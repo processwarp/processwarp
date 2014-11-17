@@ -62,9 +62,9 @@ namespace usagi {
     /// 解析中の関数の命令/変数
     struct FunctionContext {
       /// 命令配列
-      std::vector<uint32_t>& code;
+      std::vector<instruction_t>& code;
       /// 定数
-      std::vector<Value*>&  k;
+      std::vector<Value*>& k;
       /// 変数
       std::vector<const llvm::Value*>& values;
     };
@@ -73,8 +73,13 @@ namespace usagi {
     llvm::LLVMContext& context;
     /// ロード先仮想マシン
     VMachine& vmachine;
+    /// ロード済みの型とアドレスの対応関係
+    std::map<const llvm::Type*,  vaddr_t> loaded_type;
+    /// ロード済みの型とアドレスの対応関係
+    std::map<vaddr_t, Value> loaded_addr_type;
+
     /// ロード済みの値とアドレスの対応関係
-    std::map<const llvm::Value*, Value> loaded;
+    std::map<const llvm::Value*, Value> loaded_value;
 
     /// 解析中のモジュールのデータレイアウト
     const llvm::DataLayout* data_layout;
@@ -86,6 +91,14 @@ namespace usagi {
      * @return 
      */
     Value* assign_loaded(const llvm::Value* v, const Value& src);
+
+    /**
+     * LLVMの型に対応するオペランドを取得する。
+     * @param fc 解析中の関数の命令/変数
+     * @param v LLVMの型。
+     * @return オペランド。
+     */
+    int assign_operand(FunctionContext& fc, const llvm::Type* t);
 
     /**
      * LLVMの変数に対応するオペランドを取得する。
@@ -137,12 +150,11 @@ namespace usagi {
     void load(const llvm::Module* module);
 
     /**
-     * 現在解析中の関数の命令配列に命令を追記する。
-     * @param fc 解析中の関数の命令/変数
-     * @param opcode 命令コード
-     * @param a オペランド1
+     * LLVMの型を仮想マシンにロードする。
+     * @param type LLVMの型
+     * @return
      */
-    void push_codeA(FunctionContext& fc, Opcode opcode, int a);
+    vaddr_t load_type(const llvm::Type* type);
 
     /**
      * 現在解析中の関数の命令配列に命令を追記する。
@@ -152,5 +164,13 @@ namespace usagi {
      * @param b オペランド2
      */
     void push_codeAB(FunctionContext& fc, Opcode opcode, int a, int b);
+
+    /**
+     * 現在解析中の関数の命令配列に命令を追記する。
+     * @param fc 解析中の関数の命令/変数
+     * @param opcode 命令コード
+     * @param c オペランド1
+     */
+    void push_codeC(FunctionContext& fc, Opcode opcode, int c);
   };
 }

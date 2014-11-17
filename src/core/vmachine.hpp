@@ -15,15 +15,19 @@ namespace usagi {
    */
   class VMachine {
   public:
+    /** VM組み込み関数一覧 */
+    typedef std::map<const std::string, intrinsic_func_t> IntrinsicFuncs;
     /** 大域変数、関数シンボル→アドレス型 */
     typedef std::map<const Symbols::Symbol*, Value> Globals;
     /** スレッド一覧型 */
     typedef std::vector<std::unique_ptr<Thread>> Threads;
-
-    Globals globals; ///< 大域変数、関数シンボル→アドレス
-    Symbols symbols; ///< シンボル
-    Threads threads; ///< スレッド一覧
-    VMemory vmemory; ///< 仮想メモリ空間
+    
+    IntrinsicFuncs intrinsic_funcs; //< VM組み込み関数一覧
+    Globals globals;    ///< 大域変数、関数シンボル→アドレス
+    Symbols symbols;    ///< シンボル
+    Threads threads;    ///< スレッド一覧
+    VMemory vmemory;    ///< 仮想メモリ空間
+    std::vector<void*> ext_libs; ///< ロードした外部のライブラリ
 
     /**
      * コンストラクタ。
@@ -31,25 +35,45 @@ namespace usagi {
     VMachine();
 
     /**
-     * VM命令を実行する。
-     * @param max_clock コンテキストスイッチまで最長クロック数
+     * 外部の関数を呼び出す。
+     * @param func 外部の関数へのポインタ
+     * @param ret_type 戻り値の型
+     * @param arg_types 引数の型
+     * @param args 引数
+     * @return 戻り値
      */
-    void execute(int max_clock);
+    Value call_external(external_func_t func,
+			const Value& ret_type,
+			const std::vector<Value>& arg_types,
+			std::vector<Value> args);
 
     /**
-     * 関数を作成する。
-     * @param is_var_arg 可変長引数かどうか
-     * @param arg_num 引数の数
-     * @param value_num 関数で利用する変数の数
-     * @param code 命令配列
-     * @param k 定数
+     * 型のサイズと最大アライメントを計算する。
+     * @param member 複合型のメンバ
+     * @return <型のサイズ, 最大アライメント>
+     */
+    std::pair<size_t, unsigned int> calc_type_size(const std::vector<vaddr_t>& member);
+
+    /**
+     * VMの終了処理を行う。
+     */
+    void close();
+
+    /**
+     * 通常の関数(VMで解釈、実行する)を作成する。
+     * @param name 関数名
+     * @param prop 通常の関数のプロパティ
      * @return 作成した値。
      */
-    Value create_function(bool is_var_arg,
-			  unsigned int arg_num,
-			  unsigned int value_num,
-			  const std::vector<uint32_t>& code,
-			  const std::vector<Value*>&   k);
+    Value create_function(const std::string& name,
+			  const FuncStore::NormalProp& prop);
+
+    /**
+     * VM組み込み関数/ライブラリなど外部の関数を作成する。
+     * @param name 関数名
+     * @return 作成した値。
+     */
+    Value create_function(const std::string& name);
 
     /**
      * NULLポインタを作成する。
@@ -64,6 +88,20 @@ namespace usagi {
      * @return 作成した値。
      */
     Value create_pointer(Value* src, int delta);
+
+    /**
+     * 基本型情報を作成する。
+     * @param type 基本型
+     * @return 作成した値。
+     */
+    Value create_type(BasicType type);
+
+    /**
+     * 複合型情報を作成する。
+     * @param member 複合型のメンバ型のアドレス
+     * @return 作成した値。
+     */
+    Value create_type(const std::vector<vaddr_t>& member);
 
     /**
      * プリミティブ変数で処理化した値を作成する。
@@ -87,6 +125,26 @@ namespace usagi {
 				const void* data);
 
     /**
+     * VM命令を実行する。
+     * @param max_clock コンテキストスイッチまで最長クロック数
+     */
+    void execute(int max_clock);
+
+    /**
+     * ライブラリなど、外部の関数へのポインタを取得する。
+     * @param name 関数の名称
+     * @return 関数へのポインタ
+     */
+    external_func_t get_external_func(const Symbols::Symbol& name);
+
+    /**
+     * アプリケーションの初期設定をする。
+     * エントリポイントに対するクロージャを作成し、実行可能な状態を作る。
+     * @param args エントリポイントへ渡す引数。
+     */
+    void run(std::vector<std::string> args);
+    
+    /**
      * 大域変数のアドレスを設定する。
      * @param name 大域変数名
      * @param value 大域変数に登録する変数。
@@ -95,11 +153,9 @@ namespace usagi {
 
     /**
      * VMの初期設定をする。
-     * エントリポイントに対するクロージャを作成し、実行可能な状態を作る。
-     * @param args エントリポイントへ渡す引数。
      */
-    void setup(std::vector<std::string> args);
-    
+    void setup();
+
   private:
     /**
      * 変数が即値であった場合に、仮想メモリに値を配置し直す。

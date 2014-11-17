@@ -3,6 +3,11 @@
 
 using namespace usagi;
 
+// シンボル文字列を取得する。
+const std::string& Symbols::Symbol::str() const {
+  return *this;
+}
+
 // 文字列を指定してシンボルを作成。
 Symbols::Symbol::Symbol(const std::string& str) :
   std::string(str) {

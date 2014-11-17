@@ -4,10 +4,10 @@ LD          = clang++ -std=c++0x -stdlib=libc++
 #LD          = g++-4.9 -std=c++11 -fsanitize=address
 RM          = rm -f
 CXXFLAGS    = -g -O0 -Wall -I/usr/local/Cellar/llvm/3.5.0/include -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS
-LDLIBS      = -L/usr/local/Cellar/llvm/3.5.0/lib -lLLVM-3.5
+LDLIBS      = -L/usr/local/Cellar/llvm/3.5.0/lib -lLLVM-3.5 -lffi
 
 OBJS        = llvm_asm_loader.o symbols.o usagi.o util.o value.o vmachine.o vmemory.o \
-              error.o func_store.o data_store.o
+              error.o func_store.o data_store.o type_store.o
 
 TARGETS     = usagi
 
@@ -30,11 +30,11 @@ usagi:$(OBJS)
 
 .PHONY:check-syntax clean gtags
 
-callinfo.hpp:definitions.hpp
+callinfo.hpp:definitions.hpp value.hpp
 definitions.hpp:
 error.hpp:
 error.o:error.cpp error.hpp
-func_store.hpp:definitions.hpp value.hpp
+func_store.hpp:definitions.hpp symbols.hpp value.hpp
 func_store.o:func_store.cpp func_store.hpp
 llvm_asm_loader.hpp:definitions.hpp value.hpp
 llvm_asm_loader.o:llvm_asm_loader.cpp error.hpp llvm_asm_loader.hpp util.hpp vmachine.hpp
@@ -43,12 +43,14 @@ data_store.o:
 symbols.hpp:
 symbols.o:symbols.cpp symbols.hpp
 thread.hpp:callinfo.hpp definitions.hpp value.hpp
+type_store.hpp:definitions.hpp
+type_store.o:type_store.cpp type_store.hpp
 usagi.o:usagi.cpp llvm_asm_loader.hpp
-util.hpp:
+util.hpp:definitions.hpp
 util.o:util.cpp util.hpp
 value.hpp:definitions.hpp
 value.o:value.cpp value.hpp util.hpp
-vmachine.hpp:symbols.hpp thread.hpp value.hpp vmemory.hpp
+vmachine.hpp:func_store.hpp symbols.hpp thread.hpp value.hpp vmemory.hpp
 vmachine.o:vmachine.cpp callinfo.hpp error.hpp func_store.hpp util.hpp vmachine.hpp
-vmemory.hpp:data_store.hpp definitions.hpp func_store.hpp
+vmemory.hpp:data_store.hpp definitions.hpp func_store.hpp type_store.hpp
 vmemory.o:vmemory.cpp error.hpp util.hpp vmemory.hpp

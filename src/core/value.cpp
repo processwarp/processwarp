@@ -8,8 +8,7 @@ using namespace usagi;
 
 // コンストラクタ。
 Value::Value() :
-  is_function(false),
-  is_pointer(false) {
+  type(NORMAL_DATA) {
   inner_value.immediate.value.i64 = 0;
   cache = &inner_value.immediate;
 }

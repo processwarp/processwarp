@@ -18,7 +18,7 @@ namespace usagi {
 
     /** CallInfo */
     typedef std::vector<std::unique_ptr<CallInfo>> CallInfos;
-    CallInfos call_infos;
+    CallInfos callinfos;
 
     /** スタック */
     typedef std::vector<Value> Stack;

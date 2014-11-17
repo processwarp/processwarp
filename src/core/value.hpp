@@ -4,6 +4,7 @@
 #include <cstdint>
 
 #include "definitions.hpp"
+#include "util.hpp"
 
 namespace usagi {
   /** 仮想メモリ空間管理クラスのプロトタイプ定義。 */
@@ -14,10 +15,15 @@ namespace usagi {
    */
   class Value {
   public:
-    /// 関数かどうか
-    bool is_function;
-    /// ポインタかどうか
-    bool is_pointer;
+    /// 値クラスの分類
+    enum Type {
+      NORMAL_DATA,  ///< 通常の値
+      POINTER_DATA, ///< ポインタ
+      FUNCTION,     ///< 関数
+      TYPE,         ///< 型
+    };
+    /// 値クラスの分類
+    Type type;
 
     /**
      * Valueの内部の値を持つ。
@@ -40,7 +46,7 @@ namespace usagi {
 	  double   f64; ///< 64bit浮動小数の即値
 	  float    f32; ///< 32bit浮動小数の即値
 	} value;        ///< 即値の共用体
-	size_t size;    ///< 即値のサイズ
+	size_t size;    ///< 即値のサイズ(Byte)
       } immediate;
     } inner_value;
 
@@ -60,9 +66,17 @@ namespace usagi {
      * 値アドレスを取得する。
      * @return 値アドレス。
      */
-    inline vaddr_t get_address() {
+    inline vaddr_t get_address() const {
       assert(cache != &inner_value.immediate.value); // 即値でないこと
       return inner_value.address.upper | inner_value.address.lower;
+    }
+
+    /**
+     * データの格納形式が即値かどうか調べる。
+     * @return 即値の場合true。
+     */
+    inline bool is_immediate() const {
+      return cache == &inner_value.immediate.value;
     }
 
     /**

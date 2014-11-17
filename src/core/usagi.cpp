@@ -15,6 +15,7 @@ int main(const int argc, const char* argv[]) {
   if(argc != 2) return (EXIT_FAILURE);
   
   VMachine vmachine;
+  vmachine.setup();
 
   { // VMにLLVMファイルを読み込む
     LlvmAsmLoader loader(vmachine);
@@ -22,8 +23,11 @@ int main(const int argc, const char* argv[]) {
   }
 
   std::vector<std::string> args;
-  vmachine.setup(args);
-  vmachine.execute(0);
-  
+  vmachine.run(args);
+  vmachine.execute(100);
+
+  vmachine.close();
+
+  print_debug("bye!\n");
   return(EXIT_SUCCESS);
 }

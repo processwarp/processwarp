@@ -22,6 +22,13 @@ namespace usagi {
   public:
 
     class Symbol : private std::string {
+    public:
+      /**
+       * シンボル文字列を取得する。
+       * @return シンボル文字列。
+       */
+      const std::string& str() const;
+
     private:
       friend Symbols;
 

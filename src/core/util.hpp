@@ -4,6 +4,8 @@
 #include <sstream>
 #include <iostream>
 
+#include "definitions.hpp"
+
 namespace usagi {
   class Value;
 
@@ -14,7 +16,7 @@ namespace usagi {
      * @param v 変換元数値
      * @return 変換後文字列
      */
-    template<class T> static inline std::string num2dec_str(T v) {
+    template<class T> static std::string num2dec_str(T v) {
       return std::to_string(v);
     }
 
@@ -23,11 +25,18 @@ namespace usagi {
      * @param v 変換元数値
      * @return 変換後文字列
      */
-    template<class T> static inline std::string num2hex_str(T v) {
+    template<class T> static std::string num2hex_str(T v) {
       std::ostringstream os;
       os << std::hex << v;
       return os.str();
     }
+
+    /**
+     * アドレスを16進数表現で文字列に変換。
+     * @param addr 変換元アドレス
+     * @return 変換後文字列
+     */
+    static std::string addr2str(vaddr_t addr);
 
     /**
      * 未実装機能を表すメソッド。

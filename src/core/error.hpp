@@ -15,12 +15,17 @@ namespace usagi {
   public:
     enum Reason {
       PARSE,      ///< 入力ファイルのパースに失敗
-      UNSUPPORT,  ///< 未サポートの機能
+      UNSUPPORT,  ///< 未サポートの機能(LLVMの仕様のうち)
       SPEC_VIOLATION, ///< 仕様違反
+      INST_VIOLATION, ///< 不正命令
+      TYPE_VIOLATION, ///< 型違反
       MOD_FUNCTION,   ///< 関数ポインタに対する演算
       SEGMENT_FAULT,  ///< セグメンテーションフォルト
       OUT_OF_MEMORY,  ///< メモリ不足
       SYM_NOT_FOUND,  ///< シンボルが見つけられなかった
+      TOO_MANY_VALUE, ///< 変数、定数がオペランドで表現できない
+      EXT_LIBRARY,    ///< 外部ライブラリの読み出しエラー
+      EXT_CALL,       ///< 外部関数の読み出しエラー
     };
 
     /// 例外の理由
