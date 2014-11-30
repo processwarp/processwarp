@@ -116,6 +116,20 @@ namespace usagi {
     Value* load(const llvm::Constant* constant);
 
     /**
+     * LLVMの定数(0うめ領域)を仮想マシンにロードする。
+     * @param src LLVMの定数(0うめ領域)
+     * @return
+     */
+    Value* load(const llvm::ConstantAggregateZero* src);
+
+    /**
+     * LLVMの定数(配列)を仮想マシンにロードする。
+     * @param src LLVMの定数(配列)
+     * @return
+     */
+    Value* load(const llvm::ConstantArray* src);
+
+    /**
      * LLVMの定数(DataArray)を仮想マシンにロードする。
      * @param data_array LLVMの定数
      * @return 
@@ -128,6 +142,20 @@ namespace usagi {
      * @return 
      */
     Value* load(const llvm::ConstantExpr* expr);
+
+    /**
+     * LLVMの定数(Floating-point)を仮想マシンにロードする。
+     * @param src llvmの定数(Floating-point)
+     * @return
+     */
+    Value* load(const llvm::ConstantFP* src);
+
+    /**
+     * LLVMの定数(Int)を仮想マシンにロードする。
+     * @param src LLVMの定数(Int)
+     * @return
+     */
+    Value* load(const llvm::ConstantInt* src);
 
     /**
      * LLVMの関数を仮想マシンにロードする。
@@ -159,18 +187,11 @@ namespace usagi {
     /**
      * 現在解析中の関数の命令配列に命令を追記する。
      * @param fc 解析中の関数の命令/変数
-     * @param opcode 命令コード
-     * @param a オペランド1
-     * @param b オペランド2
+     * @param opcode オペコード
+     * @param option オプション
+     * @param a Aコード
+     * @param b Bコード
      */
-    void push_codeAB(FunctionContext& fc, Opcode opcode, int a, int b);
-
-    /**
-     * 現在解析中の関数の命令配列に命令を追記する。
-     * @param fc 解析中の関数の命令/変数
-     * @param opcode 命令コード
-     * @param c オペランド1
-     */
-    void push_codeC(FunctionContext& fc, Opcode opcode, int c);
+    void push_code_AB(FunctionContext& fc, Opcode opcode, int option, int a, int b);
   };
 }

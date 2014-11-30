@@ -11,8 +11,6 @@ namespace usagi {
    */
   class CallInfo {
   public:
-    /** 呼び出した関数のスタック上の位置(絶対) */
-    unsigned int func;
     /** スタックトップ(絶対) */
     //unsigned int top;
 
@@ -24,6 +22,9 @@ namespace usagi {
 
     /** プログラムカウンタ */
     unsigned int pc;
+
+    /** 最終jump位置 */
+    unsigned int phi;
 
     /** 可変長引数 */
     std::vector<Value> var_arg;

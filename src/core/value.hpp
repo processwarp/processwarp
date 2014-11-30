@@ -16,7 +16,7 @@ namespace usagi {
   class Value {
   public:
     /// 値クラスの分類
-    enum Type {
+    enum Type : uint8_t {
       NORMAL_DATA,  ///< 通常の値
       POINTER_DATA, ///< ポインタ
       FUNCTION,     ///< 関数
@@ -54,13 +54,25 @@ namespace usagi {
      * 値を取得するためのキャッシュポインタ。
      * 即値の場合、「cache == &inner_value.immediate.value」を満たす。
      */ 
-    void* cache;
+    mutable void* cache;
 
     /**
      * コンストラクタ。
      * 値を0クリアする。
      */
     Value();
+
+    /**
+     * コピーコンストラクタ。
+     * 即値の場合、cacheを作りなおす。
+     */
+    Value(const Value& src);
+
+    /**
+     * =演算子。
+     * 即値の場合、cacheを作り直す。
+     */
+    Value& operator=(const Value& src);
     
     /**
      * 値アドレスを取得する。
@@ -87,27 +99,9 @@ namespace usagi {
     bool is_same(const Value& target) const;
 
     /**
-     * 値の比較を行う。
-     * @param target 比較対象インスタンス。
-     * @return thisがtargetより小さい場合負、値が同じ場合0、大きい場合正の値を戻す。
+     * 値のアドレスを設定する。
+     * @param addr 値のアドレス。
      */
-    //virtual int compare(const Value& target) const;
-
-    /**
-     * 変数のコピーを作成する。
-     * プリミティブ変数は新しいアドレスにコピーを作成する。オブジェクトはコピー不可。
-     * @param vmemory 仮想メモリ空間。
-     * @param dst 配置先アドレス。VADDR_NONを指定すると空いているを割り当てる。
-     * @return クローン配置先仮想アドレス。
-     */
-    //virtual vaddr_t copy(VMemory& vmemory, vaddr_t dst = VADDR_NON) const;
-
-    /**
-     * 型の比較を行う。
-     * 型の大小はdefinitions.hppの型順で行われる。
-     * @param 比較対象インスタンス。
-     * @return thisがtargetより小さい場合負、値が同じ場合0、大きい場合正の値を戻す。
-     */
-    //int type_compare(const Value& target) const;
+    void set_address(vaddr_t addr);
   };
 }

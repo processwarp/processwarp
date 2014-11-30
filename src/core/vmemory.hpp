@@ -8,6 +8,7 @@
 #include "definitions.hpp"
 #include "func_store.hpp"
 #include "type_store.hpp"
+#include "util.hpp"
 
 namespace usagi {
   /**
@@ -45,7 +46,20 @@ namespace usagi {
       TypeStore& type;
     };
 
-    struct 
+    /**
+     * アドレスが関数領域のものかどうか調べる。
+     * @param addr 調査対象アドレス。
+     * @return アドレスが関数領域の場合trueを戻す。
+     */
+    static bool addr_is_func(vaddr_t addr);
+
+    /**
+     * アドレスが型領域のものかどうか調べる。
+     * @param addr 調査対象アドレス。
+     * @return アドレスが型領域の場合trueを戻す。
+     */
+    static bool addr_is_type(vaddr_t addr);
+
     /**
      * メモリ空間に新しいデータ領域を確保する。
      * 同一アドレスにデータ領域が確保されていた場合、エラーとなる。
@@ -91,7 +105,7 @@ namespace usagi {
 			    vaddr_t addr = VADDR_NON);
 
     /**
-     * メモリ空間に型領域を確保する。
+     * メモリ空間に複合型領域を確保する。
      * 同一アドレスに型領域が確保されていた場合、エラーとなる。
      * 同一のデータ構造に対しては、既存のアドレスを割り当てる。
      * @param size 構造のサイズ(Byte)
@@ -105,6 +119,24 @@ namespace usagi {
 			    const std::vector<vaddr_t>& member,
 			    vaddr_t addr = VADDR_NON);
 
+    
+    /**
+     * メモリ空間に配列型領域を確保する。
+     * 同一アドレスに型領域が確保されていた場合、エラーとなる。
+     * 同一のデータ構造に対しては、既存のアドレスを割り当てる。
+     * @param size 構造のサイズ(Byte)
+     * @param alignment アライメント(Byte)
+     * @param element 配列の要素の型
+     * @param num 配列の要素数
+     * @param addr 確保先仮想アドレス。VADDR_NONを指定すると空いているアドレスを割り当てる。
+     * @return 確保したアドレスと領域。
+     */
+    AllocTypeRet alloc_type(size_t size,
+			    unsigned int alignment,
+			    vaddr_t element,
+			    unsigned int num,
+			    vaddr_t addr = VADDR_NON);
+
     /**
      * 既存のメモリ空間をコピーして新しいデータ領域を確保する。
      * @param addr コピー元アドレス。
@@ -113,6 +145,20 @@ namespace usagi {
      */
     AllocDataRet copy_data(vaddr_t addr, unsigned int size);
 
+    /**
+     * アドレスのupper部分を取り出す。
+     * @param addr アドレス
+     * @return アドレスのupper部分
+     */
+    static vaddr_t get_addr_upper(vaddr_t addr);
+
+    /**
+     * アドレスのlower部分を取り出す。
+     * @param addr アドレス
+     * @return アドレスのlower部分
+     */
+    static vaddr_t get_addr_lower(vaddr_t addr);
+    
     /**
      * アドレスに対応する領域を取得する。
      * @param addr 仮想アドレス。
@@ -141,8 +187,9 @@ namespace usagi {
     std::map<vaddr_t, FuncStore> func_store_map;
     /** メモリ空間の持つ型一覧(仮想アドレス→型領域) */
     std::map<vaddr_t, TypeStore> type_store_map;
-
+    //at_death("VMemory\n");
+    
     /** 空きアドレス */
-    vaddr_t last_free[0xf];
+    vaddr_t last_free[0x10];
   };
 }

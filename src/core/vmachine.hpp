@@ -1,5 +1,6 @@
 #pragma once
 
+#include <set>
 #include <string>
 #include <vector>
 
@@ -21,14 +22,26 @@ namespace usagi {
     typedef std::map<const Symbols::Symbol*, Value> Globals;
     /** スレッド一覧型 */
     typedef std::vector<std::unique_ptr<Thread>> Threads;
-    
+    /** VM組み込みアドレス一覧 */
+    typedef std::set<vaddr_t> IntrinsicAddrs;
+    /** VM実行状態一覧 */
+    enum Status {
+      SETUP,   ///< 起動中
+      ACTIVE,  ///< 実行中(実行中スレッドあり)
+      PASSIVE, ///< 実行中(実行中スレッドなし)
+      FINISH,  ///< 終了
+    };
+
     IntrinsicFuncs intrinsic_funcs; //< VM組み込み関数一覧
+    IntrinsicAddrs intrinsic_addrs; //< VM組み込みアドレス一覧(他VMにコピーしない)
     Globals globals;    ///< 大域変数、関数シンボル→アドレス
+    Status  status;     ///< VM実行状態
     Symbols symbols;    ///< シンボル
     Threads threads;    ///< スレッド一覧
     VMemory vmemory;    ///< 仮想メモリ空間
-    std::vector<void*> ext_libs; ///< ロードした外部のライブラリ
-
+    //at_death("VMachine\n");
+    //std::vector<void*> ext_libs; ///< ロードした外部のライブラリ
+    
     /**
      * コンストラクタ。
      */
@@ -58,6 +71,14 @@ namespace usagi {
      * VMの終了処理を行う。
      */
     void close();
+
+    /**
+     * 値をコピーする。
+     * @param コピー先の値の格納先
+     * @param コピー元の値の格納先
+     * @param コピーするデータの型
+     */
+    void copy_value(Value& dst, const Value& src, const Value& type);
 
     /**
      * 通常の関数(VMで解釈、実行する)を作成する。
@@ -97,6 +118,14 @@ namespace usagi {
     Value create_type(BasicType type);
 
     /**
+     * 配列型情報を作成する。
+     * @param element 配列のメンバの型のアドレス
+     * @param num 配列の要素数
+     * @return 作成した値。
+     */
+    Value create_type(vaddr_t element, unsigned int num);
+
+    /**
      * 複合型情報を作成する。
      * @param member 複合型のメンバ型のアドレス
      * @return 作成した値。
@@ -123,6 +152,30 @@ namespace usagi {
     Value create_value_by_array(int  per_size,
 				int  length,
 				const void* data);
+
+    /**
+     * ライブラリ関数を指定アドレスに展開する。
+     * @param name 関数名
+     * @param addr 展開先アドレス
+     */
+    void deploy_function_external(const std::string& name, vaddr_t addr);
+    
+    /**
+     * VM組み込み関数を指定アドレスに展開する。
+     * @param name 関数名
+     * @param addr 展開先アドレス
+     */
+    void deploy_function_intrinsic(const std::string& name, vaddr_t addr);
+
+    /**
+     * 通常の関数(VMで解釈、実行する)を指定アドレスに展開する。
+     * @param name 関数名
+     * @param prop 通常の関数のプロパティ
+     * @param addr 展開先アドレス
+     */
+    void deploy_function_normal(const std::string& name,
+				const FuncStore::NormalProp& prop,
+				vaddr_t addr);
 
     /**
      * VM命令を実行する。
@@ -156,7 +209,22 @@ namespace usagi {
      */
     void setup();
 
+    /**
+     * ワープ後のVMの設定をする。
+     */
+    void setup_continuous();
+
   private:
+    /**
+     * 変数の中身をintとして取得する。
+     * 変数の中身はsize-byteの値とし、符号あり整数としてlongest_int_tに
+     * 拡張した値を戻す。
+     * @param src VMの変数
+     * @param size 変数のサイズ(sizeof(longest_int_t)以下であること)
+     * @return 拡張済みの値
+     */
+    longest_int_t get_value_as_int(const Value& src, unsigned int size);
+
     /**
      * 変数が即値であった場合に、仮想メモリに値を配置し直す。
      * 値が仮想メモリに配置済みの場合は何もしない。
@@ -169,6 +237,6 @@ namespace usagi {
      * 変数が即値またはキャッシュ設定済みの場合なにもしない。
      * @param target 対象の変数
      */
-    void resolve_value_cache(Value* target);
+    void resolve_value_cache(const Value* target);
   };
 }

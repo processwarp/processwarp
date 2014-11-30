@@ -1,0 +1,15 @@
+{
+    "network":"xmpp",
+    "xmpp":{
+	"server":"llamerada.net",
+	"jid":"account1@llamerada.net",
+	"password":"passwd1"
+    },
+
+    "mode":"file",
+    "file":{
+	"mode":"file",
+	"filename":"../sample/lua.ll",
+	"args":[]
+    }
+}

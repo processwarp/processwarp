@@ -1,7 +1,9 @@
 
 #include <cassert>
+#include <cstring>
 
 #include "value.hpp"
+#include "vmemory.hpp"
 #include "util.hpp"
 
 using namespace usagi;
@@ -9,29 +11,39 @@ using namespace usagi;
 // コンストラクタ。
 Value::Value() :
   type(NORMAL_DATA) {
-  inner_value.immediate.value.i64 = 0;
-  cache = &inner_value.immediate;
+  memset(&inner_value, 0, sizeof(inner_value));
+  cache = &inner_value.immediate.value;
 }
 
-/*
-// 値の比較を行う。
-int Value::compare(const Value& target) const {
-  // 呼ばれない
-  assert(false);
+// コピーコンストラクタ。
+Value::Value(const Value& src) :
+  type(src.type),
+  inner_value(src.inner_value) {
 
-  return 0;
+  if (src.is_immediate()) {
+    cache = &inner_value.immediate.value;
+  } else {
+    cache = src.cache;
+  }
 }
 
-// 変数のコピーを作成する。
-vaddr_t Value::copy(VMemory& vmemory, vaddr_t dst) const {
-  // 呼ばれない
-  assert(false);
+// =演算子。
+Value& Value::operator=(const Value& src) {
+  type = src.type;
+  inner_value = src.inner_value;
 
-  return VADDR_NON;
+  if (src.is_immediate()) {
+    cache = &inner_value.immediate.value;
+  } else {
+    cache = src.cache;
+  }
+
+  return *this;
 }
 
-// 型の比較を行う。
-int Value::type_compare(const Value& target) const {
-  return static_cast<int>(type) - static_cast<int>(target.type);
+// 値のアドレスを設定する。
+void Value::set_address(vaddr_t addr) {
+  inner_value.address.upper = VMemory::get_addr_upper(addr);
+  inner_value.address.lower = VMemory::get_addr_lower(addr);
+  cache = nullptr;
 }
-//*/

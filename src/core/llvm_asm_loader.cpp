@@ -6,6 +6,7 @@
 #include <memory>
 
 #include "error.hpp"
+#include "instruction.hpp"
 #include "llvm_asm_loader.hpp"
 #include "util.hpp"
 #include "vmachine.hpp"
@@ -34,7 +35,7 @@ void LlvmAsmLoader::load_file(const std::string& filename) {
   llvm::SMDiagnostic error;
   llvm::Module* module = llvm::ParseAssemblyFile(filename, error, context);
   if (module == nullptr)
-    throw_error_message(Error::PARSE, error.getMessage().str());
+    throw_error_message(Error::PARSE, error.getMessage().str() + "[" + filename + "]");
   load(module);
 }
 
@@ -125,15 +126,23 @@ Value* LlvmAsmLoader::load(const llvm::Constant* constant) {
     //case llvm::Value::BlockAddressVal: {} break;
   case llvm::Value::ConstantExprVal:
     return load(static_cast<const llvm::ConstantExpr*>(constant));
+    
+  case llvm::Value::ConstantAggregateZeroVal:
+    return load(static_cast<const llvm::ConstantAggregateZero*>(constant));
 
-    //case llvm::Value::ConstantAggregateZeroVal: {} break;
   case llvm::Value::ConstantDataArrayVal:
     return load(static_cast<const llvm::ConstantDataArray*>(constant));
 
     //case llvm::Value::ConstantDataVectorVal: {} break;
-    //case llvm::Value::ConstantIntVal: {} break;
-    //case llvm::Value::ConstantFPVal: {} break;
-    //case llvm::Value::ConstantArrayVal: {} break;
+  case llvm::Value::ConstantIntVal:
+    return load(static_cast<const llvm::ConstantInt*>(constant));
+
+  case llvm::Value::ConstantFPVal:
+    return load(static_cast<const llvm::ConstantFP*>(constant));
+
+  case llvm::Value::ConstantArrayVal:
+    return load(static_cast<const llvm::ConstantArray*>(constant));
+
     //case llvm::Value::ConstantStructVal: {} break;
     //case llvm::Value::ConstantVectorVal: {} break;
     //case llvm::Value::ConstantPointerNullVal: {} break;
@@ -143,8 +152,52 @@ Value* LlvmAsmLoader::load(const llvm::Constant* constant) {
     //case llvm::Value::InstructionVal: {} break;
   default: {
     print_debug("unsupport type : %d\n", constant->getValueID());
+    constant->dump();
+
     throw_error(Error::UNSUPPORT);
   } break;
+  }
+}
+
+// LLVMの定数(0うめ領域)を仮想マシンにロードする。
+Value* LlvmAsmLoader::load(const llvm::ConstantAggregateZero* src) {
+  check_same_value(loaded_value, src);
+
+  // 領域サイズを取得
+  unsigned int size = src->getType()->getScalarSizeInBits();
+  // 領域確保
+  Value value = vmachine.create_value_by_array(1, size, nullptr);
+  // 0クリア
+  memset(value.cache, 0, size);
+
+  return assign_loaded(src, value);
+}
+
+// LLVMの定数(配列)を仮想マシンにロードする。
+Value* LlvmAsmLoader::load(const llvm::ConstantArray* src) {
+  check_same_value(loaded_value, src);
+
+  // Typeの要素数とOperandsの要素数は同じはず
+  assert(src->getType()->getNumElements() == src->getNumOperands());
+  
+  if (src->getType()->getElementType()->isPointerTy()) {
+    // 要素がポインタの場合、要素の仮想アドレスを格納する
+    // 領域確保
+    Value value = vmachine.create_value_by_array(sizeof(vaddr_t),
+						 src->getNumOperands(),
+						 nullptr);
+    // 仮想アドレスを格納する
+    vaddr_t* cache = reinterpret_cast<vaddr_t*>(value.cache);
+    for (int i = 0, num = src->getNumOperands(); i < num; i++) {
+      Value* operand_value = load(src->getOperand(i));
+      *(cache + i) = operand_value->get_address();
+    }
+
+    return assign_loaded(src, value);
+
+  } else {
+    // 値がどのように格納されるか未検証
+    assert(false);
   }
 }
 
@@ -191,6 +244,7 @@ Value* LlvmAsmLoader::load(const llvm::ConstantExpr* expr) {
     assert(op_type->isSized()); // サイズが確定可能と想定
     int delta = 0;
     // delta = Σ(size(n) * operand(n))を計算
+    /// TODO バグあり、vmachine.cppのGET_EPのアルゴリズムを参考に書き換えること
     for (unsigned int i = 1, num_operands = expr->getNumOperands(); i < num_operands; i ++) {
       // 2つ目以降のオペランドは数値のはず。
       assert(llvm::ConstantInt::classof(expr->getOperand(i)));
@@ -200,6 +254,8 @@ Value* LlvmAsmLoader::load(const llvm::ConstantExpr* expr) {
 		  (uint32_t)data_layout->getTypeStoreSize(op_type),
 		  (uint32_t)data_layout->getTypeAllocSize(op_type),
 		  op->getSExtValue());
+      assert((uint32_t)data_layout->getTypeStoreSize(op_type) ==
+	     (uint32_t)data_layout->getTypeAllocSize(op_type)); // どちらの値を取るべきか？
       if (llvm::SequentialType::classof(op_type)) {
 	// pointer, array, vectorの場合、中身の型を見る。
 	op_type = static_cast<const llvm::SequentialType*>(op_type)->getElementType();
@@ -217,6 +273,48 @@ Value* LlvmAsmLoader::load(const llvm::ConstantExpr* expr) {
     //default: {} break; // Binary
   default: {
     print_debug("unsupport expr : %d %s\n", expr->getOpcode(), expr->getOpcodeName());
+    throw_error(Error::UNSUPPORT);
+  } break;
+  }
+}
+
+// LLVMの定数(Floating-point)を仮想マシンにロードする。
+Value* LlvmAsmLoader::load(const llvm::ConstantFP* src) {
+  check_same_value(loaded_value, src);
+
+  switch(src->getType()->getTypeID()) {
+  case llvm::Type::FloatTyID:
+    return assign_loaded(src, vmachine.create_value_by_primitive
+			 (src->getValueAPF().convertToFloat()));
+    
+  case llvm::Type::DoubleTyID:
+    return assign_loaded(src, vmachine.create_value_by_primitive
+			 (src->getValueAPF().convertToDouble()));
+
+  default: {
+    print_debug("unsupport type : %d\n", src->getType()->getTypeID());
+    src->dump();
+    throw_error(Error::UNSUPPORT);
+  } break;
+  };
+}
+
+// LLVMの定数(Int)を仮想マシンにロードする。
+Value* LlvmAsmLoader::load(const llvm::ConstantInt* src) {
+  check_same_value(loaded_value, src);
+
+  switch (src->getBitWidth()) {
+  case 8:
+    return assign_loaded(src, vmachine.create_value_by_array(1, 1, src->getValue().getRawData()));
+  case 16:
+    return assign_loaded(src, vmachine.create_value_by_array(2, 1, src->getValue().getRawData()));
+  case 32:
+    return assign_loaded(src, vmachine.create_value_by_array(4, 1, src->getValue().getRawData()));
+  case 64:
+    return assign_loaded(src, vmachine.create_value_by_array(8, 1, src->getValue().getRawData()));
+
+  default: {
+    print_debug("unsupport bit width : %d\n", src->getBitWidth());
     throw_error(Error::UNSUPPORT);
   } break;
   }
@@ -240,6 +338,10 @@ Value* LlvmAsmLoader::load(const llvm::Function* function) {
     std::vector<Value*> k;
     // 変数
     std::vector<const llvm::Value*> values;
+    // ブロックとそれに割り当てる名前
+    std::map<const llvm::BasicBlock*, unsigned int> block_alias;
+    // ブロック名とそれの開始位置
+    std::map<unsigned int, unsigned int> block_start;
 
     FunctionContext fc = {prop.code, k, values };
     
@@ -252,15 +354,32 @@ Value* LlvmAsmLoader::load(const llvm::Function* function) {
       values.push_back(arg_val);
     }
 
+    // ブロックの名称を最初に作っておく
+    unsigned int alias = 0;
+    for (auto b = function->begin(); b != function->end(); b ++) {
+      block_alias.insert(std::make_pair(b, alias ++));
+    }
+
     for (auto block = function->begin(); block != function->end(); block ++) {
+      // ブロックの開始位置を格納しておく
+      block_start.insert(std::make_pair(block_alias.at(block), fc.code.size()));
+
+      // 命令を解析する
       for (auto i = block->begin(); i != block->end(); i ++) {
+	i->dump(); // TODO
 	// LLVMに対応した命令に置き換え
 	switch(i->getOpcode()) {
 	case llvm::Instruction::Ret: {
-	  // Ret命令の追加
 	  const llvm::ReturnInst& inst = static_cast<const llvm::ReturnInst&>(*i);
-	  push_codeC(fc, Opcode::RETURN,
-		     assign_operand(fc, inst.getReturnValue()));
+	  if (inst.getReturnValue() == nullptr) {
+	    // 戻り値がない場合、A = 0, B = 0
+	    push_code_AB(fc, Opcode::RETURN, 0, 0, 0);
+
+	  } else {
+	    // 戻り値がある場合、A = 1, B = 値
+	    push_code_AB(fc, Opcode::RETURN, 0,
+			 1, assign_operand(fc, inst.getReturnValue()));
+	  }
 	} break;
 
 	case llvm::Instruction::Call: {
@@ -269,29 +388,163 @@ Value* LlvmAsmLoader::load(const llvm::Function* function) {
 	  if (inst.isInlineAsm()) throw_error(Error::UNSUPPORT);
 	  
 	  // CALL命令、関数
-	  push_codeAB(fc, Opcode::CALL,
-		      assign_operand(fc, inst.getCalledFunction()), 
-		      // 末尾再帰の場合、Bに1を設定
-		      inst.isTailCall() ? 1 : 0);
+	  push_code_AB(fc, Opcode::CALL, 0,
+		       assign_operand(fc, inst.getCalledFunction()),
+		       /// TODO 末尾再帰の場合、Bに1を設定(llvmのtail callの定義が認識と違う？)
+		       /*inst.isTailCall() ? 1 :*/ 0);
 	  // 戻り値の型、格納先の命令を追加
-	  push_codeAB(fc, Opcode::EXTRAARG2,
-		      assign_operand(fc, inst.getCalledFunction()->getReturnType()),
-		      assign_operand(fc, &inst));
+	  push_code_AB(fc, Opcode::EXTRAARG2, 0,
+		       assign_operand(fc, inst.getCalledFunction()->getReturnType()),
+		       assign_operand(fc, &inst));
 
 	  // 引数部分の命令(引数の型、引数〜)を追加
 	  for (unsigned int arg_idx = 0, num = inst.getNumArgOperands();
 	       arg_idx < num; arg_idx ++) {
 	    int op_a = assign_operand(fc, inst.getArgOperand(arg_idx)->getType());
 	    int op_b = assign_operand(fc, inst.getArgOperand(arg_idx));
-	    push_codeAB(fc, Opcode::EXTRAARG2, op_a, op_b);
+	    push_code_AB(fc, Opcode::EXTRAARG2, 0, op_a, op_b);
 	  }
+	} break;
+
+	case llvm::Instruction::Br: {
+	  const llvm::IndirectBrInst& inst = static_cast<const llvm::IndirectBrInst&>(*i);
+	  if (inst.getNumDestinations() == 0) {
+	    // 無条件分岐の場合、無条件jump先の命令を追加
+	    push_code_AB(fc, Opcode::JUMP, 0,
+			 block_alias.at(inst.getDestination(-1)), 0);
+
+	  } else {
+	    // 条件分岐
+	    assert(inst.getNumDestinations() == 2);
+	    // jump先、判定対象の命令を追加
+	    push_code_AB(fc, Opcode::TEST, 0,
+			 block_alias.at(inst.getDestination(0)),
+			 assign_operand(fc, inst.getAddress()));
+	    // 無条件jump先の命令を追加
+	    push_code_AB(fc, Opcode::JUMP, 0,
+			 block_alias.at(inst.getDestination(1)), 0);
+	  }
+	} break;
+
+	case llvm::Instruction::PHI: {
+	  const llvm::PHINode& inst = static_cast<const llvm::PHINode&>(*i);
+	  // 変数格納先、型の命令を追加
+	  push_code_AB(fc, Opcode::PHI, 0,
+		       assign_operand(fc, &inst),
+		       assign_operand(fc, inst.getType()));
+	  for (unsigned int i = 0, num = inst.getNumIncomingValues(); i < num; i ++) {
+	    // Phiと最終jump先の命令を追加
+	    push_code_AB(fc, Opcode::EXTRAARG2, 0,
+			 assign_operand(fc, inst.getIncomingValue(i)),
+			 block_alias.at(inst.getIncomingBlock(i)));
+	  }
+	} break;
+
+	  /**
+	   * 加減乗除などの２項演算子命令作成マクロ
+	   * @param opcode
+	   */
+#define M_BIN_OPERATOR(opcode)						\
+	  const llvm::BinaryOperator& inst =				\
+	  static_cast<const llvm::BinaryOperator&>(*i);			\
+	  assert(inst.getNumOperands() == 2);				\
+	  /* 変数格納先、型の命令を追加	*/				\
+	  push_code_AB(fc, (opcode), 0,					\
+		       assign_operand(fc, &inst),			\
+		       assign_operand(fc, inst.getType()));		\
+	  /* 2項の命令を追加 */						\
+	  push_code_AB(fc, Opcode::EXTRAARG2, 0,			\
+		       assign_operand(fc, inst.getOperand(0)),		\
+		       assign_operand(fc, inst.getOperand(1)))
+
+	case llvm::Instruction::Add: {
+	  M_BIN_OPERATOR(Opcode::ADD);
+	} break;
+
+	case llvm::Instruction::URem: {
+	  M_BIN_OPERATOR(Opcode::UREM);
+	} break;
+
+	case llvm::Instruction::SRem: {
+	  M_BIN_OPERATOR(Opcode::SREM);
+	} break;
+
+#undef M_BIN_OPERATOR
+
+	case llvm::Instruction::Load: {
+	  const llvm::LoadInst& inst = static_cast<const llvm::LoadInst&>(*i);
+	  /* 変数格納先、アドレス格納元を追加 */
+	  push_code_AB(fc, Opcode::LOAD, 0,
+		       assign_operand(fc, &inst),
+		       assign_operand(fc, inst.getPointerOperand()));
+	} break;
+
+	case llvm::Instruction::GetElementPtr: {
+	  const llvm::GetElementPtrInst& inst = static_cast<const llvm::GetElementPtrInst&>(*i);
+	  /* 変数格納先、アドレス格納元を追加 */
+	  push_code_AB(fc, Opcode::GET_EP, 0,
+		       assign_operand(fc, &inst),
+		       assign_operand(fc, inst.getPointerOperand()));
+	  /* ポインタの型、インデクスのサイズを追加 */
+	  llvm::Type* idx_type = inst.getOperand(1)->getType();
+	  assert(idx_type->isIntegerTy()); // int系のはず
+	  push_code_AB(fc, Opcode::EXTRAARG2, 0,
+		       assign_operand(fc, inst.getPointerOperandType()->getPointerElementType()),
+		       idx_type->getIntegerBitWidth() / 8);
+	  for (unsigned int i = 1, num = inst.getNumOperands(); i < num; i ++) {
+	    // 型が同じはず
+	    assert(inst.getOperand(i)->getType() == idx_type &&
+		   i + 1 < num ? inst.getOperand(i + 1)->getType() == idx_type : true);
+	    // インデクスを追加
+	    push_code_AB(fc, Opcode::EXTRAARG2, 0,
+			 assign_operand(fc, inst.getOperand(i ++)),
+			 i < num ? assign_operand(fc, inst.getOperand(i ++)) : 0);
+	  }
+	} break;
+
+	case llvm::Instruction::SExt: {
+	  const llvm::SExtInst& inst = static_cast<const llvm::SExtInst&>(*i);
+	  assert(inst.getNumOperands() == 1);
+	  /* 変数格納先、キャスト後の型を追加 */
+	  push_code_AB(fc, Opcode::SEXT, 0,
+		       assign_operand(fc, &inst),
+		       assign_operand(fc, inst.getDestTy()));
+	  /* 変換元変数格納先、キャスト前の型を追加 */
+	  push_code_AB(fc, Opcode::EXTRAARG2, 0,
+		       assign_operand(fc, inst.getOperand(0)),
+		       assign_operand(fc, inst.getSrcTy()));
 	} break;
 
 	default: {
 	  print_debug("unsupport instruction : %s\n", i->getOpcodeName());
-	  throw_error(Error::UNSUPPORT);
+	  throw_error_message(Error::UNSUPPORT, "instruction:" + Util::num2dec_str(i->getOpcode()));
 	} break;
 	};
+      }
+    }
+
+    // TEST/JUMP命令のジャンプ先を名前から開始位置に書き換える
+    for (unsigned int pc = 0, size = fc.code.size(); pc < size; pc ++) {
+      instruction_t code = fc.code[pc];
+      switch (Instruction::get_opcode(code)) {
+      case Opcode::JUMP: {
+	unsigned int start = block_start.at(Instruction::get_code_A(code));
+	fc.code[pc] = Instruction::rewrite_code_A(code, start);
+      } break;
+
+      case Opcode::TEST: {
+	unsigned int start = block_start.at(Instruction::get_code_B(code));
+	fc.code[pc] = Instruction::rewrite_code_B(code, start);
+      } break;
+
+      case Opcode::PHI: {
+	// PHIの場合、ソレに続くextar arg内を書き換える
+	while (Instruction::get_opcode(code = fc.code[pc + 1]) == Opcode::EXTRAARG2) {
+	  unsigned int start = block_start.at(Instruction::get_code_B(code));
+	  fc.code[pc + 1] = Instruction::rewrite_code_B(code, start);
+	  pc ++;
+	}
+      } break;
       }
     }
 
@@ -397,6 +650,13 @@ vaddr_t LlvmAsmLoader::load_type(const llvm::Type* type) {
     return loaded_type.insert(std::make_pair(type, value.get_address())).first->second;
   } break;
 
+  case llvm::Type::ArrayTyID: {
+    Value value = vmachine.create_type(load_type(type->getArrayElementType()),
+				       type->getArrayNumElements());
+    loaded_addr_type.insert(std::make_pair(value.get_address(), value));
+    return loaded_type.insert(std::make_pair(type, value.get_address())).first->second;
+  } break;
+
   default:
     throw_error_message(Error::UNSUPPORT, "type:" + Util::num2dec_str(type->getTypeID()));
     break;
@@ -409,27 +669,7 @@ vaddr_t LlvmAsmLoader::load_type(const llvm::Type* type) {
 }
 
 // 現在解析中の関数の命令配列に命令を追記する。
-void LlvmAsmLoader::push_codeAB(FunctionContext& fc, Opcode opcode, int a, int b) {
-  assert((a << 12 & ~0x00fff000) == 0 || ((-a-1) << 12 & ~0x00fff000) == 0);
-  assert((b <<  0 & ~0x00000fff) == 0 || ((-b-1) <<  0 & ~0x00000fff) == 0);
-
-  print_debug("opcode:%d, a:%d, b:%d\n", opcode, a, b);
-
-  uint32_t v =
-    (static_cast<uint32_t>(opcode) << 24 & 0xff000000) |
-    (static_cast<uint32_t>(a)      << 12 & 0x00fff000) |
-    (static_cast<uint32_t>(b)      <<  0 & 0x00000fff);
-
-  fc.code.push_back(v);
-}
-
-// 現在解析中の関数の命令配列に命令を追記する。
-void LlvmAsmLoader::push_codeC(FunctionContext& fc, Opcode opcode, int c) {
-  assert((c <<  0 & ~0x00ffffff) == 0);
-
-  uint32_t v =
-    (static_cast<uint32_t>(opcode) << 24 & 0xff000000) |
-    (static_cast<uint32_t>(c)      <<  0 & 0x00ffffff);
-
-  fc.code.push_back(v);
+void LlvmAsmLoader::push_code_AB(FunctionContext& fc, Opcode opcode, int option, int a, int b) {
+  fc.code.push_back(Instruction::make_AB(opcode, option, a, b));
+  print_debug("push code %02x %02x %08x(%d) %08x(%d)\n", opcode, option, a, a, b, b);
 }
