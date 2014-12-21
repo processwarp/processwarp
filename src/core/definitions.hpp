@@ -32,6 +32,9 @@ namespace usagi {
   /** 値に割り振る仮想アドレス */
   typedef std::uint64_t vaddr_t;
 
+  /** NULLのアドレス */
+  static vaddr_t VADDR_NULL = 0x0;
+
   /** 命令 */
   typedef std::uint64_t instruction_t;
 
@@ -110,6 +113,7 @@ namespace usagi {
       SREM,     /* ??   A B	R(A) = (R(B))ex2-0A % ex2-0B */
       // メモリアクセス系命令
       LOAD,     /* ??   A B	R(A) = addrof(R(B)) */
+      STORE,	/* ??   A B	addrof(R(B)) = R(A) */
       GET_EP,   /* ??   A B	R(A) = addrof(R(B)) */
       // 変換演算子
       SEXT,     /* ??   A B	R(A) = (R(B))ex2-0A % ex2-0B */

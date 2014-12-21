@@ -101,6 +101,7 @@ vpid_t Server::assign_vm(const picojson::object& conf) {
   // 機動引数を取り出し
   picojson::array conf_args = conf.at("args").get<picojson::array>();
   std::vector<std::string> args;
+  args.push_back(conf.at("filename").get<std::string>());
   for (picojson::array::iterator it = conf_args.begin();
        it != conf_args.end(); it ++) {
     args.push_back(it->get<std::string>());

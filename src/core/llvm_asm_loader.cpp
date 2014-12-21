@@ -71,7 +71,7 @@ int LlvmAsmLoader::assign_operand(FunctionContext& fc, const llvm::Type* t) {
   // 既存の定数の場合、その番号を戻す。
   for (int i = 0, size = fc.k.size(); i < size; i ++)
       // 定数の場合は1の補数表現の負数を戻す。
-    if (type == fc.k[i]) return (- i) - 1;
+    if (type == fc.k.at(i)) return (- i) - 1;
 
   // 新規の場合末尾に割り当てる。
   fc.k.push_back(type);
@@ -96,7 +96,7 @@ int LlvmAsmLoader::assign_operand(FunctionContext& fc, const llvm::Value* v) {
     // 既存の定数の場合、その番号を戻す。
     for (int i = 0, size = fc.k.size(); i < size; i ++)
       // 定数の場合は1の補数表現の負数を戻す。
-      if (value == fc.k[i]) return (- i) - 1;
+      if (value == fc.k.at(i)) return (- i) - 1;
 
     // 既存の定数でない場合、末尾に割り当てる。
     fc.k.push_back(value);
@@ -121,7 +121,9 @@ Value* LlvmAsmLoader::load(const llvm::Constant* constant) {
     return load(static_cast<const llvm::Function*>(constant));
 
     //case llvm::Value::GlobalAliasVal: {} break;
-    //case llvm::Value::GlobalVariableVal: {} break;
+  case llvm::Value::GlobalVariableVal:
+    return load(static_cast<const llvm::GlobalVariable*>(constant));
+
     //case llvm::Value::UndefValueVal: {} break;
     //case llvm::Value::BlockAddressVal: {} break;
   case llvm::Value::ConstantExprVal:
@@ -143,7 +145,9 @@ Value* LlvmAsmLoader::load(const llvm::Constant* constant) {
   case llvm::Value::ConstantArrayVal:
     return load(static_cast<const llvm::ConstantArray*>(constant));
 
-    //case llvm::Value::ConstantStructVal: {} break;
+  case llvm::Value::ConstantStructVal:
+    return load(static_cast<const llvm::ConstantStruct*>(constant));
+
     //case llvm::Value::ConstantVectorVal: {} break;
     //case llvm::Value::ConstantPointerNullVal: {} break;
     //case llvm::Value::MDNodeVal: {} break;
@@ -320,6 +324,13 @@ Value* LlvmAsmLoader::load(const llvm::ConstantInt* src) {
   }
 }
 
+// LLVMの定数(struct)を仮想マシンにロードする。
+Value* LlvmAsmLoader::load(const llvm::ConstantStruct* src) {
+  //check_same_value(loaded_value, function);
+
+  assert(false);
+}
+
 // LLVMの関数を仮想マシンにロードする。
 Value* LlvmAsmLoader::load(const llvm::Function* function) {
   check_same_value(loaded_value, function);
@@ -471,11 +482,24 @@ Value* LlvmAsmLoader::load(const llvm::Function* function) {
 
 #undef M_BIN_OPERATOR
 
+	case llvm::Instruction::Alloca: {
+	  const llvm::AllocaInst& inst = static_cast<const llvm::AllocaInst&>(*i);
+	  
+	} break;
+	  
 	case llvm::Instruction::Load: {
 	  const llvm::LoadInst& inst = static_cast<const llvm::LoadInst&>(*i);
 	  /* 変数格納先、アドレス格納元を追加 */
-	  push_code_AB(fc, Opcode::LOAD, 0,
+	  push_code_AB(fc, Opcode::LOAD, inst.getAlignment(),
 		       assign_operand(fc, &inst),
+		       assign_operand(fc, inst.getPointerOperand()));
+	} break;
+
+	case llvm::Instruction::Store: {
+	  const llvm::StoreInst& inst = static_cast<const llvm::StoreInst&>(*i);
+	  /* 変数格納元、アドレス格納先を追加 */
+	  push_code_AB(fc, Opcode::STORE, inst.getAlignment(),
+		       assign_operand(fc, inst.getValueOperand()),
 		       assign_operand(fc, inst.getPointerOperand()));
 	} break;
 
@@ -498,7 +522,8 @@ Value* LlvmAsmLoader::load(const llvm::Function* function) {
 	    // インデクスを追加
 	    push_code_AB(fc, Opcode::EXTRAARG2, 0,
 			 assign_operand(fc, inst.getOperand(i ++)),
-			 i < num ? assign_operand(fc, inst.getOperand(i ++)) : 0);
+			 i < num ? assign_operand(fc, inst.getOperand(i ++)) : MAX_OPERAND_AB);
+	    // 最後のインデクスが欠ける(奇数個)の場合MAX_OPERAND_ABで埋める
 	  }
 	} break;
 
@@ -525,23 +550,23 @@ Value* LlvmAsmLoader::load(const llvm::Function* function) {
 
     // TEST/JUMP命令のジャンプ先を名前から開始位置に書き換える
     for (unsigned int pc = 0, size = fc.code.size(); pc < size; pc ++) {
-      instruction_t code = fc.code[pc];
+      instruction_t code = fc.code.at(pc);
       switch (Instruction::get_opcode(code)) {
       case Opcode::JUMP: {
 	unsigned int start = block_start.at(Instruction::get_code_A(code));
-	fc.code[pc] = Instruction::rewrite_code_A(code, start);
+	fc.code.at(pc) = Instruction::rewrite_code_A(code, start);
       } break;
 
       case Opcode::TEST: {
 	unsigned int start = block_start.at(Instruction::get_code_B(code));
-	fc.code[pc] = Instruction::rewrite_code_B(code, start);
+	fc.code.at(pc) = Instruction::rewrite_code_B(code, start);
       } break;
 
       case Opcode::PHI: {
 	// PHIの場合、ソレに続くextar arg内を書き換える
-	while (Instruction::get_opcode(code = fc.code[pc + 1]) == Opcode::EXTRAARG2) {
+	while (Instruction::get_opcode(code = fc.code.at(pc + 1)) == Opcode::EXTRAARG2) {
 	  unsigned int start = block_start.at(Instruction::get_code_B(code));
-	  fc.code[pc + 1] = Instruction::rewrite_code_B(code, start);
+	  fc.code.at(pc + 1) = Instruction::rewrite_code_B(code, start);
 	  pc ++;
 	}
       } break;
@@ -554,7 +579,7 @@ Value* LlvmAsmLoader::load(const llvm::Function* function) {
     // codeは予めセットされている
     prop.k.resize(k.size());
     for (int i = 0, size = k.size(); i < size; i ++) {
-      prop.k[i] = *k[i];
+      prop.k.at(i) = *k.at(i);
     }
 
     // 定数、変数の数がオペランドで表現可能な上限を超えた場合エラー
@@ -600,7 +625,6 @@ Value* LlvmAsmLoader::load(const llvm::GlobalVariable* variable) {
     return assign_loaded(variable,
 			 vmachine.create_pointer(load(variable->getInitializer()), 0));
   } else {
-    assert(false); // あっている？
     return assign_loaded(variable,
 			 vmachine.create_null());
   }

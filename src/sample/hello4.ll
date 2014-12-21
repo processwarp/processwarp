@@ -2,10 +2,10 @@
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.10.0"
 
-@.str = private unnamed_addr constant [11 x i8] c"hello you!\00", align 1
-@.str1 = private unnamed_addr constant [10 x i8] c"hello me!\00", align 1
-@.str2 = private unnamed_addr constant [11 x i8] c"hello all!\00", align 1
-@HELLOS = global [3 x i8*] [i8* getelementptr inbounds ([11 x i8]* @.str, i32 0, i32 0), i8* getelementptr inbounds ([10 x i8]* @.str1, i32 0, i32 0), i8* getelementptr inbounds ([11 x i8]* @.str2, i32 0, i32 0)], align 16
+@HELLOS = internal unnamed_addr constant [3 x i8*] [i8* getelementptr inbounds ([11 x i8]* @.str1, i32 0, i32 0), i8* getelementptr inbounds ([10 x i8]* @.str2, i32 0, i32 0), i8* getelementptr inbounds ([11 x i8]* @.str3, i32 0, i32 0)], align 16
+@.str1 = private unnamed_addr constant [11 x i8] c"hello you!\00", align 1
+@.str2 = private unnamed_addr constant [10 x i8] c"hello me!\00", align 1
+@.str3 = private unnamed_addr constant [11 x i8] c"hello all!\00", align 1
 
 ; Function Attrs: noreturn nounwind ssp uwtable
 define i32 @main() #0 {

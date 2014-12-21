@@ -158,6 +158,13 @@ namespace usagi {
     Value* load(const llvm::ConstantInt* src);
 
     /**
+     * LLVMの定数(struct)を仮想マシンにロードする。
+     * @param src LLVMの定数(struct)
+     * @return
+     */
+    Value* load(const llvm::ConstantStruct* src);
+
+    /**
      * LLVMの関数を仮想マシンにロードする。
      * @param function LLVMの関数
      * @return 

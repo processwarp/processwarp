@@ -1,14 +1,17 @@
 
 #include <stdio.h>
 
-struct {
+struct AB {
   int a;
-  int b;
+  union {
+    int b_i;
+    long b_l;
+  } b;
 } ab;
 
 int main() {
   ab.a = 0;
-  ab.b = 1;
+  ab.b.b_l = 1;
 
-  return printf("hello %d %p\n", ab.a, &ab.b);
+  return printf("hello %d %d\n", ab.a, ab.b.b_i);
 }

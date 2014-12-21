@@ -124,7 +124,7 @@ void Convert::import_thread(const picojson::value& src) {
     const picojson::array& var_arg = obj_ci.at("var_arg").get<picojson::array>();
     callinfo->var_arg.resize(var_arg.size());
     for (int i = 0, size = var_arg.size(); i < size; i ++) {
-      callinfo->var_arg[i] = import_value(var_arg.at(i).get<picojson::object>());
+      callinfo->var_arg.at(i) = import_value(var_arg.at(i).get<picojson::object>());
     }
     
     thread->callinfos.push_back(std::move(callinfo));
@@ -134,7 +134,7 @@ void Convert::import_thread(const picojson::value& src) {
   const picojson::array& stack = obj_src.at("stack").get<picojson::array>();
   thread->stack.resize(stack.size());
   for (int i = 0, size = stack.size(); i < size; i ++) {
-    thread->stack[i] = import_value(stack.at(i).get<picojson::object>());
+    thread->stack.at(i) = import_value(stack.at(i).get<picojson::object>());
   }
 
   vm.threads.push_back(std::move(thread));
@@ -159,7 +159,7 @@ picojson::value Convert::export_data(const DataStore& src, Related& related) {
 
   dst.resize(src.size);
   for (int i = 0, size = src.size; i < size; i ++) {
-    dst[i] = num2json<uint8_t>(src.head[i]);
+    dst.at(i) = num2json<uint8_t>(src.head[i]);
   }
 
   return picojson::value(dst);
@@ -183,7 +183,7 @@ picojson::value Convert::export_func(const FuncStore& src, Related& related) {
     picojson::array code;
     code.resize(src.normal_prop.code.size());
     for (int i = 0, size = code.size(); i < size; i ++) {
-      code[i] = num2json<instruction_t>(src.normal_prop.code[i]);
+      code.at(i) = num2json<instruction_t>(src.normal_prop.code.at(i));
     }
     dst.insert(std::make_pair("code", picojson::value(code)));
 
@@ -191,7 +191,7 @@ picojson::value Convert::export_func(const FuncStore& src, Related& related) {
     picojson::array k;
     k.resize(src.normal_prop.k.size());
     for (int i = 0, size = k.size(); i < size; i ++) {
-      k[i] = export_value(src.normal_prop.k[i], related);
+      k.at(i) = export_value(src.normal_prop.k.at(i), related);
     }
     dst.insert(std::make_pair("k", picojson::value(k)));
   }
@@ -218,8 +218,8 @@ picojson::value Convert::export_type(const TypeStore& src, Related& related) {
     picojson::array member;
     member.resize(src.member.size());
     for (int i = 0, size = src.member.size(); i < size; i ++) {
-      member[i] = vaddr2json(src.member[i]);
-      related.insert(src.member[i]);
+      member.at(i) = vaddr2json(src.member.at(i));
+      related.insert(src.member.at(i));
     }
     dst.insert(std::make_pair("member", picojson::value(member)));
   }
@@ -243,7 +243,7 @@ picojson::value Convert::export_value(const Value& src, Related& related) {
 	   src.inner_value.immediate.size == 8);
     immediate.resize(src.inner_value.immediate.size);
     for (int i = 0, size = immediate.size(); i < size; i ++) {
-      immediate[i] = num2json(*(reinterpret_cast<const uint8_t*>
+      immediate.at(i) = num2json(*(reinterpret_cast<const uint8_t*>
 				(&src.inner_value.immediate.value) + i));
     }
     dst.insert(std::make_pair("immediate", picojson::value(immediate)));
@@ -261,7 +261,7 @@ picojson::value Convert::export_value(const Value& src, Related& related) {
 void Convert::import_data(vaddr_t addr, const picojson::array& src) {
   VMemory::AllocDataRet ret = vmemory.alloc_data(src.size(), false, addr);
   for (int i = 0, size = src.size(); i < size; i ++) {
-    ret.data.head[i] = json2num<uint8_t>(src[i]);
+    ret.data.head[i] = json2num<uint8_t>(src.at(i));
   }
 }
 
@@ -283,13 +283,13 @@ void Convert::import_func(vaddr_t addr, const picojson::object& src) {
     picojson::array code = src.at("code").get<picojson::array>();
     prop.code.resize(code.size());
     for (int i = 0, size = code.size(); i < size; i ++) {
-      prop.code[i] = json2num<instruction_t>(code[i]);
+      prop.code.at(i) = json2num<instruction_t>(code.at(i));
     }
 
     const picojson::array k = src.at("k").get<picojson::array>();
     prop.k.resize(k.size());
     for (int i = 0, size = k.size(); i < size; i ++) {
-      prop.k[i] = import_value(k[i].get<picojson::object>());
+      prop.k.at(i) = import_value(k.at(i).get<picojson::object>());
     }
 
     vm.deploy_function_normal(name, prop, addr);
@@ -326,7 +326,7 @@ void Convert::import_type(vaddr_t addr, const picojson::object& src) {
     std::vector<vaddr_t> work;
     work.resize(member.size());
     for (int i = 0, size = member.size(); i < size; i ++) {
-      work[i] = json2vaddr(member[i]);
+      work.at(i) = json2vaddr(member.at(i));
     }
 
     vmemory.alloc_type(json2num<size_t>(src.at("size")),
@@ -354,7 +354,7 @@ Value Convert::import_value(const picojson::object& src) {
     value.inner_value.immediate.size = immediate.size();
     for (int i = 0, size = immediate.size(); i < size; i ++) {
       *(reinterpret_cast<uint8_t*>(&value.inner_value.immediate.value) + i) =
-	json2num<uint8_t>(immediate[i]);
+	json2num<uint8_t>(immediate.at(i));
     }
     value.cache = &value.inner_value.immediate.value;
   }

@@ -23,14 +23,14 @@ inline Value& get_operand_A(unsigned int base, instruction_t code, Thread::Stack
   print_debug("operandA stack %llx\n", base + Instruction::get_code_A(code));
   assert((Instruction::get_code_A(code) & HEAD_OPERAND_AB) == 0);
   assert(base + Instruction::get_code_A(code) < stack.size());
-  return stack[base + Instruction::get_code_A(code)];
+  return stack.at(base + Instruction::get_code_A(code));
 }
 
 inline Value& get_operand_B(unsigned int base, instruction_t code, Thread::Stack& stack) {
   print_debug("operandB stack %llx\n", base + Instruction::get_code_B(code));
   assert((Instruction::get_code_B(code) & HEAD_OPERAND_AB) == 0);
   assert(base + Instruction::get_code_B(code) < stack.size());
-  return stack[base + Instruction::get_code_B(code)];
+  return stack.at(base + Instruction::get_code_B(code));
 }
 
 inline const Value& get_operand_A(unsigned int base, instruction_t code,
@@ -39,12 +39,12 @@ inline const Value& get_operand_A(unsigned int base, instruction_t code,
   if ((a & HEAD_OPERAND_AB) != 0) {
     print_debug("operandA k %llx\n", MAX_OPERAND_AB - a);
     assert(MAX_OPERAND_AB - a < k.size());
-    return k[MAX_OPERAND_AB - a]; // 定数の場合1の補数表現からの復元
+    return k.at(MAX_OPERAND_AB - a); // 定数の場合1の補数表現からの復元
 
   } else {
     print_debug("operandA stack %llx\n", a);
     assert(base + a < stack.size());
-    return stack[base + a];
+    return stack.at(base + a);
   }
 }
 
@@ -54,12 +54,12 @@ inline const Value& get_operand_B(unsigned int base, instruction_t code,
   if ((b & HEAD_OPERAND_AB) != 0) {
     print_debug("operandB k %llx\n", MAX_OPERAND_AB - b);
     assert(MAX_OPERAND_AB - b < k.size());
-    return k[MAX_OPERAND_AB - b]; // 定数の場合1の補数表現からの復元
+    return k.at(MAX_OPERAND_AB - b); // 定数の場合1の補数表現からの復元
 
   } else {
     print_debug("operandB stack %llx\n", b);
     assert(base + b < stack.size());
-    return stack[base + b];
+    return stack.at(base + b);
   }
 }
 
@@ -72,21 +72,21 @@ void VMachine::execute(int max_clock) {
     if (thread.callinfos.size() == 0) return;
     
     CallInfo&         ci      = *(thread.callinfos.back().get());
-    resolve_value_cache(&stack[ci.base - 1]);
-    const FuncStore&  func    = *reinterpret_cast<FuncStore*>(stack[ci.base - 1].cache);
+    resolve_value_cache(&stack.at(ci.base - 1));
+    const FuncStore&  func    = *reinterpret_cast<FuncStore*>(stack.at(ci.base - 1).cache);
     const std::vector<instruction_t>& insts   = func.normal_prop.code;
     const std::vector<Value>&         k       = func.normal_prop.k;
 
     for (; max_clock > 0; max_clock --) {
-      instruction_t code = insts[ci.pc];
+      instruction_t code = insts.at(ci.pc);
       print_debug("pc:%d, code:%016llx, stack:%ld, k:%ld, insts:%ld\n",
 		  ci.pc, code, stack.size(), k.size(), insts.size());
-      usleep(200000);///< TODO
+      usleep(100000);///< TODO
       switch (static_cast<uint8_t>(Instruction::get_opcode(code))) {
       case Opcode::CALL: {
 	std::unique_ptr<CallInfo> new_ci(new CallInfo());
 	const bool is_tailcall = (Instruction::get_code_B(code) == 1);
-	const instruction_t ret_code = insts[ci.pc + 1]; // 戻り値に関する情報
+	const instruction_t ret_code = insts.at(ci.pc + 1); // 戻り値に関する情報
 	if (is_tailcall) {
 	  // 末尾再帰のため、ciを再利用
 	  new_ci->pos_ret = ci.pos_ret;
@@ -94,7 +94,7 @@ void VMachine::execute(int max_clock) {
 	  new_ci->pc      = 0;
 	  new_ci->phi     = 0;
 	  // 関数をbase-1に設置
-	  stack[new_ci->base - 1] = get_operand_A(ci.base, code, stack, k);
+	  stack.at(new_ci->base - 1) = get_operand_A(ci.base, code, stack, k);
 
 	} else {
 	  // 末尾再帰でないので新しいciを作成
@@ -104,17 +104,18 @@ void VMachine::execute(int max_clock) {
 	  new_ci->pc      = 0;
 	  new_ci->phi     = 0;
 	  // 関数をbase-1に設置
-	  stack[new_ci->base - 1] = get_operand_A(ci.base, code, stack, k);
+	  stack.at(new_ci->base - 1) = get_operand_A(ci.base, code, stack, k);
 	}
 
-	resolve_value_cache(&stack[new_ci->base - 1]);
-	FuncStore& func = *static_cast<FuncStore*>(stack[new_ci->base - 1].cache);
+	resolve_value_cache(&stack.at(new_ci->base - 1));
+	FuncStore& func = *static_cast<FuncStore*>(stack.at(new_ci->base - 1).cache);
 
 	// 引数を集める
 	/// @TODO コピー効率を上げる
 	std::vector<Value> args;
 	std::vector<Value> arg_types;
-	while (code = insts[ci.pc + args.size() + 2], Instruction::get_opcode(code) == Opcode::EXTRAARG2) {
+	while (code = insts.at(ci.pc + args.size() + 2),
+	       Instruction::get_opcode(code) == Opcode::EXTRAARG2) {
 	  arg_types.push_back(get_operand_A(ci.base, code, stack, k));
 	  args     .push_back(get_operand_B(ci.base, code, stack, k));
 
@@ -148,17 +149,17 @@ void VMachine::execute(int max_clock) {
 	  if (stack.size() < new_ci->base + func.normal_prop.val_num + STACK_BUFFER_SIZE)
 	    stack.resize(new_ci->base + func.normal_prop.val_num + STACK_BUFFER_SIZE);
 	  for (int i = 0; i < func.normal_prop.arg_num; i ++)
-	    stack[new_ci->base + i] = args[i];
+	    stack.at(new_ci->base + i) = args.at(i);
 
 	  // 可変長引数分がある場合、callinfoに退避
 	  new_ci->var_arg.resize(args.size() - func.normal_prop.arg_num);
 	  for (int i = 0, num = args.size() - func.normal_prop.arg_num; i < num; i ++)
-	    new_ci->var_arg[i] = args[func.normal_prop.arg_num + i];
+	    new_ci->var_arg.at(i) = args.at(func.normal_prop.arg_num + i);
 
 	  if (is_tailcall) {
 	    // 末尾再帰の場合、既存のciを上書き
 	    // 次の命令はRETURNのはず
-	    assert(Instruction::get_opcode(insts[ci.pc]) == Opcode::RETURN);
+	    assert(Instruction::get_opcode(insts.at(ci.pc)) == Opcode::RETURN);
 	    ci = *new_ci;
 	  } else {
 	    ci.pc ++;
@@ -170,12 +171,12 @@ void VMachine::execute(int max_clock) {
 	} else if (func.type == FuncType::FC_INTRINSIC) {
 	  // VM組み込み関数の呼び出し
 	  assert(func.intrinsic != nullptr);
-	  stack[new_ci->pos_ret] = func.intrinsic(*this, thread, args);
+	  stack.at(new_ci->pos_ret) = func.intrinsic(*this, thread, args);
 	  // 末尾再帰の場合、既存のciは削除
 	  if (is_tailcall) {
 	    ci.pc ++;
 	    // 次の命令はRETURNのはず
-	    assert(Instruction::get_opcode(insts[ci.pc]) == Opcode::RETURN);
+	    assert(Instruction::get_opcode(insts.at(ci.pc)) == Opcode::RETURN);
 	    thread.callinfos.pop_back();
 	    goto re_entry;
 	  }
@@ -187,15 +188,15 @@ void VMachine::execute(int max_clock) {
 	  }
 
 	  // 関数の呼び出し
-	  stack[new_ci->pos_ret] = call_external(func.external,
-						 get_operand_A(ci.base, ret_code, stack, k),
-						 arg_types, args);
+	  stack.at(new_ci->pos_ret) = call_external(func.external,
+						    get_operand_A(ci.base, ret_code, stack, k),
+						    arg_types, args);
 
 	  // 末尾再帰の場合、既存のciは削除
 	  if (is_tailcall) {
 	    ci.pc ++;
 	    // 次の命令はRETURNのはず
-	    assert(Instruction::get_opcode(insts[ci.pc]) == Opcode::RETURN);
+	    assert(Instruction::get_opcode(insts.at(ci.pc)) == Opcode::RETURN);
 	    thread.callinfos.pop_back();
 	    goto re_entry;
 	  }
@@ -209,7 +210,7 @@ void VMachine::execute(int max_clock) {
 
 	} else {
 	  // 戻り値を設定する
-	  stack[ci.pos_ret] = get_operand_B(ci.base, code, stack, k);
+	  stack.at(ci.pos_ret) = get_operand_B(ci.base, code, stack, k);
 	}
 	// callinfoを除去してpcを変更せずにre_entryに移動
 	thread.callinfos.pop_back();
@@ -225,7 +226,7 @@ void VMachine::execute(int max_clock) {
       case Opcode::PHI: {
 	Value& dst = get_operand_A(ci.base, code, stack);
 	const Value& type = get_operand_B(ci.base, code, stack, k);
-	while (code = insts[ci.pc + 1], Instruction::get_opcode(code) == Opcode::EXTRAARG2) {
+	while (code = insts.at(ci.pc + 1), Instruction::get_opcode(code) == Opcode::EXTRAARG2) {
 	  if (Instruction::get_code_B(code) == ci.phi) {
 	    const Value& src = get_operand_A(ci.base, code, stack, k);
 	    copy_value(dst, src, type);
@@ -238,7 +239,7 @@ void VMachine::execute(int max_clock) {
       case Opcode::ADD: {
 	Value& dst = get_operand_A(ci.base, code, stack);
 	const Value& type = get_operand_B(ci.base, code, stack, k);
-	code = insts[ci.pc + 1];
+	code = insts.at(ci.pc + 1);
 	const Value& val_a = get_operand_A(ci.base, code, stack, k);
 	const Value& val_b = get_operand_B(ci.base, code, stack, k);
 	resolve_value_cache(&val_a);
@@ -278,7 +279,7 @@ void VMachine::execute(int max_clock) {
       case Opcode::UREM: {
 	Value& dst = get_operand_A(ci.base, code, stack);
 	const Value& type = get_operand_B(ci.base, code, stack, k);
-	code = insts[ci.pc + 1];
+	code = insts.at(ci.pc + 1);
 	const Value& val_a = get_operand_A(ci.base, code, stack, k);
 	const Value& val_b = get_operand_B(ci.base, code, stack, k);
 	resolve_value_cache(&val_a);
@@ -310,7 +311,7 @@ void VMachine::execute(int max_clock) {
       case Opcode::SREM: {
 	Value& dst = get_operand_A(ci.base, code, stack);
 	const Value& type = get_operand_B(ci.base, code, stack, k);
-	code = insts[ci.pc + 1];
+	code = insts.at(ci.pc + 1);
 	const Value& val_a = get_operand_A(ci.base, code, stack, k);
 	const Value& val_b = get_operand_B(ci.base, code, stack, k);
 	resolve_value_cache(&val_a);
@@ -348,11 +349,18 @@ void VMachine::execute(int max_clock) {
 	dst.set_address(*reinterpret_cast<vaddr_t*>(src.cache));
       } break;
 
+      case Opcode::STORE: {
+	const Value& src = get_operand_A(ci.base, code, stack);
+	Value& dst = get_operand_B(ci.base, code, stack);
+	resolve_value_cache(&src);
+	assert(false);
+      } break;
+
       case Opcode::GET_EP: {
 	Value& dst = get_operand_A(ci.base, code, stack);
 	const Value& src = get_operand_B(ci.base, code, stack, k);
 	assert(!src.is_immediate());	// srcはポインタのはず
-	code = insts[ci.pc + 1];
+	code = insts.at(ci.pc + 1);
 	vaddr_t type_addr = get_operand_A(ci.base, code, stack, k).get_address();
 	unsigned int idx_size = Instruction::get_code_B(code);
 
@@ -361,7 +369,7 @@ void VMachine::execute(int max_clock) {
 	int next;
 
 	for (next = 1;
-	     Instruction::get_opcode(code = insts[ci.pc + next + 1]) == Opcode::EXTRAARG2;
+	     Instruction::get_opcode(code = insts.at(ci.pc + next + 1)) == Opcode::EXTRAARG2;
 	     next ++) {
 	  if (next == 1) {
 	    idx = get_value_as_int(get_operand_A(ci.base, code, stack, k), idx_size);
@@ -381,11 +389,13 @@ void VMachine::execute(int max_clock) {
 	      // 構造要素数より多い要素にアクセスした場合エラー
 	      if (idx >= type->member.size()) throw_error(Error::SEGMENT_FAULT);
 	      for (int m_idx = 0; m_idx < idx; m_idx ++) {
-		TypeStore* m_type = &vmemory.get_type(type_addr = type->member[m_idx]);
+		TypeStore* m_type = &vmemory.get_type(type_addr = type->member.at(m_idx));
 		diff += m_type->size;
 	      }
 	    }
 	  }
+	  // OperandBがMAX_OPERAND_ABの場合、パディングなので処理をスキップ
+	  if (Instruction::get_code_B(code) == MAX_OPERAND_AB) continue; 
 	  idx = get_value_as_int(get_operand_B(ci.base, code, stack, k), idx_size);
 	  TypeStore* type = &vmemory.get_type(type_addr);
 	  if (type->is_array) {
@@ -398,7 +408,7 @@ void VMachine::execute(int max_clock) {
 	    // 構造要素数より多い要素にアクセスした場合エラー
 	    if (idx >= type->member.size()) throw_error(Error::SEGMENT_FAULT);
 	    for (int m_idx = 0; m_idx < idx; m_idx ++) {
-	      TypeStore* m_type = &vmemory.get_type(type_addr = type->member[m_idx]);
+	      TypeStore* m_type = &vmemory.get_type(type_addr = type->member.at(m_idx));
 	      diff += m_type->size;
 	    }
 	  }
@@ -413,7 +423,7 @@ void VMachine::execute(int max_clock) {
       case Opcode::SEXT: {
 	Value& dst = get_operand_A(ci.base, code, stack);
 	const Value& dst_type = get_operand_B(ci.base, code, stack, k);
-	code = insts[ci.pc + 1];
+	code = insts.at(ci.pc + 1);
 	const Value& src = get_operand_A(ci.base, code, stack, k);
 	const Value& src_type = get_operand_B(ci.base, code, stack, k);
 	resolve_value_cache(&dst);
@@ -431,7 +441,7 @@ void VMachine::execute(int max_clock) {
 
       default:
 	// EXTRAARGを含む想定外の命令
-	throw_error_message(Error::INST_VIOLATION, Util::num2hex_str(insts[ci.pc]));
+	throw_error_message(Error::INST_VIOLATION, Util::num2hex_str(insts.at(ci.pc)));
       }
       
       ci.pc ++;
@@ -444,6 +454,19 @@ Value VMachine::call_external(external_func_t func,
 			      const Value& ret_type,
 			      const std::vector<Value>& arg_types,
 			      std::vector<Value> args) {
+  print_debug("call_external\n");
+  for (int i = 0; i < args.size(); i ++) {
+    print_debug("param%d\n", i + 1);
+    Value& v = args[i];
+    if (v.is_immediate()) {
+      print_debug("\tvalue:%016llx(%ld)\n",
+		  v.inner_value.immediate.value.i64,
+		  v.inner_value.immediate.size);
+    } else {
+      print_debug("\taddr:%016llx\n", v.get_address());
+    }
+  }
+
   // 戻り値
   Value ret;
 
@@ -466,36 +489,37 @@ Value VMachine::call_external(external_func_t func,
   std::vector<void*> ffi_args(args.size());
 
   for (int i = 0, size = args.size(); i < size; i ++) {
-    resolve_value_cache(&args[i]);
+    resolve_value_cache(&args.at(i));
 
-    switch(arg_types[i].get_address()) {
+    switch(arg_types.at(i).get_address()) {
     case BasicType::TY_POINTER: {
-      ffi_arg_types[i] = &ffi_type_pointer;
-      ffi_args[i]      = &args[i].cache;
+      ffi_arg_types.at(i) = &ffi_type_pointer;
+      ffi_args.at(i)      = &args.at(i).cache;
+      print_debug("%p, %s\n", args.at(i).cache, args.at(i).cache);
     } break;
 
     case BasicType::TY_I8: {
-      ffi_arg_types[i] = &ffi_type_uint8;
-      ffi_args[i]      = args[i].cache;
+      ffi_arg_types.at(i) = &ffi_type_uint8;
+      ffi_args.at(i)      = args.at(i).cache;
     } break;
 
     case BasicType::TY_I16: {
-      ffi_arg_types[i] = &ffi_type_uint16;
-      ffi_args[i]      = args[i].cache;
+      ffi_arg_types.at(i) = &ffi_type_uint16;
+      ffi_args.at(i)      = args.at(i).cache;
     } break;
 
     case BasicType::TY_I32: {
-      ffi_arg_types[i] = &ffi_type_uint32;
-      ffi_args[i]      = args[i].cache;
+      ffi_arg_types.at(i) = &ffi_type_uint32;
+      ffi_args.at(i)      = args.at(i).cache;
     } break;
 
     case BasicType::TY_I64: {
-      ffi_arg_types[i] = &ffi_type_uint64;
-      ffi_args[i]      = args[i].cache;
+      ffi_arg_types.at(i) = &ffi_type_uint64;
+      ffi_args.at(i)      = args.at(i).cache;
     } break;
 
     default: {
-      fixme(Util::vaddr2str(arg_types[i].get_address()));
+      fixme(Util::vaddr2str(arg_types.at(i).get_address()));
       assert(false); // TODO 他の型の対応
     } break;
     }
@@ -523,7 +547,7 @@ std::pair<size_t, unsigned int> VMachine::calc_type_size(const std::vector<vaddr
   unsigned int odd;
 
   for (int i = 0, member_size = member.size(); i < member_size; i ++) {
-    TypeStore& type = vmemory.get_type(member[i]);
+    TypeStore& type = vmemory.get_type(member.at(i));
     // メンバ中で一番大きなアライメントを保持
     if (type.alignment > max_alignment) max_alignment = type.alignment;
     // パディングを計算する
@@ -623,6 +647,19 @@ Value VMachine::create_function(const std::string& name) {
   val.inner_value.address.lower = 0;
   val.cache = &store.func;
   
+  return val;
+}
+
+// NULLポインタを作成する。
+Value VMachine::create_null() {
+  Value val;
+  val.type = Value::POINTER_DATA;
+  val.inner_value.address.upper = VADDR_NULL;
+  val.inner_value.address.lower = 0;
+  val.cache = nullptr;
+
+  print_debug("create_pointer\n");
+
   return val;
 }
 
@@ -832,7 +869,7 @@ void VMachine::run(std::vector<std::string> args) {
   
   // 関数情報を元にstackを拡張
   init_thread->stack.resize(init_thread->top + main_func.normal_prop.val_num + STACK_BUFFER_SIZE);
-  init_thread->stack[1] = it_main_func->second;
+  init_thread->stack.at(1) = it_main_func->second;
   
   // プログラムのコマンドライン引数を設定
   if (main_func.normal_prop.arg_num == 2) {
@@ -841,14 +878,14 @@ void VMachine::run(std::vector<std::string> args) {
     // 引数1要素毎に作った値のアドレスを格納する
     for (unsigned int i = 0, arg_size = args.size(); i < arg_size; i ++) {
       Value value = create_value_by_array(sizeof(char),
-					  args[i].length() + 1,
-					  args[i].c_str());
+					  args.at(i).length() + 1,
+					  args.at(i).c_str());
       place_virtual_value(&value);
       param2[i] = value.get_address();
     }
     
-    init_thread->stack[1] = create_value_by_primitive(static_cast<vm_int_t>(args.size()));
-    init_thread->stack[2] = create_value_by_array(sizeof(vaddr_t), args.size(), param2.get());
+    init_thread->stack.at(2) = create_value_by_primitive(static_cast<vm_int_t>(args.size()));
+    init_thread->stack.at(3) = create_value_by_array(sizeof(vaddr_t), args.size(), param2.get());
     init_thread->top += 2;
 
   } else if (main_func.normal_prop.arg_num != 0) {
