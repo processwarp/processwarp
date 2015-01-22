@@ -23,30 +23,6 @@ namespace usagi {
     VMemory();
 
     /**
-     * データ領域確保の戻り値型。
-     */
-    struct AllocDataRet {
-      vaddr_t addr;
-      DataStore& data;
-    };
-
-    /**
-     * 関数領域確保の戻り値型。
-     */
-    struct AllocFuncRet {
-      vaddr_t addr;
-      FuncStore& func;
-    };
-
-    /**
-     * 型領域確保の戻り値型。
-     */
-    struct AllocTypeRet {
-      vaddr_t addr;
-      TypeStore& type;
-    };
-
-    /**
      * アドレスが関数領域のものかどうか調べる。
      * @param addr 調査対象アドレス。
      * @return アドレスが関数領域の場合trueを戻す。
@@ -68,41 +44,47 @@ namespace usagi {
      * @param addr 確保先仮想アドレス。VADDR_NONを指定すると空いているアドレスを割り当てる。
      * @return 確保したアドレスとデータ領域。
      */
-    AllocDataRet alloc_data(size_t size, bool is_const, vaddr_t addr = VADDR_NON);
+    DataStore& alloc_data(size_t size, bool is_const, vaddr_t addr = VADDR_NON);
 
     /**
      * メモリ空間に新しい通常の関数領域を確保する。
      * 同一アドレスに領域が確保されていた場合、エラーとなる。
      * @param name 関数名称
+     * @param ret_type 戻り値の型
      * @param normal_prop 通常の関数のプロパティ
      * @param addr 確保先仮想アドレス。VADDR_NONを指定すると空いているアドレスを割り当てる。
      * @return 確保したアドレスと領域。
      */
-    AllocFuncRet alloc_func(const Symbols::Symbol& name,
-			    const FuncStore::NormalProp& normal_prop,
-			    vaddr_t addr = VADDR_NON);
+    FuncStore& alloc_func(const Symbols::Symbol& name,
+			  vaddr_t ret_type,
+			  const FuncStore::NormalProp& normal_prop,
+			  vaddr_t addr = VADDR_NON);
 
     /**
      * メモリ空間に新しいVM組み込み関数領域を確保する。
      * 同一アドレスに領域が確保されていた場合、エラーとなる。
      * @param name 関数名称
+     * @param ret_type 戻り値の型
      * @param intrinsic VM組み込み関数へのポインタ
      * @param addr 確保先仮想アドレス。VADDR_NONを指定すると空いているアドレスを割り当てる。
      * @return 確保したアドレスと領域。
      */
-    AllocFuncRet alloc_func(const Symbols::Symbol& name,
-			    const intrinsic_func_t intrinsic, 
-			    vaddr_t addr = VADDR_NON);
+    FuncStore& alloc_func(const Symbols::Symbol& name,
+			  vaddr_t ret_type,
+			  const intrinsic_func_t intrinsic, 
+			  vaddr_t addr = VADDR_NON);
 
     /**
      * メモリ空間に新しい外部関数領域を確保する。
      * 同一アドレスに領域が確保されていた場合、エラーとなる。
      * @param name 関数名称
+     * @param ret_type 戻り値の型
      * @param addr 確保先仮想アドレス。VADDR_NONを指定すると空いているアドレスを割り当てる。
      * @return 確保したアドレスと領域。
      */
-    AllocFuncRet alloc_func(const Symbols::Symbol& name,
-			    vaddr_t addr = VADDR_NON);
+    FuncStore& alloc_func(const Symbols::Symbol& name,
+			  vaddr_t ret_type,
+			  vaddr_t addr = VADDR_NON);
 
     /**
      * メモリ空間に複合型領域を確保する。
@@ -114,11 +96,10 @@ namespace usagi {
      * @param addr 確保先仮想アドレス。VADDR_NONを指定すると空いているアドレスを割り当てる。
      * @return 確保したアドレスと領域。
      */
-    AllocTypeRet alloc_type(size_t size,
-			    unsigned int alignment,
-			    const std::vector<vaddr_t>& member,
-			    vaddr_t addr = VADDR_NON);
-
+    TypeStore& alloc_type(size_t size,
+			  unsigned int alignment,
+			  const std::vector<vaddr_t>& member,
+			  vaddr_t addr = VADDR_NON);
     
     /**
      * メモリ空間に配列型領域を確保する。
@@ -131,11 +112,11 @@ namespace usagi {
      * @param addr 確保先仮想アドレス。VADDR_NONを指定すると空いているアドレスを割り当てる。
      * @return 確保したアドレスと領域。
      */
-    AllocTypeRet alloc_type(size_t size,
-			    unsigned int alignment,
-			    vaddr_t element,
-			    unsigned int num,
-			    vaddr_t addr = VADDR_NON);
+    TypeStore& alloc_type(size_t size,
+			  unsigned int alignment,
+			  vaddr_t element,
+			  unsigned int num,
+			  vaddr_t addr = VADDR_NON);
 
     /**
      * 既存のメモリ空間をコピーして新しいデータ領域を確保する。
@@ -143,7 +124,14 @@ namespace usagi {
      * @param size コピーサイズ。
      * @return 確保したアドレスとデータ領域。
      */
-    AllocDataRet copy_data(vaddr_t addr, unsigned int size);
+    //DataStore& copy_data(vaddr_t addr, unsigned int size);
+
+    /**
+     * 指定されたデータ領域を開放する。
+     * 指定アドレスがNULLの場合、なにもしない。
+     * @param addr データ領域のアドレス。
+     */
+    void free(vaddr_t addr);
 
     /**
      * アドレスのupper部分を取り出す。

@@ -1,222 +1,363 @@
 
 #include <cstring>
 #include <memory>
+
 #include <ffi/ffi.h>
 #include <dlfcn.h>
 #include <unistd.h>
 
-#include "callinfo.hpp"
 #include "error.hpp"
 #include "func_store.hpp"
 #include "instruction.hpp"
+#include "stackinfo.hpp"
+#include "type_based.hpp"
 #include "util.hpp"
 #include "vmachine.hpp"
 
 using namespace usagi;
+
+static TypeBased* TYPE_BASES[] = {
+  nullptr, // 0
+  nullptr, // 1 void
+  new TypePointer(), // 2 pointer
+  nullptr, // 3 function
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr, // 10
+  new TypeExtended<int8_t>(), // 11 8bit整数型
+  new TypeExtended<int16_t>(), // 12 16bit整数型
+  new TypeExtended<int32_t>(), // 13 32bit整数型
+  new TypeExtended<int64_t>(), // 14 64bit整数型
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr, // 20
+  new TypeExtended<uint8_t>(), // 21 8bit整数型
+  new TypeExtended<uint16_t>(), // 22 16bit整数型
+  new TypeExtended<uint32_t>(), // 23 32bit整数型
+  new TypeExtended<uint64_t>(), // 24 64bit整数型
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr, // 30
+  nullptr, // 31
+  new TypeExtended<float>(), // 32 float
+  new TypeExtended<double>(), // 33 double
+  nullptr, // 34
+  nullptr, // 35 quad
+};
+
+struct OperandRet {
+  DataStore& data;
+  vaddr_t addr;
+  uint8_t* cache;
+};
+
+struct OperandParam {
+  DataStore& stack;
+  const std::vector<vaddr_t>& k;
+  VMemory& vmemory;
+};
+
+inline FuncStore& get_function(instruction_t code, OperandParam& param) {
+  int operand = Instruction::get_operand(code);
+  // 関数は定数領域に置かれているはず
+  assert((operand & HEAD_OPERAND) != 0);
+
+  vaddr_t addr = param.k.at(FILL_OPERAND - operand);
+  return param.vmemory.get_func(addr);
+}
+
+inline TypeStore& get_type(instruction_t code, OperandParam& param) {
+  int operand = Instruction::get_operand(code);
+  // 型は定数領域に置かれているはず
+  assert((operand & HEAD_OPERAND) != 0);
+  
+  vaddr_t addr = param.k.at(FILL_OPERAND - operand);
+  return param.vmemory.get_type(addr);
+}
+
+inline OperandRet get_operand(instruction_t code, OperandParam& param) {
+  int operand = Instruction::get_operand(code);
+  if ((operand & HEAD_OPERAND) != 0) {
+    print_debug("operand k %x\n", FILL_OPERAND - operand);
+    assert(FILL_OPERAND - operand < param.k.size());
+    // 定数の場合1の補数表現からの復元
+    vaddr_t addr = param.k.at(FILL_OPERAND - operand);
+    DataStore& store = param.vmemory.get_data(addr);
+    return {store, addr, store.head.get() + VMemory::get_addr_lower(addr)};
+
+  } else {
+    print_debug("operand stack %d %ld\n", operand, param.stack.size);
+    assert(operand < param.stack.size);
+    return {param.stack, param.stack.addr + operand, param.stack.head.get() + operand};
+  }
+}
 
 // コンストラクタ。
 VMachine::VMachine() :
   status(SETUP) {
 }
 
-inline Value& get_operand_A(unsigned int base, instruction_t code, Thread::Stack& stack) {
-  print_debug("operandA stack %llx\n", base + Instruction::get_code_A(code));
-  assert((Instruction::get_code_A(code) & HEAD_OPERAND_AB) == 0);
-  assert(base + Instruction::get_code_A(code) < stack.size());
-  return stack.at(base + Instruction::get_code_A(code));
-}
-
-inline Value& get_operand_B(unsigned int base, instruction_t code, Thread::Stack& stack) {
-  print_debug("operandB stack %llx\n", base + Instruction::get_code_B(code));
-  assert((Instruction::get_code_B(code) & HEAD_OPERAND_AB) == 0);
-  assert(base + Instruction::get_code_B(code) < stack.size());
-  return stack.at(base + Instruction::get_code_B(code));
-}
-
-inline const Value& get_operand_A(unsigned int base, instruction_t code,
-				  const Thread::Stack& stack, const std::vector<Value>& k) {
-  instruction_t a = Instruction::get_code_A(code);
-  if ((a & HEAD_OPERAND_AB) != 0) {
-    print_debug("operandA k %llx\n", MAX_OPERAND_AB - a);
-    assert(MAX_OPERAND_AB - a < k.size());
-    return k.at(MAX_OPERAND_AB - a); // 定数の場合1の補数表現からの復元
-
-  } else {
-    print_debug("operandA stack %llx\n", a);
-    assert(base + a < stack.size());
-    return stack.at(base + a);
-  }
-}
-
-inline const Value& get_operand_B(unsigned int base, instruction_t code,
-				  const Thread::Stack& stack, const std::vector<Value>& k) {
-  instruction_t b = Instruction::get_code_B(code);
-  if ((b & HEAD_OPERAND_AB) != 0) {
-    print_debug("operandB k %llx\n", MAX_OPERAND_AB - b);
-    assert(MAX_OPERAND_AB - b < k.size());
-    return k.at(MAX_OPERAND_AB - b); // 定数の場合1の補数表現からの復元
-
-  } else {
-    print_debug("operandB stack %llx\n", b);
-    assert(base + b < stack.size());
-    return stack.at(base + b);
-  }
-}
-
 // VM命令を実行する。
 void VMachine::execute(int max_clock) {
-  Thread&           thread  = *(threads.front().get());
-  Thread::Stack&    stack   = thread.stack;
+  Thread& thread = *(threads.front().get());
  re_entry: {
-    // ciが0段の場合、終了
-    if (thread.callinfos.size() == 0) return;
+    // ciが1段の場合、終了
+    if (thread.stackinfos.size() == 1) return;
     
-    CallInfo&         ci      = *(thread.callinfos.back().get());
-    resolve_value_cache(&stack.at(ci.base - 1));
-    const FuncStore&  func    = *reinterpret_cast<FuncStore*>(stack.at(ci.base - 1).cache);
-    const std::vector<instruction_t>& insts   = func.normal_prop.code;
-    const std::vector<Value>&         k       = func.normal_prop.k;
+    StackInfo& stackinfo = *(thread.stackinfos.back().get());
+    const FuncStore& func = stackinfo.func_cache;
+    const std::vector<instruction_t>& insts = func.normal_prop.code;
+    const std::vector<vaddr_t>&       k     = func.normal_prop.k;
+    OperandParam op_param = {stackinfo.stack_cache, k, vmemory};
 
     for (; max_clock > 0; max_clock --) {
-      instruction_t code = insts.at(ci.pc);
-      print_debug("pc:%d, code:%016llx, stack:%ld, k:%ld, insts:%ld\n",
-		  ci.pc, code, stack.size(), k.size(), insts.size());
-      usleep(100000);///< TODO
+      instruction_t code = insts.at(stackinfo.pc);
+      print_debug("pc:%d, code:%08x, k:%ld, insts:%ld\n",
+		  stackinfo.pc, code, k.size(), insts.size());
+      //usleep(100000);///< TODO
+
+      // call命令の判定(call命令の場合falseに変える)
+      bool is_tailcall = true;
+
       switch (static_cast<uint8_t>(Instruction::get_opcode(code))) {
-      case Opcode::CALL: {
-	std::unique_ptr<CallInfo> new_ci(new CallInfo());
-	const bool is_tailcall = (Instruction::get_code_B(code) == 1);
-	const instruction_t ret_code = insts.at(ci.pc + 1); // 戻り値に関する情報
-	if (is_tailcall) {
-	  // 末尾再帰のため、ciを再利用
-	  new_ci->pos_ret = ci.pos_ret;
-	  new_ci->base    = ci.base;
-	  new_ci->pc      = 0;
-	  new_ci->phi     = 0;
-	  // 関数をbase-1に設置
-	  stack.at(new_ci->base - 1) = get_operand_A(ci.base, code, stack, k);
+      case Opcode::NOP: {
+	// 何もしない命令
+      } break;
+	
+      case Opcode::CALL:
+	is_tailcall = false;
+	
+      case Opcode::TAILCALL: {
+	std::unique_ptr<StackInfo> new_stackinfo;
+	FuncStore& new_func = get_function(code, op_param);
 
-	} else {
-	  // 末尾再帰でないので新しいciを作成
-	  new_ci->pos_ret = ci.base + Instruction::get_code_B(ret_code);
-	  /// TODO 現在利用しているスタックの最大+2にする
-	  new_ci->base    = ci.base + func.normal_prop.val_num + 2;
-	  new_ci->pc      = 0;
-	  new_ci->phi     = 0;
-	  // 関数をbase-1に設置
-	  stack.at(new_ci->base - 1) = get_operand_A(ci.base, code, stack, k);
-	}
-
-	resolve_value_cache(&stack.at(new_ci->base - 1));
-	FuncStore& func = *static_cast<FuncStore*>(stack.at(new_ci->base - 1).cache);
-
+	assert(!is_tailcall); // TODO 動きを確認する。
+	new_stackinfo.reset
+	  (new StackInfo(new_func,
+			 // tailcallの場合、戻り値の格納先を現行のものから引き継ぐ
+			 is_tailcall ? stackinfo.ret_addr : stackinfo.output,
+			 Instruction::get_operand(insts.at(stackinfo.pc + 1)),
+			 Instruction::get_operand(insts.at(stackinfo.pc + 2)),
+			 vmemory.alloc_data(new_func.normal_prop.stack_size, false)));
+	
 	// 引数を集める
-	/// @TODO コピー効率を上げる
-	std::vector<Value> args;
-	std::vector<Value> arg_types;
-	while (code = insts.at(ci.pc + args.size() + 2),
-	       Instruction::get_opcode(code) == Opcode::EXTRAARG2) {
-	  arg_types.push_back(get_operand_A(ci.base, code, stack, k));
-	  args     .push_back(get_operand_B(ci.base, code, stack, k));
+	int args = 0;
+	int written_size = 0;
+	instruction_t type_inst;
+	instruction_t value_inst;
+	std::vector<uint8_t> work; // 可変長引数、ネイティブメソッド用引数を一時的に格納する領域
+	while (stackinfo.pc + 4 + args * 2 < insts.size() &&
+	       Instruction::get_opcode(type_inst  = insts.at(stackinfo.pc + 3 + args * 2))
+	       == Opcode::EXTRA &&
+	       Instruction::get_opcode(value_inst = insts.at(stackinfo.pc + 4 + args * 2))
+	       == Opcode::EXTRA) {
 
-	  Value& arg_type = arg_types.back();
-	  Value& arg      = args.back();
+	  const TypeStore& type  = get_type(type_inst, op_param);
+	  OperandRet value = get_operand(value_inst, op_param);
 
-	  // void、ポインタ、即値以外の場合、新しいデータ領域に中身をコピーする。
-	  if (arg_type.get_address() != BasicType::TY_VOID &&
-	      arg_type.get_address() != BasicType::TY_POINTER &&
-	      !arg.is_immediate()) {
-	    resolve_value_cache(&arg_type);
-	    VMemory::AllocDataRet store =
-	      vmemory.copy_data(arg.get_address(),
-				static_cast<TypeStore*>(arg_type.cache)->size);
-	    arg.inner_value.address.upper = store.addr;
-	    arg.inner_value.address.lower = 0;
-	    arg.cache                     = store.data.head.get();
+	  if (new_func.type == FuncType::FC_NORMAL &&
+	      args < new_func.normal_prop.arg_num) {
+	      // 通常の引数はスタックの先頭にコピー
+	      memcpy(new_stackinfo->stack_cache.head.get() + written_size, value.cache, type.size);
+	      written_size += type.size;
+
+	  } else {
+	    // 可変長引数、ネイティブメソッド用引数は一時領域に格納
+	    std::size_t dest = work.size();
+	    work.resize(dest + sizeof(vaddr_t) + type.size);
+	    memcpy(work.data() + dest,                   &type.addr,  sizeof(vaddr_t));
+	    memcpy(work.data() + dest + sizeof(vaddr_t), value.cache, type.size);
 	  }
+	  
+	  args += 1;
 	}
 
 	// pcの書き換え
-	ci.pc += args.size() + 1;
+	stackinfo.pc += args * 2 + 2;
 
-	if (func.type == FuncType::FC_NORMAL) {
+	if (new_func.type == FuncType::FC_NORMAL) {
 	  // 可変長引数でない場合、引数の数をチェック
-	  if (args.size() < func.normal_prop.arg_num ||
-	      (!func.normal_prop.is_var_arg && args.size() != func.normal_prop.arg_num))
+	  if (args < new_func.normal_prop.arg_num ||
+	      (!new_func.normal_prop.is_var_arg && args != new_func.normal_prop.arg_num))
 	    throw_error(Error::TYPE_VIOLATION);
 
-	  // 引数をスタックの所定の位置に設定
-	  if (stack.size() < new_ci->base + func.normal_prop.val_num + STACK_BUFFER_SIZE)
-	    stack.resize(new_ci->base + func.normal_prop.val_num + STACK_BUFFER_SIZE);
-	  for (int i = 0; i < func.normal_prop.arg_num; i ++)
-	    stack.at(new_ci->base + i) = args.at(i);
-
-	  // 可変長引数分がある場合、callinfoに退避
-	  new_ci->var_arg.resize(args.size() - func.normal_prop.arg_num);
-	  for (int i = 0, num = args.size() - func.normal_prop.arg_num; i < num; i ++)
-	    new_ci->var_arg.at(i) = args.at(func.normal_prop.arg_num + i);
+	  // 可変長引数分がある場合、別領域を作成
+	  DataStore& store = create_value_by_array(work.size(), 1, work.data());
+	  new_stackinfo->alloca_addrs.push_back(store.addr);
+	  new_stackinfo->var_arg = store.addr;
 
 	  if (is_tailcall) {
-	    // 末尾再帰の場合、既存のciを上書き
+	    // 末尾再帰の場合、既存のstackinfoを削除
 	    // 次の命令はRETURNのはず
-	    assert(Instruction::get_opcode(insts.at(ci.pc)) == Opcode::RETURN);
-	    ci = *new_ci;
+	    assert(Instruction::get_opcode(insts.at(stackinfo.pc + 2)) == Opcode::RETURN);
+	    thread.stackinfos.pop_back();
 	  } else {
-	    ci.pc ++;
+	    stackinfo.pc ++;
+	    assert(false);
 	    // 末尾再帰でない場合、callinfosを追加
-	    thread.callinfos.push_back(std::unique_ptr<CallInfo>(new_ci.release()));
 	  }
+	  thread.stackinfos.push_back(std::unique_ptr<StackInfo>(new_stackinfo.release()));
 	  goto re_entry;
 
 	} else if (func.type == FuncType::FC_INTRINSIC) {
 	  // VM組み込み関数の呼び出し
+	  assert(false);
 	  assert(func.intrinsic != nullptr);
-	  stack.at(new_ci->pos_ret) = func.intrinsic(*this, thread, args);
-	  // 末尾再帰の場合、既存のciは削除
-	  if (is_tailcall) {
-	    ci.pc ++;
-	    // 次の命令はRETURNのはず
-	    assert(Instruction::get_opcode(insts.at(ci.pc)) == Opcode::RETURN);
-	    thread.callinfos.pop_back();
-	    goto re_entry;
-	  }
+	  func.intrinsic(*this, thread, stackinfo.output_cache, work);
 
 	} else { // func.type == FuncType::EXTERNAL
 	  // 関数のロードを行っていない場合、ロードする
-	  if (func.external == nullptr) {
-	    func.external = get_external_func(func.name);
+	  if (new_func.external == nullptr) {
+	    new_func.external = get_external_func(new_func.name);
 	  }
 
 	  // 関数の呼び出し
-	  stack.at(new_ci->pos_ret) = call_external(func.external,
-						    get_operand_A(ci.base, ret_code, stack, k),
-						    arg_types, args);
-
-	  // 末尾再帰の場合、既存のciは削除
-	  if (is_tailcall) {
-	    ci.pc ++;
-	    // 次の命令はRETURNのはず
-	    assert(Instruction::get_opcode(insts.at(ci.pc)) == Opcode::RETURN);
-	    thread.callinfos.pop_back();
-	    goto re_entry;
-	  }
+	  call_external(new_func.external, new_func.ret_type, stackinfo.output_cache, work);
 	}
 	
       } break;
 
       case Opcode::RETURN: {
-	if (Instruction::get_code_A(code) == 0) {
+	StackInfo& upperinfo = *(thread.stackinfos.at(thread.stackinfos.size() - 2).get());
+
+	if (Instruction::get_operand(code) == FILL_OPERAND) {
 	  // 戻り値がないので何もしない
 
 	} else {
 	  // 戻り値を設定する
-	  stack.at(ci.pos_ret) = get_operand_B(ci.base, code, stack, k);
+	  OperandRet operand = get_operand(code, op_param);
+	  
+	  stackinfo.type_cache1->copy(upperinfo.output_cache, operand.cache);
 	}
-	// callinfoを除去してpcを変更せずにre_entryに移動
-	thread.callinfos.pop_back();
+	// スタック領域を開放
+	vmemory.free(stackinfo.stack);
+
+	// alloca領域を開放
+	for (vaddr_t addr : stackinfo.alloca_addrs) {
+	  vmemory.free(addr);
+	}
+	
+	// 1段上のスタックのpcを設定(normal_pc)
+	upperinfo.pc = stackinfo.normal_pc;
+
+	// stackinfoを1つ除去してre_entryに移動
+	thread.stackinfos.pop_back();
 	goto re_entry;
       } break;
 
+      case Opcode::SET_TYPE: {
+	TypeStore& store = get_type(code, op_param);
+	stackinfo.type = store.addr;
+	if (store.addr < sizeof(TYPE_BASES) / sizeof(TYPE_BASES[0])) {
+	  stackinfo.type_cache1 = TYPE_BASES[store.addr];
+	  if (stackinfo.type_cache1 == nullptr) {
+	    assert(false); // TODO 未対応の型
+	  }
+
+	} else {
+	  assert(false); // 拡張型
+	}
+	stackinfo.type_cache2 = &store;
+      } break;
+
+      case Opcode::SET_OUTPUT: {
+	OperandRet operand = get_operand(code, op_param);
+	stackinfo.output       = operand.addr;
+	stackinfo.output_cache = operand.cache;
+      } break;
+
+      case Opcode::SET_VALUE: {
+	OperandRet operand = get_operand(code, op_param);
+	stackinfo.value       = operand.addr;
+	stackinfo.value_cache = operand.cache;
+      } break;
+
+      case Opcode::ADD: {
+	OperandRet operand = get_operand(code, op_param);
+	stackinfo.type_cache1->add(stackinfo.output_cache,
+				   stackinfo.value_cache,
+				   operand.cache);
+      } break;
+
+      case Opcode::SET_ADR: {
+	OperandRet operand = get_operand(code, op_param);
+	stackinfo.address = operand.addr;
+	stackinfo.address_cache = operand.cache;
+      } break;
+
+      case Opcode::SET_PTR: {
+	OperandRet operand = get_operand(code, op_param);
+	/*
+	vaddr_t addr = *reinterpret_cast<vaddr_t*>(operand.cache);
+	DataStore& data = vmemory.get_data(addr);
+	stackinfo.address = addr;
+	stackinfo.address_cache = data.head.get() + VMemory::get_addr_lower(addr);
+	*/
+	stackinfo.address = operand.addr;
+	stackinfo.address_cache = operand.cache;
+      } break;
+
+      case Opcode::SET_ALIGN: {
+	int operand = Instruction::get_operand_value(code);
+	stackinfo.alignment = operand;
+      } break;
+
+      case Opcode::ADD_ADR: {
+	int operand = Instruction::get_operand_value(code);
+	stackinfo.address += operand;
+	stackinfo.address_cache += operand;
+      } break;
+
+      case Opcode::MUL_ADR: {
+	int operand = Instruction::get_operand_value(code);
+	const vm_int_t diff = operand * stackinfo.type_cache1->get(stackinfo.value_cache);
+	stackinfo.address += diff;
+	stackinfo.address_cache += diff;
+      } break;
+
+      case Opcode::GET_ADR: {
+	OperandRet operand = get_operand(code, op_param);
+	*reinterpret_cast<vaddr_t*>(operand.cache) = stackinfo.address;
+      } break;
+
+      case Opcode::LOAD: {
+	OperandRet operand = get_operand(code, op_param);
+	memcpy(operand.cache, stackinfo.address_cache, stackinfo.type_cache2->size);
+      } break;
+
+      case Opcode::STORE: {
+	OperandRet operand = get_operand(code, op_param);
+	memcpy(stackinfo.address_cache, operand.cache, stackinfo.type_cache2->size);
+      } break;
+
+	/*
       case Opcode::JUMP: {
 	// 無条件ジャンプを行う
 	ci.phi = ci.pc = Instruction::get_code_A(code);
@@ -235,299 +376,101 @@ void VMachine::execute(int max_clock) {
 	}
 		      
       } break;
+	*/
 
-      case Opcode::ADD: {
-	Value& dst = get_operand_A(ci.base, code, stack);
-	const Value& type = get_operand_B(ci.base, code, stack, k);
-	code = insts.at(ci.pc + 1);
-	const Value& val_a = get_operand_A(ci.base, code, stack, k);
-	const Value& val_b = get_operand_B(ci.base, code, stack, k);
-	resolve_value_cache(&val_a);
-	resolve_value_cache(&val_b);
-
-	switch(type.get_address()) {
-	case BasicType::TY_I8: {
-	  dst = create_value_by_primitive(*static_cast<uint8_t*>(val_a.cache) +
-					  *static_cast<uint8_t*>(val_b.cache));
-	} break;
-	case BasicType::TY_I16: {
-	  dst = create_value_by_primitive(*static_cast<uint16_t*>(val_a.cache) +
-					  *static_cast<uint16_t*>(val_b.cache));
-	} break;
-	case BasicType::TY_I32: {
-	  dst = create_value_by_primitive(*static_cast<uint32_t*>(val_a.cache) +
-					  *static_cast<uint32_t*>(val_b.cache));
-	} break;
-	case BasicType::TY_I64: {
-	  dst = create_value_by_primitive(*static_cast<uint64_t*>(val_a.cache) +
-					  *static_cast<uint64_t*>(val_b.cache));
-	} break;
-	case BasicType::TY_F32: {
-	  dst = create_value_by_primitive(*static_cast<float*>(val_a.cache) +
-					  *static_cast<float*>(val_b.cache));
-	} break;
-	case BasicType::TY_F64: {
-	  dst = create_value_by_primitive(*static_cast<double*>(val_a.cache) +
-					  *static_cast<double*>(val_b.cache));
-	} break;
-	default: {
-	} break;
-	}
-	ci.pc ++;
+      case Opcode::TYPE_CAST: {
+	TypeStore& type = get_type(code, op_param);
+	stackinfo.type_cache1->type_cast(stackinfo.output_cache,
+					 type.addr,
+					 stackinfo.value_cache);
       } break;
 
-      case Opcode::UREM: {
-	Value& dst = get_operand_A(ci.base, code, stack);
-	const Value& type = get_operand_B(ci.base, code, stack, k);
-	code = insts.at(ci.pc + 1);
-	const Value& val_a = get_operand_A(ci.base, code, stack, k);
-	const Value& val_b = get_operand_B(ci.base, code, stack, k);
-	resolve_value_cache(&val_a);
-	resolve_value_cache(&val_b);
-
-	switch(type.get_address()) {
-	case BasicType::TY_I8: {
-	  dst = create_value_by_primitive(*static_cast<uint8_t*>(val_a.cache) %
-					  *static_cast<uint8_t*>(val_b.cache));
-	} break;
-	case BasicType::TY_I16: {
-	  dst = create_value_by_primitive(*static_cast<uint16_t*>(val_a.cache) %
-					  *static_cast<uint16_t*>(val_b.cache));
-	} break;
-	case BasicType::TY_I32: {
-	  dst = create_value_by_primitive(*static_cast<uint32_t*>(val_a.cache) %
-					  *static_cast<uint32_t*>(val_b.cache));
-	} break;
-	case BasicType::TY_I64: {
-	  dst = create_value_by_primitive(*static_cast<uint64_t*>(val_a.cache) %
-					  *static_cast<uint64_t*>(val_b.cache));
-	} break;
-	default: {
-	} break;
-	}
-	ci.pc ++;
-      } break;
-
-      case Opcode::SREM: {
-	Value& dst = get_operand_A(ci.base, code, stack);
-	const Value& type = get_operand_B(ci.base, code, stack, k);
-	code = insts.at(ci.pc + 1);
-	const Value& val_a = get_operand_A(ci.base, code, stack, k);
-	const Value& val_b = get_operand_B(ci.base, code, stack, k);
-	resolve_value_cache(&val_a);
-	resolve_value_cache(&val_b);
-
-	switch(type.get_address()) {
-	case BasicType::TY_I8: {
-	  dst = create_value_by_primitive(*static_cast<int8_t*>(val_a.cache) %
-					  *static_cast<int8_t*>(val_b.cache));
-	} break;
-	case BasicType::TY_I16: {
-	  dst = create_value_by_primitive(*static_cast<int16_t*>(val_a.cache) %
-					  *static_cast<int16_t*>(val_b.cache));
-	} break;
-	case BasicType::TY_I32: {
-	  dst = create_value_by_primitive(*static_cast<int32_t*>(val_a.cache) %
-					  *static_cast<int32_t*>(val_b.cache));
-	} break;
-	case BasicType::TY_I64: {
-	  dst = create_value_by_primitive(*static_cast<int64_t*>(val_a.cache) %
-					  *static_cast<int64_t*>(val_b.cache));
-	} break;
-	default: {
-	} break;
-	}
-	ci.pc ++;
-      } break;
-
-      case Opcode::LOAD: {
-	Value& dst = get_operand_A(ci.base, code, stack);
-	const Value& src = get_operand_B(ci.base, code, stack, k);
-	resolve_value_cache(&src);
-	// srcに格納されている値をアドレスとして設定する。
-	dst.type = Value::Type::POINTER_DATA;
-	dst.set_address(*reinterpret_cast<vaddr_t*>(src.cache));
-      } break;
-
-      case Opcode::STORE: {
-	const Value& src = get_operand_A(ci.base, code, stack);
-	Value& dst = get_operand_B(ci.base, code, stack);
-	resolve_value_cache(&src);
-	assert(false);
-      } break;
-
-      case Opcode::GET_EP: {
-	Value& dst = get_operand_A(ci.base, code, stack);
-	const Value& src = get_operand_B(ci.base, code, stack, k);
-	assert(!src.is_immediate());	// srcはポインタのはず
-	code = insts.at(ci.pc + 1);
-	vaddr_t type_addr = get_operand_A(ci.base, code, stack, k).get_address();
-	unsigned int idx_size = Instruction::get_code_B(code);
-
-	longest_int_t diff = 0;
-	longest_int_t idx;
-	int next;
-
-	for (next = 1;
-	     Instruction::get_opcode(code = insts.at(ci.pc + next + 1)) == Opcode::EXTRAARG2;
-	     next ++) {
-	  if (next == 1) {
-	    idx = get_value_as_int(get_operand_A(ci.base, code, stack, k), idx_size);
-	    TypeStore* type = &vmemory.get_type(type_addr);
-	    diff += type->size * idx;
-
-	  } else {
-	    idx = get_value_as_int(get_operand_A(ci.base, code, stack, k), idx_size);
-	    TypeStore* type = &vmemory.get_type(type_addr);
-	    if (type->is_array) {
-	      // 配列要素数より多い要素にアクセスした場合エラー
-	      if (idx >= type->num) throw_error(Error::SEGMENT_FAULT);
-	      type = &vmemory.get_type(type_addr = type->element);
-	      diff += type->size * idx;
-	      
-	    } else {
-	      // 構造要素数より多い要素にアクセスした場合エラー
-	      if (idx >= type->member.size()) throw_error(Error::SEGMENT_FAULT);
-	      for (int m_idx = 0; m_idx < idx; m_idx ++) {
-		TypeStore* m_type = &vmemory.get_type(type_addr = type->member.at(m_idx));
-		diff += m_type->size;
-	      }
-	    }
-	  }
-	  // OperandBがMAX_OPERAND_ABの場合、パディングなので処理をスキップ
-	  if (Instruction::get_code_B(code) == MAX_OPERAND_AB) continue; 
-	  idx = get_value_as_int(get_operand_B(ci.base, code, stack, k), idx_size);
-	  TypeStore* type = &vmemory.get_type(type_addr);
-	  if (type->is_array) {
-	    // 配列要素数より多い要素にアクセスした場合エラー
-	    if (idx >= type->num) throw_error(Error::SEGMENT_FAULT);
-	    type = &vmemory.get_type(type_addr = type->element);
-	    diff += type->size * idx;
-
-	  } else {
-	    // 構造要素数より多い要素にアクセスした場合エラー
-	    if (idx >= type->member.size()) throw_error(Error::SEGMENT_FAULT);
-	    for (int m_idx = 0; m_idx < idx; m_idx ++) {
-	      TypeStore* m_type = &vmemory.get_type(type_addr = type->member.at(m_idx));
-	      diff += m_type->size;
-	    }
-	  }
-	}
-	dst = src;
-	dst.inner_value.address.lower += diff;
-	dst.cache = nullptr;
-
-	ci.pc += next;
-      } break;
-
-      case Opcode::SEXT: {
-	Value& dst = get_operand_A(ci.base, code, stack);
-	const Value& dst_type = get_operand_B(ci.base, code, stack, k);
-	code = insts.at(ci.pc + 1);
-	const Value& src = get_operand_A(ci.base, code, stack, k);
-	const Value& src_type = get_operand_B(ci.base, code, stack, k);
-	resolve_value_cache(&dst);
-	resolve_value_cache(&dst_type);
-	resolve_value_cache(&src);
-	resolve_value_cache(&src_type);
-
-	size_t src_size = reinterpret_cast<TypeStore*>(src_type.cache)->size;
-	size_t dst_size = reinterpret_cast<TypeStore*>(dst_type.cache)->size;
-	longest_int_t work = get_value_as_int(src, src_size);
-	memcpy(dst.cache, &work, dst_size);
-
-	ci.pc ++;
-      } break;
-
-      default:
+      default: {
 	// EXTRAARGを含む想定外の命令
-	throw_error_message(Error::INST_VIOLATION, Util::num2hex_str(insts.at(ci.pc)));
+	throw_error_message(Error::INST_VIOLATION, Util::num2hex_str(insts.at(stackinfo.pc)));
+      } break;
       }
       
-      ci.pc ++;
+      stackinfo.pc ++;
     }
   }
 }
 
 // 外部の関数を呼び出す。
-Value VMachine::call_external(external_func_t func,
-			      const Value& ret_type,
-			      const std::vector<Value>& arg_types,
-			      std::vector<Value> args) {
+void VMachine::call_external(external_func_t func,
+			     vaddr_t ret_type,
+			     uint8_t* ret_addr,
+			     std::vector<uint8_t>& args) {
   print_debug("call_external\n");
-  for (int i = 0; i < args.size(); i ++) {
-    print_debug("param%d\n", i + 1);
-    Value& v = args[i];
-    if (v.is_immediate()) {
-      print_debug("\tvalue:%016llx(%ld)\n",
-		  v.inner_value.immediate.value.i64,
-		  v.inner_value.immediate.size);
-    } else {
-      print_debug("\taddr:%016llx\n", v.get_address());
-    }
-  }
-
-  // 戻り値
-  Value ret;
 
   // 戻り値の型変換
   ffi_type* ffi_ret_type = nullptr;
-  switch(ret_type.get_address()) {
-  case BasicType::TY_I32: {
-    ffi_ret_type = &ffi_type_uint32;
-    ret = create_value_by_primitive(static_cast<uint32_t>(0));
-  } break;
+  switch(ret_type) {
+  case BasicType::TY_UI8:  ffi_ret_type = &ffi_type_uint8;  break;
+  case BasicType::TY_UI16: ffi_ret_type = &ffi_type_uint16; break;
+  case BasicType::TY_UI32: ffi_ret_type = &ffi_type_uint32; break;
+  case BasicType::TY_UI64: ffi_ret_type = &ffi_type_uint64; break;
+  case BasicType::TY_SI8:  ffi_ret_type = &ffi_type_sint8;  break;
+  case BasicType::TY_SI16: ffi_ret_type = &ffi_type_sint16; break;
+  case BasicType::TY_SI32: ffi_ret_type = &ffi_type_sint32; break;
+  case BasicType::TY_SI64: ffi_ret_type = &ffi_type_sint64; break;
 
   default: {
-    fixme(Util::vaddr2str(ret_type.get_address()));
+    fixme(Util::vaddr2str(ret_type));
     assert(false); // TODO 他の型の対応
   } break;
   }
 
   // 引数の型変換 & ポインタ格納
-  std::vector<ffi_type*> ffi_arg_types(args.size());
-  std::vector<void*> ffi_args(args.size());
+  std::vector<ffi_type*> ffi_arg_types;
+  std::vector<void*> ffi_args;
 
-  for (int i = 0, size = args.size(); i < size; i ++) {
-    resolve_value_cache(&args.at(i));
+  int seek = 0;
+  while(seek < args.size()) {
+    TypeStore& type = vmemory.get_type(*reinterpret_cast<vaddr_t*>(args.data() + seek));
 
-    switch(arg_types.at(i).get_address()) {
+    switch(type.addr) {
     case BasicType::TY_POINTER: {
-      ffi_arg_types.at(i) = &ffi_type_pointer;
-      ffi_args.at(i)      = &args.at(i).cache;
-      print_debug("%p, %s\n", args.at(i).cache, args.at(i).cache);
+      ffi_arg_types.push_back(&ffi_type_pointer);
+      vaddr_t addr = *reinterpret_cast<vaddr_t*>(args.data() + seek + sizeof(vaddr_t));
+      DataStore& pointed = vmemory.get_data(addr);
+      *reinterpret_cast<void**>(args.data() + seek + sizeof(vaddr_t)) =
+	pointed.head.get() + VMemory::get_addr_lower(addr);
+      ffi_args.push_back(args.data() + seek + sizeof(vaddr_t));
     } break;
 
-    case BasicType::TY_I8: {
-      ffi_arg_types.at(i) = &ffi_type_uint8;
-      ffi_args.at(i)      = args.at(i).cache;
+    case BasicType::TY_UI8: {
+      ffi_arg_types.push_back(&ffi_type_uint8);
+      ffi_args.push_back(args.data() + seek + sizeof(vaddr_t));
     } break;
 
-    case BasicType::TY_I16: {
-      ffi_arg_types.at(i) = &ffi_type_uint16;
-      ffi_args.at(i)      = args.at(i).cache;
+    case BasicType::TY_UI16: {
+      ffi_arg_types.push_back(&ffi_type_uint16);
+      ffi_args.push_back(args.data() + seek + sizeof(vaddr_t));
     } break;
 
-    case BasicType::TY_I32: {
-      ffi_arg_types.at(i) = &ffi_type_uint32;
-      ffi_args.at(i)      = args.at(i).cache;
+    case BasicType::TY_UI32: {
+      ffi_arg_types.push_back(&ffi_type_uint32);
+      ffi_args.push_back(args.data() + seek + sizeof(vaddr_t));
     } break;
 
-    case BasicType::TY_I64: {
-      ffi_arg_types.at(i) = &ffi_type_uint64;
-      ffi_args.at(i)      = args.at(i).cache;
+    case BasicType::TY_UI64: {
+      ffi_arg_types.push_back(&ffi_type_uint64);
+      ffi_args.push_back(args.data() + seek + sizeof(vaddr_t));
     } break;
 
     default: {
-      fixme(Util::vaddr2str(arg_types.at(i).get_address()));
+      fixme(Util::vaddr2str(type.addr));
       assert(false); // TODO 他の型の対応
     } break;
     }
+    
+    seek += sizeof(vaddr_t) + type.size;
   }
 
   // libffiの準備
   ffi_cif cif;
-  ffi_status status = ffi_prep_cif(&cif, FFI_DEFAULT_ABI, args.size(),
+  ffi_status status = ffi_prep_cif(&cif, FFI_DEFAULT_ABI, ffi_args.size(),
 				   ffi_ret_type, ffi_arg_types.data());
 
   if (status != FFI_OK) {
@@ -535,12 +478,10 @@ Value VMachine::call_external(external_func_t func,
   }
 
   // メソッド呼び出し
-  ffi_call(&cif, func, ret.cache, ffi_args.data());
-
-  return ret;
+  ffi_call(&cif, func, ret_addr, ffi_args.data());
 }
 
-// 型のサイズを計算する。
+// 型のサイズと最大アライメントを計算する。
 std::pair<size_t, unsigned int> VMachine::calc_type_size(const std::vector<vaddr_t>& member) {
   size_t size = 0;
   unsigned int max_alignment = 0;
@@ -561,6 +502,13 @@ std::pair<size_t, unsigned int> VMachine::calc_type_size(const std::vector<vaddr
   return std::make_pair(size, max_alignment);
 }
 
+// 型のサイズと最大アライメントを計算する。
+std::pair<size_t, unsigned int> VMachine::calc_type_size(vaddr_t type) {
+  TypeStore& t = vmemory.get_type(type);
+  
+  return std::make_pair(t.size, t.alignment);
+}
+
 // VMの終了処理を行う。
 void VMachine::close() {
   // ロードした外部のライブラリを閉じる
@@ -571,221 +519,121 @@ void VMachine::close() {
   //*/
 }
 
-// 値をコピーする。
-void VMachine::copy_value(Value& dst, const Value& src, const Value& type) {
-  assert(src.type == Value::NORMAL_DATA);
-
-  // コピー先とコピー元が同じ場合何もしない。
-  if (&dst == &src) return;
-
-  // コピー
-  dst = src;
-
-  // void、ポインタ、即値以外の場合、新しいデータ領域に中身をコピーする。
-  if (type.get_address() != BasicType::TY_VOID &&
-      type.get_address() != BasicType::TY_POINTER &&
-      !src.is_immediate()) {
-    resolve_value_cache(&type);
-    VMemory::AllocDataRet store =
-      vmemory.copy_data(src.get_address(),
-			static_cast<TypeStore*>(type.cache)->size);
-    dst.inner_value.address.upper = store.addr;
-    dst.inner_value.address.lower = 0;
-    dst.cache                     = store.data.head.get();
-  }
-}
-
 // 関数を作成する。
-Value VMachine::create_function(const std::string& name,
-				const FuncStore::NormalProp& prop) {
+FuncStore& VMachine::create_function(const std::string& name,
+				     vaddr_t ret_type,
+				     const FuncStore::NormalProp& prop) {
   // 関数領域を確保
-  VMemory::AllocFuncRet store = vmemory.alloc_func(symbols.get(name), prop);
+  FuncStore& store = vmemory.alloc_func(symbols.get(name), ret_type, prop);
   
-  // 関数のアドレスを持つValueを作成。
-  Value val;
-  val.type = Value::FUNCTION;
-  val.inner_value.address.upper = store.addr;
-  val.inner_value.address.lower = 0;
-  val.cache = &store.func;
-
   print_debug("create_function\n");
   print_debug("\tis_var_arg\t:%d\n", prop.is_var_arg);
   print_debug("\targ_num\t:%d\n", prop.arg_num);
+  print_debug("\tstack_size\t:%d\n", prop.stack_size);
   print_debug("\tcode:(%ld)\n", prop.code.size());
   for (auto it = prop.code.begin(); it != prop.code.end(); it++) {
-    print_debug("\t\t%016llx\n", *it);
+    print_debug("\t\t%08x\n", *it);
   }
   print_debug("\taddress\t:%016llx\n", store.addr);
-  print_debug("\tfunc\t:%p\n", &store.func);
+  print_debug("\tfunc\t:%p\n", &store);
   print_debug("\tk:(%ld)\n", prop.k.size());
   for (auto it = prop.k.begin(); it != prop.k.end(); it++) {
-    if (it->is_immediate()) {
-      print_debug("\t\tv:%016llx(%ld)\n",
-		  it->inner_value.immediate.value.i64,
-		  it->inner_value.immediate.size);
-    } else {
-      print_debug("\t\ta:%016llx\n", it->get_address());
-    }
+    print_debug("\t\t%016llx\n", *it);
   }
+  print_debug("\tret_type\t%016llx\n", store.ret_type);
 
-  return val;
+  return store;
 }
 
 // VM組み込み関数/ライブラリなど外部の関数を作成する。
-Value VMachine::create_function(const std::string& name) {
+FuncStore& VMachine::create_function(const std::string& name,
+				     vaddr_t ret_type) {
   auto ifunc = intrinsic_funcs.find(name);
 
   // 関数領域を確保
-  VMemory::AllocFuncRet store = (ifunc == intrinsic_funcs.end() ?
-				 vmemory.alloc_func(symbols.get(name)) :
-				 vmemory.alloc_func(symbols.get(name), ifunc->second));
+  FuncStore& store = (ifunc == intrinsic_funcs.end() ?
+		      vmemory.alloc_func(symbols.get(name), ret_type) :
+		      vmemory.alloc_func(symbols.get(name), ret_type, ifunc->second));
 
-  // 関数のアドレスを持つValueを作成。
-  Value val;
-  val.type = Value::FUNCTION;
-  val.inner_value.address.upper = store.addr;
-  val.inner_value.address.lower = 0;
-  val.cache = &store.func;
-  
-  return val;
+  return store;
 }
 
 // NULLポインタを作成する。
-Value VMachine::create_null() {
-  Value val;
-  val.type = Value::POINTER_DATA;
-  val.inner_value.address.upper = VADDR_NULL;
-  val.inner_value.address.lower = 0;
-  val.cache = nullptr;
-
-  print_debug("create_pointer\n");
-
-  return val;
+DataStore& VMachine::create_null() {
+  return create_pointer(VADDR_NULL, 0);
 }
 
 // ポインタ変数を作成する。
-Value VMachine::create_pointer(Value* src, int delta) {
+DataStore& VMachine::create_pointer(vaddr_t src, int delta) {
   // 関数ポインタに対する演算はエラー
-  if ((src->type == Value::FUNCTION || src->type == Value::TYPE) && delta != 0)
+  if ((VMemory::addr_is_func(src) || VMemory::addr_is_type(src)) && delta != 0)
     throw_error(Error::MOD_FUNCTION);
 
-  // 即値はポインタが作れないので仮想メモリに移動
-  place_virtual_value(src);
-  // 変数のキャッシュを解決しておく
-  resolve_value_cache(src);
-
-  // セグメンテーションフォルト判定
-  if ((delta < 0 && static_cast<int>(src->inner_value.address.lower) + delta < 0) ||
-      (delta > 0 && static_cast<int>(src->inner_value.address.lower) + delta >=
-       static_cast<int>(vmemory.get_data(src->inner_value.address.upper).size)))
+  /// セグメンテーションフォルト判定
+  vaddr_t lower = vmemory.get_addr_lower(src);
+  DataStore& data = vmemory.get_data(src);
+  if ((delta < 0 && static_cast<signed>(lower) + delta < 0) ||
+      (delta > 0 && static_cast<signed>(lower) + delta >=
+       static_cast<int>(data.size)))
     throw_error(Error::SEGMENT_FAULT);
 
-  // ポインタを作成。
-  Value val;
-  val.type = Value::POINTER_DATA;
-  val.inner_value.address.upper = src->inner_value.address.upper;
-  val.inner_value.address.lower = src->inner_value.address.lower + delta;
-  val.cache = static_cast<uint8_t*>(src->cache) + delta;
-
   print_debug("create_pointer\n");
-  print_debug("\tupper\t:%llx\n", val.inner_value.address.upper);
-  print_debug("\tlower\t:%llx\n", val.inner_value.address.lower);
-  print_debug("\tcache\t:%p\n", val.cache);
-  
-  return val;
+  print_debug("\tsrc\t:%llx\n", src);
+  print_debug("\tdelta\t:%d\n", delta);
+  print_debug("\taddr\t:%p\n", data.head.get());
+
+  // ポインタを作成。
+  return create_value_by_primitive(src + delta);
 }
 
 // 基本型情報を作成する。
-Value VMachine::create_type(BasicType type) {
+TypeStore& VMachine::create_type(BasicType type) {
   // 型のアドレスを持つValueを作成
-  Value val;
-  val.type = Value::TYPE;
-  val.inner_value.address.upper = type;
-  val.inner_value.address.lower = 0;
-  val.cache = &vmemory.get_type(type);
-  print_debug("create_type\n");
-  print_debug("\taddr\t:%016llx\n", val.inner_value.address.upper);
-
-  return val;
+  print_debug("create_type(basic)\n");
+  print_debug("\taddr\t:%016llx\n", type);
+  
+  return vmemory.get_type(type);
 }
 
 // 配列型情報を作成する。
-Value VMachine::create_type(vaddr_t element, unsigned int num) {
+TypeStore& VMachine::create_type(vaddr_t element, unsigned int num) {
   // サイズ、アライメントを計算
   std::vector<vaddr_t> member;
   member.push_back(element);
   std::pair<size_t, unsigned int> info = calc_type_size(member);
-
+  
   // 領域を確保
-  VMemory::AllocTypeRet store = vmemory.alloc_type(info.first * num, info.second, element, num);
-  TypeStore& type = store.type;
-
-  // 型のアドレスを持つValueを作成
-  Value val;
-  val.type = Value::TYPE;
-  val.inner_value.address.upper = store.addr;
-  val.inner_value.address.lower = 0;
-  val.cache = &type;
-
-  return val;
+  return vmemory.alloc_type(info.first * num, info.second, element, num);
 }
 
 // 複合型情報を作成する。
-Value VMachine::create_type(const std::vector<vaddr_t>& member) {
+TypeStore& VMachine::create_type(const std::vector<vaddr_t>& member) {
   // 領域を確保
   std::pair<size_t, unsigned int> info = calc_type_size(member);
-  VMemory::AllocTypeRet store = vmemory.alloc_type(info.first, info.second, member);
-  TypeStore& type = store.type;
-
-  // 型のアドレスを持つValueを作成
-  Value val;
-  val.type = Value::TYPE;
-  val.inner_value.address.upper = store.addr;
-  val.inner_value.address.lower = 0;
-  val.cache = &type;
-
-  return val;
+  return vmemory.alloc_type(info.first, info.second, member);
 }
 
 // データの配列で初期化した値を作成する。
-Value VMachine::create_value_by_array(int per_size, int length, const void* data) {
-  Value val;
-  val.type = Value::NORMAL_DATA;
-
+DataStore& VMachine::create_value_by_array(int per_size, int length, const void* data) {
   int size = per_size * length;
-  if (size == 1 || size == 2 || size == 4 || size == 8) {
-    // 即値を作る
-    std::memcpy(&val.inner_value.immediate.value, data, size);
-    val.inner_value.immediate.size = size;
-    val.cache = &val.inner_value.immediate.value;
-
-  } else {
-    // データ領域を作る
-    VMemory::AllocDataRet store = vmemory.alloc_data(size, false);/// @TODO 定数フラグ
-    
-    // 仮想アドレスをコピー
-    val.inner_value.address.upper = store.addr;
-    val.inner_value.address.lower = 0;
-    val.cache = store.data.head.get();
-  }
-
+  // データ領域を作る
+  DataStore& store = vmemory.alloc_data(size, false);/// @TODO 定数フラグ
+  
   // データ領域にデータをコピー
   if (data != nullptr) {
-    std::memcpy(val.cache, data, size);
+    std::memcpy(store.head.get(), data, size);
   }
 
   print_debug("create_array\n");
+  print_debug("\taddr\t:%016llx\n", store.addr);
+  print_debug("\taddr\t:%p\n", store.head.get());
   print_debug("\tper_size\t:%d\n", per_size);
   print_debug("\tlength\t:%d\n", length);
-  if (!val.is_immediate()) {
-    print_debug("\taddress\t:%s\n", Util::vaddr2str(val.inner_value.address.upper).c_str());
-  }
-  print_debug("\tcache:\t%p\n", val.cache);
   if (data == nullptr) {
     print_debug("\tdata:nullptr\n");
   } else {
     print_debug("\tdata:\n");
-    for (int i = 0; i < length; i ++) {
+    for (int i = 0; i < size; i ++) {
       print_debug("\t\t%02x(%c)\n",
 		  static_cast<const char*>(data)[i],
 		  (' ' <= static_cast<const char*>(data)[i] &&
@@ -794,7 +642,7 @@ Value VMachine::create_value_by_array(int per_size, int length, const void* data
     }
   }
 
-  return val;
+  return store;
 }
 
 // ライブラリ関数を指定アドレスに展開する。
@@ -811,7 +659,7 @@ void VMachine::deploy_function_external(const std::string& name, vaddr_t addr) {
 }
 
 // VM組み込み関数を指定アドレスに展開する。
-void VMachine::deploy_function_intrinsic(const std::string& name, vaddr_t addr) {
+void VMachine::deploy_function_intrinsic(const std::string& name, vaddr_t ret_type, vaddr_t addr) {
   auto ifunc = intrinsic_funcs.find(name);
 
   // VM組み込み関数に指定の名前の関数がない。
@@ -820,15 +668,16 @@ void VMachine::deploy_function_intrinsic(const std::string& name, vaddr_t addr) 
   }
 
   // 関数領域を確保
-  vmemory.alloc_func(symbols.get(name), ifunc->second, addr);
+  vmemory.alloc_func(symbols.get(name), ret_type, ifunc->second, addr);
 }
 
 // 通常の関数(VMで解釈、実行する)を指定アドレスに展開する。
 void VMachine::deploy_function_normal(const std::string& name,
+				      vaddr_t ret_type,
 				      const FuncStore::NormalProp& prop,
 				      vaddr_t addr) {
   // 関数領域を確保
-  vmemory.alloc_func(symbols.get(name), prop, addr);
+  vmemory.alloc_func(symbols.get(name), ret_type, prop, addr);
 }
 
 // ライブラリなど、外部の関数へのポインタを取得する。
@@ -852,57 +701,77 @@ void VMachine::run(std::vector<std::string> args) {
   threads.push_back(std::unique_ptr<Thread>(init_thread = new Thread()));
   
   // スレッドを初期化
-  init_thread->top = 2; // 戻り値所、関数、ベース〜と格納するので2
-  CallInfo* init_callinfo;
-  init_thread->callinfos.push_back(std::unique_ptr<CallInfo>(init_callinfo = new CallInfo()));
-
-  // 関数の呼び出し情報を設定
-  init_callinfo->pos_ret = 0;
-  init_callinfo->base    = 2; // 戻り値所、関数、ベース〜と格納するので2
-  init_callinfo->pc      = 0;
 
   // main関数の取得
   auto it_main_func = globals.find(&symbols.get("main"));
   if (it_main_func == globals.end())
     throw_error_message(Error::SYM_NOT_FOUND, "main");
-  FuncStore& main_func = vmemory.get_func(it_main_func->second.inner_value.address.upper);
+  FuncStore& main_func = vmemory.get_func(it_main_func->second);
+
+  // main関数用のスタックを確保する
+  DataStore& main_stack = vmemory.alloc_data(main_func.normal_prop.stack_size, 1);
   
-  // 関数情報を元にstackを拡張
-  init_thread->stack.resize(init_thread->top + main_func.normal_prop.val_num + STACK_BUFFER_SIZE);
-  init_thread->stack.at(1) = it_main_func->second;
-  
+  vaddr_t init_stack_addr;
   // プログラムのコマンドライン引数を設定
   if (main_func.normal_prop.arg_num == 2) {
-    // ポインタのポインタ
-    std::unique_ptr<vaddr_t[]> param2(new vaddr_t[args.size()]);
-    // 引数1要素毎に作った値のアドレスを格納する
+    // main関数の戻り値と引数を格納するのに必要な領域サイズを計算
+    const size_t ret_size = calc_type_size(main_func.ret_type).first;
+    size_t init_stack_size = ret_size + sizeof(vaddr_t) * args.size();
     for (unsigned int i = 0, arg_size = args.size(); i < arg_size; i ++) {
-      Value value = create_value_by_array(sizeof(char),
-					  args.at(i).length() + 1,
-					  args.at(i).c_str());
-      place_virtual_value(&value);
-      param2[i] = value.get_address();
+      init_stack_size += args.at(i).length() + 1;
     }
+    // 領域を確保
+    DataStore& init_stack = vmemory.alloc_data(init_stack_size, 1);
+    init_stack_addr = init_stack.addr;
+    // mainのreturnを受け取るためのスタックを1段確保する
+    StackInfo* init_stackinfo = new StackInfo(*static_cast<FuncStore*>(nullptr),
+					      VADDR_NON, 0, 0, init_stack);
+    init_thread->stackinfos.push_back(std::unique_ptr<StackInfo>(init_stackinfo));
     
-    init_thread->stack.at(2) = create_value_by_primitive(static_cast<vm_int_t>(args.size()));
-    init_thread->stack.at(3) = create_value_by_array(sizeof(vaddr_t), args.size(), param2.get());
-    init_thread->top += 2;
-
+    // init_stack_dataにmain関数の戻り値、argvとして渡すポインタの配列、引数文字列、、を格納する
+    vaddr_t sum = ret_size + sizeof(vaddr_t) * args.size();
+    for (unsigned int i = 0, arg_size = args.size(); i < arg_size; i ++) {
+      memcpy(init_stack.head.get() + ret_size + sizeof(vaddr_t) * i,
+	     &sum, sizeof(vaddr_t));
+      memcpy(init_stack.head.get() + sum,
+	     args.at(i).c_str(), args.at(i).length() + 1);
+      sum += args.at(i).length() + 1;
+    }
+    // main関数のスタックの先頭にargc, argvを格納する
+    vm_int_t argc = args.size();
+    vaddr_t  argv = init_stack.addr + ret_size;
+    memcpy(main_stack.head.get(), &argc, sizeof(argc));
+    memcpy(main_stack.head.get() + sizeof(argc), &argv, sizeof(argv));
+    
   } else if (main_func.normal_prop.arg_num != 0) {
     // int main()でもint main(int, char**)でもないようだ
     throw_error(Error::SPEC_VIOLATION);
+
+  } else {
+    // int main()の場合は引数を設定しない
+    // main関数の戻り値格納先を確保する
+    DataStore& init_stack = vmemory.alloc_data(calc_type_size(main_func.ret_type).first, 1);
+    init_stack_addr = init_stack.addr;
+    // mainのreturnを受け取るためのスタックを1段確保する
+    StackInfo* init_stackinfo = new StackInfo(*static_cast<FuncStore*>(nullptr),
+					      VADDR_NON, 0, 0, init_stack);
+    init_stackinfo->output = init_stack.addr;
+    init_stackinfo->output_cache = init_stack.head.get();
+    init_thread->stackinfos.push_back(std::unique_ptr<StackInfo>(init_stackinfo));
   }
-  // int main()の場合は引数を設定しない
+
+  StackInfo* main_stackinfo = new StackInfo(main_func,
+					    init_stack_addr,
+					    0, 0, main_stack);
+  init_thread->stackinfos.push_back(std::unique_ptr<StackInfo>(main_stackinfo));
 
   status = ACTIVE;
 }
 
 // 大域変数のアドレスを設定する。
-void VMachine::set_global_value(const std::string& name, Value* value) {
+void VMachine::set_global_value(const std::string& name, vaddr_t addr) {
   /// @todo 同一の名前が再利用されないことの確認
-  // 大域変数は仮想メモリに配置
-  place_virtual_value(value);
-  globals.insert(std::make_pair(&symbols.get(name), *value));
+  globals.insert(std::make_pair(&symbols.get(name), addr));
 }
 
 // VMの初期設定をする。
@@ -912,18 +781,22 @@ void VMachine::setup() {
   std::vector<vaddr_t> basic_type_dummy;
   basic_type_dummy.push_back(BasicType::TY_VOID);
 
-#define M_ALLOC_BASIC_TYPE(s, a, t)					\
-  vmemory.alloc_type((s), (a), basic_type_dummy, (t));			\
+#define M_ALLOC_BASIC_TYPE(s, a, t)		       \
+  vmemory.alloc_type((s), (a), basic_type_dummy, (t)); \
   intrinsic_addrs.insert(t)
 
   // 基本型を登録
   M_ALLOC_BASIC_TYPE(0,  0,  BasicType::TY_VOID);
   M_ALLOC_BASIC_TYPE(8,  8,  BasicType::TY_POINTER);
   M_ALLOC_BASIC_TYPE(8,  8,  BasicType::TY_FUNCTION);
-  M_ALLOC_BASIC_TYPE(1,  1,  BasicType::TY_I8);
-  M_ALLOC_BASIC_TYPE(2,  2,  BasicType::TY_I16);
-  M_ALLOC_BASIC_TYPE(4,  4,  BasicType::TY_I32);
-  M_ALLOC_BASIC_TYPE(8,  8,  BasicType::TY_I64);
+  M_ALLOC_BASIC_TYPE(1,  1,  BasicType::TY_UI8);
+  M_ALLOC_BASIC_TYPE(2,  2,  BasicType::TY_UI16);
+  M_ALLOC_BASIC_TYPE(4,  4,  BasicType::TY_UI32);
+  M_ALLOC_BASIC_TYPE(8,  8,  BasicType::TY_UI64);
+  M_ALLOC_BASIC_TYPE(1,  1,  BasicType::TY_SI8);
+  M_ALLOC_BASIC_TYPE(2,  2,  BasicType::TY_SI16);
+  M_ALLOC_BASIC_TYPE(4,  4,  BasicType::TY_SI32);
+  M_ALLOC_BASIC_TYPE(8,  8,  BasicType::TY_SI64);
   M_ALLOC_BASIC_TYPE(4,  4,  BasicType::TY_F32);
   M_ALLOC_BASIC_TYPE(8,  8,  BasicType::TY_F64);
   M_ALLOC_BASIC_TYPE(16, 16, BasicType::TY_F128);
@@ -941,70 +814,4 @@ void VMachine::setup() {
 
 // ワープ後のVMの設定をする。
 void VMachine::setup_continuous() {
-}
-
-// 変数の中身をintとして取得する。
-longest_int_t VMachine::get_value_as_int(const Value& src, unsigned int size) {
-  /// TODO ビッグエンディアンでも動くか？
-  longest_int_t int_value;
-  resolve_value_cache(&src);
-  // srcが負の場合先頭部分を1うめ
-  if (*(reinterpret_cast<int8_t*>(src.cache) + size - 1) >= 0) {
-    int_value = 0;
-  } else {
-    int_value = LONGEST_UINT_FILL << (size * 8);
-  }
-  // 数値部分をコピー
-  memcpy(&int_value, src.cache, size);
-
-  print_debug("get_value_as_int src:%016llx, size:%d, head:%d, out:%016llx\n",
-	      *reinterpret_cast<uint64_t*>(src.cache), size, 
-	      *(reinterpret_cast<int8_t*>(src.cache) + size - 1),
-	      int_value);
-
-  return int_value;
-}
-
-// 変数が即値であった場合に、仮想メモリに値を配置し直す。
-void VMachine::place_virtual_value(Value* target) {
-  // 即値でないのでスキップ
-  if (!target->is_immediate()) return;
-
-  // 即値のサイズと同じデータ領域を確保
-  /// @TODO:定数かどうかの判定
-  VMemory::AllocDataRet alloc_data =
-    vmemory.alloc_data(target->inner_value.immediate.size, false);
-  
-  // 変数の即値を仮想メモリにコピー
-  memcpy(alloc_data.data.head.get(),
-	 &target->inner_value.immediate.value,
-	 target->inner_value.immediate.size);
-
-  // 変数の指す内容を仮想メモリに変更
-  target->inner_value.address.upper = alloc_data.addr;
-  target->inner_value.address.lower = 0;
-  target->cache = alloc_data.data.head.get();
-}
-
-// 変数のキャッシュを解決します。
-void VMachine::resolve_value_cache(const Value* target) {
-  if (target->cache == nullptr) {
-    // 領域の型にあわせてキャッシュの詰め方が変わる
-    if (VMemory::addr_is_func(target->inner_value.address.upper)) {
-      // 関数の場合、FuncStoreへのポインタ
-      assert(target->inner_value.address.lower == 0);
-      target->cache = &vmemory.get_func(target->inner_value.address.upper);
-
-    } else if (VMemory::addr_is_type(target->inner_value.address.upper)) {
-      // 型の場合、TypeStoreへのポインタ
-      assert(target->inner_value.address.lower == 0);
-      target->cache = &vmemory.get_type(target->inner_value.address.upper);
-
-    } else {
-      // データの場合、DataStoreの内部データへのポインタ(+lower分)
-      target->cache =
-	vmemory.get_data(target->inner_value.address.upper).head.get() +
-	target->inner_value.address.lower;
-    }
-  }
 }

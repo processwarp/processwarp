@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cassert>
+
 #include "definitions.hpp"
 
 namespace usagi {
@@ -11,79 +13,58 @@ namespace usagi {
      * @return オペコード
      */
     static inline instruction_t get_opcode(instruction_t code) {
-      return (code >> 56) & 0xFF;
+      return (code >> 26) & 0x3F;
     }
 
     /**
-     * 命令の中からオプションコードを抜き出す。
+     * 命令の中からオペランドを抜き出す。
      * @param code 命令
-     * @return オプションコード
+     * @return オペランド
      */
-    static inline instruction_t get_option(instruction_t code) {
-      return (code >> 48) & 0xFF;
+    static inline instruction_t get_operand(instruction_t code) {
+      return (code      ) & FILL_OPERAND;
     }
 
     /**
-     * AB形式の命令の中からAコードを抜き出す。
+     * 命令の中からオペランドを数値として抜き出す。
      * @param code 命令
-     * @return Aコード
+     * @return 数値
      */
-    static inline instruction_t get_code_A(instruction_t code) {
-      return (code >> 24) & 0xFFFFFF;
+    static inline int get_operand_value(instruction_t code) {
+      if ((code & HEAD_OPERAND) != 0) {
+	assert(false); // うまく動くか、要確認
+	return static_cast<int>(code | ~FILL_OPERAND);
+
+      } else {
+	return code & FILL_OPERAND;
+      }
     }
     
     /**
-     * AB形式の命令の中からBコードを抜き出す。
-     * @param code 命令
-     * @return Bコード
-     */
-    static inline instruction_t get_code_B(instruction_t code) {
-      return (code      ) & 0xFFFFFF;
-    }
-
-    /**
-     * AB形式の命令を作成する。
+     * 命令を作成する。
      * @param opcode オペコード
-     * @param option オプション
-     * @param a Aコード
-     * @param b Bコード
+     * @param operand オペランド
      * @return 命令
      */
-    static inline instruction_t make_AB(Opcode opcode, int option, int a, int b) {
-      assert((static_cast<instruction_t>(a)    << 24 & ~0x0000FFFFFF000000) == 0 ||
-	     (static_cast<instruction_t>(-a-1) << 24 & ~0x0000FFFFFF000000) == 0);
-      assert((static_cast<instruction_t>(b)    <<  0 & ~0x0000000000FFFFFF) == 0 ||
-	     (static_cast<instruction_t>(-b-1) <<  0 & ~0x0000000000FFFFFF) == 0);
+    static inline instruction_t make_instruction(Opcode opcode, int operand) {
+      assert((static_cast<instruction_t>(operand)    & ~FILL_OPERAND) == 0 ||
+	     (static_cast<instruction_t>(-operand-1) & ~FILL_OPERAND) == 0);
 
       return
-	(static_cast<instruction_t>(opcode) << 56 & 0xFF00000000000000) |
-	(static_cast<instruction_t>(option) << 48 & 0x00FF000000000000) |
-	(static_cast<instruction_t>(a)      << 24 & 0x0000FFFFFF000000) |
-	(static_cast<instruction_t>(b)      <<  0 & 0x0000000000FFFFFF);
+	(static_cast<instruction_t>(opcode) << 26 & 0xFC000000) |
+	(static_cast<instruction_t>(operand)      & 0x03FFFFFF);
     }
 
     /**
-     * AB形式の命令のAコードを書き換える。
+     * 命令のオペランドを書き換える。
      * @param code 書き換え前命令
-     * @param a Aコード
+     * @param operand オペランド
      * @return 書き換え後命令
      */
-    static inline instruction_t rewrite_code_A(instruction_t code, int a) {
-      assert((static_cast<instruction_t>(a)    << 24 & ~0x0000FFFFFF000000) == 0 ||
-	     (static_cast<instruction_t>(-a-1) << 24 & ~0x0000FFFFFF000000) == 0);
-      return (code & 0xFFFF000000FFFFFF) | (a << 24 & 0x0000FFFFFF000000);
-    }
-
-    /**
-     * AB形式の命令のBコードを書き換える。
-     * @param code 書き換え前命令
-     * @param b Bコード
-     * @return 書き換え後命令
-     */
-    static inline instruction_t rewrite_code_B(instruction_t code, int b) {
-      assert((static_cast<instruction_t>(b)    <<  0 & ~0x0000000000FFFFFF) == 0 ||
-	     (static_cast<instruction_t>(-b-1) <<  0 & ~0x0000000000FFFFFF) == 0);
-      return (code & 0xFFFFFFFFFF000000) | (b <<  0 & 0x0000000000FFFFFF);
+    static inline instruction_t rewrite_operand(instruction_t code, int operand) {
+      assert((static_cast<instruction_t>(operand)    & ~FILL_OPERAND) == 0 ||
+	     (static_cast<instruction_t>(-operand-1) & ~FILL_OPERAND) == 0);
+      return (code & 0xFC000000) | (operand & 0x03FFFFFF);
     }
   };
 }

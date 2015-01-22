@@ -106,7 +106,7 @@ bool VMemory::addr_is_type(vaddr_t addr) {
 }
 
 // メモリ空間に新しいデータ領域を確保する。
-VMemory::AllocDataRet VMemory::alloc_data(size_t size, bool is_const, vaddr_t addr) {
+DataStore& VMemory::alloc_data(size_t size, bool is_const, vaddr_t addr) {
   print_debug("alloc_data size:%ld, addr:%016llx\n", size, addr);
   // サイズからアドレスタイプを判定する
   vaddr_t type;
@@ -123,13 +123,14 @@ VMemory::AllocDataRet VMemory::alloc_data(size_t size, bool is_const, vaddr_t ad
   // 空きアドレスの検索
   addr = assign_addr(data_store_map, type, &last_free[type >> 60], addr);
   
-  return {addr, data_store_map.insert(std::make_pair(addr, DataStore(size))).first->second};
+  return data_store_map.insert(std::make_pair(addr, DataStore(addr, size))).first->second;
 }
 
 // メモリ空間に新しい通常の関数領域を確保する。
-VMemory::AllocFuncRet VMemory::alloc_func(const Symbols::Symbol& name,
-					  const FuncStore::NormalProp& normal_prop,
-					  vaddr_t addr) {
+FuncStore& VMemory::alloc_func(const Symbols::Symbol& name,
+			       vaddr_t ret_type,
+			       const FuncStore::NormalProp& normal_prop,
+			       vaddr_t addr) {
   print_debug("alloc_func(N) name:%s, addr:%016llx\n", name.str().c_str(), addr);
   // 空きアドレスの検索
   addr = assign_addr(func_store_map,
@@ -137,14 +138,15 @@ VMemory::AllocFuncRet VMemory::alloc_func(const Symbols::Symbol& name,
 		     &last_free[static_cast<vaddr_t>(AddrType::AD_FUNCTION) >> 60],
 		     addr);
 
-  return {addr, func_store_map.insert
-      (std::make_pair(addr, FuncStore(name, normal_prop))).first->second};
+  return func_store_map.insert
+    (std::make_pair(addr, FuncStore(addr, name, ret_type, normal_prop))).first->second;
 }
 
 // メモリ空間に新しいVM組み込み関数領域を確保する。
-VMemory::AllocFuncRet VMemory::alloc_func(const Symbols::Symbol& name,
-					  const intrinsic_func_t intrinsic, 
-					  vaddr_t addr) {
+FuncStore& VMemory::alloc_func(const Symbols::Symbol& name,
+			       vaddr_t ret_type,
+			       const intrinsic_func_t intrinsic, 
+			       vaddr_t addr) {
   print_debug("alloc_func(I) name:%s, addr:%016llx\n", name.str().c_str(), addr);
   // 空きアドレスの検索
   addr = assign_addr(func_store_map,
@@ -152,13 +154,14 @@ VMemory::AllocFuncRet VMemory::alloc_func(const Symbols::Symbol& name,
 		     &last_free[static_cast<vaddr_t>(AddrType::AD_FUNCTION) >> 60],
 		     addr);
 
-  return {addr, func_store_map.insert
-      (std::make_pair(addr, FuncStore(name, intrinsic))).first->second};
+  return func_store_map.insert
+    (std::make_pair(addr, FuncStore(addr, name, ret_type, intrinsic))).first->second;
 }
 
 // メモリ空間に新しい外部関数領域を確保する。
-VMemory::AllocFuncRet VMemory::alloc_func(const Symbols::Symbol& name,
-					  vaddr_t addr) {
+FuncStore& VMemory::alloc_func(const Symbols::Symbol& name,
+			       vaddr_t ret_type,
+			       vaddr_t addr) {
   print_debug("alloc_func(E) name:%s, addr:%016llx\n", name.str().c_str(), addr);
   // 空きアドレスの検索
   addr = assign_addr(func_store_map,
@@ -166,16 +169,15 @@ VMemory::AllocFuncRet VMemory::alloc_func(const Symbols::Symbol& name,
 		     &last_free[static_cast<vaddr_t>(AddrType::AD_FUNCTION) >> 60],
 		     addr);
 
-  return {addr, func_store_map.insert
-      (std::make_pair(addr, FuncStore(name))).first->second};
+  return func_store_map.insert
+    (std::make_pair(addr, FuncStore(addr, name, ret_type))).first->second;
 }
 
-
 // メモリ空間に複合型領域を確保する。
-VMemory::AllocTypeRet VMemory::alloc_type(size_t size,
-					  unsigned int alignment,
-					  const std::vector<vaddr_t>& member,
-					  vaddr_t addr) {
+TypeStore& VMemory::alloc_type(size_t size,
+			       unsigned int alignment,
+			       const std::vector<vaddr_t>& member,
+			       vaddr_t addr) {
   print_debug("alloc_type size:%ld, alignment:%d, addr:%016llx\n", size, alignment, addr);
   // 空きアドレスの検索
   addr = assign_addr(type_store_map,
@@ -183,16 +185,16 @@ VMemory::AllocTypeRet VMemory::alloc_type(size_t size,
 		     &last_free[static_cast<vaddr_t>(AddrType::AD_TYPE) >> 60],
 		     addr);
 
-  return {addr, type_store_map.insert
-      (std::make_pair(addr, TypeStore(size, alignment, member))).first->second};
+  return type_store_map.insert
+      (std::make_pair(addr, TypeStore(addr, size, alignment, member))).first->second;
 }
 
 // メモリ空間に配列型領域を確保する。
-VMemory::AllocTypeRet VMemory::alloc_type(size_t size,
-					  unsigned int alignment,
-					  vaddr_t element,
-					  unsigned int num,
-					  vaddr_t addr) {
+TypeStore& VMemory::alloc_type(size_t size,
+			       unsigned int alignment,
+			       vaddr_t element,
+			       unsigned int num,
+			       vaddr_t addr) {
   print_debug("alloc_type size:%ld, alignment:%d, element:%016llx, num:%d, addr:%016llx\n",
 	      size, alignment, element, num, addr);
   // 空きアドレスの検索
@@ -201,35 +203,21 @@ VMemory::AllocTypeRet VMemory::alloc_type(size_t size,
 		     &last_free[static_cast<vaddr_t>(AddrType::AD_TYPE) >> 60],
 		     addr);
 
-  return {addr, type_store_map.insert
-      (std::make_pair(addr, TypeStore(size, alignment, element, num))).first->second};
+  return type_store_map.insert
+    (std::make_pair(addr, TypeStore(addr, size, alignment, element, num))).first->second;
 }
 
-
-// 既存のメモリ空間をコピーして新しいデータ領域を確保する。
-VMemory::AllocDataRet VMemory::copy_data(vaddr_t addr, unsigned int size) {
-  DataStore& src = get_data(addr);
-
-  // 領域をはみ出している場合NG
-  if (get_addr_lower(addr) + size > src.size) {
-    throw_error_message(Error::SEGMENT_FAULT, Util::vaddr2str(addr + size));
+// 指定されたデータ領域を開放する。
+void VMemory::free(vaddr_t addr) {
+  if (addr != VADDR_NULL) {
+    // アドレスが領域の先頭でなかったり、存在しないアドレスの場合、セグメンテーションフォルト
+    if (addr != get_addr_upper(addr) ||
+	data_store_map.find(addr) == data_store_map.end()) {
+      throw_error_message(Error::SEGMENT_FAULT, Util::vaddr2str(addr));
+    }
+    // 開放
+    data_store_map.erase(addr);
   }
-
-  // 新しい領域を取得する。
-  AllocDataRet dst = alloc_data(size, false);
-  // 新しい領域にデータをコピー。
-  memcpy(dst.data.head.get(),
-	 src.head.get() + get_addr_lower(addr),
-	 size);
-
-  print_debug("copy\n");
-  print_debug("\tsize\t:%d\n", size);
-  print_debug("\tsrc\t:%s\n", Util::vaddr2str(addr).c_str());
-  print_debug("\tsrc addr\t:%p\n", src.head.get() + get_addr_lower(addr));
-  print_debug("\tdst\t:%s\n", Util::vaddr2str(dst.addr).c_str());
-  print_debug("\tdst addr\t:%p\n", dst.data.head.get());
-
-  return dst;
 }
 
 // アドレスのupper部分を取り出す。

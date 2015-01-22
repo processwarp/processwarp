@@ -19,6 +19,7 @@ namespace usagi {
       SPEC_VIOLATION, ///< 仕様違反
       INST_VIOLATION, ///< 不正命令
       TYPE_VIOLATION, ///< 型違反
+      CAST_VIOLATION, ///< 型変換違反
       MOD_FUNCTION,   ///< 関数ポインタに対する演算
       SEGMENT_FAULT,  ///< セグメンテーションフォルト
       OUT_OF_MEMORY,  ///< メモリ不足

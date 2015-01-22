@@ -4,9 +4,11 @@
 using namespace usagi;
 
 // コンストラクタ。
-TypeStore::TypeStore(size_t size_,
+TypeStore::TypeStore(vaddr_t addr_,
+		     size_t size_,
 		     unsigned int alignment_,
 		     const std::vector<vaddr_t>& member_) :
+  addr(addr_),
   size(size_),
   alignment(alignment_),
   is_array(false),
@@ -16,10 +18,12 @@ TypeStore::TypeStore(size_t size_,
   }
 
 // コンストラクタ(配列)。
-TypeStore::TypeStore(size_t size_,
+TypeStore::TypeStore(vaddr_t addr_,
+		     size_t size_,
 		     unsigned int alignment_,
 		     vaddr_t element_,
 		     unsigned int num_) :
+  addr(addr_),
   size(size_),
   alignment(alignment_),
   is_array(true),

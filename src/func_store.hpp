@@ -4,7 +4,6 @@
 
 #include "definitions.hpp"
 #include "symbols.hpp"
-#include "value.hpp"
 
 namespace usagi {
   /**
@@ -18,18 +17,22 @@ namespace usagi {
       bool is_var_arg;
       /// 引数の数
       unsigned int arg_num;
-      /// 関数で利用する変数の数
-      unsigned int val_num;
+      /// 関数で利用するスタックサイズ
+      unsigned int stack_size;
       /// 命令配列
       std::vector<instruction_t> code;
       /// 定数配列
-      std::vector<Value> k;
+      std::vector<vaddr_t> k;
     };
 
+    /// アドレス
+    const vaddr_t addr;
     /// 関数のタイプ
     const FuncType type;
     /// 関数名称
     const Symbols::Symbol& name;
+    /// 戻り値の型
+    const vaddr_t ret_type;
 
     /// 通常の関数で利用するメンバ
     const NormalProp normal_prop;
@@ -44,23 +47,36 @@ namespace usagi {
 
     /**
      * 通常の関数のコンストラクタ。
+     * @param addr_ 割り当てアドレス
      * @param name_ 関数名称
+     * @param ret_type_ 戻り値の型
      * @param normal_prop_ 通常の関数のプロパティ
      */
-    FuncStore(const Symbols::Symbol& name_,
+    FuncStore(vaddr_t addr_,
+	      const Symbols::Symbol& name_,
+	      vaddr_t ret_type_,
 	      const NormalProp& normal_prop_);
 
     /**
      * VM組み込み関数のコンストラクタ。
+     * @param addr_ 割り当てアドレス
      * @param name_ 関数名称
+     * @param ret_type_ 戻り値の型
      * @param intrinsic_ VM組み込み関数へのポインタ
      */
-    FuncStore(const Symbols::Symbol& name_,
+    FuncStore(vaddr_t addr_,
+	      const Symbols::Symbol& name_,
+	      vaddr_t ret_type_,
 	      const intrinsic_func_t intrinsic_);
 
     /**
      * 外部の関数のコンストラクタ。
+     * @param addr_ 割り当てアドレス
+     * @param name_ 関数名称
+     * @param ret_type_ 戻り値の型
      */
-    FuncStore(const Symbols::Symbol& name_);
+    FuncStore(vaddr_t addr_,
+	      const Symbols::Symbol& name_,
+	      vaddr_t ret_type_);
   };
 }

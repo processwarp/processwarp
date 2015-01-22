@@ -81,8 +81,6 @@ namespace usagi {
     picojson::value export_func(const FuncStore& src, Related& related);
     // TypeStoreをJSON形式に変換する。
     picojson::value export_type(const TypeStore& src, Related& related);
-    // ValueをJSON形式に変換する。
-    picojson::value export_value(const Value& src, Related& related);
 
     // JSONからDataStoreを復元する。
     void import_data(vaddr_t addr, const picojson::array& src);
@@ -90,7 +88,5 @@ namespace usagi {
     void import_func(vaddr_t addr, const picojson::object& src);
     // JSONからTypeStoreを復元する。
     void import_type(vaddr_t addr, const picojson::object& src);
-    // JSONからValueを復元する。
-    Value import_value(const picojson::object& src);
   };
 }

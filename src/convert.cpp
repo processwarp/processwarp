@@ -56,6 +56,8 @@ Convert::Convert(VMachine& vm_) :
 picojson::value Convert::export_thread(const Thread& src, Related& related) {
   picojson::object dst;
 
+  assert(false);
+  /*
   // スタックトップ
   dst.insert(std::make_pair("top", num2json(src.top)));
 
@@ -84,7 +86,7 @@ picojson::value Convert::export_thread(const Thread& src, Related& related) {
     dst_stack.push_back(export_value(*it, related));
   }
   dst.insert(std::make_pair("stack", picojson::value(dst_stack)));
-
+  */
   return picojson::value(dst);
 }
 
@@ -103,9 +105,11 @@ picojson::value Convert::export_store(vaddr_t src, Related& related) {
 
 // JSONからスレッドを復元する。
 void Convert::import_thread(const picojson::value& src) {
+  assert(false);
+  /*
   const picojson::object& obj_src = src.get<picojson::object>();
   std::unique_ptr<Thread> thread(new Thread());
-  
+
   // スタックトップ
   thread->top = json2num<unsigned int>(obj_src.at("top"));
   
@@ -138,6 +142,7 @@ void Convert::import_thread(const picojson::value& src) {
   }
 
   vm.threads.push_back(std::move(thread));
+  */
 }
 
 // JSONから変数を復元する。
@@ -169,6 +174,8 @@ picojson::value Convert::export_data(const DataStore& src, Related& related) {
 picojson::value Convert::export_func(const FuncStore& src, Related& related) {
   picojson::object dst;
 
+  assert(false);
+  /*
   // 関数のタイプ
   dst.insert(std::make_pair("type", num2json<uint8_t>(src.type)));
   // 関数名称
@@ -195,7 +202,7 @@ picojson::value Convert::export_func(const FuncStore& src, Related& related) {
     }
     dst.insert(std::make_pair("k", picojson::value(k)));
   }
-  
+  */
   return picojson::value(dst);
 }
 
@@ -227,46 +234,18 @@ picojson::value Convert::export_type(const TypeStore& src, Related& related) {
   return picojson::value(dst);
 }
 
-// ValueをJSON形式に変換する。
-picojson::value Convert::export_value(const Value& src, Related& related) {
-  picojson::object dst;
-
-  // 分類
-  dst.insert(std::make_pair("type", num2json<uint8_t>(src.type)));
-  if (src.is_immediate()) {
-    // 即値の場合、size分のuint8_tとして出力
-    picojson::array immediate;
-    assert(src.inner_value.immediate.size == 0 ||
-	   src.inner_value.immediate.size == 1 ||
-	   src.inner_value.immediate.size == 2 ||
-	   src.inner_value.immediate.size == 4 ||
-	   src.inner_value.immediate.size == 8);
-    immediate.resize(src.inner_value.immediate.size);
-    for (int i = 0, size = immediate.size(); i < size; i ++) {
-      immediate.at(i) = num2json(*(reinterpret_cast<const uint8_t*>
-				(&src.inner_value.immediate.value) + i));
-    }
-    dst.insert(std::make_pair("immediate", picojson::value(immediate)));
-
-  } else {
-    // アドレスの場合、素直に出力
-    dst.insert(std::make_pair("addr", vaddr2json(src.get_address())));
-    related.insert(src.inner_value.address.upper);
-  }
-
-  return picojson::value(dst);
-}
-
 // JSONからDataStoreを復元する。
 void Convert::import_data(vaddr_t addr, const picojson::array& src) {
-  VMemory::AllocDataRet ret = vmemory.alloc_data(src.size(), false, addr);
+  DataStore& store = vmemory.alloc_data(src.size(), false, addr);
   for (int i = 0, size = src.size(); i < size; i ++) {
-    ret.data.head[i] = json2num<uint8_t>(src.at(i));
+    store.head[i] = json2num<uint8_t>(src.at(i));
   }
 }
 
 // JSONからFuncStoreを復元する。
 void Convert::import_func(vaddr_t addr, const picojson::object& src) {
+  assert(false);
+  /*
   // 関数のタイプ
   uint8_t type = json2num<uint8_t>(src.at("type"));
   // 関数名称
@@ -308,6 +287,7 @@ void Convert::import_func(vaddr_t addr, const picojson::object& src) {
     assert(false); /// TODO パケットの正当性チェック
   } break;
   }
+  */
 }
 
 // JSONからTypeStoreを復元する。
@@ -333,33 +313,6 @@ void Convert::import_type(vaddr_t addr, const picojson::object& src) {
 		       json2num<unsigned int>(src.at("alignment")),
 		       work, addr);
   }
-}
-
-// JSONからValueを復元する。
-Value Convert::import_value(const picojson::object& src) {
-  Value value;
-  
-  value.type = static_cast<Value::Type>(json2num<uint8_t>(src.at("type")));
-
-  if (src.find("immediate") == src.end()) {
-    // 即値でない場合、アドレスを格納してキャッシュはクリアしておく
-    vaddr_t addr = json2vaddr(src.at("addr"));
-    value.inner_value.address.upper = VMemory::get_addr_upper(addr);
-    value.inner_value.address.lower = VMemory::get_addr_lower(addr);
-    value.cache = nullptr;
-
-  } else {
-    // 即値の場合、中身をコピーして、キャッシュをvalueの先頭にしておく
-    picojson::array immediate = src.at("immediate").get<picojson::array>();
-    value.inner_value.immediate.size = immediate.size();
-    for (int i = 0, size = immediate.size(); i < size; i ++) {
-      *(reinterpret_cast<uint8_t*>(&value.inner_value.immediate.value) + i) =
-	json2num<uint8_t>(immediate.at(i));
-    }
-    value.cache = &value.inner_value.immediate.value;
-  }
-
-  return value;
 }
 
 // JSONから仮想アドレスを復元する。

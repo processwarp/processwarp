@@ -8,7 +8,6 @@
 #include "definitions.hpp"
 
 namespace usagi {
-  class Value;
   class Util {
   public:
     /**
