@@ -711,8 +711,8 @@ void VMachine::run(std::vector<std::string> args) {
   // main関数用のスタックを確保する
   DataStore& main_stack = vmemory.alloc_data(main_func.normal_prop.stack_size, 1);
   
-  vaddr_t init_stack_addr;
-  // プログラムのコマンドライン引数を設定
+  // maink関数の内容に応じて、init_stackを作成する
+  DataStore* init_stack;
   if (main_func.normal_prop.arg_num == 2) {
     // main関数の戻り値と引数を格納するのに必要な領域サイズを計算
     const size_t ret_size = calc_type_size(main_func.ret_type).first;
@@ -721,25 +721,20 @@ void VMachine::run(std::vector<std::string> args) {
       init_stack_size += args.at(i).length() + 1;
     }
     // 領域を確保
-    DataStore& init_stack = vmemory.alloc_data(init_stack_size, 1);
-    init_stack_addr = init_stack.addr;
-    // mainのreturnを受け取るためのスタックを1段確保する
-    StackInfo* init_stackinfo = new StackInfo(*static_cast<FuncStore*>(nullptr),
-					      VADDR_NON, 0, 0, init_stack);
-    init_thread->stackinfos.push_back(std::unique_ptr<StackInfo>(init_stackinfo));
-    
+    init_stack = &vmemory.alloc_data(init_stack_size, 1);
+
     // init_stack_dataにmain関数の戻り値、argvとして渡すポインタの配列、引数文字列、、を格納する
     vaddr_t sum = ret_size + sizeof(vaddr_t) * args.size();
     for (unsigned int i = 0, arg_size = args.size(); i < arg_size; i ++) {
-      memcpy(init_stack.head.get() + ret_size + sizeof(vaddr_t) * i,
+      memcpy(init_stack->head.get() + ret_size + sizeof(vaddr_t) * i,
 	     &sum, sizeof(vaddr_t));
-      memcpy(init_stack.head.get() + sum,
+      memcpy(init_stack->head.get() + sum,
 	     args.at(i).c_str(), args.at(i).length() + 1);
       sum += args.at(i).length() + 1;
     }
     // main関数のスタックの先頭にargc, argvを格納する
     vm_int_t argc = args.size();
-    vaddr_t  argv = init_stack.addr + ret_size;
+    vaddr_t  argv = init_stack->addr + ret_size;
     memcpy(main_stack.head.get(), &argc, sizeof(argc));
     memcpy(main_stack.head.get() + sizeof(argc), &argv, sizeof(argv));
     
@@ -750,18 +745,18 @@ void VMachine::run(std::vector<std::string> args) {
   } else {
     // int main()の場合は引数を設定しない
     // main関数の戻り値格納先を確保する
-    DataStore& init_stack = vmemory.alloc_data(calc_type_size(main_func.ret_type).first, 1);
-    init_stack_addr = init_stack.addr;
-    // mainのreturnを受け取るためのスタックを1段確保する
-    StackInfo* init_stackinfo = new StackInfo(*static_cast<FuncStore*>(nullptr),
-					      VADDR_NON, 0, 0, init_stack);
-    init_stackinfo->output = init_stack.addr;
-    init_stackinfo->output_cache = init_stack.head.get();
-    init_thread->stackinfos.push_back(std::unique_ptr<StackInfo>(init_stackinfo));
+    init_stack = &vmemory.alloc_data(calc_type_size(main_func.ret_type).first, 1);
   }
 
+  // mainのreturnを受け取るためのスタックを1段確保する
+  StackInfo* init_stackinfo = new StackInfo(*static_cast<FuncStore*>(nullptr),
+					    VADDR_NON, 0, 0, *init_stack);
+  init_stackinfo->output = init_stack->addr;
+  init_stackinfo->output_cache = init_stack->head.get();
+  init_thread->stackinfos.push_back(std::unique_ptr<StackInfo>(init_stackinfo));
+  
   StackInfo* main_stackinfo = new StackInfo(main_func,
-					    init_stack_addr,
+					    init_stack->addr,
 					    0, 0, main_stack);
   init_thread->stackinfos.push_back(std::unique_ptr<StackInfo>(main_stackinfo));
 
