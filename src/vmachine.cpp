@@ -307,20 +307,7 @@ void VMachine::execute(int max_clock) {
       } break;
 
       case Opcode::SET_ADR: {
-	assert(false); // ?
 	OperandRet operand = get_operand(code, op_param);
-	stackinfo.address = operand.addr;
-	stackinfo.address_cache = operand.cache;
-      } break;
-
-      case Opcode::SET_PTR: {
-	OperandRet operand = get_operand(code, op_param);
-	/*
-	vaddr_t addr = *reinterpret_cast<vaddr_t*>(operand.cache);
-	DataStore& data = vmemory.get_data(addr);
-	stackinfo.address = addr;
-	stackinfo.address_cache = data.head.get() + VMemory::get_addr_lower(addr);
-	*/
 	stackinfo.address = operand.addr;
 	stackinfo.address_cache = operand.cache;
       } break;

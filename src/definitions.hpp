@@ -128,7 +128,6 @@ namespace usagi {
       XOR,
       COPY,
       SET_ADR, // 20
-      SET_PTR,
       SET_ALIGN,
       ADD_ADR,
       MUL_ADR,
@@ -137,8 +136,8 @@ namespace usagi {
       STORE,
       ALLOC,
       FREE,
-      ALLOCA, // 30
-      TEST,
+      ALLOCA,
+      TEST, // 30
       TEST_EQ,
       JUMP,
       PHI,
@@ -147,8 +146,8 @@ namespace usagi {
       EQUAL,
       NOT_EQUAL,
       GREATER,
-      GREATER_EQUAL, // 40
-      NANS,
+      GREATER_EQUAL,
+      NANS, // 40
       OR_NANS,
       SELECT,
       VA_ARG,

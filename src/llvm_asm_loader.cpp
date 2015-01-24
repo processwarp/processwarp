@@ -97,18 +97,11 @@ int LlvmAsmLoader::assign_operand(FunctionContext& fc, const llvm::Value* v) {
     // 既存のローカル変数でない場合、末尾に割り当てている。
     fc.stack_value.insert(std::make_pair(v, fc.stack_sum));
 
-    if (v->getType()->isPointerTy()) {
-      // ポインタ型はサイズが0と申告されるのでvaddr_tのサイズ分を確保しておく
-      assert(v->getType()->getPrimitiveSizeInBits() == 0);
-      fc.stack_sum += sizeof(vaddr_t);
+    assert(data_layout->getTypeAllocSize(v->getType()) != 0);
+    assert(data_layout->getTypeStoreSize(v->getType()) ==
+	   data_layout->getTypeAllocSize(v->getType()));
+    fc.stack_sum += data_layout->getTypeStoreSize(v->getType());
 
-    } else {
-      // ポインタ型以外はサイズが存在するはず
-      fc.stack_sum += v->getType()->getPrimitiveSizeInBits() / 8;
-      assert(v->getType()->getPrimitiveSizeInBits() / 8 != 0);
-      assert(v->getType()->getPrimitiveSizeInBits() ==
-	     v->getType()->getScalarSizeInBits());
-    }
     return fc.stack_value.find(v)->second;
   }
   
@@ -246,8 +239,9 @@ vaddr_t LlvmAsmLoader::load_expr(const llvm::ConstantExpr* expr) {
       // 2つ目以降のオペランドは数値のはず。
       assert(llvm::ConstantInt::classof(expr->getOperand(i)));
       const llvm::ConstantInt* op = static_cast<const llvm::ConstantInt*>(expr->getOperand(i));
-      assert((uint32_t)data_layout->getTypeStoreSize(op_type) ==
-	     (uint32_t)data_layout->getTypeAllocSize(op_type)); // どちらの値を取るべきか？
+      assert(data_layout->getTypeStoreSize(op_type) != 0);
+      assert(data_layout->getTypeStoreSize(op_type) ==
+	     data_layout->getTypeAllocSize(op_type));
 
       if (i == 1) {
 	// 先頭の番号は最初のポインタを基準としたアドレスの計算
@@ -338,9 +332,11 @@ vaddr_t LlvmAsmLoader::load_function(const llvm::Function* function) {
 	 arg != function->getArgumentList().end(); arg ++) {
       assert(arg->hasName()); // 名前を持つはず
       stack_values.insert(std::make_pair(arg, fc.stack_sum));
-      fc.stack_sum += arg->getType()->getPrimitiveSizeInBits() / 8;
-      assert(arg->getType()->getPrimitiveSizeInBits() == 
-	     arg->getType()->getScalarSizeInBits());
+
+      assert(data_layout->getTypeAllocSize(arg->getType()) != 0);
+      assert(data_layout->getTypeStoreSize(arg->getType()) ==
+	     data_layout->getTypeAllocSize(arg->getType()));
+      fc.stack_sum += data_layout->getTypeAllocSize(arg->getType());
     }
 
     // ブロックの名称を最初に作っておく
@@ -586,16 +582,10 @@ vaddr_t LlvmAsmLoader::load_function(const llvm::Function* function) {
 	      // set_value <idx>
 	      push_code(fc, Opcode::SET_VALUE, assign_operand(fc, inst.getOperand(i)));
 	      // mul_adr <>
-	      if (op_type->isPointerTy()) {
-		assert(op_type->getPrimitiveSizeInBits() == 0);
-		push_code(fc, Opcode::MUL_ADR, sizeof(vaddr_t));
-
-	      }	else {
-		assert(op_type->getPrimitiveSizeInBits() != 0);
-		assert(op_type->getPrimitiveSizeInBits() ==
-		       op_type->getScalarSizeInBits());
-		push_code(fc, Opcode::MUL_ADR, op_type->getPrimitiveSizeInBits() / 8);
-	      }
+	      assert(data_layout->getTypeAllocSize(op_type) != 0);
+	      assert(data_layout->getTypeStoreSize(op_type) ==
+		     data_layout->getTypeAllocSize(op_type));
+	      push_code(fc, Opcode::MUL_ADR, data_layout->getTypeAllocSize(op_type));
 	      
 	    } else if (llvm::SequentialType::classof(op_type)) {
 	      op_type = static_cast<const llvm::SequentialType*>(op_type)->getElementType();
@@ -604,10 +594,10 @@ vaddr_t LlvmAsmLoader::load_function(const llvm::Function* function) {
 	      // set_value <idx>
 	      push_code(fc, Opcode::SET_VALUE, assign_operand(fc, inst.getOperand(i)));
 	      // mul_adr <>
-	      assert(op_type->getPrimitiveSizeInBits() != 0);
-	      assert(op_type->getPrimitiveSizeInBits() ==
-		     op_type->getScalarSizeInBits());
-	      push_code(fc, Opcode::MUL_ADR, op_type->getPrimitiveSizeInBits() / 8);
+	      assert(data_layout->getTypeAllocSize(op_type) != 0);
+	      assert(data_layout->getTypeStoreSize(op_type) ==
+		     data_layout->getTypeAllocSize(op_type));
+	      push_code(fc, Opcode::MUL_ADR, data_layout->getTypeAllocSize(op_type));
 
 	    } else if (llvm::StructType::classof(op_type)) {
 	      int j = 0;
