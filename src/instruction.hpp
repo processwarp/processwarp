@@ -32,7 +32,6 @@ namespace usagi {
      */
     static inline int get_operand_value(instruction_t code) {
       if ((code & HEAD_OPERAND) != 0) {
-	assert(false); // うまく動くか、要確認
 	return static_cast<int>(code | ~FILL_OPERAND);
 
       } else {

@@ -59,7 +59,7 @@ type_based.hpp:definitions.hpp
 type_based.o:type_based.cpp type_based.hpp
 usagi.o:usagi.cpp error.hpp llvm_asm_loader.hpp server.hpp vmachine.hpp
 util.hpp:definitions.hpp
-util.o:util.cpp util.hpp
+util.o:util.cpp util.hpp instruction.hpp
 vmachine.hpp:error.hpp symbols.hpp thread.hpp vmemory.hpp
 vmachine.o:vmachine.cpp error.hpp func_store.hpp instruction.hpp stackinfo.hpp type_based.hpp util.hpp vmachine.hpp
 vmemory.hpp:data_store.hpp definitions.hpp func_store.hpp type_store.hpp

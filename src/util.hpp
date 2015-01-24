@@ -11,6 +11,13 @@ namespace usagi {
   class Util {
   public:
     /**
+     * 命令コードを人間に読みやすい文字列に変換する。
+     * @param code 命令コード
+     * @return 変換後文字列
+     */
+    static std::string code2str(instruction_t code);
+
+    /**
      * 数字を10進数表現で文字列に変換。
      * @param v 変換元数値
      * @return 変換後文字列

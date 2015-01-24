@@ -134,7 +134,7 @@ void VMachine::execute(int max_clock) {
     StackInfo& stackinfo = *(thread.stackinfos.back().get());
     const FuncStore& func = stackinfo.func_cache;
     const std::vector<instruction_t>& insts = func.normal_prop.code;
-    const std::vector<vaddr_t>&       k     = func.normal_prop.k;
+    const std::vector<vaddr_t>& k = func.normal_prop.k;
     OperandParam op_param = {stackinfo.stack_cache, k, vmemory};
 
     for (; max_clock > 0; max_clock --) {
@@ -307,6 +307,7 @@ void VMachine::execute(int max_clock) {
       } break;
 
       case Opcode::SET_ADR: {
+	assert(false); // ?
 	OperandRet operand = get_operand(code, op_param);
 	stackinfo.address = operand.addr;
 	stackinfo.address_cache = operand.cache;
@@ -357,26 +358,33 @@ void VMachine::execute(int max_clock) {
 	memcpy(stackinfo.address_cache, operand.cache, stackinfo.type_cache2->size);
       } break;
 
-	/*
       case Opcode::JUMP: {
-	// 無条件ジャンプを行う
-	ci.phi = ci.pc = Instruction::get_code_A(code);
+	stackinfo.phi0 = stackinfo.phi1;
+	stackinfo.phi1 = stackinfo.pc = Instruction::get_operand(code);
 	continue;
       } break;
 
       case Opcode::PHI: {
-	Value& dst = get_operand_A(ci.base, code, stack);
-	const Value& type = get_operand_B(ci.base, code, stack, k);
-	while (code = insts.at(ci.pc + 1), Instruction::get_opcode(code) == Opcode::EXTRAARG2) {
-	  if (Instruction::get_code_B(code) == ci.phi) {
-	    const Value& src = get_operand_A(ci.base, code, stack, k);
-	    copy_value(dst, src, type);
+	instruction_t code2 = insts.at(stackinfo.pc + 1);
+	int count = 0;
+	while ((Instruction::get_opcode(code) == Opcode::PHI ||
+		Instruction::get_opcode(code) == Opcode::EXTRA)) {
+	  // PHI命令はEXTRA含め、偶数個
+	  if (Instruction::get_opcode(code2) != Opcode::EXTRA) {
+	    throw_error(Error::INST_VIOLATION);
 	  }
-	  ci.pc ++;
+
+	  if (stackinfo.phi0 == Instruction::get_operand(code2)) {
+	    OperandRet operand = get_operand(code, op_param);
+	    stackinfo.type_cache1->copy(stackinfo.output_cache, operand.cache);
+	  }
+	  count += 2;
+	  code  = insts.at(stackinfo.pc + count);
+	  code2 = insts.at(stackinfo.pc + count + 1);
 	}
+	stackinfo.pc += count - 1;
 		      
       } break;
-	*/
 
       case Opcode::TYPE_CAST: {
 	TypeStore& type = get_type(code, op_param);
@@ -532,7 +540,7 @@ FuncStore& VMachine::create_function(const std::string& name,
   print_debug("\tstack_size\t:%d\n", prop.stack_size);
   print_debug("\tcode:(%ld)\n", prop.code.size());
   for (auto it = prop.code.begin(); it != prop.code.end(); it++) {
-    print_debug("\t\t%08x\n", *it);
+    print_debug("\t\t%08x  %s\n", *it, Util::code2str(*it).c_str());
   }
   print_debug("\taddress\t:%016llx\n", store.addr);
   print_debug("\tfunc\t:%p\n", &store);

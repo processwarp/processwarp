@@ -41,6 +41,9 @@ namespace usagi {
 
     /// プログラムカウンタ
     unsigned int pc;
+    /// φ動作用カウンタ
+    unsigned int phi0;
+    unsigned int phi1;
 
     /// 操作対象の型
     vaddr_t type;

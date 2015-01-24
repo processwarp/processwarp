@@ -20,6 +20,15 @@ StackInfo::StackInfo(FuncStore& func_,
   stack_cache(stack_),
   var_arg(VADDR_NON),
   pc(0),
+  phi0(0),
+  phi1(0),
+  type(VADDR_NON),
+  type_cache1(nullptr),
+  type_cache2(nullptr),
   output(VADDR_NON),
-  output_cache(nullptr) {
+  output_cache(nullptr),
+  value(VADDR_NON),
+  value_cache(nullptr),
+  address(VADDR_NON),
+  address_cache(nullptr) {
 }
