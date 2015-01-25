@@ -12,9 +12,46 @@ TypeBased::~TypeBased() {
   // 基底クラスなため、virtual宣言を行うが何もしない。
 }
 
-// ADD命令に対応した加算を行う。
-template <typename T> void TypeExtended<T>::add(uint8_t* dst, uint8_t* a, uint8_t* b) {
-  *reinterpret_cast<T*>(dst) = *reinterpret_cast<T*>(a) + *reinterpret_cast<T*>(b);
+// bit_cast命令に対応したキャスト演算を行う。
+void TypeBased::bit_cast(uint8_t* dst, size_t size, uint8_t* src) {
+  throw_error(Error::INST_VIOLATION);
+}
+
+// 値をコピーする。
+void TypeBased::copy(uint8_t* dst, uint8_t* src) {
+  throw_error(Error::INST_VIOLATION);
+}
+
+// 値を読み込む
+vm_int_t TypeBased::get(uint8_t* src) {
+  throw_error(Error::INST_VIOLATION);
+}
+
+/**
+ * TypeBaseクラスの2項演算子はすべてVOILATIONとする。
+ * @param op メソッド名
+ */
+#define M_BINARY_OPERATOR_VIOLATION(op)				\
+  void TypeBased::op(uint8_t* dst, uint8_t* a, uint8_t* b) {	\
+    throw_error(Error::INST_VIOLATION);				\
+  }
+
+M_BINARY_OPERATOR_VIOLATION(op_add); // 加算
+M_BINARY_OPERATOR_VIOLATION(op_and); // and
+M_BINARY_OPERATOR_VIOLATION(op_div); // 除算
+M_BINARY_OPERATOR_VIOLATION(op_mul); // 乗算
+M_BINARY_OPERATOR_VIOLATION(op_or);  // or
+M_BINARY_OPERATOR_VIOLATION(op_rem); // 剰余
+M_BINARY_OPERATOR_VIOLATION(op_shl); // 左シフト
+M_BINARY_OPERATOR_VIOLATION(op_shr); // 右シフト
+M_BINARY_OPERATOR_VIOLATION(op_sub); // 減算
+M_BINARY_OPERATOR_VIOLATION(op_xor); // xor
+
+#undef M_BINARY_OPERATOR_VIOLATION
+
+// type_cast命令に対応したキャスト演算を行う。
+void TypeBased::type_cast(uint8_t* dst, vaddr_t type, uint8_t* src) {
+  throw_error(Error::INST_VIOLATION);
 }
 
 // bit_cast命令に対応したキャスト演算を行う。
@@ -32,6 +69,64 @@ template <typename T> void TypeExtended<T>::copy(uint8_t* dst, uint8_t* src) {
 // 値を読み込む
 template <typename T> vm_int_t TypeExtended<T>::get(uint8_t* src) {
   return static_cast<vm_int_t>(*reinterpret_cast<T*>(src));
+}
+
+/**
+ * 二項演算に対応したメソッドを生成する
+ * @param op メソッド名
+ * @param infix 演算中置子
+ */
+#define M_BINARY_OPERATOR_TYPE_EXTENDED(op, infix)			\
+  template <typename T> void TypeExtended<T>::op(uint8_t* dst, uint8_t* a, uint8_t* b) { \
+    *reinterpret_cast<T*>(dst) = *reinterpret_cast<T*>(a) infix *reinterpret_cast<T*>(b); \
+  }
+
+M_BINARY_OPERATOR_TYPE_EXTENDED(op_add, +); // 加算
+M_BINARY_OPERATOR_TYPE_EXTENDED(op_and, &); // and
+M_BINARY_OPERATOR_TYPE_EXTENDED(op_div, /); // 除算
+M_BINARY_OPERATOR_TYPE_EXTENDED(op_mul, *); // 乗算
+M_BINARY_OPERATOR_TYPE_EXTENDED(op_or,  |); // or
+M_BINARY_OPERATOR_TYPE_EXTENDED(op_rem, %); // 剰余
+M_BINARY_OPERATOR_TYPE_EXTENDED(op_sub, -); // 減算
+M_BINARY_OPERATOR_TYPE_EXTENDED(op_xor, ^); // xor
+
+#undef M_BINARY_OPERATOR_TYPE_EXTENDED
+
+/**
+ * 浮動小数点演算でサポートしない2項演算子用のメソッドを生成する
+ * @param op メソッド名
+ * @param type 型
+ */
+#define M_BINARY_OPERATOR_UNSUPPORT(op, type)				\
+  template<> void TypeExtended<type>::op(uint8_t* dst, uint8_t* a, uint8_t* b) { \
+    throw_error(Error::UNSUPPORT);					\
+  }
+
+M_BINARY_OPERATOR_UNSUPPORT(op_and, double); // and
+M_BINARY_OPERATOR_UNSUPPORT(op_or,  double); // or
+M_BINARY_OPERATOR_UNSUPPORT(op_rem, double); // 剰余
+M_BINARY_OPERATOR_UNSUPPORT(op_shl, double); // 左シフト
+M_BINARY_OPERATOR_UNSUPPORT(op_shr, double); // 右シフト
+M_BINARY_OPERATOR_UNSUPPORT(op_xor, double); // xor
+M_BINARY_OPERATOR_UNSUPPORT(op_and, float); // and
+M_BINARY_OPERATOR_UNSUPPORT(op_or,  float); // or
+M_BINARY_OPERATOR_UNSUPPORT(op_rem, float); // 剰余
+M_BINARY_OPERATOR_UNSUPPORT(op_shl, float); // 左シフト
+M_BINARY_OPERATOR_UNSUPPORT(op_shr, float); // 右シフト
+M_BINARY_OPERATOR_UNSUPPORT(op_xor, float); // xor
+
+#undef M_BINARY_OPERATOR_UNSUPPORT
+
+// shl命令に対応した加算を行う。
+template <typename T> void TypeExtended<T>::op_shl(uint8_t* dst, uint8_t* a, uint8_t* b) {
+  *reinterpret_cast<T*>(dst) =
+    *reinterpret_cast<T*>(a) << static_cast<unsigned>(*reinterpret_cast<T*>(b));
+}
+
+// shr命令に対応した加算を行う。
+template <typename T> void TypeExtended<T>::op_shr(uint8_t* dst, uint8_t* a, uint8_t* b) {
+  *reinterpret_cast<T*>(dst) =
+    *reinterpret_cast<T*>(a) >> static_cast<unsigned>(*reinterpret_cast<T*>(b));
 }
 
 // type_cast命令に対応したキャスト演算を行う。
@@ -73,29 +168,9 @@ template <typename T> void TypeExtended<T>::type_cast(uint8_t* dst, vaddr_t type
   }
 }
 
-// ADD命令に対応した加算を行う。
-void TypePointer::add(uint8_t* dst, uint8_t* a, uint8_t* b) {
-  throw_error(Error::SPEC_VIOLATION);
-}
-
-// bit_cast命令に対応したキャスト演算を行う。
-void TypePointer::bit_cast(uint8_t* dst, size_t size, uint8_t* src) {
-  throw_error(Error::SPEC_VIOLATION);
-}
-
 // 値をコピーする。
 void TypePointer::copy(uint8_t* dst, uint8_t* src) {
   *reinterpret_cast<vaddr_t*>(dst) = *reinterpret_cast<vaddr_t*>(src);
-}
-
-// 値を読み込む
-vm_int_t TypePointer::get(uint8_t* src) {
-  throw_error(Error::SPEC_VIOLATION);
-}
-
-// type_cast命令に対応したキャスト演算を行う。
-void TypePointer::type_cast(uint8_t* dst, vaddr_t type, uint8_t* src) {
-  throw_error(Error::SPEC_VIOLATION);
 }
 
 // 明示的テンプレートのインスタンス化

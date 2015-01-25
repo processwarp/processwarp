@@ -316,12 +316,26 @@ void VMachine::execute(int max_clock) {
 	stackinfo.value_cache = operand.cache;
       } break;
 
-      case Opcode::ADD: {
-	OperandRet operand = get_operand(code, op_param);
-	stackinfo.type_cache1->add(stackinfo.output_cache,
-				   stackinfo.value_cache,
-				   operand.cache);
-      } break;
+#define M_BINARY_OPERATOR(name, op)				\
+	case Opcode::name: {					\
+	  OperandRet operand = get_operand(code, op_param);	\
+	  stackinfo.type_cache1->op(stackinfo.output_cache,	\
+				    stackinfo.value_cache,	\
+				    operand.cache);		\
+	} break;
+
+	M_BINARY_OPERATOR(ADD, op_add); // 加算
+	M_BINARY_OPERATOR(SUB, op_sub); // 減算
+	M_BINARY_OPERATOR(MUL, op_mul); // 乗算
+	M_BINARY_OPERATOR(DIV, op_div); // 除算
+	M_BINARY_OPERATOR(REM, op_rem); // 剰余
+	M_BINARY_OPERATOR(SHL, op_shl); // 左シフト
+	M_BINARY_OPERATOR(SHR, op_shr); // 右シフト
+	M_BINARY_OPERATOR(AND, op_and); // and
+	M_BINARY_OPERATOR(OR,  op_or);  // or
+	M_BINARY_OPERATOR(XOR, op_xor); // xor
+
+#undef M_BINARY_OPERATOR
 
       case Opcode::SET_ADR: {
 	OperandRet operand = get_operand(code, op_param);
