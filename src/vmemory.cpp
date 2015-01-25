@@ -108,6 +108,8 @@ bool VMemory::addr_is_type(vaddr_t addr) {
 // メモリ空間に新しいデータ領域を確保する。
 DataStore& VMemory::alloc_data(size_t size, bool is_const, vaddr_t addr) {
   print_debug("alloc_data size:%ld, addr:%016llx\n", size, addr);
+  assert(size != 0);
+
   // サイズからアドレスタイプを判定する
   vaddr_t type;
   if      (size < (static_cast<vaddr_t>(1) <<  8)) type = AddrType::AD_VALUE_08;

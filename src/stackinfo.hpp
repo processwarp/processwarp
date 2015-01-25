@@ -74,6 +74,8 @@ namespace usagi {
      * コンストラクタ。
      * @param func_ 関数
      * @param ret_addr_ return格納先
+     * @param normal_pc_ unwindなしに関数が終了した場合にpcに設定する値
+     * @param unwind_pc_ unwindが発生した場合にpcに設定する値
      * @param stack_ スタック領域
      */
     StackInfo(FuncStore& func_,
@@ -81,5 +83,17 @@ namespace usagi {
 	      unsigned int normal_pc_,
 	      unsigned int unwind_pc_,
 	      DataStore& stack_);
+
+    /**
+     * ネイティブ関数など、スタック不要な場合のコンストラクタ。
+     * @param func_ 関数
+     * @param ret_addr_ return格納先
+     * @param normal_pc_ unwindなしに関数が終了した場合にpcに設定する値
+     * @param unwind_pc_ unwindが発生した場合にpcに設定する値
+     */
+    StackInfo(FuncStore& func_,
+	      vaddr_t ret_addr_,
+	      unsigned int normal_pc_,
+	      unsigned int unwind_pc_);
   };
 }

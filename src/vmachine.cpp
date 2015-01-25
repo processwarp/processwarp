@@ -84,6 +84,11 @@ struct OperandParam {
   VMemory& vmemory;
 };
 
+inline uint8_t* get_cache(vaddr_t addr, VMemory& vmemory) {
+  DataStore& store = vmemory.get_data(addr);
+  return store.head.get() + VMemory::get_addr_lower(addr);
+}
+
 inline FuncStore& get_function(instruction_t code, OperandParam& param) {
   int operand = Instruction::get_operand(code);
   // 関数は定数領域に置かれているはず
@@ -91,15 +96,6 @@ inline FuncStore& get_function(instruction_t code, OperandParam& param) {
 
   vaddr_t addr = param.k.at(FILL_OPERAND - operand);
   return param.vmemory.get_func(addr);
-}
-
-inline TypeStore& get_type(instruction_t code, OperandParam& param) {
-  int operand = Instruction::get_operand(code);
-  // 型は定数領域に置かれているはず
-  assert((operand & HEAD_OPERAND) != 0);
-  
-  vaddr_t addr = param.k.at(FILL_OPERAND - operand);
-  return param.vmemory.get_type(addr);
 }
 
 inline OperandRet get_operand(instruction_t code, OperandParam& param) {
@@ -117,6 +113,15 @@ inline OperandRet get_operand(instruction_t code, OperandParam& param) {
     assert(operand < param.stack.size);
     return {param.stack, param.stack.addr + operand, param.stack.head.get() + operand};
   }
+}
+
+inline TypeStore& get_type(instruction_t code, OperandParam& param) {
+  int operand = Instruction::get_operand(code);
+  // 型は定数領域に置かれているはず
+  assert((operand & HEAD_OPERAND) != 0);
+  
+  vaddr_t addr = param.k.at(FILL_OPERAND - operand);
+  return param.vmemory.get_type(addr);
 }
 
 // コンストラクタ。
@@ -139,8 +144,8 @@ void VMachine::execute(int max_clock) {
 
     for (; max_clock > 0; max_clock --) {
       instruction_t code = insts.at(stackinfo.pc);
-      print_debug("pc:%d, code:%08x, k:%ld, insts:%ld\n",
-		  stackinfo.pc, code, k.size(), insts.size());
+      print_debug("pc:%d, k:%ld, insts:%ld, code:%08x %s\n",
+		  stackinfo.pc, k.size(), insts.size(), code, Util::code2str(code).c_str());
       //usleep(100000);///< TODO
 
       // call命令の判定(call命令の場合falseに変える)
@@ -159,13 +164,25 @@ void VMachine::execute(int max_clock) {
 	FuncStore& new_func = get_function(code, op_param);
 
 	assert(!is_tailcall); // TODO 動きを確認する。
-	new_stackinfo.reset
-	  (new StackInfo(new_func,
-			 // tailcallの場合、戻り値の格納先を現行のものから引き継ぐ
-			 is_tailcall ? stackinfo.ret_addr : stackinfo.output,
-			 Instruction::get_operand(insts.at(stackinfo.pc + 1)),
-			 Instruction::get_operand(insts.at(stackinfo.pc + 2)),
-			 vmemory.alloc_data(new_func.normal_prop.stack_size, false)));
+
+	// スタックのサイズの有無により作りを変える
+	if (new_func.normal_prop.stack_size != 0) {
+	  new_stackinfo.reset
+	    (new StackInfo(new_func,
+			   // tailcallの場合、戻り値の格納先を現行のものから引き継ぐ
+			   is_tailcall ? stackinfo.ret_addr : stackinfo.output,
+			   Instruction::get_operand(insts.at(stackinfo.pc + 1)),
+			   Instruction::get_operand(insts.at(stackinfo.pc + 2)),
+			   vmemory.alloc_data(new_func.normal_prop.stack_size, false)));
+
+	} else {
+	  new_stackinfo.reset
+	    (new StackInfo(new_func,
+			   // tailcallの場合、戻り値の格納先を現行のものから引き継ぐ
+			   is_tailcall ? stackinfo.ret_addr : stackinfo.output,
+			   Instruction::get_operand(insts.at(stackinfo.pc + 1)),
+			   Instruction::get_operand(insts.at(stackinfo.pc + 2))));
+	}
 	
 	// 引数を集める
 	int args = 0;
@@ -308,8 +325,8 @@ void VMachine::execute(int max_clock) {
 
       case Opcode::SET_ADR: {
 	OperandRet operand = get_operand(code, op_param);
-	stackinfo.address = operand.addr;
-	stackinfo.address_cache = operand.cache;
+	stackinfo.address = *reinterpret_cast<vaddr_t*>(operand.cache);
+	stackinfo.address_cache = get_cache(stackinfo.address, vmemory);
       } break;
 
       case Opcode::SET_ALIGN: {
@@ -378,6 +395,13 @@ void VMachine::execute(int max_clock) {
 	stackinfo.type_cache1->type_cast(stackinfo.output_cache,
 					 type.addr,
 					 stackinfo.value_cache);
+      } break;
+
+      case Opcode::BIT_CAST: {
+	TypeStore& type = get_type(code, op_param);
+	stackinfo.type_cache1->bit_cast(stackinfo.output_cache,
+					type.size,
+					stackinfo.value_cache);
       } break;
 
       default: {
@@ -630,7 +654,7 @@ DataStore& VMachine::create_value_by_array(int per_size, int length, const void*
     print_debug("\tdata:\n");
     for (int i = 0; i < size; i ++) {
       print_debug("\t\t%02x(%c)\n",
-		  static_cast<const char*>(data)[i],
+		  (0xff & static_cast<const char*>(data)[i]),
 		  (' ' <= static_cast<const char*>(data)[i] &&
 		   static_cast<const char*>(data)[i] <= '~' ?
 		   static_cast<const char*>(data)[i] : ' '));
@@ -721,8 +745,9 @@ void VMachine::run(std::vector<std::string> args) {
     // init_stack_dataにmain関数の戻り値、argvとして渡すポインタの配列、引数文字列、、を格納する
     vaddr_t sum = ret_size + sizeof(vaddr_t) * args.size();
     for (unsigned int i = 0, arg_size = args.size(); i < arg_size; i ++) {
+      vaddr_t addr = init_stack->addr + sum;
       memcpy(init_stack->head.get() + ret_size + sizeof(vaddr_t) * i,
-	     &sum, sizeof(vaddr_t));
+	     &addr, sizeof(vaddr_t));
       memcpy(init_stack->head.get() + sum,
 	     args.at(i).c_str(), args.at(i).length() + 1);
       sum += args.at(i).length() + 1;
@@ -731,7 +756,7 @@ void VMachine::run(std::vector<std::string> args) {
     vm_int_t argc = args.size();
     vaddr_t  argv = init_stack->addr + ret_size;
     memcpy(main_stack.head.get(), &argc, sizeof(argc));
-    memcpy(main_stack.head.get() + sizeof(argc), &argv, sizeof(argv));
+    memcpy(main_stack.head.get() + 4, &argv, sizeof(argv));
     
   } else if (main_func.normal_prop.arg_num != 0) {
     // int main()でもint main(int, char**)でもないようだ

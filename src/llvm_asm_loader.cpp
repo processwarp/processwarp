@@ -570,7 +570,7 @@ vaddr_t LlvmAsmLoader::load_function(const llvm::Function* function) {
 	case llvm::Instruction::GetElementPtr: {
 	  const llvm::GetElementPtrInst& inst = static_cast<const llvm::GetElementPtrInst&>(*i);
 	  // set_ptr <ptrval>
-	  push_code(fc, Opcode::SET_PTR,
+	  push_code(fc, Opcode::SET_ADR,
 		    assign_operand(fc, inst.getPointerOperand()));
 
 	  llvm::Type* op_type = inst.getPointerOperandType();

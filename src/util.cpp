@@ -15,7 +15,7 @@ static const char* OPCODE_STR[] = {
   "SET_OUTPUT",
   "SET_VALUE",
   "ADD",
-  "SUB",//10
+  "SUB", // 10
   "MUL",
   "DIV",
   "REM",
@@ -48,7 +48,7 @@ static const char* OPCODE_STR[] = {
   "NANS", // 40
   "OR_NANS",
   "SELECT",
-  "VA_ARG",    
+  "VA_ARG",
 };
 
 // 未実装機能を表すメソッド。

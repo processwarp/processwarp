@@ -23,6 +23,14 @@ namespace usagi {
     virtual void add(uint8_t* dst, uint8_t* a, uint8_t* b) = 0;
 
     /**
+     * bit_cast命令に対応したキャスト演算を行う。
+     * @param dst 出力先
+     * @param size 出力サイズ
+     * @param src 入力元
+     */
+    virtual void bit_cast(uint8_t* dst, size_t size, uint8_t* src) = 0;
+
+    /**
      * 値をコピーする。
      * @param dst コピー先
      * @param src コピー元
@@ -56,6 +64,14 @@ namespace usagi {
      * @param b
      */
     void add(uint8_t* dst, uint8_t* a, uint8_t* b) override;
+
+    /**
+     * bit_cast命令に対応したキャスト演算を行う。
+     * @param dst 出力先
+     * @param size 出力サイズ
+     * @param src 入力元
+     */
+    void bit_cast(uint8_t* dst, size_t size, uint8_t* src) override;
 
     /**
      * 値をコピーする。
@@ -92,6 +108,14 @@ namespace usagi {
      * @param b
      */
     void add(uint8_t* dst, uint8_t* a, uint8_t* b) override;
+
+    /**
+     * bit_cast命令に対応したキャスト演算を行う。
+     * @param dst 出力先
+     * @param size 出力サイズ
+     * @param src 入力元
+     */
+    void bit_cast(uint8_t* dst, size_t size, uint8_t* src) override;
 
     /**
      * 値をコピーする。
