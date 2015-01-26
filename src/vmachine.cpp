@@ -137,10 +137,12 @@ void VMachine::execute(int max_clock) {
     if (thread.stackinfos.size() == 1) return;
     
     StackInfo& stackinfo = *(thread.stackinfos.back().get());
-    const FuncStore& func = stackinfo.func_cache;
+    resolve_stackinfo_cache(&stackinfo);
+
+    const FuncStore& func = *stackinfo.func_cache;
     const std::vector<instruction_t>& insts = func.normal_prop.code;
     const std::vector<vaddr_t>& k = func.normal_prop.k;
-    OperandParam op_param = {stackinfo.stack_cache, k, vmemory};
+    OperandParam op_param = {*stackinfo.stack_cache, k, vmemory};
 
     for (; max_clock > 0; max_clock --) {
       instruction_t code = insts.at(stackinfo.pc);
@@ -166,24 +168,16 @@ void VMachine::execute(int max_clock) {
 	assert(!is_tailcall); // TODO 動きを確認する。
 
 	// スタックのサイズの有無により作りを変える
-	if (new_func.normal_prop.stack_size != 0) {
-	  new_stackinfo.reset
-	    (new StackInfo(new_func,
-			   // tailcallの場合、戻り値の格納先を現行のものから引き継ぐ
-			   is_tailcall ? stackinfo.ret_addr : stackinfo.output,
-			   Instruction::get_operand(insts.at(stackinfo.pc + 1)),
-			   Instruction::get_operand(insts.at(stackinfo.pc + 2)),
-			   vmemory.alloc_data(new_func.normal_prop.stack_size, false)));
+	new_stackinfo.reset
+	  (new StackInfo(new_func.addr,
+			 // tailcallの場合、戻り値の格納先を現行のものから引き継ぐ
+			 is_tailcall ? stackinfo.ret_addr : stackinfo.output,
+			 Instruction::get_operand(insts.at(stackinfo.pc + 1)),
+			 Instruction::get_operand(insts.at(stackinfo.pc + 2)),
+			 (new_func.normal_prop.stack_size != 0 ?
+			  vmemory.alloc_data(new_func.normal_prop.stack_size, false).addr :
+			  VADDR_NON)));
 
-	} else {
-	  new_stackinfo.reset
-	    (new StackInfo(new_func,
-			   // tailcallの場合、戻り値の格納先を現行のものから引き継ぐ
-			   is_tailcall ? stackinfo.ret_addr : stackinfo.output,
-			   Instruction::get_operand(insts.at(stackinfo.pc + 1)),
-			   Instruction::get_operand(insts.at(stackinfo.pc + 2))));
-	}
-	
 	// 引数を集める
 	int args = 0;
 	int written_size = 0;
@@ -202,7 +196,7 @@ void VMachine::execute(int max_clock) {
 	  if (new_func.type == FuncType::FC_NORMAL &&
 	      args < new_func.normal_prop.arg_num) {
 	      // 通常の引数はスタックの先頭にコピー
-	      memcpy(new_stackinfo->stack_cache.head.get() + written_size, value.cache, type.size);
+	      memcpy(new_stackinfo->stack_cache->head.get() + written_size, value.cache, type.size);
 	      written_size += type.size;
 
 	  } else {
@@ -679,7 +673,7 @@ DataStore& VMachine::create_value_by_array(int per_size, int length, const void*
 }
 
 // ライブラリ関数を指定アドレスに展開する。
-void VMachine::deploy_function_external(const std::string& name, vaddr_t addr) {
+void VMachine::deploy_function_external(const std::string& name, vaddr_t ret_type, vaddr_t addr) {
   auto ifunc = intrinsic_funcs.find(name);
 
   // VM組み込み関数と同じ名前は使えない
@@ -688,7 +682,7 @@ void VMachine::deploy_function_external(const std::string& name, vaddr_t addr) {
   }
 
   // 関数領域を確保
-  vmemory.alloc_func(symbols.get(name), addr);
+  vmemory.alloc_func(symbols.get(name), ret_type, addr);
 }
 
 // VM組み込み関数を指定アドレスに展開する。
@@ -727,6 +721,55 @@ external_func_t VMachine::get_external_func(const Symbols::Symbol& name) {
   return func;
 }
 
+// StackInfoのキャッシュを解決し、実行前の状態にする。
+void VMachine::resolve_stackinfo_cache(StackInfo* target) {
+  // 関数
+  if (target->func != VADDR_NON) {
+    target->func_cache = &vmemory.get_func(target->func);
+  } else {
+    target->func_cache = nullptr;
+  }
+  // スタック領域
+  if (target->stack != VADDR_NON) {
+    target->stack_cache = &vmemory.get_data(target->stack);
+  } else {
+    target->stack_cache = nullptr;
+  }
+  // 操作対象の型
+  if (target->type != VADDR_NON) {
+    target->type_cache2 = &vmemory.get_type(target->type);
+    if (target->type < sizeof(TYPE_BASES) / sizeof(TYPE_BASES[0])) {
+      target->type_cache1 = TYPE_BASES[target->type];
+      if (target->type_cache1 == nullptr) {
+	assert(false); // TODO 未対応の型
+      }
+    } else {
+      assert(false); // 拡張型
+    }
+  } else {
+    target->type_cache1 = nullptr;
+    target->type_cache2 = nullptr;
+  }
+  // 格納先アドレス
+  if (target->output != VADDR_NON) {
+    target->output_cache = get_cache(target->output, vmemory);
+  } else {
+    target->output_cache = nullptr;
+  }
+  // 値レジスタ
+  if (target->value != VADDR_NON) {
+    target->value_cache = get_cache(target->value, vmemory);
+  } else {
+    target->value_cache = nullptr;
+  }
+  // アドレスレジスタ
+  if (target->address != VADDR_NON) {
+    target->address_cache = get_cache(target->address, vmemory);
+  } else {
+    target->address_cache = nullptr;
+  }
+}
+
 // VMの初期設定をする。
 void VMachine::run(std::vector<std::string> args) {
   // 最初のスレッドを作成
@@ -742,7 +785,7 @@ void VMachine::run(std::vector<std::string> args) {
   FuncStore& main_func = vmemory.get_func(it_main_func->second);
 
   // main関数用のスタックを確保する
-  DataStore& main_stack = vmemory.alloc_data(main_func.normal_prop.stack_size, 1);
+  DataStore& main_stack = vmemory.alloc_data(main_func.normal_prop.stack_size, false);
   
   // maink関数の内容に応じて、init_stackを作成する
   DataStore* init_stack;
@@ -754,7 +797,7 @@ void VMachine::run(std::vector<std::string> args) {
       init_stack_size += args.at(i).length() + 1;
     }
     // 領域を確保
-    init_stack = &vmemory.alloc_data(init_stack_size, 1);
+    init_stack = &vmemory.alloc_data(init_stack_size, false);
 
     // init_stack_dataにmain関数の戻り値、argvとして渡すポインタの配列、引数文字列、、を格納する
     vaddr_t sum = ret_size + sizeof(vaddr_t) * args.size();
@@ -779,19 +822,18 @@ void VMachine::run(std::vector<std::string> args) {
   } else {
     // int main()の場合は引数を設定しない
     // main関数の戻り値格納先を確保する
-    init_stack = &vmemory.alloc_data(calc_type_size(main_func.ret_type).first, 1);
+    init_stack = &vmemory.alloc_data(calc_type_size(main_func.ret_type).first, false);
   }
 
   // mainのreturnを受け取るためのスタックを1段確保する
-  StackInfo* init_stackinfo = new StackInfo(*static_cast<FuncStore*>(nullptr),
-					    VADDR_NON, 0, 0, *init_stack);
+  StackInfo* init_stackinfo = new StackInfo(VADDR_NON, VADDR_NON, 0, 0, init_stack->addr);
   init_stackinfo->output = init_stack->addr;
   init_stackinfo->output_cache = init_stack->head.get();
   init_thread->stackinfos.push_back(std::unique_ptr<StackInfo>(init_stackinfo));
   
-  StackInfo* main_stackinfo = new StackInfo(main_func,
+  StackInfo* main_stackinfo = new StackInfo(main_func.addr,
 					    init_stack->addr,
-					    0, 0, main_stack);
+					    0, 0, main_stack.addr);
   init_thread->stackinfos.push_back(std::unique_ptr<StackInfo>(main_stackinfo));
 
   status = ACTIVE;

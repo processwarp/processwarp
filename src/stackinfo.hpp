@@ -18,7 +18,7 @@ namespace usagi {
     /// 関数
     const vaddr_t func;
     /// 関数領域のキャッシュ
-    FuncStore& func_cache;
+    FuncStore* func_cache;
 
     /// return格納先
     const vaddr_t ret_addr;
@@ -31,7 +31,7 @@ namespace usagi {
     /// スタック領域
     const vaddr_t stack;
     /// スタック領域のキャッシュ(実アドレスへのポインタ)
-    DataStore& stack_cache;
+    DataStore* stack_cache;
 
     /// allocaで確保された領域
     std::vector<vaddr_t> alloca_addrs;
@@ -78,22 +78,11 @@ namespace usagi {
      * @param unwind_pc_ unwindが発生した場合にpcに設定する値
      * @param stack_ スタック領域
      */
-    StackInfo(FuncStore& func_,
+    StackInfo(vaddr_t func_,
 	      vaddr_t ret_addr_,
 	      unsigned int normal_pc_,
 	      unsigned int unwind_pc_,
-	      DataStore& stack_);
+	      vaddr_t stack_);
 
-    /**
-     * ネイティブ関数など、スタック不要な場合のコンストラクタ。
-     * @param func_ 関数
-     * @param ret_addr_ return格納先
-     * @param normal_pc_ unwindなしに関数が終了した場合にpcに設定する値
-     * @param unwind_pc_ unwindが発生した場合にpcに設定する値
-     */
-    StackInfo(FuncStore& func_,
-	      vaddr_t ret_addr_,
-	      unsigned int normal_pc_,
-	      unsigned int unwind_pc_);
   };
 }

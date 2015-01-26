@@ -173,9 +173,12 @@ void Server::command_warp_in(const picojson::object& command) {
   reply.insert(std::make_pair("thread", convert.export_thread(*(vm.threads.back()), related)));
   
   // relatedの中身をすべてexportする
+  /*
   while(true) {
     bool dump_flg = false;
     for (Convert::Related::iterator it = related.begin(); it != related.end(); it ++) {
+      // NULLはexportしない
+      if (*it == VADDR_NULL || *it == VADDR_NON) continue;
       // VM組み込みのアドレスはexportしない
       if (vm.intrinsic_addrs.find(*it) != vm.intrinsic_addrs.end()) continue;
 
@@ -191,6 +194,18 @@ void Server::command_warp_in(const picojson::object& command) {
     // すべてスキャンしてdumpしたものがなければ終了
     if (!dump_flg) break;
   }
+  /*/
+  fixme("必要な領域を請求する機能が無いので、メモリ上のデータを全て吐き出している");
+  std::set<vaddr_t> all = vm.vmemory.get_alladdr();
+  for (auto it = all.begin(); it != all.end(); it ++) {
+    // NULLはexportしない
+    if (*it == VADDR_NULL || *it == VADDR_NON) continue;
+    // VM組み込みのアドレスはexportしない
+    if (vm.intrinsic_addrs.find(*it) != vm.intrinsic_addrs.end()) continue;
+
+    dump.insert(std::make_pair(Util::vaddr2str(*it), convert.export_store(*it, related)));
+  }
+  //*/
   reply.insert(std::make_pair("dump", picojson::value(dump)));
 
   // 応答を送信

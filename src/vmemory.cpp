@@ -232,6 +232,23 @@ vaddr_t VMemory::get_addr_lower(vaddr_t addr) {
   return addr & (~UPPER_MASKS[addr >> 60]);
 }
 
+// 現在管理しているアドレスすべての集合を作成する。
+std::set<vaddr_t> VMemory::get_alladdr() {
+  std::set<vaddr_t> all;
+  
+  for (auto it = data_store_map.begin(); it != data_store_map.end(); it ++) {
+    all.insert(it->first);
+  }
+  for (auto it = func_store_map.begin(); it != func_store_map.end(); it ++) {
+    all.insert(it->first);
+  }
+  for (auto it = type_store_map.begin(); it != type_store_map.end(); it ++) {
+    all.insert(it->first);
+  }
+
+  return all;
+}
+
 // アドレスに対応する領域を取得する。
 DataStore& VMemory::get_data(vaddr_t addr) {
   auto data = data_store_map.find(get_addr_upper(addr));

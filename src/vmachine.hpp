@@ -166,9 +166,11 @@ namespace usagi {
     /**
      * ライブラリ関数を指定アドレスに展開する。
      * @param name 関数名
+     * @param ret_type 戻り値の型
      * @param addr 展開先アドレス
      */
     void deploy_function_external(const std::string& name,
+				  vaddr_t ret_type,
 				  vaddr_t addr);
     
     /**
@@ -214,6 +216,12 @@ namespace usagi {
      * @return 関数へのポインタ
      */
     external_func_t get_external_func(const Symbols::Symbol& name);
+
+    /**
+     * StackInfoのキャッシュを解決し、実行前の状態にする。
+     * @param target キャッシュ解決対象のStackInfo
+     */
+    void resolve_stackinfo_cache(StackInfo* target);
 
     /**
      * アプリケーションの初期設定をする。

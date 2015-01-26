@@ -3,6 +3,7 @@
 #include <cassert>
 #include <map>
 #include <memory>
+#include <set>
 
 #include "data_store.hpp"
 #include "definitions.hpp"
@@ -146,6 +147,12 @@ namespace usagi {
      * @return アドレスのlower部分
      */
     static vaddr_t get_addr_lower(vaddr_t addr);
+
+    /**
+     * 現在管理しているアドレスすべての集合を作成する。
+     * @return アドレスの集合
+     */
+    std::set<vaddr_t> get_alladdr();
     
     /**
      * アドレスに対応する領域を取得する。

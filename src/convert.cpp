@@ -56,37 +56,56 @@ Convert::Convert(VMachine& vm_) :
 picojson::value Convert::export_thread(const Thread& src, Related& related) {
   picojson::object dst;
 
-  assert(false);
-  /*
-  // スタックトップ
-  dst.insert(std::make_pair("top", num2json(src.top)));
+  // StackInfo
+  picojson::array dst_stackinfos;
+  for (auto it = src.stackinfos.begin(); it != src.stackinfos.end(); it ++) {
+    picojson::object dst_stackinfo;
 
-  // CallInfo
-  picojson::array dst_callinfos;
-  for (auto it = src.callinfos.begin(); it != src.callinfos.end(); it ++) {
-    picojson::object dst_callinfo;
-    dst_callinfo.insert(std::make_pair("pos_ret", num2json((**it).pos_ret)));
-    dst_callinfo.insert(std::make_pair("base", num2json((**it).base)));
-    dst_callinfo.insert(std::make_pair("pc", num2json((**it).pc)));
-    dst_callinfo.insert(std::make_pair("phi", num2json((**it).phi)));
-
-    picojson::array var_arg;
-    for (auto it_va = (**it).var_arg.begin(); it_va != (**it).var_arg.end(); it_va ++) {
-      var_arg.push_back(export_value(*it_va, related));
+    // 関数
+    dst_stackinfo.insert(std::make_pair("func", vaddr2json((**it).func)));
+    related.insert((**it).func);
+    // return格納先
+    dst_stackinfo.insert(std::make_pair("ret_addr", vaddr2json((**it).ret_addr)));
+    related.insert(VMemory::get_addr_upper((**it).ret_addr));
+    // 終了時にpcに設定する値
+    dst_stackinfo.insert(std::make_pair("normal_pc", num2json((**it).normal_pc)));
+    dst_stackinfo.insert(std::make_pair("unwind_pc", num2json((**it).unwind_pc)));
+    // スタック領域
+    dst_stackinfo.insert(std::make_pair("stack", vaddr2json((**it).stack)));
+    related.insert((**it).stack);
+    // allocaで確保された領域
+    picojson::array alloca_addrs;
+    for (auto it_aa = (**it).alloca_addrs.begin(); it_aa != (**it).alloca_addrs.end(); it_aa ++) {
+      alloca_addrs.push_back(vaddr2json(*it_aa));
+      related.insert(VMemory::get_addr_upper(*it_aa));
     }
-    dst_callinfo.insert(std::make_pair("var_arg", picojson::value(var_arg)));
+    dst_stackinfo.insert(std::make_pair("alloca_addrs", picojson::value(alloca_addrs)));
+    // 可変長引数を格納した領域アドレス
+    dst_stackinfo.insert(std::make_pair("var_arg", vaddr2json((**it).var_arg)));
+    related.insert(VMemory::get_addr_upper((**it).var_arg));
+    // プログラムカウンタ、φ動作用カウンタ
+    dst_stackinfo.insert(std::make_pair("pc", num2json((**it).pc)));
+    dst_stackinfo.insert(std::make_pair("phi0", num2json((**it).phi0)));
+    dst_stackinfo.insert(std::make_pair("phi1", num2json((**it).phi1)));
+    // 操作対象の型
+    dst_stackinfo.insert(std::make_pair("type", vaddr2json((**it).type)));
+    related.insert(VMemory::get_addr_upper((**it).type));
+    // アライメント
+    dst_stackinfo.insert(std::make_pair("alignment", num2json((**it).alignment)));
+    // 格納先アドレス
+    dst_stackinfo.insert(std::make_pair("output", vaddr2json((**it).output)));
+    related.insert(VMemory::get_addr_upper((**it).output));
+    // 値レジスタ
+    dst_stackinfo.insert(std::make_pair("value", vaddr2json((**it).value)));
+    related.insert(VMemory::get_addr_upper((**it).value));
+    // アドレスレジスタ
+    dst_stackinfo.insert(std::make_pair("address", vaddr2json((**it).address)));
+    related.insert(VMemory::get_addr_upper((**it).address));
 
-    dst_callinfos.push_back(picojson::value(dst_callinfo));
+    dst_stackinfos.push_back(picojson::value(dst_stackinfo));
   }
-  dst.insert(std::make_pair("callinfos", picojson::value(dst_callinfos)));
+  dst.insert(std::make_pair("stackinfos", picojson::value(dst_stackinfos)));
 
-  // スタック
-  picojson::array dst_stack;
-  for (auto it = src.stack.begin(); it != src.stack.end(); it ++) {
-    dst_stack.push_back(export_value(*it, related));
-  }
-  dst.insert(std::make_pair("stack", picojson::value(dst_stack)));
-  */
   return picojson::value(dst);
 }
 
@@ -105,44 +124,46 @@ picojson::value Convert::export_store(vaddr_t src, Related& related) {
 
 // JSONからスレッドを復元する。
 void Convert::import_thread(const picojson::value& src) {
-  assert(false);
-  /*
   const picojson::object& obj_src = src.get<picojson::object>();
   std::unique_ptr<Thread> thread(new Thread());
 
-  // スタックトップ
-  thread->top = json2num<unsigned int>(obj_src.at("top"));
-  
-  // CallInfo
-  const picojson::array& callinfos = obj_src.at("callinfos").get<picojson::array>();
-  for (auto it_ci = callinfos.begin(); it_ci != callinfos.end(); it_ci ++) {
-    const picojson::object& obj_ci = it_ci->get<picojson::object>();
-    std::unique_ptr<CallInfo> callinfo(new CallInfo());
-
-    callinfo->pos_ret = json2num<unsigned int>(obj_ci.at("pos_ret"));
-    callinfo->base    = json2num<unsigned int>(obj_ci.at("base"));
-    callinfo->pc      = json2num<unsigned int>(obj_ci.at("pc"));
-    callinfo->phi     = json2num<unsigned int>(obj_ci.at("phi"));
-
-    // 可変長配列
-    const picojson::array& var_arg = obj_ci.at("var_arg").get<picojson::array>();
-    callinfo->var_arg.resize(var_arg.size());
-    for (int i = 0, size = var_arg.size(); i < size; i ++) {
-      callinfo->var_arg.at(i) = import_value(var_arg.at(i).get<picojson::object>());
+  // Stackinfo
+  const picojson::array& stackinfos = obj_src.at("stackinfos").get<picojson::array>();
+  for (auto it_si = stackinfos.begin(); it_si != stackinfos.end(); it_si ++) {
+    const picojson::object& obj_si = it_si->get<picojson::object>();
+    std::unique_ptr<StackInfo> stackinfo
+      (new StackInfo(json2vaddr(obj_si.at("func")),
+		     json2vaddr(obj_si.at("ret_addr")),
+		     json2num<unsigned int>(obj_si.at("normal_pc")),
+		     json2num<unsigned int>(obj_si.at("unwind_pc")),
+		     json2vaddr(obj_si.at("stack"))));
+    // allocaで確保された領域
+    const picojson::array& alloca_addrs = obj_si.at("alloca_addrs").get<picojson::array>();
+    stackinfo->alloca_addrs.resize(alloca_addrs.size());
+    for (int i = 0, size = alloca_addrs.size(); i < size; i ++) {
+      stackinfo->alloca_addrs.at(i) = json2vaddr(alloca_addrs.at(i));
     }
+    // 可変長引数を格納した領域アドレス
+    stackinfo->var_arg = json2vaddr(obj_si.at("var_arg"));
+    // プログラムカウンタ、φ動作用カウンタ
+    stackinfo->pc = json2num<unsigned int>(obj_si.at("pc"));
+    stackinfo->phi0 = json2num<unsigned int>(obj_si.at("phi0"));
+    stackinfo->phi1 = json2num<unsigned int>(obj_si.at("phi1"));
+    // 操作対象の型
+    stackinfo->type = json2vaddr(obj_si.at("type"));
+    // アライメント
+    stackinfo->alignment = json2num<vm_int_t>(obj_si.at("alignment"));
+    // 格納先アドレス
+    stackinfo->output = json2vaddr(obj_si.at("output"));
+    // 値レジスタ
+    stackinfo->value = json2vaddr(obj_si.at("value"));
+    // アドレスレジスタ
+    stackinfo->address = json2vaddr(obj_si.at("address"));
     
-    thread->callinfos.push_back(std::move(callinfo));
-  }
-
-  // スタック
-  const picojson::array& stack = obj_src.at("stack").get<picojson::array>();
-  thread->stack.resize(stack.size());
-  for (int i = 0, size = stack.size(); i < size; i ++) {
-    thread->stack.at(i) = import_value(stack.at(i).get<picojson::object>());
+    thread->stackinfos.push_back(std::move(stackinfo));
   }
 
   vm.threads.push_back(std::move(thread));
-  */
 }
 
 // JSONから変数を復元する。
@@ -174,18 +195,23 @@ picojson::value Convert::export_data(const DataStore& src, Related& related) {
 picojson::value Convert::export_func(const FuncStore& src, Related& related) {
   picojson::object dst;
 
-  assert(false);
-  /*
+  // アドレス
+  dst.insert(std::make_pair("addr", vaddr2json(src.addr)));
   // 関数のタイプ
   dst.insert(std::make_pair("type", num2json<uint8_t>(src.type)));
   // 関数名称
   dst.insert(std::make_pair("name", picojson::value(src.name.str())));
+  // 戻り値の型
+  dst.insert(std::make_pair("ret_type", vaddr2json(src.ret_type)));
+  related.insert(src.ret_type);
 
   if (src.type == FuncType::FC_NORMAL) {
+    // 可変長引数かどうか
     dst.insert(std::make_pair("is_var_arg", picojson::value(src.normal_prop.is_var_arg)));
+    // 引数の数
     dst.insert(std::make_pair("arg_num", num2json(src.normal_prop.arg_num)));
-    dst.insert(std::make_pair("val_num", num2json(src.normal_prop.val_num)));
-    
+    // 関数で利用するスタックサイズ
+    dst.insert(std::make_pair("stack_size", num2json(src.normal_prop.stack_size)));
     // 命令配列
     picojson::array code;
     code.resize(src.normal_prop.code.size());
@@ -193,16 +219,16 @@ picojson::value Convert::export_func(const FuncStore& src, Related& related) {
       code.at(i) = num2json<instruction_t>(src.normal_prop.code.at(i));
     }
     dst.insert(std::make_pair("code", picojson::value(code)));
-
     // 定数配列
     picojson::array k;
     k.resize(src.normal_prop.k.size());
     for (int i = 0, size = k.size(); i < size; i ++) {
-      k.at(i) = export_value(src.normal_prop.k.at(i), related);
+      k.at(i) = vaddr2json(src.normal_prop.k.at(i));
+      related.insert(src.normal_prop.k.at(i));
     }
     dst.insert(std::make_pair("k", picojson::value(k)));
   }
-  */
+
   return picojson::value(dst);
 }
 
@@ -244,42 +270,44 @@ void Convert::import_data(vaddr_t addr, const picojson::array& src) {
 
 // JSONからFuncStoreを復元する。
 void Convert::import_func(vaddr_t addr, const picojson::object& src) {
-  assert(false);
-  /*
   // 関数のタイプ
   uint8_t type = json2num<uint8_t>(src.at("type"));
   // 関数名称
   std::string name = src.at("name").get<std::string>();
+  // 戻り値の型
+  vaddr_t ret_type = json2vaddr(src.at("ret_type"));
 
   switch(type) {
   case FuncType::FC_NORMAL: {
     FuncStore::NormalProp prop;
-
+    // 可変長引数かどうか
     prop.is_var_arg = src.at("is_var_arg").get<bool>();
-    prop.arg_num    = json2num<unsigned int>(src.at("arg_num"));
-    prop.val_num    = json2num<unsigned int>(src.at("val_num"));
-
+    // 引数の数
+    prop.arg_num = json2num<unsigned int>(src.at("arg_num"));
+    // 関数で利用するスタックサイズ
+    prop.stack_size = json2num<unsigned int>(src.at("stack_size"));
+    // 命令配列
     picojson::array code = src.at("code").get<picojson::array>();
     prop.code.resize(code.size());
     for (int i = 0, size = code.size(); i < size; i ++) {
       prop.code.at(i) = json2num<instruction_t>(code.at(i));
     }
-
+    // 定数配列
     const picojson::array k = src.at("k").get<picojson::array>();
     prop.k.resize(k.size());
     for (int i = 0, size = k.size(); i < size; i ++) {
-      prop.k.at(i) = import_value(k.at(i).get<picojson::object>());
+      prop.k.at(i) = json2vaddr(k.at(i));
     }
 
-    vm.deploy_function_normal(name, prop, addr);
+    vm.deploy_function_normal(name, ret_type, prop, addr);
   } break;
 
   case FuncType::FC_INTRINSIC: {
-    vm.deploy_function_intrinsic(name, addr);
+    vm.deploy_function_intrinsic(name, ret_type, addr);
   } break;
 
   case FuncType::FC_EXTERNAL: {
-    vm.deploy_function_external(name, addr);
+    vm.deploy_function_external(name, ret_type, addr);
   } break;
 
   default: {
@@ -287,7 +315,6 @@ void Convert::import_func(vaddr_t addr, const picojson::object& src) {
     assert(false); /// TODO パケットの正当性チェック
   } break;
   }
-  */
 }
 
 // JSONからTypeStoreを復元する。
