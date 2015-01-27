@@ -204,7 +204,7 @@ namespace usagi {
     template <typename T> T get_by_addr(vaddr_t addr) {
       DataStore& store = vmemory.get_data(addr);
       // アクセス違反
-      if (VMemory::get_addr_lower(addr) + sizeof(T) < store.size) {
+      if (VMemory::get_addr_lower(addr) + sizeof(T) > store.size) {
 	throw_error_message(Error::SEGMENT_FAULT, Util::vaddr2str(addr));
       }
       return *reinterpret_cast<T*>(store.head.get() + VMemory::get_addr_lower(addr));

@@ -21,8 +21,8 @@ namespace usagi {
       unsigned int stack_size;
       /// 命令配列
       std::vector<instruction_t> code;
-      /// 定数配列
-      std::vector<vaddr_t> k;
+      /// 定数領域
+      vaddr_t k;
     };
 
     /// アドレス

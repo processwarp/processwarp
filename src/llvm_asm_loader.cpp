@@ -229,9 +229,8 @@ vaddr_t LlvmAsmLoader::load_expr(const llvm::ConstantExpr* expr) {
   case llvm::Instruction::GetElementPtr: {
     const llvm::Value* tv = expr->getOperand(0);
     assert(llvm::Constant::classof(tv)); // オペランドは定数のはず。
+    // ポインタのアドレスを取得。
     vaddr_t target_value = load_constant(static_cast<const llvm::Constant*>(tv));
-    // ポインタ(なはず)のアドレスを取り出す。
-    vaddr_t target_addr = vmachine.get_by_addr<vaddr_t>(target_value);
     llvm::Type* op_type = tv->getType()->getPointerElementType();
     assert(op_type->isSized()); // サイズが確定可能と想定
     int delta = 0;
@@ -265,7 +264,8 @@ vaddr_t LlvmAsmLoader::load_expr(const llvm::ConstantExpr* expr) {
 	assert(false);
       }
     }
-    return assign_loaded(expr, vmachine.create_pointer(target_addr, delta).addr);
+    fixme("範囲チェック");
+    return assign_loaded(expr, target_value + delta);
   } break;
 
     // case Instruction::ICmp:
@@ -573,9 +573,8 @@ vaddr_t LlvmAsmLoader::load_function(const llvm::Function* function) {
 	  push_code(fc, Opcode::SET_ADR,
 		    assign_operand(fc, inst.getPointerOperand()));
 
-	  llvm::Type* op_type = inst.getPointerOperandType();
+	  llvm::Type* op_type = inst.getPointerOperandType()->getPointerElementType();
 	  for (unsigned int i = 1, num = inst.getNumOperands(); i < num; i ++) {
-	    //assign_operand(fc, inst.getOperand(i));
 	    if (i == 1) {
 	      // set_type <ty>
 	      push_code(fc, Opcode::SET_TYPE, assign_type(fc, inst.getOperand(i)->getType()));
@@ -703,11 +702,9 @@ vaddr_t LlvmAsmLoader::load_function(const llvm::Function* function) {
     prop.arg_num    = function->arg_size();
     prop.stack_size = fc.stack_sum;
 
-    // codeは予めセットされている
-    prop.k.resize(k.size());
-    for (int i = 0, size = k.size(); i < size; i ++) {
-      prop.k = k;
-    }
+    // 定数領域を作成
+    DataStore& store_k = vmachine.create_value_by_array(sizeof(vaddr_t), k.size(), k.data());
+    prop.k = store_k.addr;
 
     // 定数、変数の数がオペランドで表現可能な上限を超えた場合エラー
     if (stack_values.size() > 2000 || k.size() > 2000)
@@ -726,8 +723,9 @@ vaddr_t LlvmAsmLoader::load_global(const llvm::GlobalVariable* variable) {
 
   if (variable->hasInitializer()) {
     return assign_loaded(variable,
-			 vmachine.create_pointer(load_constant(variable->getInitializer()), 0).addr);
+			 load_constant(variable->getInitializer()));
   } else {
+    assert(false); // 動作を確認する
     return assign_loaded(variable,
 			 vmachine.create_null().addr);
   }
@@ -763,25 +761,20 @@ void LlvmAsmLoader::load_module(const llvm::Module* module) {
 vaddr_t LlvmAsmLoader::load_int(const llvm::ConstantInt* src) {
   check_same_value(loaded_value, src);
 
+  vaddr_t buf = 0;
   switch (src->getBitWidth()) {
-  case 8:
-    return assign_loaded(src,
-			 vmachine.create_value_by_array(1, 1, src->getValue().getRawData()).addr);
-  case 16:
-    return assign_loaded(src,
-			 vmachine.create_value_by_array(2, 1, src->getValue().getRawData()).addr);
-  case 32:
-    return assign_loaded(src,
-			 vmachine.create_value_by_array(4, 1, src->getValue().getRawData()).addr);
-  case 64:
-    return assign_loaded(src,
-			 vmachine.create_value_by_array(8, 1, src->getValue().getRawData()).addr);
+  case 8:  memcpy(&buf, src->getValue().getRawData(), 1); break;
+  case 16: memcpy(&buf, src->getValue().getRawData(), 2); break;
+  case 32: memcpy(&buf, src->getValue().getRawData(), 4); break;
+  case 64: memcpy(&buf, src->getValue().getRawData(), 8); break;
 
   default: {
     print_debug("unsupport bit width : %d\n", src->getBitWidth());
     throw_error(Error::UNSUPPORT);
   } break;
   }
+
+  return buf;
 }
 
 // LLVMの定数(struct)を仮想マシンにロードする。

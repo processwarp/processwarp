@@ -219,14 +219,9 @@ picojson::value Convert::export_func(const FuncStore& src, Related& related) {
       code.at(i) = num2json<instruction_t>(src.normal_prop.code.at(i));
     }
     dst.insert(std::make_pair("code", picojson::value(code)));
-    // 定数配列
-    picojson::array k;
-    k.resize(src.normal_prop.k.size());
-    for (int i = 0, size = k.size(); i < size; i ++) {
-      k.at(i) = vaddr2json(src.normal_prop.k.at(i));
-      related.insert(src.normal_prop.k.at(i));
-    }
-    dst.insert(std::make_pair("k", picojson::value(k)));
+    // 定数領域
+    dst.insert(std::make_pair("k", vaddr2json(src.normal_prop.k)));
+    related.insert(src.normal_prop.k);
   }
 
   return picojson::value(dst);
@@ -292,12 +287,8 @@ void Convert::import_func(vaddr_t addr, const picojson::object& src) {
     for (int i = 0, size = code.size(); i < size; i ++) {
       prop.code.at(i) = json2num<instruction_t>(code.at(i));
     }
-    // 定数配列
-    const picojson::array k = src.at("k").get<picojson::array>();
-    prop.k.resize(k.size());
-    for (int i = 0, size = k.size(); i < size; i ++) {
-      prop.k.at(i) = json2vaddr(k.at(i));
-    }
+    // 定数領域
+    prop.k = json2vaddr(src.at("k"));
 
     vm.deploy_function_normal(name, ret_type, prop, addr);
   } break;
