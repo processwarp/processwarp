@@ -867,7 +867,11 @@ vaddr_t LlvmAsmLoader::load_zero(const llvm::ConstantAggregateZero* src) {
   check_same_value(loaded_value, src);
 
   // 領域サイズを取得
-  unsigned int size = src->getType()->getScalarSizeInBits();
+  assert(data_layout->getTypeAllocSize(src->getType()) != 0);
+  assert(data_layout->getTypeStoreSize(src->getType()) ==
+	 data_layout->getTypeAllocSize(src->getType()));
+  unsigned int size = data_layout->getTypeAllocSize(src->getType());
+
   // 領域確保
   DataStore& store = vmachine.create_value_by_array(1, size, nullptr);
   // 0クリア
