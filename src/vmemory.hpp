@@ -120,14 +120,6 @@ namespace usagi {
 			  vaddr_t addr = VADDR_NON);
 
     /**
-     * 既存のメモリ空間をコピーして新しいデータ領域を確保する。
-     * @param addr コピー元アドレス。
-     * @param size コピーサイズ。
-     * @return 確保したアドレスとデータ領域。
-     */
-    //DataStore& copy_data(vaddr_t addr, unsigned int size);
-
-    /**
      * 指定されたデータ領域を開放する。
      * 指定アドレスがNULLの場合、なにもしない。
      * @param addr データ領域のアドレス。
@@ -175,13 +167,26 @@ namespace usagi {
      */
     TypeStore& get_type(vaddr_t addr);
 
+    /**
+     * 関数のアドレスを予約する。
+     * @return 予約したアドレス。
+     */
+    vaddr_t reserve_func_addr();
+
   private:
-    /** メモリ空間のもつ数値一覧(仮想アドレス→データ領域) */
+    /** メモリ空間のもつデータ領域一覧(仮想アドレス→データ領域) */
     std::map<vaddr_t, DataStore> data_store_map;
-    /** メモリ空間のもつ数値一覧(仮想アドレス→関数領域) */
+    /** データ領域として予約されたアドレス一覧 */
+    std::set<vaddr_t> data_reserved;
+    /** メモリ空間のもつ関数領域一覧(仮想アドレス→関数領域) */
     std::map<vaddr_t, FuncStore> func_store_map;
-    /** メモリ空間の持つ型一覧(仮想アドレス→型領域) */
+    /** 関数領域として予約されたアドレス一覧 */
+    std::set<vaddr_t> func_reserved;
+    /** メモリ空間の持つ型領域一覧(仮想アドレス→型領域) */
     std::map<vaddr_t, TypeStore> type_store_map;
+    /** 型領域として予約されたアドレス一覧 */
+    std::set<vaddr_t> type_reserved;
+    
     //at_death("VMemory\n");
     
     /** 空きアドレス */

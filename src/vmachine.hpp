@@ -39,7 +39,6 @@ namespace usagi {
     Symbols symbols;    ///< シンボル
     Threads threads;    ///< スレッド一覧
     VMemory vmemory;    ///< 仮想メモリ空間
-    //at_death("VMachine\n");
     //std::vector<void*> ext_libs; ///< ロードした外部のライブラリ
     
     /**
@@ -79,48 +78,6 @@ namespace usagi {
     void close();
 
     /**
-     * 値をコピーする。
-     * @param コピー先の値の格納先
-     * @param コピー元の値の格納先
-     * @param コピーするデータの型
-     */
-    //void copy_value(Value& dst, const Value& src, const Value& type);
-
-    /**
-     * 通常の関数(VMで解釈、実行する)を作成する。
-     * @param name 関数名
-     * @param ret_type 戻り値の型
-     * @param prop 通常の関数のプロパティ
-     * @return 作成した値。
-     */
-    FuncStore& create_function(const std::string& name,
-			       vaddr_t ret_type,
-			       const FuncStore::NormalProp& prop);
-
-    /**
-     * VM組み込み関数/ライブラリなど外部の関数を作成する。
-     * @param name 関数名
-     * @param ret_type 戻り値の型
-     * @return 作成した値。
-     */
-    FuncStore& create_function(const std::string& name,
-			       vaddr_t ret_type);
-    
-    /**
-     * NULLポインタを作成する。
-     * @return 作成した値。
-     */
-    DataStore& create_null();
-
-    /**
-     * ポインタ変数を作成する。
-     * @param src ポインタの基底となる値(ポインタ含む)。
-     * @param delta 基底の値のアドレスからの差(1Byte単位)。
-     * @return 作成した値。
-     */
-    DataStore& create_pointer(vaddr_t src, int delta);
-
-    /**
      * 基本型情報を作成する。
      * @param type 基本型
      * @return 作成した値。
@@ -143,26 +100,15 @@ namespace usagi {
     TypeStore& create_type(const std::vector<vaddr_t>& member);
 
     /**
-     * プリミティブ変数で処理化した値を作成する。
-     * @param T プリミティブ型
-     * @param src プリミティブ変数
-     * @return 作成した値。
+     * ネイティブ関数を指定アドレスに展開する。
+     * 関数名を元にVM組み込み関数かライブラリ関数として分岐する。
+     * @param name 関数名
+     * @param ret_type 戻り値の型
+     * @param addr 展開先アドレス
      */
-    template<typename T> DataStore& create_value_by_primitive(T src) {
-      return create_value_by_array(sizeof(src), 1, &src);
-    }
-
-    /**
-     * データの配列で初期化した値を作成する。
-     * @param per_size 1要素のサイズ
-     * @param length   要素数
-     * @param data 配列の生データを持つ領域のアドレス
-     * @return 作成した値。
-     */
-    DataStore& create_value_by_array(int per_size,
-				     int length,
-				     const void* data);
-
+    void deploy_function(const std::string& name,
+			 vaddr_t ret_type,
+			 vaddr_t addr);
     /**
      * ライブラリ関数を指定アドレスに展開する。
      * @param name 関数名
@@ -201,7 +147,12 @@ namespace usagi {
      */
     void execute(int max_clock);
 
-    template <typename T> T get_by_addr(vaddr_t addr) {
+    /**
+     * アドレスに格納された値にアクセスする。
+     * @param アクセス先仮想アドレス。
+     * @return アドレスに格納された値への参照。
+     */
+    template <typename T> T& get_by_addr(vaddr_t addr) {
       DataStore& store = vmemory.get_data(addr);
       // アクセス違反
       if (VMemory::get_addr_lower(addr) + sizeof(T) > store.size) {
@@ -218,10 +169,25 @@ namespace usagi {
     external_func_t get_external_func(const Symbols::Symbol& name);
 
     /**
+     * 仮想アドレスに相当する実アドレスを取得する。
+     * 取得した実アドレスは定数領域であっても書き換え可能。
+     * 起動前のk領域の作成のため以外に利用すべきではない。
+     * @param addr 仮想アドレス。
+     * @return 実アドレス。
+     */
+    uint8_t* get_raw_addr(vaddr_t addr);
+
+    /**
      * StackInfoのキャッシュを解決し、実行前の状態にする。
      * @param target キャッシュ解決対象のStackInfo
      */
     void resolve_stackinfo_cache(StackInfo* target);
+
+    /**
+     * 関数のアドレスを予約する。
+     * @return 予約したアドレス。
+     */
+    vaddr_t reserve_func_addr();
 
     /**
      * アプリケーションの初期設定をする。
@@ -246,5 +212,32 @@ namespace usagi {
      * ワープ後のVMの設定をする。
      */
     void setup_continuous();
+
+    /**
+     * データ領域を確保する。
+     * TODO 定数領域にVM内の計算などで書き換えが生じた場合、エラーとする
+     * 定数領域であってもget_rawなどを利用して書き換えた場合はエラーとならないので注意。
+     * @param size 確保するサイズ
+     * @param is_constant 定数領域かどうか
+     * @return 確保した領域の先頭の仮想アドレス
+     */
+    vaddr_t v_malloc(size_t size, bool is_constant);
+
+    /**
+     * データ領域へ実データをコピーする。
+     * @param dst コピー先仮想アドレス。
+     * @param src コピー元の実アドレス。
+     * @param n コピーサイズ。
+     */
+    void v_memcpy(vaddr_t dst, void* src, size_t n);
+
+    /**
+     * データ領域を指定の数値で埋める。
+     * 標準ライブラリのmemsetと同様の動作をする。
+     * @param dst データ領域上の埋め先のアドレス。
+     * @param c 埋めデータ(unsigned char分のデータのみ利用される)
+     * @param len 埋めサイズ
+     */
+    void v_memset(vaddr_t dst, int c, size_t len);
   };
 }

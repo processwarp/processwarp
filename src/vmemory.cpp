@@ -48,13 +48,19 @@ static const int LOWER_BITS[] = {
 };
 
 /**
- * 空いているaddressを割り当てる
- * @param store_map
- * @param last_free
- * @param addr
+ * 空いているaddressを割り当てる。
+ * アドレス指定がVADDR_NON以外かつ、reservedに同一アドレスが指定されていた場合、
+ * reservedから該当アドレスを削除する。
+ * @param store_map 割り当て済みの領域一覧
+ * @param reserved 予約アドレス一覧
+ * @param type 割り当てるアドレスの判定フラグ
+ * @param last_free 判定フラグに対応した空きアドレス
+ * @param addr アドレス指定
+ * @return 割り当てアドレス
  */
 template<typename T>
 vaddr_t assign_addr(std::map<vaddr_t, T>& store_map,
+		    std::set<vaddr_t>& reserved,
 		    vaddr_t type, vaddr_t* last_free, vaddr_t addr) {
   
   if (addr != VADDR_NON) {
@@ -64,6 +70,13 @@ vaddr_t assign_addr(std::map<vaddr_t, T>& store_map,
       print_debug("type:%016llx, addr:%016llx\n", type, addr);
       throw_error(Error::SPEC_VIOLATION);
     }
+
+    // reservedにアドレスが含まれたいた場合除去
+    auto it = reserved.find(addr);
+    if (it != reserved.end()) {
+      reserved.erase(it);
+    }
+
     return addr;
 
   } else {
@@ -73,7 +86,8 @@ vaddr_t assign_addr(std::map<vaddr_t, T>& store_map,
     vaddr_t max_upper = static_cast<vaddr_t>(1) << (sizeof(vaddr_t) * 8 - 4 - lower_bits);
 
     // メモリ空間の空きアドレスを探す
-    while (store_map.find(type | (*last_free << lower_bits)) != store_map.end()) {
+    while (store_map.find(type | (*last_free << lower_bits)) != store_map.end() ||
+	   reserved.find (type | (*last_free << lower_bits)) != reserved.end()) {
       (*last_free) ++;
       if (*last_free >= max_upper) {
 	throw_error_message(Error::OUT_OF_MEMORY, Util::vaddr2str(*last_free));
@@ -123,7 +137,7 @@ DataStore& VMemory::alloc_data(size_t size, bool is_const, vaddr_t addr) {
   if (is_const) type |= AddrType::AD_CONSTANT;
 
   // 空きアドレスの検索
-  addr = assign_addr(data_store_map, type, &last_free[type >> 60], addr);
+  addr = assign_addr(data_store_map, data_reserved, type, &last_free[type >> 60], addr);
   
   return data_store_map.insert(std::make_pair(addr, DataStore(addr, size))).first->second;
 }
@@ -135,7 +149,7 @@ FuncStore& VMemory::alloc_func(const Symbols::Symbol& name,
 			       vaddr_t addr) {
   print_debug("alloc_func(N) name:%s, addr:%016llx\n", name.str().c_str(), addr);
   // 空きアドレスの検索
-  addr = assign_addr(func_store_map,
+  addr = assign_addr(func_store_map, func_reserved,
 		     static_cast<vaddr_t>(AddrType::AD_FUNCTION),
 		     &last_free[static_cast<vaddr_t>(AddrType::AD_FUNCTION) >> 60],
 		     addr);
@@ -151,7 +165,7 @@ FuncStore& VMemory::alloc_func(const Symbols::Symbol& name,
 			       vaddr_t addr) {
   print_debug("alloc_func(I) name:%s, addr:%016llx\n", name.str().c_str(), addr);
   // 空きアドレスの検索
-  addr = assign_addr(func_store_map,
+  addr = assign_addr(func_store_map, func_reserved,
 		     static_cast<vaddr_t>(AddrType::AD_FUNCTION),
 		     &last_free[static_cast<vaddr_t>(AddrType::AD_FUNCTION) >> 60],
 		     addr);
@@ -166,7 +180,7 @@ FuncStore& VMemory::alloc_func(const Symbols::Symbol& name,
 			       vaddr_t addr) {
   print_debug("alloc_func(E) name:%s, addr:%016llx\n", name.str().c_str(), addr);
   // 空きアドレスの検索
-  addr = assign_addr(func_store_map,
+  addr = assign_addr(func_store_map, func_reserved,
 		     static_cast<vaddr_t>(AddrType::AD_FUNCTION),
 		     &last_free[static_cast<vaddr_t>(AddrType::AD_FUNCTION) >> 60],
 		     addr);
@@ -182,13 +196,13 @@ TypeStore& VMemory::alloc_type(size_t size,
 			       vaddr_t addr) {
   print_debug("alloc_type size:%ld, alignment:%d, addr:%016llx\n", size, alignment, addr);
   // 空きアドレスの検索
-  addr = assign_addr(type_store_map,
+  addr = assign_addr(type_store_map, type_reserved,
 		     static_cast<vaddr_t>(AddrType::AD_TYPE),
 		     &last_free[static_cast<vaddr_t>(AddrType::AD_TYPE) >> 60],
 		     addr);
 
   return type_store_map.insert
-      (std::make_pair(addr, TypeStore(addr, size, alignment, member))).first->second;
+    (std::make_pair(addr, TypeStore(addr, size, alignment, member))).first->second;
 }
 
 // メモリ空間に配列型領域を確保する。
@@ -200,7 +214,7 @@ TypeStore& VMemory::alloc_type(size_t size,
   print_debug("alloc_type size:%ld, alignment:%d, element:%016llx, num:%d, addr:%016llx\n",
 	      size, alignment, element, num, addr);
   // 空きアドレスの検索
-  addr = assign_addr(type_store_map,
+  addr = assign_addr(type_store_map, type_reserved,
 		     static_cast<vaddr_t>(AddrType::AD_TYPE),
 		     &last_free[static_cast<vaddr_t>(AddrType::AD_TYPE) >> 60],
 		     addr);
@@ -283,4 +297,16 @@ TypeStore& VMemory::get_type(vaddr_t addr) {
   }
 
   return type->second;
+}
+
+// 関数のアドレスを予約する。
+vaddr_t VMemory::reserve_func_addr() {
+  // 空きアドレスの検索
+  vaddr_t addr = assign_addr(func_store_map, func_reserved,
+			     static_cast<vaddr_t>(AddrType::AD_FUNCTION),
+			     &last_free[static_cast<vaddr_t>(AddrType::AD_FUNCTION) >> 60],
+			     VADDR_NON);
+  func_reserved.insert(addr);
+
+  return addr;
 }

@@ -13,19 +13,11 @@
 
 using namespace usagi;
 
-/**
- * 値がロード済みかチェックし該当した場合、既存のアドレスを戻すマクロ
- * @param value チェック対象の値
- */
-#define check_same_value(loaded, value)			\
-  auto exist = loaded.find(value);			\
-  if (exist != loaded.end())  return exist->second
-
 // コンストラクタ。
-LlvmAsmLoader::LlvmAsmLoader(VMachine& vmachine_) :
+LlvmAsmLoader::LlvmAsmLoader(VMachine& vm_) :
   context(llvm::getGlobalContext()),
-  vmachine(vmachine_) {
-}
+  vm(vm_) {
+  }
 
 // デストラクタ。
 LlvmAsmLoader::~LlvmAsmLoader() {
@@ -42,29 +34,34 @@ void LlvmAsmLoader::load_file(const std::string& filename) {
 }
 
 // ロード済みの値とアドレスの対応関係を登録する。
-vaddr_t LlvmAsmLoader::assign_loaded(const llvm::Value* v, vaddr_t addr) {
-  // 登録済LLVM変数が再度登録されることはない
-  assert(loaded_value.find(v) == loaded_value.end());
+void LlvmAsmLoader::assign_loaded(FunctionContext& fc, const llvm::Value* v) {
+  // グローバル変数として確保されているか確認
+  if (map_global.find(v) != map_global.end()) {
+    // 登録済LLVM変数が再度登録されることはない
+    assert(loaded_global.find(v) == loaded_global.end());
+    loaded_global.insert(v);
+    return;
 
-  // 値が未登録なので登録する
-  loaded_value.insert(std::make_pair(v, addr));
-
-  return addr;
+  } else {
+    assert(false);
+  }
 }
 
 // LLVMの型に対応するオペランドを取得する。
 int LlvmAsmLoader::assign_type(FunctionContext& fc, const llvm::Type* t, bool sign) {
-  vaddr_t addr = load_type(t, sign);
-
-  // 既存の定数の場合、その番号を戻す。
-  for (int i = 0, size = fc.k.size(); i < size; i ++) {
-    // 定数の場合は1の補数表現の負数を戻す。
-    if (addr == fc.k.at(i)) return (- i) - 1;
+  // ローカル定数に割り当てられている場合、そのまま戻す。
+  if (fc.loaded_type.find(t) != fc.loaded_type.end()) {
+    return fc.loaded_type.at(t);
   }
 
-  // 新規の場合末尾に割り当てる。
-  fc.k.push_back(addr);
-  return -fc.k.size();
+  // 新規割り当て
+  vaddr_t type = load_type(t, sign);
+  int k = fc.k.size();
+  fc.loaded_type.insert(std::make_pair(t, -k - 1));
+  fc.k.resize(k + sizeof(vaddr_t));
+  *reinterpret_cast<vaddr_t*>(&fc.k.at(k)) = type;
+  
+  return -k - 1;
 }
 
 // LLVMの変数に対応する変数の番号を取得する。
@@ -78,20 +75,23 @@ int LlvmAsmLoader::assign_operand(FunctionContext& fc, const llvm::Value* v) {
   }
 
   if (llvm::Constant::classof(v)) {
-    // llvm::Constant->vaddr_tに変換
-    vaddr_t addr = load_constant(static_cast<const llvm::Constant*>(v));
-
+    assert(data_layout->getTypeAllocSize(v->getType()) != 0);
+    assert(data_layout->getTypeStoreSize(v->getType()) ==
+	   data_layout->getTypeAllocSize(v->getType()));
+    
     // 既存の定数の場合、その番号を戻す。
-    for (int i = 0, size = fc.k.size(); i < size; i ++) {
-      // 定数の場合は1の補数表現の負数を戻す。
-      if (addr == fc.k.at(i)) {
-	return (- i) - 1;
-      }
+    if (fc.loaded_value.find(v) != fc.loaded_value.end()) {
+      return fc.loaded_value.at(v);
     }
 
+    int size = data_layout->getTypeAllocSize(v->getType());
     // 既存の定数でない場合、末尾に割り当てる。
-    fc.k.push_back(addr);
-    return -fc.k.size();
+    int k = fc.k.size();
+    fc.k.resize(k + size);
+    fc.loaded_value.insert(std::make_pair(v, -k - 1));
+    load_constant(&fc.k.at(k), static_cast<const llvm::Constant*>(v));
+
+    return -k - 1;
 
   } else {
     // 既存のローカル変数でない場合、末尾に割り当てている。
@@ -108,44 +108,65 @@ int LlvmAsmLoader::assign_operand(FunctionContext& fc, const llvm::Value* v) {
   return 0;
 }
 
-// LLVMの定数を仮想マシンにロードする。
-vaddr_t LlvmAsmLoader::load_constant(const llvm::Constant* constant) {
-  check_same_value(loaded_value, constant);
+// LLVMの定数(配列)を仮想マシンにロードする。
+void LlvmAsmLoader::load_array(uint8_t* dst, const llvm::ConstantArray* src) {
+  // Typeの要素数とOperandsの要素数は同じはず
+  assert(src->getType()->getNumElements() == src->getNumOperands());
   
+  // 書き込み
+  int one_size = data_layout->getTypeAllocSize(src->getOperand(0)->getType());
+  for (int i = 0; i < src->getNumOperands(); i ++) {
+    load_constant(dst + i * one_size, src->getOperand(i));
+  }
+}
+
+// LLVMの定数を仮想マシンにロードする。
+void LlvmAsmLoader::load_constant(uint8_t* dst, const llvm::Constant* src) {
   // 値の型に合わせて分岐
-  switch(constant->getValueID()) {
+  switch(src->getValueID()) {
     //case llvm::Value::ArgumentVal: {} break;
     //case llvm::Value::BasicBlockVal: {} break;
-  case llvm::Value::FunctionVal:
-    return load_function(static_cast<const llvm::Function*>(constant));
+  case llvm::Value::FunctionVal: {
+    assert(map_func.find(static_cast<const llvm::Function*>(src)) != map_func.end());
+    *reinterpret_cast<vaddr_t*>(dst) = map_func.at(static_cast<const llvm::Function*>(src));
+  } return;
 
     //case llvm::Value::GlobalAliasVal: {} break;
-  case llvm::Value::GlobalVariableVal:
-    return load_global(static_cast<const llvm::GlobalVariable*>(constant));
+  case llvm::Value::GlobalVariableVal: {
+    assert(map_global.find(src) != map_global.end());
+    *reinterpret_cast<vaddr_t*>(dst) = map_global.at(src);
+  } break;
 
     //case llvm::Value::UndefValueVal: {} break;
     //case llvm::Value::BlockAddressVal: {} break;
-  case llvm::Value::ConstantExprVal:
-    return load_expr(static_cast<const llvm::ConstantExpr*>(constant));
+  case llvm::Value::ConstantExprVal: {
+    load_expr(dst, static_cast<const llvm::ConstantExpr*>(src));
+  } break;
     
-  case llvm::Value::ConstantAggregateZeroVal:
-    return load_zero(static_cast<const llvm::ConstantAggregateZero*>(constant));
+  case llvm::Value::ConstantAggregateZeroVal: {
+    load_zero(dst, static_cast<const llvm::ConstantAggregateZero*>(src));
+  } break;
 
-  case llvm::Value::ConstantDataArrayVal:
-    return load_data(static_cast<const llvm::ConstantDataArray*>(constant));
+  case llvm::Value::ConstantDataArrayVal: {
+    load_data(dst, static_cast<const llvm::ConstantDataArray*>(src));
+  } break;
 
     //case llvm::Value::ConstantDataVectorVal: {} break;
-  case llvm::Value::ConstantIntVal:
-    return load_int(static_cast<const llvm::ConstantInt*>(constant));
+  case llvm::Value::ConstantIntVal: {
+    load_int(dst, static_cast<const llvm::ConstantInt*>(src));
+  } break;
 
-  case llvm::Value::ConstantFPVal:
-    return load_float(static_cast<const llvm::ConstantFP*>(constant));
+  case llvm::Value::ConstantFPVal: {
+    load_float(dst, static_cast<const llvm::ConstantFP*>(src));
+  } break;
 
-  case llvm::Value::ConstantArrayVal:
-    return load_array(static_cast<const llvm::ConstantArray*>(constant));
+  case llvm::Value::ConstantArrayVal: {
+    load_array(dst, static_cast<const llvm::ConstantArray*>(src));
+  } break;
 
-  case llvm::Value::ConstantStructVal:
-    return load_struct(static_cast<const llvm::ConstantStruct*>(constant));
+  case llvm::Value::ConstantStructVal: {
+    load_struct(dst, static_cast<const llvm::ConstantStruct*>(src));
+  } break;
 
     //case llvm::Value::ConstantVectorVal: {} break;
     //case llvm::Value::ConstantPointerNullVal: {} break;
@@ -154,59 +175,23 @@ vaddr_t LlvmAsmLoader::load_constant(const llvm::Constant* constant) {
     //case llvm::Value::InlineAsmVal: {} break;
     //case llvm::Value::InstructionVal: {} break;
   default: {
-    print_debug("unsupport type : %d\n", constant->getValueID());
-    constant->dump();
+    print_debug("unsupport type : %d\n", src->getValueID());
+    src->dump();
 
     throw_error(Error::UNSUPPORT);
   } break;
   }
 }
 
-// LLVMの定数(配列)を仮想マシンにロードする。
-vaddr_t LlvmAsmLoader::load_array(const llvm::ConstantArray* src) {
-  check_same_value(loaded_value, src);
-
-  // Typeの要素数とOperandsの要素数は同じはず
-  assert(src->getType()->getNumElements() == src->getNumOperands());
-  
-  if (src->getType()->getElementType()->isPointerTy()) {
-    // 要素がポインタの場合、要素の仮想アドレスを格納する
-    // 領域確保
-    DataStore& store = vmachine.create_value_by_array(sizeof(vaddr_t),
-						      src->getNumOperands(),
-						      nullptr);
-    // 仮想アドレスを格納する
-    vaddr_t* array = reinterpret_cast<vaddr_t*>(store.head.get());
-    for (int i = 0, num = src->getNumOperands(); i < num; i++) {
-      vaddr_t operand_addr = load_constant(src->getOperand(i));
-      *(array + i) = operand_addr;
-    }
-
-    return assign_loaded(src, store.addr);
-
-  } else {
-    // 値がどのように格納されるか未検証
-    assert(false);
-  }
-}
-
 // LLVMの定数(DataArray)を仮想マシンにロードする。
-vaddr_t LlvmAsmLoader::load_data(const llvm::ConstantDataArray* data_array) {
-  check_same_value(loaded_value, data_array);
-
-  DataStore& store =
-    vmachine.create_value_by_array(data_array->getElementByteSize(),
-				   data_array->getNumElements(),
-				   data_array->getRawDataValues().data());
-
-  return assign_loaded(data_array, store.addr);
+void LlvmAsmLoader::load_data(uint8_t* dst, const llvm::ConstantDataArray* src) {
+  memcpy(dst, src->getRawDataValues().data(),
+	 data_layout->getTypeAllocSize(src->getType()));
 }
 
 // LLVMの定数(Expr)を仮想マシンにロードする。
-vaddr_t LlvmAsmLoader::load_expr(const llvm::ConstantExpr* expr) {
-  check_same_value(loaded_value, expr);
-
-  switch(expr->getOpcode()) {
+void LlvmAsmLoader::load_expr(uint8_t* dst, const llvm::ConstantExpr* src) {
+  switch(src->getOpcode()) {
     // case llvm::Instruction::Trunc:
     // case llvm::Instruction::ZExt:
     // case llvm::Instruction::SExt:
@@ -226,18 +211,21 @@ vaddr_t LlvmAsmLoader::load_expr(const llvm::ConstantExpr* expr) {
     // case llvm::Instruction::InsertValue: {} break; // InsertValue
     // case llvm::Instruction::ExtractValue: {} break; // ExtractValue
     // case llvm::Instruction::ShuffleVector: {} break; // ShuffleVector
+    
   case llvm::Instruction::GetElementPtr: {
-    const llvm::Value* tv = expr->getOperand(0);
+    const llvm::Value* tv = src->getOperand(0);
     assert(llvm::Constant::classof(tv)); // オペランドは定数のはず。
     // ポインタのアドレスを取得。
-    vaddr_t target_value = load_constant(static_cast<const llvm::Constant*>(tv));
+    //vaddr_t target_value = load_constant(static_cast<const llvm::Constant*>(tv));
+    assert(map_global.find(tv) != map_global.end());
+    vaddr_t target_value = map_global.at(tv);
     llvm::Type* op_type = tv->getType()->getPointerElementType();
     assert(op_type->isSized()); // サイズが確定可能と想定
     int delta = 0;
-    for (unsigned int i = 1, num_operands = expr->getNumOperands(); i < num_operands; i ++) {
+    for (unsigned int i = 1, num_operands = src->getNumOperands(); i < num_operands; i ++) {
       // 2つ目以降のオペランドは数値のはず。
-      assert(llvm::ConstantInt::classof(expr->getOperand(i)));
-      const llvm::ConstantInt* op = static_cast<const llvm::ConstantInt*>(expr->getOperand(i));
+      assert(llvm::ConstantInt::classof(src->getOperand(i)));
+      const llvm::ConstantInt* op = static_cast<const llvm::ConstantInt*>(src->getOperand(i));
       assert(data_layout->getTypeStoreSize(op_type) != 0);
       assert(data_layout->getTypeStoreSize(op_type) ==
 	     data_layout->getTypeAllocSize(op_type));
@@ -264,32 +252,28 @@ vaddr_t LlvmAsmLoader::load_expr(const llvm::ConstantExpr* expr) {
 	assert(false);
       }
     }
-    fixme("範囲チェック");
-    return assign_loaded(expr, target_value + delta);
+    // TODO 範囲チェック
+    *reinterpret_cast<vaddr_t*>(dst) = target_value + delta;
   } break;
 
     // case Instruction::ICmp:
     // case Instruction::FCmp: {} break; // Cmp
-    //default: {} break; // Binary
+
   default: {
-    print_debug("unsupport expr : %d %s\n", expr->getOpcode(), expr->getOpcodeName());
+    print_debug("unsupport expr : %d %s\n", src->getOpcode(), src->getOpcodeName());
     throw_error(Error::UNSUPPORT);
   } break;
   }
 }
 
 // LLVMの定数(Floating-point)を仮想マシンにロードする。
-vaddr_t LlvmAsmLoader::load_float(const llvm::ConstantFP* src) {
-  check_same_value(loaded_value, src);
-
+void LlvmAsmLoader::load_float(uint8_t* dst, const llvm::ConstantFP* src) {
   switch(src->getType()->getTypeID()) {
   case llvm::Type::FloatTyID:
-    return assign_loaded(src, vmachine.create_value_by_primitive
-			 (src->getValueAPF().convertToFloat()).addr);
+    *reinterpret_cast<float*>(dst) = src->getValueAPF().convertToFloat();
     
   case llvm::Type::DoubleTyID:
-    return assign_loaded(src, vmachine.create_value_by_primitive
-			 (src->getValueAPF().convertToDouble()).addr);
+    *reinterpret_cast<double*>(dst) = src->getValueAPF().convertToDouble();
 
   default: {
     print_debug("unsupport type : %d\n", src->getType()->getTypeID());
@@ -300,26 +284,26 @@ vaddr_t LlvmAsmLoader::load_float(const llvm::ConstantFP* src) {
 }
 
 // LLVMの関数を仮想マシンにロードする。
-vaddr_t LlvmAsmLoader::load_function(const llvm::Function* function) {
-  check_same_value(loaded_value, function);
-
+void LlvmAsmLoader::load_function(const llvm::Function* function) {
   if (function->isDeclaration()) {
     // VM組み込み関数/ライブラリなど外部の関数
     // 名前を持つはず
     assert(function->hasName());
-    return assign_loaded(function,
-			 vmachine.create_function(function->getName(),
-						  load_type(function->getReturnType(),
-							    false)).addr);
+    
+    vaddr_t addr = map_func.at(function);
+    vm.deploy_function(function->getName(),
+		       load_type(function->getReturnType(), false),
+		       addr);
 
   } else {
     // 通常の関数(VMで解釈、実行する)
     FuncStore::NormalProp prop;
 
     // 定数
-    std::vector<vaddr_t> k;
+    std::vector<uint8_t> k;
     // 変数
     std::map<const llvm::Value*, int> stack_values;
+    
     // ブロックとそれに割り当てる名前
     std::map<const llvm::BasicBlock*, unsigned int> block_alias;
     // ブロック名とそれの開始位置
@@ -351,7 +335,6 @@ vaddr_t LlvmAsmLoader::load_function(const llvm::Function* function) {
 
       // 命令を解析する
       for (auto i = block->begin(); i != block->end(); i ++) {
-	i->dump(); // TODO
 	// LLVMに対応した命令に置き換え
 	switch(i->getOpcode()) {
 	case llvm::Instruction::Ret: {
@@ -441,21 +424,21 @@ vaddr_t LlvmAsmLoader::load_function(const llvm::Function* function) {
 	   * @param opcode オペコード
 	   * @param sign 符号考慮の場合true
 	   */
-#define M_BIN_OPERATOR(opcode, sign)					\
-	  const llvm::BinaryOperator& inst =				\
-	    static_cast<const llvm::BinaryOperator&>(*i);		\
-	  assert(inst.getNumOperands() == 2);				\
-	  /* set_type <ty> */						\
-	  push_code(fc, Opcode::SET_TYPE,				\
-		    assign_type(fc, inst.getType(), sign));		\
-	  /* set_output <result> */					\
-	  push_code(fc, Opcode::SET_OUTPUT,				\
-		    assign_operand(fc, &inst));				\
-	  /* set_value <op1> */						\
-	  push_code(fc, Opcode::SET_VALUE,				\
-		    assign_operand(fc, inst.getOperand(0)));		\
-	  /* opcode <op2> */						\
-	  push_code(fc, (opcode),					\
+#define M_BIN_OPERATOR(opcode, sign)				\
+	  const llvm::BinaryOperator& inst =			\
+	    static_cast<const llvm::BinaryOperator&>(*i);	\
+	  assert(inst.getNumOperands() == 2);			\
+	  /* set_type <ty> */					\
+	  push_code(fc, Opcode::SET_TYPE,			\
+		    assign_type(fc, inst.getType(), sign));	\
+	  /* set_output <result> */				\
+	  push_code(fc, Opcode::SET_OUTPUT,			\
+		    assign_operand(fc, &inst));			\
+	  /* set_value <op1> */					\
+	  push_code(fc, Opcode::SET_VALUE,			\
+		    assign_operand(fc, inst.getOperand(0)));	\
+	  /* opcode <op2> */					\
+	  push_code(fc, (opcode),				\
 		    assign_operand(fc, inst.getOperand(1)))
 
 	case llvm::Instruction::Add:
@@ -703,36 +686,82 @@ vaddr_t LlvmAsmLoader::load_function(const llvm::Function* function) {
     prop.stack_size = fc.stack_sum;
 
     // 定数領域を作成
-    DataStore& store_k = vmachine.create_value_by_array(sizeof(vaddr_t), k.size(), k.data());
-    prop.k = store_k.addr;
+    prop.k = vm.v_malloc(k.size(), true);
+    vm.v_memcpy(prop.k, k.data(), k.size());
 
     // 定数、変数の数がオペランドで表現可能な上限を超えた場合エラー
-    if (stack_values.size() > 2000 || k.size() > 2000)
+    if (stack_values.size() > ((FILL_OPERAND >> 1) - 1) ||
+	k.size() > ((FILL_OPERAND >> 1) - 1)) {
       throw_error_message(Error::TOO_MANY_VALUE, function->getName().str());
+    }
 
-    return assign_loaded(function,
-			 vmachine.create_function(function->getName().str(),
-						  load_type(function->getReturnType(), false),
-						  prop).addr);
+    vaddr_t addr = map_func.at(function);
+    vm.deploy_function_normal(function->getName().str(),
+			      load_type(function->getReturnType(), false),
+			      prop, addr);
   }
 }
 
 // LLVMの大域変数を仮想マシンにロードする。
-vaddr_t LlvmAsmLoader::load_global(const llvm::GlobalVariable* variable) {
-  check_same_value(loaded_value, variable);
+void LlvmAsmLoader::load_globals(const llvm::Module::GlobalListType& variables) {
+  // 実際の値をロードする前に割当先アドレスを決定する。
+  // 定数の合計サイズを計算する
+  vaddr_t sum = 0;
+  for (auto gl = variables.begin(); gl != variables.end(); gl ++) {
+    // 割り当てサイズの確認
+    assert(data_layout->getTypeAllocSize(gl->getType()->getElementType()) != 0);
+    assert(data_layout->getTypeAllocSize(gl->getType()->getElementType()) ==
+	   data_layout->getTypeStoreSize(gl->getType()->getElementType()));
 
-  if (variable->hasInitializer()) {
-    return assign_loaded(variable,
-			 load_constant(variable->getInitializer()));
-  } else {
-    assert(false); // 動作を確認する
-    return assign_loaded(variable,
-			 vmachine.create_null().addr);
+    if (gl->isConstant()) {
+      // 定数の場合、仮のアドレスを割り当てる
+      map_global.insert(std::make_pair(gl, sum));
+      sum += data_layout->getTypeAllocSize(gl->getType()->getElementType());
+
+    } else {
+      // 変数の場合、それぞれのアドレスを確保する
+      size_t size = data_layout->getTypeAllocSize(gl->getType()->getElementType());
+      vaddr_t new_addr = vm.v_malloc(size, false);
+      map_global.insert(std::make_pair(gl, new_addr));
+    }
+  }
+
+  // 定数領域を割り当て
+  vaddr_t global_addr = vm.v_malloc(sum, true);
+  // 割り当てたアドレスを元に仮のアドレスから実際のアドレスに変更する
+  for (auto it = map_global.begin(); it != map_global.end(); it ++) {
+    if (static_cast<const llvm::GlobalVariable*>(it->first)->isConstant()) {
+      it->second += global_addr;
+    }
+  }
+
+  // 初期値がある場合は値をロードする
+  for (auto it = map_global.begin(); it != map_global.end(); it ++) {
+    const llvm::GlobalVariable* gl =
+      static_cast<const llvm::GlobalVariable*>(it->first);
+    if (gl->hasInitializer()) {
+      load_constant(vm.get_raw_addr(it->second), gl->getInitializer());
+    }
+  }
+}
+
+// LLVMの定数(Int)を仮想マシンにロードする。
+void LlvmAsmLoader::load_int(uint8_t* dst, const llvm::ConstantInt* src) {
+  switch (src->getBitWidth()) {
+  case 8:  memcpy(dst, src->getValue().getRawData(), 1); break;
+  case 16: memcpy(dst, src->getValue().getRawData(), 2); break;
+  case 32: memcpy(dst, src->getValue().getRawData(), 4); break;
+  case 64: memcpy(dst, src->getValue().getRawData(), 8); break;
+
+  default: {
+    print_debug("unsupport bit width : %d\n", src->getBitWidth());
+    throw_error(Error::UNSUPPORT);
+  } break;
   }
 }
 
 // LLVMのモジュールを仮想マシンにロードする。
-void LlvmAsmLoader::load_module(const llvm::Module* module) {
+void LlvmAsmLoader::load_module(llvm::Module* module) {
   /// todo: DataLayout, Tripleのチェック
   print_debug("DataLayout: %s\n", module->getDataLayoutStr().c_str());
   print_debug("Triple: %s\n",     module->getTargetTriple().c_str());
@@ -740,45 +769,130 @@ void LlvmAsmLoader::load_module(const llvm::Module* module) {
   // データレイアウトの取得
   data_layout = module->getDataLayout();
   // 大域変数の読み込み
-  for (auto gl = module->global_begin(); gl != module->global_end(); gl ++) {
-    /// @todo スレッドローカル、セクション、公開の扱い
-    vmachine.set_global_value(gl->getName().str(), load_global(gl));
+  load_globals(module->getGlobalList());
+
+  // 関数のアドレスを予約しておく
+  for (auto fn = module->begin(); fn != module->end(); fn ++) {
+    vaddr_t addr = vm.reserve_func_addr();
+    map_func.insert(std::make_pair(fn, addr));
+    /// todo: スレッドローカル、セクション、公開の扱い
+    vm.set_global_value(fn->getName().str(), addr);
   }
 
   // 関数の読み込み
   for (auto fn = module->begin(); fn != module->end(); fn ++) {
-    /// todo: スレッドローカル、セクション、公開の扱い
-    vmachine.set_global_value(fn->getName().str(), load_function(fn));
+    load_function(fn);
   }
 
   // AliasListは未対応
   if (module->getAliasList().size() != 0) {
     throw_error(Error::UNSUPPORT);
   }
-}
 
-// LLVMの定数(Int)を仮想マシンにロードする。
-vaddr_t LlvmAsmLoader::load_int(const llvm::ConstantInt* src) {
-  check_same_value(loaded_value, src);
+  // デバッグ用にダンプを出力
+  std::set<vaddr_t> all = vm.vmemory.get_alladdr();
+  for (auto it = all.begin(); it != all.end(); it ++) {
+    vaddr_t addr = *it;
+    if (VMemory::addr_is_func(addr)) {
+      FuncStore& func = vm.vmemory.get_func(addr);
+      if (func.type == FuncType::FC_NORMAL) {
+	const FuncStore::NormalProp& prop = func.normal_prop;
+	print_debug("func(normal):\t%016llx\n", addr);
+	print_debug("\tname:\t%s\n", func.name.str().c_str());
+	print_debug("\tis_var_arg:\t%d\n", prop.is_var_arg);
+	print_debug("\targ_num:\t%d\n", prop.arg_num);
+	print_debug("\tstack_size:\t%d\n", prop.stack_size);
+	print_debug("\tcode:(%ld)\n", prop.code.size());
+	for (auto it = prop.code.begin(); it != prop.code.end(); it++) {
+	  print_debug("\t\t%08x  %s\n", *it, Util::code2str(*it).c_str());
+	}
+	print_debug("\tk:\t%016llx\n", prop.k);
+	print_debug("\tret_type\t%016llx\n", func.ret_type);
 
-  vaddr_t buf = 0;
-  switch (src->getBitWidth()) {
-  case 8:  memcpy(&buf, src->getValue().getRawData(), 1); break;
-  case 16: memcpy(&buf, src->getValue().getRawData(), 2); break;
-  case 32: memcpy(&buf, src->getValue().getRawData(), 4); break;
-  case 64: memcpy(&buf, src->getValue().getRawData(), 8); break;
+      } else if (func.type == FuncType::FC_INTRINSIC) {
+	print_debug("func(intrinsic):\t%016llx\n", addr);
+	print_debug("\tname:\t%s\n", func.name.str().c_str());
 
-  default: {
-    print_debug("unsupport bit width : %d\n", src->getBitWidth());
-    throw_error(Error::UNSUPPORT);
-  } break;
+      } else { // FC_EXTERNAL
+	print_debug("func(external):\t%016llx\n", addr);
+	print_debug("\tname:\t%s\n", func.name.str().c_str());
+      }
+
+    } else if (VMemory::addr_is_type(addr)) {
+      TypeStore& type = vm.vmemory.get_type(addr);
+      print_debug("type:\t%016llx\n", addr);
+      if (type.is_array) {
+	print_debug("\t%016llx x %d\n", type.element, type.num);
+      } else {
+	for (auto it = type.member.begin(); it != type.member.end(); it ++)
+	  print_debug("\t%016llx\n", *it);
+      }
+
+    } else { // data
+      DataStore& data = vm.vmemory.get_data(addr);
+      print_debug("data:\t%016llx\n", addr);
+      print_debug("\tsize:\t%ld\n", data.size);
+      for (int i = 0; i < data.size; i += 4) {
+	switch(data.size - i) {
+	case 1: {
+	  print_debug("\t%02x          - %c\n",
+		      0xff & data.head[i    ],
+		      (' ' <= static_cast<const char>(data.head[i    ]) &&
+		       static_cast<const char>(data.head[i    ]) <= '~' ?
+		       static_cast<const char>(data.head[i    ]) : ' '));
+	} break;
+
+	case 2: {
+	  print_debug("\t%02x %02x       - %c%c\n",
+		      0xff & data.head[i    ], 0xff & data.head[i + 1],
+		      (' ' <= static_cast<const char>(data.head[i    ]) &&
+		       static_cast<const char>(data.head[i    ]) <= '~' ?
+		       static_cast<const char>(data.head[i    ]) : ' '),
+		      (' ' <= static_cast<const char>(data.head[i + 1]) &&
+		       static_cast<const char>(data.head[i + 1]) <= '~' ?
+		       static_cast<const char>(data.head[i + 1]) : ' '));
+	} break;
+
+	case 3: {
+	  print_debug("\t%02x %02x %02x    - %c%c%c\n",
+		      0xff & data.head[i    ], 0xff & data.head[i + 1],
+		      0xff & data.head[i + 2],
+		      (' ' <= static_cast<const char>(data.head[i    ]) &&
+		       static_cast<const char>(data.head[i    ]) <= '~' ?
+		       static_cast<const char>(data.head[i    ]) : ' '),
+		      (' ' <= static_cast<const char>(data.head[i + 1]) &&
+		       static_cast<const char>(data.head[i + 1]) <= '~' ?
+		       static_cast<const char>(data.head[i + 1]) : ' '),
+		      (' ' <= static_cast<const char>(data.head[i + 2]) &&
+		       static_cast<const char>(data.head[i + 2]) <= '~' ?
+		       static_cast<const char>(data.head[i + 2]) : ' '));
+	} break;
+
+	default: {
+	  print_debug("\t%02x %02x %02x %02x - %c%c%c%c\n",
+		      0xff & data.head[i    ], 0xff & data.head[i + 1],
+		      0xff & data.head[i + 2], 0xff & data.head[i + 3],
+		      (' ' <= static_cast<const char>(data.head[i    ]) &&
+		       static_cast<const char>(data.head[i    ]) <= '~' ?
+		       static_cast<const char>(data.head[i    ]) : ' '),
+		      (' ' <= static_cast<const char>(data.head[i + 1]) &&
+		       static_cast<const char>(data.head[i + 1]) <= '~' ?
+		       static_cast<const char>(data.head[i + 1]) : ' '),
+		      (' ' <= static_cast<const char>(data.head[i + 2]) &&
+		       static_cast<const char>(data.head[i + 2]) <= '~' ?
+		       static_cast<const char>(data.head[i + 2]) : ' '),
+		      (' ' <= static_cast<const char>(data.head[i + 3]) &&
+		       static_cast<const char>(data.head[i + 3]) <= '~' ?
+		       static_cast<const char>(data.head[i + 3]) : ' '));
+	} break;
+	}
+      }
+    }
   }
-
-  return buf;
 }
 
 // LLVMの定数(struct)を仮想マシンにロードする。
-vaddr_t LlvmAsmLoader::load_struct(const llvm::ConstantStruct* src) {
+void LlvmAsmLoader::load_struct(uint8_t* dst, const llvm::ConstantStruct* src) {
   //check_same_value(loaded_value, function);
 
   assert(false);
@@ -795,7 +909,7 @@ vaddr_t LlvmAsmLoader::load_type(const llvm::Type* type, bool sign) {
   // 基本方の判定
   BasicType addr;
   switch(type->getTypeID()) {
-  // 1:1t対応するもの
+    // 1:1t対応するもの
   case llvm::Type::VoidTyID:        addr = BasicType::TY_VOID;      break;
   case llvm::Type::FloatTyID:       addr = BasicType::TY_F32;       break;
   case llvm::Type::DoubleTyID:      addr = BasicType::TY_F64;       break;
@@ -838,15 +952,15 @@ vaddr_t LlvmAsmLoader::load_type(const llvm::Type* type, bool sign) {
     for (int i = 0, size = type->getStructNumElements(); i < size; i ++) {
       member.push_back(load_type(type->getStructElementType(i), false));
     }
-    TypeStore& store = vmachine.create_type(member);
+    TypeStore& store = vm.create_type(member);
     loaded_type.insert(std::make_pair(type, store.addr));
     return store.addr;
   } break;
 
   case llvm::Type::ArrayTyID: {
     TypeStore& store =
-      vmachine.create_type(load_type(type->getArrayElementType(), false),
-			   type->getArrayNumElements());
+      vm.create_type(load_type(type->getArrayElementType(), false),
+		     type->getArrayNumElements());
     loaded_type.insert(std::make_pair(type, store.addr));
     return store.addr;
   } break;
@@ -857,27 +971,21 @@ vaddr_t LlvmAsmLoader::load_type(const llvm::Type* type, bool sign) {
   }
   
   // 基本型をvmachineから払い出し、キャッシュに登録
-  TypeStore& store = vmachine.create_type(addr);
+  TypeStore& store = vm.create_type(addr);
   loaded_type.insert(std::make_pair(type, store.addr));
   return store.addr;
 }
 
 // LLVMの定数(0うめ領域)を仮想マシンにロードする。
-vaddr_t LlvmAsmLoader::load_zero(const llvm::ConstantAggregateZero* src) {
-  check_same_value(loaded_value, src);
-
+void LlvmAsmLoader::load_zero(uint8_t* dst, const llvm::ConstantAggregateZero* src) {
   // 領域サイズを取得
   assert(data_layout->getTypeAllocSize(src->getType()) != 0);
   assert(data_layout->getTypeStoreSize(src->getType()) ==
 	 data_layout->getTypeAllocSize(src->getType()));
   unsigned int size = data_layout->getTypeAllocSize(src->getType());
 
-  // 領域確保
-  DataStore& store = vmachine.create_value_by_array(1, size, nullptr);
   // 0クリア
-  memset(store.head.get(), 0, size);
-
-  return assign_loaded(src, store.addr);
+  memset(dst, 0, size);
 }
 
 // 現在解析中の関数の命令配列に命令を追記する。

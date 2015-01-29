@@ -8,6 +8,7 @@
 #include <llvm/IR/Value.h>
 #include <llvm/IR/ValueSymbolTable.h>
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -37,8 +38,9 @@ namespace usagi {
     /**
      * コンストラクタ。
      * LLVMのコンテキストを生成する。
+     * @param vm ロード先仮想マシン
      */
-    LlvmAsmLoader(VMachine& vmachine_);
+    LlvmAsmLoader(VMachine& vm_);
 
     /**
      * デストラクタ。
@@ -57,34 +59,42 @@ namespace usagi {
     struct FunctionContext {
       /// 命令配列
       std::vector<instruction_t>& code;
-      /// 定数
-      std::vector<vaddr_t>& k;
+      /// ローカル定数領域
+      std::vector<uint8_t>& k;
       /// スタックに格納する変数と対応するオペランド
       std::map<const llvm::Value*, int>& stack_value;
       /// スタックに割り当て済みのサイズの合計
       int stack_sum;
+      
+      /// ローカル変数とアドレスの対応関係
+      std::map<const llvm::Value*, int> loaded_value;
+      std::map<const llvm::Type*, int> loaded_type;
     };
 
     /// LLVMのコンテキスト(複数ファイルを読み込むときに使い回す)
     llvm::LLVMContext& context;
     /// ロード先仮想マシン
-    VMachine& vmachine;
+    VMachine& vm;
     /// ロード済みの型とアドレスの対応関係
-    std::map<const llvm::Type*,  vaddr_t> loaded_type;
+    std::map<const llvm::Type*, vaddr_t> loaded_type;
 
-    /// ロード済みの値とアドレスの対応関係
-    std::map<const llvm::Value*, vaddr_t> loaded_value;
+    /// 関数とアドレスの対応関係
+    std::map<const llvm::Function*, vaddr_t> map_func;
+
+    /// ロード済のグローバル変数の集合
+    std::set<const llvm::Value*> loaded_global;
+    /// グローバル変数とアドレスの対応関係
+    std::map<const llvm::Value*, vaddr_t> map_global;
 
     /// 解析中のモジュールのデータレイアウト
     const llvm::DataLayout* data_layout;
 
     /**
      * ロード済みの値とアドレスの対応関係を登録する。
+     * @param fc 解析中の関数の命令/変数
      * @param v LLVMの値
-     * @param addr アドレス
-     * @return addrに指定したアドレス
      */
-    vaddr_t assign_loaded(const llvm::Value* v, vaddr_t addr);
+    void assign_loaded(FunctionContext& fc, const llvm::Value* v);
 
     /**
      * LLVMの型に対応するオペランドを取得する。
@@ -106,77 +116,73 @@ namespace usagi {
     /**
      * LLVMの定数(配列)を仮想マシンにロードする。
      * @param src LLVMの定数(配列)
-     * @return
      */
-    vaddr_t load_array(const llvm::ConstantArray* src);
+    void load_array(uint8_t* dst, const llvm::ConstantArray* src);
 
     /**
      * LLVMの定数を仮想マシンにロードする。
      * @param constant LLVMの定数基底
-     * @return 
      */
-    vaddr_t load_constant(const llvm::Constant* constant);
+    void load_constant(uint8_t* dst, const llvm::Constant* src);
 
     /**
      * LLVMの定数(DataArray)を仮想マシンにロードする。
      * @param data_array LLVMの定数
      * @return 
      */
-    vaddr_t load_data(const llvm::ConstantDataArray* data_array);
+    void load_data(uint8_t* dst, const llvm::ConstantDataArray* src);
 
     /**
      * LLVMの定数(Expr)を仮想マシンにロードする。
      * @param expr LLVMの定数(Expr)基底
      * @return 
      */
-    vaddr_t load_expr(const llvm::ConstantExpr* expr);
+    void load_expr(uint8_t* dst, const llvm::ConstantExpr* src);
 
     /**
      * LLVMの定数(Floating-point)を仮想マシンにロードする。
      * @param src llvmの定数(Floating-point)
      * @return
      */
-    vaddr_t load_float(const llvm::ConstantFP* src);
+    void load_float(uint8_t* dst, const llvm::ConstantFP* src);
 
     /**
      * LLVMの関数を仮想マシンにロードする。
      * @param function LLVMの関数
-     * @return 
      */
-    vaddr_t load_function(const llvm::Function* function);
+    void load_function(const llvm::Function* function);
 
     /**
      * LLVMの大域変数を仮想マシンにロードする。
      * @param variable 大域変数
-     * @return 
      */
-    vaddr_t load_global(const llvm::GlobalVariable* variable);
+    void load_globals(const llvm::Module::GlobalListType& variables);
 
     /**
      * LLVMの定数(Int)を仮想マシンにロードする。
      * @param src LLVMの定数(Int)
      * @return
      */
-    vaddr_t load_int(const llvm::ConstantInt* src);
+    void load_int(uint8_t* dst, const llvm::ConstantInt* src);
 
     /**
      * LLVMのモジュールを仮想マシンにロードする。
      * @param module LLVMのモジュール
      */
-    void load_module(const llvm::Module* module);
+    void load_module(llvm::Module* module);
 
     /**
      * LLVMの定数(struct)を仮想マシンにロードする。
      * @param src LLVMの定数(struct)
      * @return
      */
-    vaddr_t load_struct(const llvm::ConstantStruct* src);
+    void load_struct(uint8_t* dst, const llvm::ConstantStruct* src);
 
     /**
      * LLVMの型を仮想マシンにロードする。
      * @param type LLVMの型
      * @param sign i8などの整数で符号ありの場合trueを指定する
-     * @return
+     * @return 型に対応するアドレス値
      */
     vaddr_t load_type(const llvm::Type* type, bool sign);
 
@@ -185,7 +191,7 @@ namespace usagi {
      * @param src LLVMの定数(0うめ領域)
      * @return
      */
-    vaddr_t load_zero(const llvm::ConstantAggregateZero* src);
+    void load_zero(uint8_t* dst, const llvm::ConstantAggregateZero* src);
 
     /**
      * 現在解析中の関数の命令配列に命令を追記する。

@@ -93,53 +93,53 @@ inline FuncStore& get_function(instruction_t code, OperandParam& param) {
   int operand = Instruction::get_operand(code);
   // 関数は定数領域に置かれているはず
   assert((operand & HEAD_OPERAND) != 0);
+  vaddr_t addr = *reinterpret_cast<vaddr_t*>(param.k.head.get() + (FILL_OPERAND - operand));
+  return param.vmemory.get_func(addr);
+}
 
-  vaddr_t addr = reinterpret_cast<vaddr_t*>(param.k.head.get())[FILL_OPERAND - operand];
-   return param.vmemory.get_func(addr);
- }
+inline OperandRet get_operand(instruction_t code, OperandParam& param) {
+  int operand = Instruction::get_operand(code);
+  print_debug("get_operand %d\n", operand);
+  if ((operand & HEAD_OPERAND) != 0) {
+    vaddr_t position = (FILL_OPERAND - operand);
+    assert(position < param.k.size);
+    // 定数の場合1の補数表現からの復元
+    return {param.k, param.k.addr + position, param.k.head.get() + position};
+    
+  } else {
+    assert(operand < param.stack.size);
+    return {param.stack, param.stack.addr + operand, param.stack.head.get() + operand};
+  }
+}
 
- inline OperandRet get_operand(instruction_t code, OperandParam& param) {
-   int operand = Instruction::get_operand(code);
-   if ((operand & HEAD_OPERAND) != 0) {
-     vaddr_t position = (FILL_OPERAND - operand) * sizeof(vaddr_t);
-     assert(position < param.k.size);
-     // 定数の場合1の補数表現からの復元
-     return {param.k, param.k.addr + position, param.k.head.get() + position};
+inline TypeStore& get_type(instruction_t code, OperandParam& param) {
+  int operand = Instruction::get_operand(code);
+  // 型は定数領域に置かれているはず
+  assert((operand & HEAD_OPERAND) != 0);
 
-   } else {
-     assert(operand < param.stack.size);
-     return {param.stack, param.stack.addr + operand, param.stack.head.get() + operand};
-   }
- }
+  vaddr_t addr = *reinterpret_cast<vaddr_t*>(param.k.head.get() + (FILL_OPERAND - operand));
+  return param.vmemory.get_type(addr);
+}
 
- inline TypeStore& get_type(instruction_t code, OperandParam& param) {
-   int operand = Instruction::get_operand(code);
-   // 型は定数領域に置かれているはず
-   assert((operand & HEAD_OPERAND) != 0);
+// コンストラクタ。
+VMachine::VMachine() :
+  status(SETUP) {
+}
 
-   vaddr_t addr = reinterpret_cast<vaddr_t*>(param.k.head.get())[FILL_OPERAND - operand];
-   return param.vmemory.get_type(addr);
- }
+// VM命令を実行する。
+void VMachine::execute(int max_clock) {
+  Thread& thread = *(threads.front().get());
+ re_entry: {
+    // ciが1段の場合、終了
+    if (thread.stackinfos.size() == 1) return;
 
- // コンストラクタ。
- VMachine::VMachine() :
-   status(SETUP) {
- }
+    StackInfo& stackinfo = *(thread.stackinfos.back().get());
+    resolve_stackinfo_cache(&stackinfo);
 
- // VM命令を実行する。
- void VMachine::execute(int max_clock) {
-   Thread& thread = *(threads.front().get());
-  re_entry: {
-     // ciが1段の場合、終了
-     if (thread.stackinfos.size() == 1) return;
-
-     StackInfo& stackinfo = *(thread.stackinfos.back().get());
-     resolve_stackinfo_cache(&stackinfo);
-
-     const FuncStore& func = *stackinfo.func_cache;
-     const std::vector<instruction_t>& insts = func.normal_prop.code;
-     DataStore& k = vmemory.get_data(func.normal_prop.k);
-     OperandParam op_param = {*stackinfo.stack_cache, k, vmemory};
+    const FuncStore& func = *stackinfo.func_cache;
+    const std::vector<instruction_t>& insts = func.normal_prop.code;
+    DataStore& k = vmemory.get_data(func.normal_prop.k);
+    OperandParam op_param = {*stackinfo.stack_cache, k, vmemory};
 
     for (; max_clock > 0; max_clock --) {
       instruction_t code = insts.at(stackinfo.pc);
@@ -218,10 +218,10 @@ inline FuncStore& get_function(instruction_t code, OperandParam& param) {
 	    throw_error(Error::TYPE_VIOLATION);
 
 	  // 可変長引数分がある場合、別領域を作成
-	  DataStore& store = create_value_by_array(work.size(), 1, work.data());
-	  new_stackinfo->alloca_addrs.push_back(store.addr);
-	  new_stackinfo->var_arg = store.addr;
-
+	  new_stackinfo->var_arg = v_malloc(work.size(), false);
+	  new_stackinfo->alloca_addrs.push_back(new_stackinfo->var_arg);
+	  v_memcpy(new_stackinfo->var_arg, work.data(), work.size());
+	  
 	  if (is_tailcall) {
 	    // 末尾再帰の場合、既存のstackinfoを削除
 	    // 次の命令はRETURNのはず
@@ -565,78 +565,10 @@ std::pair<size_t, unsigned int> VMachine::calc_type_size(vaddr_t type) {
 void VMachine::close() {
   // ロードした外部のライブラリを閉じる
   /*
-  for (auto it = ext_libs.begin(); it != ext_libs.end(); it ++) {
+    for (auto it = ext_libs.begin(); it != ext_libs.end(); it ++) {
     dlclose(*it);
-  }
+    }
   //*/
-}
-
-// 関数を作成する。
-FuncStore& VMachine::create_function(const std::string& name,
-				     vaddr_t ret_type,
-				     const FuncStore::NormalProp& prop) {
-  // 関数領域を確保
-  FuncStore& store = vmemory.alloc_func(symbols.get(name), ret_type, prop);
-  
-  print_debug("create_function\n");
-  print_debug("\tis_var_arg\t:%d\n", prop.is_var_arg);
-  print_debug("\targ_num\t:%d\n", prop.arg_num);
-  print_debug("\tstack_size\t:%d\n", prop.stack_size);
-  print_debug("\tcode:(%ld)\n", prop.code.size());
-  for (auto it = prop.code.begin(); it != prop.code.end(); it++) {
-    print_debug("\t\t%08x  %s\n", *it, Util::code2str(*it).c_str());
-  }
-  print_debug("\taddress\t:%016llx\n", store.addr);
-  print_debug("\tfunc\t:%p\n", &store);
-  print_debug("\tk:(%016llx)\n", prop.k);
-  const DataStore& store_k = vmemory.get_data(prop.k);
-  for (int i = 0; i < store_k.size; i += sizeof(vaddr_t)) {
-    print_debug("\t\t%016llx\n", *reinterpret_cast<vaddr_t*>(store_k.head.get() + i));
-  }
-  print_debug("\tret_type\t%016llx\n", store.ret_type);
-
-  return store;
-}
-
-// VM組み込み関数/ライブラリなど外部の関数を作成する。
-FuncStore& VMachine::create_function(const std::string& name,
-				     vaddr_t ret_type) {
-  auto ifunc = intrinsic_funcs.find(name);
-
-  // 関数領域を確保
-  FuncStore& store = (ifunc == intrinsic_funcs.end() ?
-		      vmemory.alloc_func(symbols.get(name), ret_type) :
-		      vmemory.alloc_func(symbols.get(name), ret_type, ifunc->second));
-
-  return store;
-}
-
-// NULLポインタを作成する。
-DataStore& VMachine::create_null() {
-  return create_pointer(VADDR_NULL, 0);
-}
-
-// ポインタ変数を作成する。
-DataStore& VMachine::create_pointer(vaddr_t src, int delta) {
-  // 関数ポインタに対する演算はエラー
-  if ((VMemory::addr_is_func(src) || VMemory::addr_is_type(src)) && delta != 0)
-    throw_error(Error::MOD_FUNCTION);
-
-  /// セグメンテーションフォルト判定
-  vaddr_t lower = vmemory.get_addr_lower(src);
-  DataStore& data = vmemory.get_data(src);
-  if ((delta < 0 && static_cast<signed>(lower) + delta < 0) ||
-      (delta > 0 && static_cast<signed>(lower) + delta >=
-       static_cast<int>(data.size)))
-    throw_error(Error::SEGMENT_FAULT);
-
-  print_debug("create_pointer\n");
-  print_debug("\tsrc\t:%llx\n", src);
-  print_debug("\tdelta\t:%d\n", delta);
-  print_debug("\taddr\t:%p\n", data.head.get());
-
-  // ポインタを作成。
-  return create_value_by_primitive(src + delta);
 }
 
 // 基本型情報を作成する。
@@ -666,36 +598,17 @@ TypeStore& VMachine::create_type(const std::vector<vaddr_t>& member) {
   return vmemory.alloc_type(info.first, info.second, member);
 }
 
-// データの配列で初期化した値を作成する。
-DataStore& VMachine::create_value_by_array(int per_size, int length, const void* data) {
-  int size = per_size * length;
-  // データ領域を作る
-  DataStore& store = vmemory.alloc_data(size, false);/// @TODO 定数フラグ
-  
-  // データ領域にデータをコピー
-  if (data != nullptr) {
-    std::memcpy(store.head.get(), data, size);
-  }
+// ネイティブ関数を指定アドレスに展開する。
+void VMachine::deploy_function(const std::string& name, vaddr_t ret_type, vaddr_t addr) {
+  auto ifunc = intrinsic_funcs.find(name);
+  if (ifunc == intrinsic_funcs.end()) {
+    // 組み込み関数に名前がなかった場合、ライブラリ関数として展開。
+    deploy_function_external(name, ret_type, addr);
 
-  print_debug("create_array\n");
-  print_debug("\taddr\t:%016llx\n", store.addr);
-  print_debug("\taddr\t:%p\n", store.head.get());
-  print_debug("\tper_size\t:%d\n", per_size);
-  print_debug("\tlength\t:%d\n", length);
-  if (data == nullptr) {
-    print_debug("\tdata:nullptr\n");
   } else {
-    print_debug("\tdata:\n");
-    for (int i = 0; i < size; i ++) {
-      print_debug("\t\t%02x(%c)\n",
-		  (0xff & static_cast<const char*>(data)[i]),
-		  (' ' <= static_cast<const char*>(data)[i] &&
-		   static_cast<const char*>(data)[i] <= '~' ?
-		   static_cast<const char*>(data)[i] : ' '));
-    }
+    // 組み込み関数に名前があった場合組み込み関数として展開。
+    deploy_function_intrinsic(name, ret_type, addr);
   }
-
-  return store;
 }
 
 // ライブラリ関数を指定アドレスに展開する。
@@ -747,6 +660,16 @@ external_func_t VMachine::get_external_func(const Symbols::Symbol& name) {
   return func;
 }
 
+// 仮想アドレスに相当する実アドレスを取得する。
+uint8_t* VMachine::get_raw_addr(vaddr_t addr) {
+  DataStore& store = vmemory.get_data(addr);
+  // アクセス違反を確認する
+  if (VMemory::get_addr_lower(addr) > store.size) {
+    throw_error_message(Error::SEGMENT_FAULT, Util::vaddr2str(addr));
+  }
+  return reinterpret_cast<uint8_t*>(store.head.get() + VMemory::get_addr_lower(addr));
+}
+
 // StackInfoのキャッシュを解決し、実行前の状態にする。
 void VMachine::resolve_stackinfo_cache(StackInfo* target) {
   // 関数
@@ -794,6 +717,11 @@ void VMachine::resolve_stackinfo_cache(StackInfo* target) {
   } else {
     target->address_cache = nullptr;
   }
+}
+
+// 関数のアドレスを予約する。
+vaddr_t VMachine::reserve_func_addr() {
+  return vmemory.reserve_func_addr();
 }
 
 // VMの初期設定をする。
@@ -878,8 +806,8 @@ void VMachine::setup() {
   std::vector<vaddr_t> basic_type_dummy;
   basic_type_dummy.push_back(BasicType::TY_VOID);
 
-#define M_ALLOC_BASIC_TYPE(s, a, t)		       \
-  vmemory.alloc_type((s), (a), basic_type_dummy, (t)); \
+#define M_ALLOC_BASIC_TYPE(s, a, t)			\
+  vmemory.alloc_type((s), (a), basic_type_dummy, (t));	\
   intrinsic_addrs.insert(t)
 
   // 基本型を登録
@@ -902,13 +830,38 @@ void VMachine::setup() {
 
   // Cの標準ライブラリをロード
   /*
-  void* dl_handle = dlopen(, RTLD_LAZY);
-  if (!dl_handle) {
+    void* dl_handle = dlopen(, RTLD_LAZY);
+    if (!dl_handle) {
     throw_error_message(Error::EXT_LIBRARY, dlerror());
-  }
+    }
   //*/
 }
 
 // ワープ後のVMの設定をする。
 void VMachine::setup_continuous() {
+}
+
+// データ領域を確保する。
+vaddr_t VMachine::v_malloc(size_t size, bool is_const) {
+  return vmemory.alloc_data(size, is_const).addr;
+}
+
+// データ領域へ実データをコピーする。
+void VMachine::v_memcpy(vaddr_t dst, void* src, size_t n) {
+  DataStore& store = vmemory.get_data(dst);
+  // アクセス違反をチェック
+  if (VMemory::get_addr_lower(dst) + n > store.size) {
+    throw_error_message(Error::SEGMENT_FAULT, Util::vaddr2str(dst));
+  }
+  memcpy(store.head.get(), src, n);
+}
+
+// データ領域を指定の数値で埋める。
+void VMachine::v_memset(vaddr_t dst, int c, size_t len) {
+  DataStore& store = vmemory.get_data(dst);
+  // アクセス違反をチェック
+  if (VMemory::get_addr_lower(dst) + len > store.size) {
+    throw_error_message(Error::SEGMENT_FAULT, Util::vaddr2str(dst));
+  }
+  memset(store.head.get(), c, len);
 }
