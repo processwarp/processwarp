@@ -1,20 +1,14 @@
-CXX         = clang++ -std=c++0x -stdlib=libc++
-LD          = clang++ -std=c++0x -stdlib=libc++
-#CXX         = g++-4.9 -std=c++11 -fsanitize=address
-#LD          = g++-4.9 -std=c++11 -fsanitize=address
-#CXX        = g++ -std=c++11 -fpermissive
-#LD         = g++ -std=c++11
+
 RM          = rm -f
-CXXFLAGS    = -g -O0 -Wall -I/usr/local/Cellar/llvm/3.5.1/include -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS `pkg-config gloox --cflags`
-LDLIBS      = -L/usr/local/Cellar/llvm/3.5.1/lib -lLLVM-3.5 -lffi `pkg-config gloox --libs`
-#CXXFLAGS    = -g -O0 -Wall -I/usr/local/include -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS `pkg-config gloox --cflags`
-#LDLIBS      = -L/usr/local/lib -lLLVMAsmParser -lLLVMCore -lLLVMSupport -lcurses -ldl -lpthread -lffi `pkg-config gloox --libs`
 
 OBJS        = llvm_asm_loader.o symbols.o usagi.o util.o vmachine.o vmemory.o \
               error.o func_store.o data_store.o type_store.o server.o xmpp.o convert.o \
               stackinfo.o type_based.o
 
 TARGETS     = usagi
+
+default:
+	echo "You should select a target platform."
 
 all:$(TARGETS)
 
@@ -27,13 +21,27 @@ clean:
 gtags:
 	gtags -v
 
+linux:
+	$(MAKE) all \
+	CXX="g++ -std=c++11 -fpermissive" \
+	LD="g++ -std=c++11" \
+	CXXFLAGS="-g -O0 -Wall -I/usr/local/include -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS `pkg-config gloox --cflags`" \
+	LDLIBS="-L/usr/local/lib -lLLVMAsmParser -lLLVMCore -lLLVMSupport -lcurses -ldl -lpthread -lffi `pkg-config gloox --libs`"
+
+macosx:
+	$(MAKE) all \
+	CXX="clang++ -std=c++0x -stdlib=libc++" \
+	LD="clang++ -std=c++0x -stdlib=libc++" \
+	CXXFLAGS="-g -O0 -Wall -I/usr/include/ffi -I/usr/local/Cellar/llvm/3.5.1/include -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS `pkg-config gloox --cflags`" \
+	LDLIBS="-L/usr/local/Cellar/llvm/3.5.1/lib -lLLVM-3.5 -lffi `pkg-config gloox --libs`"
+
 usagi:$(OBJS)
 	$(LD) -o $@ $^ $(LDLIBS)
 
 .cpp.o:
 	$(CXX) $(CXXFLAGS) -c $<
 
-.PHONY:check-syntax clean gtags
+.PHONY:check-syntax clean default gtags
 
 convert.hpp:definitions.hpp
 convert.o:convert.cpp 

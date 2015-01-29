@@ -2,7 +2,7 @@
 #include <cstring>
 #include <memory>
 
-#include <ffi/ffi.h>
+#include <ffi.h>
 #include <dlfcn.h>
 #include <unistd.h>
 
