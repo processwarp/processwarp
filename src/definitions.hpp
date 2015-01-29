@@ -29,7 +29,7 @@ namespace usagi {
   typedef std::int64_t vm_int_t;
 
   /** 最長のuintを1うめしたもの */
-  static longest_uint_t LONGEST_UINT_FILL = 0xFFFFFFFFFFFFFFFF;
+  //static longest_uint_t LONGEST_UINT_FILL = 0xFFFFFFFFFFFFFFFF;
 
   /** ライブラリなど外部関数の関数の型 */
   typedef void (*external_func_t)();

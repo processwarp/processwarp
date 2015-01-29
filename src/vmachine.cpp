@@ -1,5 +1,6 @@
 
 #include <cstring>
+#include <inttypes.h>
 #include <memory>
 
 #include <ffi.h>
@@ -107,7 +108,7 @@ inline OperandRet get_operand(instruction_t code, OperandParam& param) {
     return {param.k, param.k.addr + position, param.k.head.get() + position};
     
   } else {
-    assert(operand < param.stack.size);
+    assert(operand < static_cast<signed>(param.stack.size));
     return {param.stack, param.stack.addr + operand, param.stack.head.get() + operand};
   }
 }
@@ -177,7 +178,7 @@ void VMachine::execute(int max_clock) {
 			  VADDR_NON)));
 
 	// 引数を集める
-	int args = 0;
+	unsigned int args = 0;
 	int written_size = 0;
 	instruction_t type_inst;
 	instruction_t value_inst;
@@ -333,7 +334,7 @@ void VMachine::execute(int max_clock) {
 	OperandRet operand = get_operand(code, op_param);
 	stackinfo.address = *reinterpret_cast<vaddr_t*>(operand.cache);
 	stackinfo.address_cache = get_cache(stackinfo.address, vmemory);
-	print_debug("address = %016llx\n", stackinfo.address);
+	print_debug("address = %016" PRIx64 "\n", stackinfo.address);
       } break;
 
       case Opcode::SET_ALIGN: {
@@ -345,7 +346,7 @@ void VMachine::execute(int max_clock) {
 	int operand = Instruction::get_operand_value(code);
 	stackinfo.address += operand;
 	stackinfo.address_cache += operand;
-	print_debug("+%d address = %016llx\n", operand, stackinfo.address);
+	print_debug("+%d address = %016" PRIx64 "\n", operand, stackinfo.address);
       } break;
 
       case Opcode::MUL_ADR: {
@@ -353,20 +354,20 @@ void VMachine::execute(int max_clock) {
 	const vm_int_t diff = operand * stackinfo.type_cache1->get(stackinfo.value_cache);
 	stackinfo.address += diff;
 	stackinfo.address_cache += diff;
-	print_debug("+%d * %lld address = %16llx\n",
+	print_debug("+%d * %" PRIu64 " address = %16" PRIx64 "\n",
 		    operand, stackinfo.type_cache1->get(stackinfo.value_cache), stackinfo.address);
       } break;
 
       case Opcode::GET_ADR: {
 	OperandRet operand = get_operand(code, op_param);
 	*reinterpret_cast<vaddr_t*>(operand.cache) = stackinfo.address;
-	print_debug("*%016llx = %016llx\n", operand.addr, stackinfo.address);
+	print_debug("*%016" PRIx64 " = %016" PRIx64 "\n", operand.addr, stackinfo.address);
       } break;
 
       case Opcode::LOAD: {
 	OperandRet operand = get_operand(code, op_param);
 	memcpy(operand.cache, stackinfo.address_cache, stackinfo.type_cache2->size);
-	print_debug("*%016llx = *%016llx(size = %ld)\n",
+	print_debug("*%016" PRIx64 " = *%016" PRIx64 "(size = %ld)\n",
 		    operand.addr, stackinfo.address, stackinfo.type_cache2->size);
       } break;
 
@@ -457,7 +458,7 @@ void VMachine::call_external(external_func_t func,
   std::vector<ffi_type*> ffi_arg_types;
   std::vector<void*> ffi_args;
 
-  int seek = 0;
+  unsigned int seek = 0;
   while(seek < args.size()) {
     TypeStore& type = vmemory.get_type(*reinterpret_cast<vaddr_t*>(args.data() + seek));
 
@@ -575,7 +576,7 @@ void VMachine::close() {
 TypeStore& VMachine::create_type(BasicType type) {
   // 型のアドレスを持つValueを作成
   print_debug("create_type(basic)\n");
-  print_debug("\taddr\t:%016llx\n", type);
+  print_debug("\taddr\t:%016" PRIx64 "\n", type);
   
   return vmemory.get_type(type);
 }

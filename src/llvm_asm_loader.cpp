@@ -115,7 +115,7 @@ void LlvmAsmLoader::load_array(uint8_t* dst, const llvm::ConstantArray* src) {
   
   // 書き込み
   int one_size = data_layout->getTypeAllocSize(src->getOperand(0)->getType());
-  for (int i = 0; i < src->getNumOperands(); i ++) {
+  for (unsigned int i = 0; i < src->getNumOperands(); i ++) {
     load_constant(dst + i * one_size, src->getOperand(i));
   }
 }
@@ -241,7 +241,7 @@ void LlvmAsmLoader::load_expr(uint8_t* dst, const llvm::ConstantExpr* src) {
 
       } else if (llvm::StructType::classof(op_type)) {
 	// 構造体型の中身を見る。
-	int j = 0;
+	unsigned int j = 0;
 	for (j = 0; j < op->getZExtValue(); j ++) {
 	  llvm::Type* in_type = static_cast<const llvm::StructType*>(op_type)->getElementType(j);
 	  delta += (uint32_t)data_layout->getTypeStoreSize(in_type);
@@ -582,7 +582,7 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 	      push_code(fc, Opcode::MUL_ADR, data_layout->getTypeAllocSize(op_type));
 
 	    } else if (llvm::StructType::classof(op_type)) {
-	      int j = 0;
+	      unsigned int j = 0;
 	      int size_sum = 0;
 	      // int系のはず
 	      assert(llvm::ConstantInt::classof(inst.getOperand(i)));
@@ -797,7 +797,7 @@ void LlvmAsmLoader::load_module(llvm::Module* module) {
       FuncStore& func = vm.vmemory.get_func(addr);
       if (func.type == FuncType::FC_NORMAL) {
 	const FuncStore::NormalProp& prop = func.normal_prop;
-	print_debug("func(normal):\t%016llx\n", addr);
+	print_debug("func(normal):\t%016" PRIx64 "\n", addr);
 	print_debug("\tname:\t%s\n", func.name.str().c_str());
 	print_debug("\tis_var_arg:\t%d\n", prop.is_var_arg);
 	print_debug("\targ_num:\t%d\n", prop.arg_num);
@@ -806,33 +806,33 @@ void LlvmAsmLoader::load_module(llvm::Module* module) {
 	for (auto it = prop.code.begin(); it != prop.code.end(); it++) {
 	  print_debug("\t\t%08x  %s\n", *it, Util::code2str(*it).c_str());
 	}
-	print_debug("\tk:\t%016llx\n", prop.k);
-	print_debug("\tret_type\t%016llx\n", func.ret_type);
+	print_debug("\tk:\t%016" PRIx64 "\n", prop.k);
+	print_debug("\tret_type\t%016" PRIx64 "\n", func.ret_type);
 
       } else if (func.type == FuncType::FC_INTRINSIC) {
-	print_debug("func(intrinsic):\t%016llx\n", addr);
+	print_debug("func(intrinsic):\t%016" PRIx64 "\n", addr);
 	print_debug("\tname:\t%s\n", func.name.str().c_str());
 
       } else { // FC_EXTERNAL
-	print_debug("func(external):\t%016llx\n", addr);
+	print_debug("func(external):\t%016" PRIx64 "\n", addr);
 	print_debug("\tname:\t%s\n", func.name.str().c_str());
       }
 
     } else if (VMemory::addr_is_type(addr)) {
       TypeStore& type = vm.vmemory.get_type(addr);
-      print_debug("type:\t%016llx\n", addr);
+      print_debug("type:\t%016" PRIx64 "\n", addr);
       if (type.is_array) {
-	print_debug("\t%016llx x %d\n", type.element, type.num);
+	print_debug("\t%016" PRIx64 " x %d\n", type.element, type.num);
       } else {
 	for (auto it = type.member.begin(); it != type.member.end(); it ++)
-	  print_debug("\t%016llx\n", *it);
+	  print_debug("\t%016" PRIx64 "\n", *it);
       }
 
     } else { // data
       DataStore& data = vm.vmemory.get_data(addr);
-      print_debug("data:\t%016llx\n", addr);
+      print_debug("data:\t%016" PRIx64 "\n", addr);
       print_debug("\tsize:\t%ld\n", data.size);
-      for (int i = 0; i < data.size; i += 4) {
+      for (unsigned int i = 0; i < data.size; i += 4) {
 	switch(data.size - i) {
 	case 1: {
 	  print_debug("\t%02x          - %c\n",

@@ -1,5 +1,6 @@
 
 #include <cstdint>
+#include <cstring>
 
 #include "error.hpp"
 #include "type_based.hpp"
@@ -92,30 +93,32 @@ M_BINARY_OPERATOR_TYPE_EXTENDED(op_xor, ^); // xor
 
 #undef M_BINARY_OPERATOR_TYPE_EXTENDED
 
-/**
- * 浮動小数点演算でサポートしない2項演算子用のメソッドを生成する
- * @param op メソッド名
- * @param type 型
- */
+namespace usagi {
+  /**
+   * 浮動小数点演算でサポートしない2項演算子用のメソッドを生成する
+   * @param op メソッド名
+   * @param type 型
+   */
 #define M_BINARY_OPERATOR_UNSUPPORT(op, type)				\
   template<> void TypeExtended<type>::op(uint8_t* dst, uint8_t* a, uint8_t* b) { \
     throw_error(Error::UNSUPPORT);					\
   }
 
-M_BINARY_OPERATOR_UNSUPPORT(op_and, double); // and
-M_BINARY_OPERATOR_UNSUPPORT(op_or,  double); // or
-M_BINARY_OPERATOR_UNSUPPORT(op_rem, double); // 剰余
-M_BINARY_OPERATOR_UNSUPPORT(op_shl, double); // 左シフト
-M_BINARY_OPERATOR_UNSUPPORT(op_shr, double); // 右シフト
-M_BINARY_OPERATOR_UNSUPPORT(op_xor, double); // xor
-M_BINARY_OPERATOR_UNSUPPORT(op_and, float); // and
-M_BINARY_OPERATOR_UNSUPPORT(op_or,  float); // or
-M_BINARY_OPERATOR_UNSUPPORT(op_rem, float); // 剰余
-M_BINARY_OPERATOR_UNSUPPORT(op_shl, float); // 左シフト
-M_BINARY_OPERATOR_UNSUPPORT(op_shr, float); // 右シフト
-M_BINARY_OPERATOR_UNSUPPORT(op_xor, float); // xor
+  M_BINARY_OPERATOR_UNSUPPORT(op_and, double); // and
+  M_BINARY_OPERATOR_UNSUPPORT(op_or,  double); // or
+  M_BINARY_OPERATOR_UNSUPPORT(op_rem, double); // 剰余
+  M_BINARY_OPERATOR_UNSUPPORT(op_shl, double); // 左シフト
+  M_BINARY_OPERATOR_UNSUPPORT(op_shr, double); // 右シフト
+  M_BINARY_OPERATOR_UNSUPPORT(op_xor, double); // xor
+  M_BINARY_OPERATOR_UNSUPPORT(op_and, float); // and
+  M_BINARY_OPERATOR_UNSUPPORT(op_or,  float); // or
+  M_BINARY_OPERATOR_UNSUPPORT(op_rem, float); // 剰余
+  M_BINARY_OPERATOR_UNSUPPORT(op_shl, float); // 左シフト
+  M_BINARY_OPERATOR_UNSUPPORT(op_shr, float); // 右シフト
+  M_BINARY_OPERATOR_UNSUPPORT(op_xor, float); // xor
 
 #undef M_BINARY_OPERATOR_UNSUPPORT
+}
 
 // shl命令に対応した加算を行う。
 template <typename T> void TypeExtended<T>::op_shl(uint8_t* dst, uint8_t* a, uint8_t* b) {
@@ -184,4 +187,3 @@ template class usagi::TypeExtended<uint32_t>;
 template class usagi::TypeExtended<uint64_t>;
 template class usagi::TypeExtended<float>;
 template class usagi::TypeExtended<double>;
-

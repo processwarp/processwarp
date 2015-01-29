@@ -1,5 +1,6 @@
 
 #include <cstring>
+#include <inttypes.h>
 #include <iostream>
 #include <tuple>
 
@@ -67,7 +68,7 @@ vaddr_t assign_addr(std::map<vaddr_t, T>& store_map,
     // タイプが整合していること、アドレスが空いていること。
     if (type != (addr & AddrType::AD_MASK) ||
 	store_map.find(addr) != store_map.end()) {
-      print_debug("type:%016llx, addr:%016llx\n", type, addr);
+      print_debug("type:%016" PRIx64 ", addr:%016" PRIx64 "\n", type, addr);
       throw_error(Error::SPEC_VIOLATION);
     }
 
@@ -121,7 +122,7 @@ bool VMemory::addr_is_type(vaddr_t addr) {
 
 // メモリ空間に新しいデータ領域を確保する。
 DataStore& VMemory::alloc_data(size_t size, bool is_const, vaddr_t addr) {
-  print_debug("alloc_data size:%ld, addr:%016llx\n", size, addr);
+  print_debug("alloc_data size:%ld, addr:%016" PRIx64 "\n", size, addr);
   assert(size != 0);
 
   // サイズからアドレスタイプを判定する
@@ -147,7 +148,7 @@ FuncStore& VMemory::alloc_func(const Symbols::Symbol& name,
 			       vaddr_t ret_type,
 			       const FuncStore::NormalProp& normal_prop,
 			       vaddr_t addr) {
-  print_debug("alloc_func(N) name:%s, addr:%016llx\n", name.str().c_str(), addr);
+  print_debug("alloc_func(N) name:%s, addr:%016" PRIx64 "\n", name.str().c_str(), addr);
   // 空きアドレスの検索
   addr = assign_addr(func_store_map, func_reserved,
 		     static_cast<vaddr_t>(AddrType::AD_FUNCTION),
@@ -163,7 +164,7 @@ FuncStore& VMemory::alloc_func(const Symbols::Symbol& name,
 			       vaddr_t ret_type,
 			       const intrinsic_func_t intrinsic, 
 			       vaddr_t addr) {
-  print_debug("alloc_func(I) name:%s, addr:%016llx\n", name.str().c_str(), addr);
+  print_debug("alloc_func(I) name:%s, addr:%016" PRIx64 "\n", name.str().c_str(), addr);
   // 空きアドレスの検索
   addr = assign_addr(func_store_map, func_reserved,
 		     static_cast<vaddr_t>(AddrType::AD_FUNCTION),
@@ -178,7 +179,7 @@ FuncStore& VMemory::alloc_func(const Symbols::Symbol& name,
 FuncStore& VMemory::alloc_func(const Symbols::Symbol& name,
 			       vaddr_t ret_type,
 			       vaddr_t addr) {
-  print_debug("alloc_func(E) name:%s, addr:%016llx\n", name.str().c_str(), addr);
+  print_debug("alloc_func(E) name:%s, addr:%016" PRIx64 "\n", name.str().c_str(), addr);
   // 空きアドレスの検索
   addr = assign_addr(func_store_map, func_reserved,
 		     static_cast<vaddr_t>(AddrType::AD_FUNCTION),
@@ -194,7 +195,7 @@ TypeStore& VMemory::alloc_type(size_t size,
 			       unsigned int alignment,
 			       const std::vector<vaddr_t>& member,
 			       vaddr_t addr) {
-  print_debug("alloc_type size:%ld, alignment:%d, addr:%016llx\n", size, alignment, addr);
+  print_debug("alloc_type size:%ld, alignment:%d, addr:%016" PRIx64 "\n", size, alignment, addr);
   // 空きアドレスの検索
   addr = assign_addr(type_store_map, type_reserved,
 		     static_cast<vaddr_t>(AddrType::AD_TYPE),
@@ -211,7 +212,7 @@ TypeStore& VMemory::alloc_type(size_t size,
 			       vaddr_t element,
 			       unsigned int num,
 			       vaddr_t addr) {
-  print_debug("alloc_type size:%ld, alignment:%d, element:%016llx, num:%d, addr:%016llx\n",
+  print_debug("alloc_type size:%ld, alignment:%d, element:%016" PRIx64 ", num:%d, addr:%016" PRIx64 "\n",
 	      size, alignment, element, num, addr);
   // 空きアドレスの検索
   addr = assign_addr(type_store_map, type_reserved,
