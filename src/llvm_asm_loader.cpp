@@ -269,11 +269,13 @@ void LlvmAsmLoader::load_expr(uint8_t* dst, const llvm::ConstantExpr* src) {
 // LLVMの定数(Floating-point)を仮想マシンにロードする。
 void LlvmAsmLoader::load_float(uint8_t* dst, const llvm::ConstantFP* src) {
   switch(src->getType()->getTypeID()) {
-  case llvm::Type::FloatTyID:
+  case llvm::Type::FloatTyID: {
     *reinterpret_cast<float*>(dst) = src->getValueAPF().convertToFloat();
-    
-  case llvm::Type::DoubleTyID:
+  } break;
+
+  case llvm::Type::DoubleTyID: {
     *reinterpret_cast<double*>(dst) = src->getValueAPF().convertToDouble();
+  } break;
 
   default: {
     print_debug("unsupport type : %d\n", src->getType()->getTypeID());
