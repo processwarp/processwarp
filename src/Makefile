@@ -5,8 +5,8 @@ LD          = clang++ -std=c++0x -stdlib=libc++
 #CXX        = g++ -std=c++11 -fpermissive
 #LD         = g++ -std=c++11
 RM          = rm -f
-CXXFLAGS    = -g -O0 -Wall -I/usr/local/Cellar/llvm/3.5.0/include -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS `pkg-config gloox --cflags`
-LDLIBS      = -L/usr/local/Cellar/llvm/3.5.0/lib -lLLVM-3.5 -lffi `pkg-config gloox --libs`
+CXXFLAGS    = -g -O0 -Wall -I/usr/local/Cellar/llvm/3.5.1/include -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS `pkg-config gloox --cflags`
+LDLIBS      = -L/usr/local/Cellar/llvm/3.5.1/lib -lLLVM-3.5 -lffi `pkg-config gloox --libs`
 #CXXFLAGS    = -g -O0 -Wall -I/usr/local/include -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS `pkg-config gloox --cflags`
 #LDLIBS      = -L/usr/local/lib -lLLVMAsmParser -lLLVMCore -lLLVMSupport -lcurses -ldl -lpthread -lffi `pkg-config gloox --libs`
 
