@@ -538,7 +538,7 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 	  const llvm::StoreInst& inst = static_cast<const llvm::StoreInst&>(*i);
 	  // set_type <ty>
 	  push_code(fc, Opcode::SET_TYPE,
-		    assign_type(fc, inst.getPointerOperand()->getType()));
+		    assign_type(fc, inst.getValueOperand()->getType()));
 	  // set_align <alignment>
 	  push_code(fc, Opcode::SET_ALIGN,
 		    inst.getAlignment());
@@ -835,7 +835,7 @@ void LlvmAsmLoader::load_module(llvm::Module* module) {
       for (unsigned int i = 0; i < data.size; i += 4) {
 	switch(data.size - i) {
 	case 1: {
-	  print_debug("\t%02x          - %c\n",
+	  print_debug("\t%d\t%02x          - %c\n", i,
 		      0xff & data.head[i    ],
 		      (' ' <= static_cast<const char>(data.head[i    ]) &&
 		       static_cast<const char>(data.head[i    ]) <= '~' ?
@@ -843,7 +843,7 @@ void LlvmAsmLoader::load_module(llvm::Module* module) {
 	} break;
 
 	case 2: {
-	  print_debug("\t%02x %02x       - %c%c\n",
+	  print_debug("\t%d\t%02x %02x       - %c%c\n", i,
 		      0xff & data.head[i    ], 0xff & data.head[i + 1],
 		      (' ' <= static_cast<const char>(data.head[i    ]) &&
 		       static_cast<const char>(data.head[i    ]) <= '~' ?
@@ -854,7 +854,7 @@ void LlvmAsmLoader::load_module(llvm::Module* module) {
 	} break;
 
 	case 3: {
-	  print_debug("\t%02x %02x %02x    - %c%c%c\n",
+	  print_debug("\t%d\t%02x %02x %02x    - %c%c%c\n", i,
 		      0xff & data.head[i    ], 0xff & data.head[i + 1],
 		      0xff & data.head[i + 2],
 		      (' ' <= static_cast<const char>(data.head[i    ]) &&
@@ -869,7 +869,7 @@ void LlvmAsmLoader::load_module(llvm::Module* module) {
 	} break;
 
 	default: {
-	  print_debug("\t%02x %02x %02x %02x - %c%c%c%c\n",
+	  print_debug("\t%d\t%02x %02x %02x %02x - %c%c%c%c\n", i,
 		      0xff & data.head[i    ], 0xff & data.head[i + 1],
 		      0xff & data.head[i + 2], 0xff & data.head[i + 3],
 		      (' ' <= static_cast<const char>(data.head[i    ]) &&

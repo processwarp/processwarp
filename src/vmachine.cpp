@@ -211,7 +211,7 @@ void VMachine::execute(int max_clock) {
 
 	// pcの書き換え
 	stackinfo.pc += args * 2 + 2;
-
+	print_debug("call %s\n", new_func.name.str().c_str());
 	if (new_func.type == FuncType::FC_NORMAL) {
 	  // 可変長引数でない場合、引数の数をチェック
 	  if (args < new_func.normal_prop.arg_num ||
