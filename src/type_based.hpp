@@ -38,7 +38,7 @@ namespace usagi {
     /**
      * add命令に対応した加算を行う。
      * @param dst 出力先
-     * @param a 
+     * @param a
      * @param b
      */
     virtual void op_add(uint8_t* dst, uint8_t* a, uint8_t* b);
@@ -46,7 +46,7 @@ namespace usagi {
     /**
      * and命令に対応した加算を行う。
      * @param dst 出力先
-     * @param a 
+     * @param a
      * @param b
      */
     virtual void op_and(uint8_t* dst, uint8_t* a, uint8_t* b);
@@ -54,15 +54,55 @@ namespace usagi {
     /**
      * div命令に対応した加算を行う。
      * @param dst 出力先
-     * @param a 
+     * @param a
      * @param b
      */
     virtual void op_div(uint8_t* dst, uint8_t* a, uint8_t* b);
 
     /**
+     * 比較命令(a==b)に対応した演算を行う。
+     * @param dst 出力先
+     * @param a
+     * @param b
+     */
+    virtual void op_equal(uint8_t* dst, uint8_t* a, uint8_t* b);
+
+    /**
+     * 比較命令(a>b)に対応した演算を行う。
+     * @param dst 出力先
+     * @param a
+     * @param b
+     */
+    virtual void op_greater(uint8_t* dst, uint8_t* a, uint8_t* b);
+
+    /**
+     * 比較命令(a>=b)に対応した演算を行う。
+     * @param dst 出力先
+     * @param a
+     * @param b
+     */
+    virtual void op_greater_equal(uint8_t* dst, uint8_t* a, uint8_t* b);
+
+    /**
+     * 比較命令(isnan(a) || isnan(b))に対応した演算を行う。
+     * @param dst 出力先
+     * @param a
+     * @param b
+     */
+    virtual void op_nans(uint8_t* dst, uint8_t* a, uint8_t* b);
+
+    /**
+     * 比較命令(a!=b)に対応した演算を行う。
+     * @param dst 出力先
+     * @param a
+     * @param b
+     */
+    virtual void op_not_equal(uint8_t* dst, uint8_t* a, uint8_t* b);
+
+    /**
      * mul命令に対応した加算を行う。
      * @param dst 出力先
-     * @param a 
+     * @param a
      * @param b
      */
     virtual void op_mul(uint8_t* dst, uint8_t* a, uint8_t* b);
@@ -70,7 +110,7 @@ namespace usagi {
     /**
      * or命令に対応した加算を行う。
      * @param dst 出力先
-     * @param a 
+     * @param a
      * @param b
      */
     virtual void op_or(uint8_t* dst, uint8_t* a, uint8_t* b);
@@ -78,7 +118,7 @@ namespace usagi {
     /**
      * rem命令に対応した加算を行う。
      * @param dst 出力先
-     * @param a 
+     * @param a
      * @param b
      */
     virtual void op_rem(uint8_t* dst, uint8_t* a, uint8_t* b);
@@ -86,7 +126,7 @@ namespace usagi {
     /**
      * shl命令に対応した加算を行う。
      * @param dst 出力先
-     * @param a 
+     * @param a
      * @param b
      */
     virtual void op_shl(uint8_t* dst, uint8_t* a, uint8_t* b);
@@ -94,7 +134,7 @@ namespace usagi {
     /**
      * shr命令に対応した加算を行う。
      * @param dst 出力先
-     * @param a 
+     * @param a
      * @param b
      */
     virtual void op_shr(uint8_t* dst, uint8_t* a, uint8_t* b);
@@ -102,7 +142,7 @@ namespace usagi {
     /**
      * sub命令に対応した加算を行う。
      * @param dst 出力先
-     * @param a 
+     * @param a
      * @param b
      */
     virtual void op_sub(uint8_t* dst, uint8_t* a, uint8_t* b);
@@ -110,7 +150,7 @@ namespace usagi {
     /**
      * xor命令に対応した加算を行う。
      * @param dst 出力先
-     * @param a 
+     * @param a
      * @param b
      */
     virtual void op_xor(uint8_t* dst, uint8_t* a, uint8_t* b);
@@ -153,7 +193,7 @@ namespace usagi {
     /**
      * add命令に対応した加算を行う。
      * @param dst 出力先
-     * @param a 
+     * @param a
      * @param b
      */
     void op_add(uint8_t* dst, uint8_t* a, uint8_t* b) override;
@@ -161,7 +201,7 @@ namespace usagi {
     /**
      * and命令に対応した加算を行う。
      * @param dst 出力先
-     * @param a 
+     * @param a
      * @param b
      */
     void op_and(uint8_t* dst, uint8_t* a, uint8_t* b) override;
@@ -169,15 +209,55 @@ namespace usagi {
     /**
      * div命令に対応した加算を行う。
      * @param dst 出力先
-     * @param a 
+     * @param a
      * @param b
      */
     void op_div(uint8_t* dst, uint8_t* a, uint8_t* b) override;
 
     /**
+     * 比較命令(a==b)に対応した演算を行う。
+     * @param dst 出力先
+     * @param a
+     * @param b
+     */
+    void op_equal(uint8_t* dst, uint8_t* a, uint8_t* b) override;
+
+    /**
+     * 比較命令(a>b)に対応した演算を行う。
+     * @param dst 出力先
+     * @param a
+     * @param b
+     */
+    void op_greater(uint8_t* dst, uint8_t* a, uint8_t* b) override;
+
+    /**
+     * 比較命令(a>=b)に対応した演算を行う。
+     * @param dst 出力先
+     * @param a
+     * @param b
+     */
+    void op_greater_equal(uint8_t* dst, uint8_t* a, uint8_t* b) override;
+
+    /**
+     * 比較命令(isnan(a) || isnan(b))に対応した演算を行う。
+     * @param dst 出力先
+     * @param a
+     * @param b
+     */
+    void op_nans(uint8_t* dst, uint8_t* a, uint8_t* b) override;
+
+    /**
+     * 比較命令(a!=b)に対応した演算を行う。
+     * @param dst 出力先
+     * @param a
+     * @param b
+     */
+    void op_not_equal(uint8_t* dst, uint8_t* a, uint8_t* b) override;
+
+    /**
      * mul命令に対応した加算を行う。
      * @param dst 出力先
-     * @param a 
+     * @param a
      * @param b
      */
     void op_mul(uint8_t* dst, uint8_t* a, uint8_t* b) override;
@@ -185,7 +265,7 @@ namespace usagi {
     /**
      * or命令に対応した加算を行う。
      * @param dst 出力先
-     * @param a 
+     * @param a
      * @param b
      */
     void op_or(uint8_t* dst, uint8_t* a, uint8_t* b) override;
@@ -193,7 +273,7 @@ namespace usagi {
     /**
      * rem命令に対応した加算を行う。
      * @param dst 出力先
-     * @param a 
+     * @param a
      * @param b
      */
     void op_rem(uint8_t* dst, uint8_t* a, uint8_t* b) override;
@@ -201,7 +281,7 @@ namespace usagi {
     /**
      * shl命令に対応した加算を行う。
      * @param dst 出力先
-     * @param a 
+     * @param a
      * @param b
      */
     void op_shl(uint8_t* dst, uint8_t* a, uint8_t* b) override;
@@ -209,7 +289,7 @@ namespace usagi {
     /**
      * shr命令に対応した加算を行う。
      * @param dst 出力先
-     * @param a 
+     * @param a
      * @param b
      */
     void op_shr(uint8_t* dst, uint8_t* a, uint8_t* b) override;
@@ -217,7 +297,7 @@ namespace usagi {
     /**
      * sub命令に対応した加算を行う。
      * @param dst 出力先
-     * @param a 
+     * @param a
      * @param b
      */
     void op_sub(uint8_t* dst, uint8_t* a, uint8_t* b) override;
@@ -225,7 +305,7 @@ namespace usagi {
     /**
      * xor命令に対応した加算を行う。
      * @param dst 出力先
-     * @param a 
+     * @param a
      * @param b
      */
     void op_xor(uint8_t* dst, uint8_t* a, uint8_t* b) override;

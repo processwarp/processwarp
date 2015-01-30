@@ -1,4 +1,5 @@
 
+#include <cmath>
 #include <cstdint>
 #include <cstring>
 
@@ -48,6 +49,13 @@ M_BINARY_OPERATOR_VIOLATION(op_shr); // 右シフト
 M_BINARY_OPERATOR_VIOLATION(op_sub); // 減算
 M_BINARY_OPERATOR_VIOLATION(op_xor); // xor
 
+// 比較演算もすべてVIOLATIONにしておく
+M_BINARY_OPERATOR_VIOLATION(op_equal);         // a==b
+M_BINARY_OPERATOR_VIOLATION(op_greater);       // a>b
+M_BINARY_OPERATOR_VIOLATION(op_greater_equal); // a>=b
+M_BINARY_OPERATOR_VIOLATION(op_nans);          // isnan(a) || isnan(b)
+M_BINARY_OPERATOR_VIOLATION(op_not_equal);     // a!=b
+
 #undef M_BINARY_OPERATOR_VIOLATION
 
 // type_cast命令に対応したキャスト演算を行う。
@@ -93,9 +101,26 @@ M_BINARY_OPERATOR_TYPE_EXTENDED(op_xor, ^); // xor
 
 #undef M_BINARY_OPERATOR_TYPE_EXTENDED
 
+/**
+ * 比較演算に対応したメソッドを生成する
+ * @param op メソッド名
+ * @param infix 演算中置子
+ */
+#define M_COMP_OPERATOR_TYPE_EXTENDED(op, infix)			\
+  template <typename T> void TypeExtended<T>::op(uint8_t* dst, uint8_t* a, uint8_t* b) { \
+    *reinterpret_cast<uint8_t*>(dst) = *reinterpret_cast<T*>(a) infix *reinterpret_cast<T*>(b); \
+  }
+
+M_COMP_OPERATOR_TYPE_EXTENDED(op_equal,         ==); // a==b
+M_COMP_OPERATOR_TYPE_EXTENDED(op_greater,       >);  // a>b
+M_COMP_OPERATOR_TYPE_EXTENDED(op_greater_equal, >=); // a>=b
+M_COMP_OPERATOR_TYPE_EXTENDED(op_not_equal,     !=); // a!=b
+
+#undef M_COMP_OPERATOR_TYPE_EXTENDED
+
 namespace usagi {
   /**
-   * 浮動小数点演算でサポートしない2項演算子用のメソッドを生成する
+   * サポートしない2項演算子用のメソッドを生成する
    * @param op メソッド名
    * @param type 型
    */
@@ -117,8 +142,39 @@ namespace usagi {
   M_BINARY_OPERATOR_UNSUPPORT(op_shr, float); // 右シフト
   M_BINARY_OPERATOR_UNSUPPORT(op_xor, float); // xor
 
+  // 比較演算のうち、整数型で未対応のもの
+  M_BINARY_OPERATOR_UNSUPPORT(op_nans, int8_t);
+  M_BINARY_OPERATOR_UNSUPPORT(op_nans, int16_t);
+  M_BINARY_OPERATOR_UNSUPPORT(op_nans, int32_t);
+  M_BINARY_OPERATOR_UNSUPPORT(op_nans, int64_t);
+  M_BINARY_OPERATOR_UNSUPPORT(op_nans, uint8_t);
+  M_BINARY_OPERATOR_UNSUPPORT(op_nans, uint16_t);
+  M_BINARY_OPERATOR_UNSUPPORT(op_nans, uint32_t);
+  M_BINARY_OPERATOR_UNSUPPORT(op_nans, uint64_t);
+
 #undef M_BINARY_OPERATOR_UNSUPPORT
-}
+
+  // 比較命令(isnan(a) || isnan(b))に対応した演算を行う。
+  template<> void TypeExtended<double>::op_nans(uint8_t* dst, uint8_t* a, uint8_t* b) {
+    if (std::isnan(*reinterpret_cast<double*>(a)) ||
+	std::isnan(*reinterpret_cast<double*>(b))) {
+      *dst = 0xff;
+    } else {
+      *dst = 0x00;
+    }
+  }
+
+  // 比較命令(isnan(a) || isnan(b))に対応した演算を行う。
+  template<> void TypeExtended<float>::op_nans(uint8_t* dst, uint8_t* a, uint8_t* b) {
+    if (std::isnan(*reinterpret_cast<float*>(a)) ||
+	std::isnan(*reinterpret_cast<float*>(b))) {
+      *dst = 0xff;
+    } else {
+      *dst = 0x00;
+    }
+  }
+
+} // close "namespace usagi"
 
 // shl命令に対応した加算を行う。
 template <typename T> void TypeExtended<T>::op_shl(uint8_t* dst, uint8_t* a, uint8_t* b) {

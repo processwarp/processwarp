@@ -625,6 +625,43 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 		    assign_type(fc, inst.getDestTy(), true));
 	} break;
 
+	case llvm::Instruction::ICmp: {
+	  const llvm::ICmpInst& inst = static_cast<const llvm::ICmpInst&>(*i);
+	  assert(inst.isIntPredicate());
+	  // set_type <ty>
+	  push_code(fc, Opcode::SET_TYPE,
+		    assign_type(fc, inst.getOperand(0)->getType(), inst.isSigned()));
+	  // set_output <result>
+	  push_code(fc, Opcode::SET_OUTPUT,
+		    assign_operand(fc, &inst));
+
+	  switch(inst.getPredicate()){
+	    // icmpの比較演算を作るためのマクロ
+#define M_ICMP_OPERATOR(PRE, OPC, FOP, SOP)				\
+	    case llvm::CmpInst::Predicate::PRE: {			\
+	      push_code(fc, Opcode::SET_VALUE, assign_operand(fc, inst.getOperand(FOP))); \
+	      push_code(fc, Opcode::OPC, assign_operand(fc, inst.getOperand(SOP))); \
+	    } break;
+
+	    M_ICMP_OPERATOR(ICMP_EQ, EQUAL, 0, 1); // =
+	    M_ICMP_OPERATOR(ICMP_NE, NOT_EQUAL, 0, 1); // !=
+	    M_ICMP_OPERATOR(ICMP_UGT, GREATER, 0, 1);  // > (unsigned)
+	    M_ICMP_OPERATOR(ICMP_UGE, GREATER_EQUAL, 0, 1); // >= (unsigned)
+	    M_ICMP_OPERATOR(ICMP_ULT, GREATER_EQUAL, 1, 0); // < (unsigned)
+	    M_ICMP_OPERATOR(ICMP_ULE, GREATER, 1, 0); // <= (unsigned)
+	    M_ICMP_OPERATOR(ICMP_SGT, GREATER, 0, 1);  // > (signed)
+	    M_ICMP_OPERATOR(ICMP_SGE, GREATER_EQUAL, 0, 1); // >= (signed)
+	    M_ICMP_OPERATOR(ICMP_SLT, GREATER_EQUAL, 1, 0); // < (signed)
+	    M_ICMP_OPERATOR(ICMP_SLE, GREATER, 1, 0); // <= (signed)
+#undef M_ICMP_OPERATOR
+
+	  default: {
+	    assert(false);
+	  } break;
+	  }
+
+	} break;
+
 	default: {
 	  print_debug("unsupport instruction : %s\n", i->getOpcodeName());
 	  throw_error_message(Error::UNSUPPORT, "instruction:" + Util::num2dec_str(i->getOpcode()));
@@ -900,10 +937,8 @@ void LlvmAsmLoader::load_struct(uint8_t* dst, const llvm::ConstantStruct* src) {
   
   // 書き込み
   int sum_size = 0;
-  src->dump();
   for (unsigned int i = 0; i < src->getNumOperands(); i ++) {
     int one_size = data_layout->getTypeAllocSize(src->getOperand(0)->getType());
-    src->getOperand(i)->dump();
     load_constant(dst + sum_size, src->getOperand(i));
     sum_size += one_size;
   }

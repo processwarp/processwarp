@@ -100,7 +100,6 @@ inline FuncStore& get_function(instruction_t code, OperandParam& param) {
 
 inline OperandRet get_operand(instruction_t code, OperandParam& param) {
   int operand = Instruction::get_operand(code);
-  print_debug("get_operand %d\n", operand);
   if ((operand & HEAD_OPERAND) != 0) {
     vaddr_t position = (FILL_OPERAND - operand);
     assert(position < param.k.size);
@@ -153,6 +152,15 @@ void VMachine::execute(int max_clock) {
       bool is_tailcall = true;
 
       switch (static_cast<uint8_t>(Instruction::get_opcode(code))) {
+
+#define M_BINARY_OPERATOR(name, op)				\
+	case Opcode::name: {					\
+	  OperandRet operand = get_operand(code, op_param);	\
+	  stackinfo.type_cache1->op(stackinfo.output_cache,	\
+				    stackinfo.value_cache,	\
+				    operand.cache);		\
+	} break;
+
       case Opcode::NOP: {
 	// 何もしない命令
       } break;
@@ -309,14 +317,6 @@ void VMachine::execute(int max_clock) {
 	stackinfo.value_cache = operand.cache;
       } break;
 
-#define M_BINARY_OPERATOR(name, op)				\
-	case Opcode::name: {					\
-	  OperandRet operand = get_operand(code, op_param);	\
-	  stackinfo.type_cache1->op(stackinfo.output_cache,	\
-				    stackinfo.value_cache,	\
-				    operand.cache);		\
-	} break;
-
 	M_BINARY_OPERATOR(ADD, op_add); // 加算
 	M_BINARY_OPERATOR(SUB, op_sub); // 減算
 	M_BINARY_OPERATOR(MUL, op_mul); // 乗算
@@ -327,8 +327,6 @@ void VMachine::execute(int max_clock) {
 	M_BINARY_OPERATOR(AND, op_and); // and
 	M_BINARY_OPERATOR(OR,  op_or);  // or
 	M_BINARY_OPERATOR(XOR, op_xor); // xor
-
-#undef M_BINARY_OPERATOR
 
       case Opcode::SET_ADR: {
 	OperandRet operand = get_operand(code, op_param);
@@ -376,9 +374,43 @@ void VMachine::execute(int max_clock) {
 	memcpy(stackinfo.address_cache, operand.cache, stackinfo.type_cache2->size);
       } break;
 
+      case Opcode::TEST: {
+	OperandRet operand = get_operand(code, op_param);
+	instruction_t code2 = insts.at(stackinfo.pc + 1);
+	// operandの指し先がtrueかどうか判定。
+	if (*operand.cache) {
+	  stackinfo.phi0 = stackinfo.phi1;
+	  stackinfo.phi1 = stackinfo.pc = Instruction::get_operand(code2);
+	  print_debug("pc = %d\n", stackinfo.pc);
+	  continue;
+
+	} else {
+	  stackinfo.pc ++;
+	}
+      } break;
+
+      case Opcode::TEST_EQ: {
+	// vector未対応な点に注意
+	OperandRet operand = get_operand(code, op_param);
+	instruction_t code2 = insts.at(stackinfo.pc + 1);
+	// 値を比較
+	uint8_t res;
+	stackinfo.type_cache1->op_equal(&res, stackinfo.value_cache, operand.cache);
+	if (res) {
+	  stackinfo.phi0 = stackinfo.phi1;
+	  stackinfo.phi1 = stackinfo.pc = Instruction::get_operand(code2);
+	  print_debug("pc = %d\n", stackinfo.pc);
+	  continue;
+
+	} else {
+	  stackinfo.pc ++;
+	}
+      } break;
+
       case Opcode::JUMP: {
 	stackinfo.phi0 = stackinfo.phi1;
 	stackinfo.phi1 = stackinfo.pc = Instruction::get_operand(code);
+	print_debug("pc = %d\n", stackinfo.pc);
 	continue;
       } break;
 
@@ -418,10 +450,18 @@ void VMachine::execute(int max_clock) {
 					stackinfo.value_cache);
       } break;
 
+	M_BINARY_OPERATOR(EQUAL,         op_equal);         // o = v == A
+	M_BINARY_OPERATOR(NOT_EQUAL,     op_not_equal);     // o = v != A
+	M_BINARY_OPERATOR(GREATER,       op_greater);       // o = v > A
+	M_BINARY_OPERATOR(GREATER_EQUAL, op_greater_equal); // o = v >= A
+	M_BINARY_OPERATOR(NANS,          op_nans);          // o = isnan(v) || isnan(A)
+
       default: {
 	// EXTRAARGを含む想定外の命令
 	throw_error_message(Error::INST_VIOLATION, Util::num2hex_str(insts.at(stackinfo.pc)));
       } break;
+
+#undef M_BIN_OPERATOR
       }
       
       stackinfo.pc ++;
