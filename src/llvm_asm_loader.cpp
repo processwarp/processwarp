@@ -394,10 +394,10 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 		      assign_operand(fc, inst.getAddress()));
 	    // cond == true の場合のジャンプ先
 	    push_code(fc, Opcode::EXTRA,
-		      block_alias.at(inst.getDestination(0)));
+		      block_alias.at(inst.getSuccessor(1)));
 	    // cond != true の場合のジャンプ先
 	    push_code(fc, Opcode::JUMP,
-		      block_alias.at(inst.getDestination(1)));
+		      block_alias.at(inst.getSuccessor(0)));
 	  }
 	} break;
 

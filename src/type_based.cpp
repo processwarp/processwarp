@@ -108,7 +108,7 @@ M_BINARY_OPERATOR_TYPE_EXTENDED(op_xor, ^); // xor
  */
 #define M_COMP_OPERATOR_TYPE_EXTENDED(op, infix)			\
   template <typename T> void TypeExtended<T>::op(uint8_t* dst, uint8_t* a, uint8_t* b) { \
-    *reinterpret_cast<uint8_t*>(dst) = *reinterpret_cast<T*>(a) infix *reinterpret_cast<T*>(b); \
+    *reinterpret_cast<uint8_t*>(dst) = (*reinterpret_cast<T*>(a) infix *reinterpret_cast<T*>(b)); \
   }
 
 M_COMP_OPERATOR_TYPE_EXTENDED(op_equal,         ==); // a==b
