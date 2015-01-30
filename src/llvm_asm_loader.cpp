@@ -895,9 +895,18 @@ void LlvmAsmLoader::load_module(llvm::Module* module) {
 
 // LLVMの定数(struct)を仮想マシンにロードする。
 void LlvmAsmLoader::load_struct(uint8_t* dst, const llvm::ConstantStruct* src) {
-  //check_same_value(loaded_value, function);
-
-  assert(false);
+  // Typeの要素数とOperandsの要素数は同じはず
+  assert(src->getType()->getNumElements() == src->getNumOperands());
+  
+  // 書き込み
+  int sum_size = 0;
+  src->dump();
+  for (unsigned int i = 0; i < src->getNumOperands(); i ++) {
+    int one_size = data_layout->getTypeAllocSize(src->getOperand(0)->getType());
+    src->getOperand(i)->dump();
+    load_constant(dst + sum_size, src->getOperand(i));
+    sum_size += one_size;
+  }
 }
 
 // LLVMの型を仮想マシンにロードする。
