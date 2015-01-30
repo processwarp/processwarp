@@ -114,7 +114,7 @@ void LlvmAsmLoader::load_array(uint8_t* dst, const llvm::ConstantArray* src) {
   assert(src->getType()->getNumElements() == src->getNumOperands());
   
   // 書き込み
-  int one_size = data_layout->getTypeAllocSize(src->getOperand(0)->getType());
+  int one_size = data_layout->getTypeAllocSize(src->getType()->getElementType());
   for (unsigned int i = 0; i < src->getNumOperands(); i ++) {
     load_constant(dst + i * one_size, src->getOperand(i));
   }
@@ -127,9 +127,14 @@ void LlvmAsmLoader::load_constant(uint8_t* dst, const llvm::Constant* src) {
     //case llvm::Value::ArgumentVal: {} break;
     //case llvm::Value::BasicBlockVal: {} break;
   case llvm::Value::FunctionVal: {
-    src->dump();
-    assert(map_func.find(static_cast<const llvm::Function*>(src)) != map_func.end());
-    *reinterpret_cast<vaddr_t*>(dst) = map_func.at(static_cast<const llvm::Function*>(src));
+    const llvm::Function* func = static_cast<const llvm::Function*>(src);
+    // まだ確保されていない関数
+    if (map_func.find(func) == map_func.end()) {
+      vaddr_t addr = vm.reserve_func_addr();
+      map_func.insert(std::make_pair(func, addr));
+      load_function(func);
+    }
+    *reinterpret_cast<vaddr_t*>(dst) = map_func.at(func);
   } return;
 
     //case llvm::Value::GlobalAliasVal: {} break;
@@ -619,17 +624,26 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 	  const llvm::SExtInst& inst = static_cast<const llvm::SExtInst&>(*i);
 	  assert(inst.getNumOperands() == 1);
 	  // set_type <ty>
-	  push_code(fc, Opcode::SET_TYPE,
-		    assign_type(fc, inst.getSrcTy(), true));
+	  push_code(fc, Opcode::SET_TYPE, assign_type(fc, inst.getSrcTy(), true));
 	  // set_output <result>
-	  push_code(fc, Opcode::SET_OUTPUT,
-		    assign_operand(fc, &inst));
+	  push_code(fc, Opcode::SET_OUTPUT, assign_operand(fc, &inst));
 	  // set_value <value>
-	  push_code(fc, Opcode::SET_VALUE,
-		    assign_operand(fc, inst.getOperand(0)));
+	  push_code(fc, Opcode::SET_VALUE, assign_operand(fc, inst.getOperand(0)));
 	  // typecast <ty2>
-	  push_code(fc, Opcode::TYPE_CAST,
-		    assign_type(fc, inst.getDestTy(), true));
+	  push_code(fc, Opcode::TYPE_CAST, assign_type(fc, inst.getDestTy(), true));
+	} break;
+
+	case llvm::Instruction::BitCast: {
+	  const llvm::BitCastInst& inst = static_cast<const llvm::BitCastInst&>(*i);
+	  assert(inst.getNumOperands() == 1);
+	  // set_type <ty>
+	  push_code(fc, Opcode::SET_TYPE, assign_type(fc, inst.getSrcTy()));
+	  // set_output <result>
+	  push_code(fc, Opcode::SET_OUTPUT, assign_operand(fc, &inst));
+	  // set_value <value>
+	  push_code(fc, Opcode::SET_VALUE, assign_operand(fc, inst.getOperand(0)));
+	  // bitcast <ty2>
+	  push_code(fc, Opcode::BIT_CAST, assign_type(fc, inst.getDestTy()));
 	} break;
 
 	case llvm::Instruction::ICmp: {
@@ -666,7 +680,20 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 	    assert(false);
 	  } break;
 	  }
+	} break;
 
+	case llvm::Instruction::Select: {
+	  const llvm::SelectInst& inst = static_cast<const llvm::SelectInst&>(*i);
+	  // set_type <ty>
+	  push_code(fc, Opcode::SET_TYPE, assign_type(fc, inst.getTrueValue()->getType()));
+	  // set_output <result>
+	  push_code(fc, Opcode::SET_OUTPUT, assign_operand(fc, &inst));
+	  // set_value <cond>
+	  push_code(fc, Opcode::SET_VALUE, assign_operand(fc, inst.getCondition()));
+	  // select <val1>
+	  push_code(fc, Opcode::SELECT, assign_operand(fc, inst.getTrueValue()));
+	  // extra <val2>
+	  push_code(fc, Opcode::EXTRA, assign_operand(fc, inst.getFalseValue()));
 	} break;
 
 	default: {
