@@ -938,7 +938,7 @@ void LlvmAsmLoader::load_struct(uint8_t* dst, const llvm::ConstantStruct* src) {
   // 書き込み
   int sum_size = 0;
   for (unsigned int i = 0; i < src->getNumOperands(); i ++) {
-    int one_size = data_layout->getTypeAllocSize(src->getOperand(0)->getType());
+    int one_size = data_layout->getTypeAllocSize(src->getOperand(i)->getType());
     load_constant(dst + sum_size, src->getOperand(i));
     sum_size += one_size;
   }
