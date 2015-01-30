@@ -127,6 +127,7 @@ void LlvmAsmLoader::load_constant(uint8_t* dst, const llvm::Constant* src) {
     //case llvm::Value::ArgumentVal: {} break;
     //case llvm::Value::BasicBlockVal: {} break;
   case llvm::Value::FunctionVal: {
+    src->dump();
     assert(map_func.find(static_cast<const llvm::Function*>(src)) != map_func.end());
     *reinterpret_cast<vaddr_t*>(dst) = map_func.at(static_cast<const llvm::Function*>(src));
   } return;
@@ -137,7 +138,10 @@ void LlvmAsmLoader::load_constant(uint8_t* dst, const llvm::Constant* src) {
     *reinterpret_cast<vaddr_t*>(dst) = map_global.at(src);
   } break;
 
-    //case llvm::Value::UndefValueVal: {} break;
+  case llvm::Value::UndefValueVal: {
+    // 値が不定なので初期化を行わない
+  } break;
+
     //case llvm::Value::BlockAddressVal: {} break;
   case llvm::Value::ConstantExprVal: {
     load_expr(dst, static_cast<const llvm::ConstantExpr*>(src));
@@ -169,7 +173,10 @@ void LlvmAsmLoader::load_constant(uint8_t* dst, const llvm::Constant* src) {
   } break;
 
     //case llvm::Value::ConstantVectorVal: {} break;
-    //case llvm::Value::ConstantPointerNullVal: {} break;
+  case llvm::Value::ConstantPointerNullVal: {
+    *reinterpret_cast<vaddr_t*>(dst) = VADDR_NULL;
+  } break;
+
     //case llvm::Value::MDNodeVal: {} break;
     //case llvm::Value::MDStringVal: {} break;
     //case llvm::Value::InlineAsmVal: {} break;
