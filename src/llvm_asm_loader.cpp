@@ -652,7 +652,29 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 		    assign_operand(fc, &inst));
 	} break;
 
-	case llvm::Instruction::SExt: {
+	case llvm::Instruction::Trunc:
+	case llvm::Instruction::ZExt:
+	case llvm::Instruction::FPTrunc:
+	case llvm::Instruction::FPExt:
+	case llvm::Instruction::FPToUI:
+	case llvm::Instruction::UIToFP:
+	case llvm::Instruction::PtrToInt:
+	case llvm::Instruction::IntToPtr: {
+	  const llvm::CastInst& inst = static_cast<const llvm::CastInst&>(*i);
+	  assert(inst.getNumOperands() == 1);
+	  // set_type <ty>
+	  push_code(fc, Opcode::SET_TYPE, assign_type(fc, inst.getSrcTy()));
+	  // set_output <result>
+	  push_code(fc, Opcode::SET_OUTPUT, assign_operand(fc, &inst));
+	  // set_value <value>
+	  push_code(fc, Opcode::SET_VALUE, assign_operand(fc, inst.getOperand(0)));
+	  // typecast <ty2>
+	  push_code(fc, Opcode::TYPE_CAST, assign_type(fc, inst.getDestTy()));
+	} break;
+
+	case llvm::Instruction::SExt:
+	case llvm::Instruction::FPToSI:
+	case llvm::Instruction::SIToFP: {
 	  const llvm::SExtInst& inst = static_cast<const llvm::SExtInst&>(*i);
 	  assert(inst.getNumOperands() == 1);
 	  // set_type <ty>
