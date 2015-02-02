@@ -5,6 +5,7 @@
 
 #include "error.hpp"
 #include "type_based.hpp"
+#include "type_store.hpp"
 #include "util.hpp"
 
 using namespace usagi;
@@ -230,6 +231,11 @@ template <typename T> void TypeExtended<T>::type_cast(uint8_t* dst, vaddr_t type
 // 値をコピーする。
 void TypePointer::copy(uint8_t* dst, uint8_t* src) {
   *reinterpret_cast<vaddr_t*>(dst) = *reinterpret_cast<vaddr_t*>(src);
+}
+
+// 値をコピーする。
+void TypeComplex::copy(uint8_t* dst, uint8_t* src) {
+  memcpy(dst, src, type_store->size);
 }
 
 // 明示的テンプレートのインスタンス化

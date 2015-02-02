@@ -10,6 +10,7 @@
 #include "error.hpp"
 #include "func_store.hpp"
 #include "instruction.hpp"
+#include "llvm_intrinsic.hpp"
 #include "stackinfo.hpp"
 #include "type_based.hpp"
 #include "util.hpp"
@@ -243,15 +244,13 @@ void VMachine::execute(int max_clock) {
 	  }
 	  thread.stackinfos.push_back(std::unique_ptr<StackInfo>(new_stackinfo.release()));
 	  goto re_entry;
-
-	} else if (func.type == FuncType::FC_INTRINSIC) {
+	  
+	} else if (new_func.type == FuncType::FC_INTRINSIC) {
 	  // VM組み込み関数の呼び出し
-	  assert(false);
-	  assert(func.intrinsic != nullptr);
-	  func.intrinsic(*this, thread, stackinfo.output_cache, work);
+	  assert(new_func.intrinsic != nullptr);
+	  new_func.intrinsic(*this, thread, new_func.intrinsic_param, stackinfo.output, work);
 
 	} else { // func.type == FuncType::EXTERNAL
-	  // 関数のロードを行っていない場合、ロードする
 	  if (new_func.external == nullptr) {
 	    new_func.external = get_external_func(new_func.name);
 	  }
@@ -300,7 +299,8 @@ void VMachine::execute(int max_clock) {
 	  }
 
 	} else {
-	  assert(false); // 拡張型
+	  stackinfo.type_cache1 = &stackinfo.type_complex;
+	  stackinfo.type_complex.type_store = &store;
 	}
 	stackinfo.type_cache2 = &store;
       } break;
@@ -372,6 +372,18 @@ void VMachine::execute(int max_clock) {
       case Opcode::STORE: {
 	OperandRet operand = get_operand(code, op_param);
 	memcpy(stackinfo.address_cache, operand.cache, stackinfo.type_cache2->size);
+      } break;
+
+      case Opcode::ALLOCA: {
+	OperandRet operand = get_operand(code, op_param);
+	// サイズを計算
+	size_t size = *reinterpret_cast<uint32_t*>(operand.cache) * stackinfo.type_cache2->size;
+	// 領域を確保
+	DataStore& data = vmemory.alloc_data(size, false);
+	// 確保領域のアドレスを設定
+	*reinterpret_cast<vaddr_t*>(stackinfo.output_cache) = data.addr;
+	// allocaで確保した領域はスタック終了時に開放できるように記録しておく
+	stackinfo.alloca_addrs.push_back(data.addr);
       } break;
 
       case Opcode::TEST: {
@@ -644,38 +656,13 @@ void VMachine::deploy_function(const std::string& name, vaddr_t ret_type, vaddr_
   auto ifunc = intrinsic_funcs.find(name);
   if (ifunc == intrinsic_funcs.end()) {
     // 組み込み関数に名前がなかった場合、ライブラリ関数として展開。
-    deploy_function_external(name, ret_type, addr);
+    vmemory.alloc_func(symbols.get(name), ret_type, addr);
 
   } else {
     // 組み込み関数に名前があった場合組み込み関数として展開。
-    deploy_function_intrinsic(name, ret_type, addr);
+    vmemory.alloc_func(symbols.get(name), ret_type,
+		       ifunc->second.first, ifunc->second.second, addr);
   }
-}
-
-// ライブラリ関数を指定アドレスに展開する。
-void VMachine::deploy_function_external(const std::string& name, vaddr_t ret_type, vaddr_t addr) {
-  auto ifunc = intrinsic_funcs.find(name);
-
-  // VM組み込み関数と同じ名前は使えない
-  if (ifunc != intrinsic_funcs.end()) {
-    throw_error_message(Error::EXT_LIBRARY, name);
-  }
-
-  // 関数領域を確保
-  vmemory.alloc_func(symbols.get(name), ret_type, addr);
-}
-
-// VM組み込み関数を指定アドレスに展開する。
-void VMachine::deploy_function_intrinsic(const std::string& name, vaddr_t ret_type, vaddr_t addr) {
-  auto ifunc = intrinsic_funcs.find(name);
-
-  // VM組み込み関数に指定の名前の関数がない。
-  if (ifunc == intrinsic_funcs.end()) {
-    throw_error_message(Error::EXT_LIBRARY, name);
-  }
-
-  // 関数領域を確保
-  vmemory.alloc_func(symbols.get(name), ret_type, ifunc->second, addr);
 }
 
 // 通常の関数(VMで解釈、実行する)を指定アドレスに展開する。
@@ -711,6 +698,49 @@ uint8_t* VMachine::get_raw_addr(vaddr_t addr) {
   return reinterpret_cast<uint8_t*>(store.head.get() + VMemory::get_addr_lower(addr));
 }
 
+/**
+ * 組み込み関数用に引数を取り出すメソッドを作成するマクロ。
+ * @param name メソッド名
+ * @param type C++での実際の型
+ * @param basic_type VM内の型
+ */
+#define M_READ_INTRINSIC_PARAM(name, type, basic_type)			\
+  type VMachine::name(const std::vector<uint8_t>& src, int* seek) {	\
+    /* 境界チェック */							\
+    if (*seek + sizeof(vaddr_t) + sizeof(type) > src.size())		\
+      throw_error(Error::SEGMENT_FAULT);				\
+    /* 型チェック */							\
+    if (*reinterpret_cast<const vaddr_t*>(src.data() + *seek) != BasicType::basic_type) \
+      throw_error(Error::TYPE_VIOLATION);				\
+    /* seekをずらす & 読み取り */					\
+    int tmp_seek = *seek + sizeof(vaddr_t);				\
+    *seek += sizeof(vaddr_t) + sizeof(type);				\
+    return *reinterpret_cast<const vaddr_t*>(src.data() + tmp_seek);	\
+  }
+
+M_READ_INTRINSIC_PARAM(read_intrinsic_param_ptr, vaddr_t, TY_POINTER);
+M_READ_INTRINSIC_PARAM(read_intrinsic_param_i8,  int8_t,  TY_UI8);
+M_READ_INTRINSIC_PARAM(read_intrinsic_param_i16, int16_t, TY_UI16);
+M_READ_INTRINSIC_PARAM(read_intrinsic_param_i32, int32_t, TY_UI32);
+M_READ_INTRINSIC_PARAM(read_intrinsic_param_i64, int64_t, TY_UI64);
+
+#undef M_READ_INTRINSIC_PARAM
+
+// 組み込み関数をVMに登録する。
+void VMachine::regist_intrinsic_func(const std::string& name,
+				     intrinsic_func_t func, int i64) {
+  print_debug("regist_intrinsic_func:%p\n", func);
+  intrinsic_funcs.insert(std::make_pair(name,
+					std::make_pair(func, IntrinsicFuncParam({.i64 = i64}))));
+}
+
+// 組み込み関数をVMに登録する。
+void VMachine::regist_intrinsic_func(const std::string& name,
+				     intrinsic_func_t func, void* ptr) {
+  intrinsic_funcs.insert(std::make_pair(name,
+					std::make_pair(func, IntrinsicFuncParam({.ptr = ptr}))));
+}
+
 // StackInfoのキャッシュを解決し、実行前の状態にする。
 void VMachine::resolve_stackinfo_cache(StackInfo* target) {
   // 関数
@@ -734,7 +764,8 @@ void VMachine::resolve_stackinfo_cache(StackInfo* target) {
 	assert(false); // TODO 未対応の型
       }
     } else {
-      assert(false); // 拡張型
+      target->type_cache1 = &target->type_complex;
+      target->type_complex.type_store = target->type_cache2;
     }
   } else {
     target->type_cache1 = nullptr;
@@ -868,6 +899,12 @@ void VMachine::setup() {
   M_ALLOC_BASIC_TYPE(16, 16, BasicType::TY_F128);
 
 #undef M_ALLOC_BASIC_TYPE
+
+  // VMの組み込み関数をロード
+  regist_intrinsic_func("llvm.memcpy.p0i8.p0i8.i8",  LlvmIntrinsic::memcpy, 8);
+  regist_intrinsic_func("llvm.memcpy.p0i8.p0i8.i16", LlvmIntrinsic::memcpy, 16);
+  regist_intrinsic_func("llvm.memcpy.p0i8.p0i8.i32", LlvmIntrinsic::memcpy, 32);
+  regist_intrinsic_func("llvm.memcpy.p0i8.p0i8.i64", LlvmIntrinsic::memcpy, 64);
 
   // Cの標準ライブラリをロード
   /*

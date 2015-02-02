@@ -162,9 +162,11 @@ FuncStore& VMemory::alloc_func(const Symbols::Symbol& name,
 // メモリ空間に新しいVM組み込み関数領域を確保する。
 FuncStore& VMemory::alloc_func(const Symbols::Symbol& name,
 			       vaddr_t ret_type,
-			       const intrinsic_func_t intrinsic, 
+			       const intrinsic_func_t intrinsic,
+			       const IntrinsicFuncParam param,
 			       vaddr_t addr) {
-  print_debug("alloc_func(I) name:%s, addr:%016" PRIx64 "\n", name.str().c_str(), addr);
+  print_debug("alloc_func(I) name:%s, addr:%016" PRIx64 ", param:%016" PRIx64 "\n",
+	      name.str().c_str(), addr, param.i64);
   // 空きアドレスの検索
   addr = assign_addr(func_store_map, func_reserved,
 		     static_cast<vaddr_t>(AddrType::AD_FUNCTION),
@@ -172,7 +174,7 @@ FuncStore& VMemory::alloc_func(const Symbols::Symbol& name,
 		     addr);
 
   return func_store_map.insert
-    (std::make_pair(addr, FuncStore(addr, name, ret_type, intrinsic))).first->second;
+    (std::make_pair(addr, FuncStore(addr, name, ret_type, intrinsic, param))).first->second;
 }
 
 // メモリ空間に新しい外部関数領域を確保する。

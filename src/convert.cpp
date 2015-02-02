@@ -294,11 +294,11 @@ void Convert::import_func(vaddr_t addr, const picojson::object& src) {
   } break;
 
   case FuncType::FC_INTRINSIC: {
-    vm.deploy_function_intrinsic(name, ret_type, addr);
+    vm.deploy_function(name, ret_type, addr);
   } break;
 
   case FuncType::FC_EXTERNAL: {
-    vm.deploy_function_external(name, ret_type, addr);
+    vm.deploy_function(name, ret_type, addr);
   } break;
 
   default: {

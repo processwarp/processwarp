@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cinttypes>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -16,8 +17,24 @@ namespace usagi {
   /** 仮想アドレス */
   typedef std::uint64_t vaddr_t;
 
-  /** VM組み込み関数の型 */
-  typedef size_t (*intrinsic_func_t)(VMachine&, Thread&, uint8_t*, std::vector<uint8_t>&);
+  /**
+   * VM組み込み関数に渡すパラメタ。
+   */
+  union IntrinsicFuncParam {
+    void* ptr;
+    int64_t i64;
+  };
+
+  /**
+   * VM組み込み関数の型
+   * @param vm 実行中の仮想マシン。
+   * @param th 実行中のスレッド。
+   * @param p 固定パラメータ。
+   * @param dst 戻り値格納先。
+   * @param src 呼び出しパラメタ格納先。
+   */
+  typedef void (*intrinsic_func_t)(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+				   vaddr_t dst, std::vector<uint8_t>& src);
 
   /** システム中で扱う最長のuint */
   typedef std::uint64_t longest_uint_t;

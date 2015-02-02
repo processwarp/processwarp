@@ -64,15 +64,17 @@ namespace usagi {
     /**
      * メモリ空間に新しいVM組み込み関数領域を確保する。
      * 同一アドレスに領域が確保されていた場合、エラーとなる。
-     * @param name 関数名称
-     * @param ret_type 戻り値の型
-     * @param intrinsic VM組み込み関数へのポインタ
+     * @param name 関数名称。
+     * @param ret_type 戻り値の型。
+     * @param intrinsic VM組み込み関数へのポインタ。
+     * @param param 組み込み関数へ渡す固定パラメタ。
      * @param addr 確保先仮想アドレス。VADDR_NONを指定すると空いているアドレスを割り当てる。
      * @return 確保したアドレスと領域。
      */
     FuncStore& alloc_func(const Symbols::Symbol& name,
 			  vaddr_t ret_type,
 			  const intrinsic_func_t intrinsic, 
+			  const IntrinsicFuncParam param,
 			  vaddr_t addr = VADDR_NON);
 
     /**
