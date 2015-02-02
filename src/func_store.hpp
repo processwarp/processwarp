@@ -40,6 +40,8 @@ namespace usagi {
     // VM組み込み関数で利用するメンバ
     /// VM組み込み関数のポインタ
     const intrinsic_func_t intrinsic;
+    /// 組み込み関数に渡す固定パラメータ
+    const IntrinsicFuncParam intrinsic_param;
 
     // ライブラリなど外部の関数の場合利用するメンバ
     /// ライブラリなど外部の関数のポインタ
@@ -63,11 +65,13 @@ namespace usagi {
      * @param name_ 関数名称
      * @param ret_type_ 戻り値の型
      * @param intrinsic_ VM組み込み関数へのポインタ
+     * @param intrinsic_param_ VM組み込み関数へ渡す固定パラメタ
      */
     FuncStore(vaddr_t addr_,
 	      const Symbols::Symbol& name_,
 	      vaddr_t ret_type_,
-	      const intrinsic_func_t intrinsic_);
+	      const intrinsic_func_t intrinsic_,
+	      const IntrinsicFuncParam intrinsic_param_);
 
     /**
      * 外部の関数のコンストラクタ。

@@ -3,7 +3,7 @@ RM          = rm -f
 
 OBJS        = llvm_asm_loader.o symbols.o usagi.o util.o vmachine.o vmemory.o \
               error.o func_store.o data_store.o type_store.o server.o xmpp.o convert.o \
-              stackinfo.o type_based.o
+              stackinfo.o type_based.o llvm_intrinsic.o
 
 TARGETS     = usagi
 
@@ -52,6 +52,8 @@ func_store.hpp:definitions.hpp symbols.hpp
 func_store.o:func_store.cpp func_store.hpp
 llvm_asm_loader.hpp:definitions.hpp
 llvm_asm_loader.o:llvm_asm_loader.cpp error.hpp instruction.hpp llvm_asm_loader.hpp util.hpp vmachine.hpp
+llvm_intrinsic.hpp:definitions.hpp
+llvm_intrinsic.o:llvm_intrinsic.cpp llvm_intrinsic.hpp vmachine.hpp
 data_store.hpp:definitions.hpp
 data_store.o:
 server.hpp:definitions.hpp vmachine.hpp xmpp.hpp
@@ -64,12 +66,12 @@ thread.hpp:definitions.hpp stackinfo.hpp
 type_store.hpp:definitions.hpp
 type_store.o:type_store.cpp error.hpp type_store.hpp util.hpp
 type_based.hpp:definitions.hpp
-type_based.o:type_based.cpp type_based.hpp
+type_based.o:type_based.cpp error.hpp type_based.hpp type_store.hpp util.hpp
 usagi.o:usagi.cpp error.hpp llvm_asm_loader.hpp server.hpp vmachine.hpp
 util.hpp:definitions.hpp
 util.o:util.cpp util.hpp instruction.hpp
 vmachine.hpp:error.hpp symbols.hpp thread.hpp vmemory.hpp
-vmachine.o:vmachine.cpp error.hpp func_store.hpp instruction.hpp stackinfo.hpp type_based.hpp util.hpp vmachine.hpp
+vmachine.o:vmachine.cpp error.hpp func_store.hpp instruction.hpp llvm_intrinsic.hpp stackinfo.hpp type_based.hpp util.hpp vmachine.hpp
 vmemory.hpp:data_store.hpp definitions.hpp func_store.hpp type_store.hpp
 vmemory.o:vmemory.cpp error.hpp util.hpp vmemory.hpp
 xmpp.hpp:

@@ -17,7 +17,8 @@ namespace usagi {
   class VMachine {
   public:
     /** VM組み込み関数一覧 */
-    typedef std::map<const std::string, intrinsic_func_t> IntrinsicFuncs;
+    typedef std::map<const std::string, std::pair<intrinsic_func_t, IntrinsicFuncParam>>
+      IntrinsicFuncs;
     /** 大域変数、関数シンボル→アドレス型 */
     typedef std::map<const Symbols::Symbol*, vaddr_t> Globals;
     /** スレッド一覧型 */
@@ -79,7 +80,7 @@ namespace usagi {
 
     /**
      * 基本型情報を作成する。
-     * @param type 基本型
+     * @param type 基本型。
      * @return 作成した値。
      */
     TypeStore& create_type(BasicType type);
@@ -109,25 +110,6 @@ namespace usagi {
     void deploy_function(const std::string& name,
 			 vaddr_t ret_type,
 			 vaddr_t addr);
-    /**
-     * ライブラリ関数を指定アドレスに展開する。
-     * @param name 関数名
-     * @param ret_type 戻り値の型
-     * @param addr 展開先アドレス
-     */
-    void deploy_function_external(const std::string& name,
-				  vaddr_t ret_type,
-				  vaddr_t addr);
-    
-    /**
-     * VM組み込み関数を指定アドレスに展開する。
-     * @param name 関数名
-     * @param ret_type 戻り値の型
-     * @param addr 展開先アドレス
-     */
-    void deploy_function_intrinsic(const std::string& name,
-				   vaddr_t ret_type,
-				   vaddr_t addr);
 
     /**
      * 通常の関数(VMで解釈、実行する)を指定アドレスに展開する。
@@ -178,6 +160,69 @@ namespace usagi {
     uint8_t* get_raw_addr(vaddr_t addr);
 
     /**
+     * 組み込み関数用に引数を取り出す(ポインタ)。
+     * 読み出そうとした引数が格納された型と異なったり、オーバーフローした場合エラーとなる。
+     * @param src 呼び出しパラメタ格納先。
+     * @param seek seek位置。
+     * @return 読みだした値。
+     */
+    static vaddr_t read_intrinsic_param_ptr(const std::vector<uint8_t>& src, int* seek);
+
+    /**
+     * 組み込み関数用に引数を取り出す(int8_t)。
+     * 読み出そうとした引数が格納された型と異なったり、オーバーフローした場合エラーとなる。
+     * @param src 呼び出しパラメタ格納先。
+     * @param seek seek位置。
+     * @return 読みだした値。
+     */
+    static int8_t  read_intrinsic_param_i8 (const std::vector<uint8_t>& src, int* seek);
+    
+    /**
+     * 組み込み関数用に引数を取り出す(int16_t)。
+     * 読み出そうとした引数が格納された型と異なったり、オーバーフローした場合エラーとなる。
+     * @param src 呼び出しパラメタ格納先。
+     * @param seek seek位置。
+     * @return 読みだした値。
+     */
+    static int16_t read_intrinsic_param_i16(const std::vector<uint8_t>& src, int* seek);
+
+    /**
+     * 組み込み関数用に引数を取り出す(int32_t)。
+     * 読み出そうとした引数が格納された型と異なったり、オーバーフローした場合エラーとなる。
+     * @param src 呼び出しパラメタ格納先。
+     * @param seek seek位置。
+     * @return 読みだした値。
+     */
+    static int32_t read_intrinsic_param_i32(const std::vector<uint8_t>& src, int* seek);
+
+    /**
+     * 組み込み関数用に引数を取り出す(int64_t)。
+     * 読み出そうとした引数が格納された型と異なったり、オーバーフローした場合エラーとなる。
+     * @param src 呼び出しパラメタ格納先。
+     * @param seek seek位置。
+     * @return 読みだした値。
+     */
+    static int64_t read_intrinsic_param_i64(const std::vector<uint8_t>& src, int* seek);
+
+    /**
+     * 組み込み関数をVMに登録する。
+     * @param name 関数名(C)。
+     * @param func 組み込み関数へのポインタ。
+     * @param i64 組み込み関数へ渡す固定パラメタ。
+     */
+    void regist_intrinsic_func(const std::string& name,
+			       intrinsic_func_t func, int i64);
+
+    /**
+     * 組み込み関数をVMに登録する。
+     * @param name 関数名(C)。
+     * @param func 組み込み関数へのポインタ。
+     * @param i64 組み込み関数へ渡す固定パラメタ。
+     */
+    void regist_intrinsic_func(const std::string& name,
+			       intrinsic_func_t func, void* ptr);
+
+    /**
      * StackInfoのキャッシュを解決し、実行前の状態にする。
      * @param target キャッシュ解決対象のStackInfo
      */
@@ -195,7 +240,7 @@ namespace usagi {
      * @param args エントリポイントへ渡す引数。
      */
     void run(std::vector<std::string> args);
-    
+
     /**
      * 大域変数のアドレスを設定する。
      * @param name 大域変数名

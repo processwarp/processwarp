@@ -3,6 +3,8 @@
 #include "definitions.hpp"
 
 namespace usagi {
+  class TypeStore;
+
   /**
    * 型によって動作が変わる命令の基底クラス
    */
@@ -324,6 +326,22 @@ namespace usagi {
    */
   class TypePointer : public TypeBased {
   public:
+    /**
+     * 値をコピーする。
+     * @param dst コピー先
+     * @param src コピー元
+     */
+    void copy(uint8_t* dst, uint8_t* src) override;
+  };
+
+  /**
+   * 複合型に対する演算命令。
+   */
+  class TypeComplex : public TypeBased {
+  public:
+    /// 複合型の型情報
+    TypeStore* type_store;
+
     /**
      * 値をコピーする。
      * @param dst コピー先
