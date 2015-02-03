@@ -449,6 +449,22 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 	  }
 	} break;
 
+	case llvm::Instruction::Switch: {
+	  const llvm::SwitchInst& inst = static_cast<const llvm::SwitchInst&>(*i);
+	  // set_type <intty>
+	  push_code(fc, Opcode::SET_TYPE, assign_type(fc, inst.getCondition()->getType()));
+	  // set_value <value>
+	  push_code(fc, Opcode::SET_VALUE, assign_operand(fc, inst.getCondition()));
+	  for (auto it = inst.case_begin(); it != inst.case_end(); it ++) {
+	    // test_eq <val>
+	    push_code(fc, Opcode::TEST_EQ, assign_operand(fc, it.getCaseValue()));
+	    // extra <dest>
+	    push_code(fc, Opcode::EXTRA, block_alias.at(it.getCaseSuccessor()));
+	  }
+	  // jump <defaultdest>
+	  push_code(fc, Opcode::JUMP, block_alias.at(inst.getDefaultDest()));
+	} break;
+
 	case llvm::Instruction::PHI: {
 	  const llvm::PHINode& inst = static_cast<const llvm::PHINode&>(*i);
 	  // set_type <ty>
