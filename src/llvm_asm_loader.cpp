@@ -402,11 +402,10 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 	  const llvm::CallInst& inst = static_cast<const llvm::CallInst&>(*i);
 	  // インラインアセンブラ未対応
 	  if (inst.isInlineAsm()) throw_error(Error::UNSUPPORT);
-
-	  if (!inst.getCalledFunction()->getReturnType()->isVoidTy()) {
+	  if (!inst.getType()->isVoidTy()) {
 	    // 戻り値の型
 	    push_code(fc, Opcode::SET_TYPE,
-		      assign_type(fc, inst.getCalledFunction()->getReturnType()));
+		      assign_type(fc, inst.getType()));
 	    // 出力先
 	    push_code(fc, Opcode::SET_OUTPUT,
 		      assign_operand(fc, &inst));
@@ -414,7 +413,7 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 
 	  // CALL命令、関数
 	  push_code(fc, Opcode::CALL,
-		    assign_operand(fc, inst.getCalledFunction()));
+		    assign_operand(fc, inst.getCalledValue()));
 	  // 戻り値の型、格納先の命令を追加
 	  push_code(fc, Opcode::EXTRA, FILL_OPERAND);
 	  push_code(fc, Opcode::EXTRA, FILL_OPERAND);
