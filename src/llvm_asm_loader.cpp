@@ -465,6 +465,11 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 	  push_code(fc, Opcode::JUMP, block_alias.at(inst.getDefaultDest()));
 	} break;
 
+	case llvm::Instruction::Unreachable: {
+	  // const llvm::UnreachableInst& inst = static_cast<const llvm::Unreachable&>(*i);
+	  // Unreachableはコンパイラの最適化のためだけにあるので、何も実行しなくて良い。
+	} break;
+
 	case llvm::Instruction::PHI: {
 	  const llvm::PHINode& inst = static_cast<const llvm::PHINode&>(*i);
 	  // set_type <ty>
