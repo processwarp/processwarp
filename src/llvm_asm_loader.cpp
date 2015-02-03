@@ -87,9 +87,12 @@ int LlvmAsmLoader::assign_operand(FunctionContext& fc, const llvm::Value* v) {
     int size = data_layout->getTypeAllocSize(v->getType());
     // 既存の定数でない場合、末尾に割り当てる。
     int k = fc.k.size();
+    ValueDest dst;
+    dst.is_k = true;
+    dst.addr.k = k;
     fc.k.resize(k + size);
     fc.loaded_value.insert(std::make_pair(v, -k - 1));
-    load_constant(fc, &fc.k.at(k), static_cast<const llvm::Constant*>(v));
+    load_constant(fc, dst, static_cast<const llvm::Constant*>(v));
 
     return -k - 1;
 
@@ -108,20 +111,29 @@ int LlvmAsmLoader::assign_operand(FunctionContext& fc, const llvm::Value* v) {
   return 0;
 }
 
+// 値の格納先ValueDestから実際の格納位置のポインタを取得する。
+uint8_t* LlvmAsmLoader::get_ptr_by_dest(FunctionContext& fc, ValueDest dst) {
+  if (dst.is_k) {
+    return &fc.k.at(dst.addr.k);
+  } else {
+    return dst.addr.ptr;
+  }
+}
+
 // LLVMの定数(配列)を仮想マシンにロードする。
-void LlvmAsmLoader::load_array(FunctionContext& fc, uint8_t* dst, const llvm::ConstantArray* src) {
+void LlvmAsmLoader::load_array(FunctionContext& fc, ValueDest dst, const llvm::ConstantArray* src) {
   // Typeの要素数とOperandsの要素数は同じはず
   assert(src->getType()->getNumElements() == src->getNumOperands());
   
   // 書き込み
   int one_size = data_layout->getTypeAllocSize(src->getType()->getElementType());
   for (unsigned int i = 0; i < src->getNumOperands(); i ++) {
-    load_constant(fc, dst + i * one_size, src->getOperand(i));
+    load_constant(fc, relocate_dest(dst, i * one_size), src->getOperand(i));
   }
 }
 
 // LLVMの定数を仮想マシンにロードする。
-void LlvmAsmLoader::load_constant(FunctionContext& fc, uint8_t* dst, const llvm::Constant* src) {
+void LlvmAsmLoader::load_constant(FunctionContext& fc, ValueDest dst, const llvm::Constant* src) {
   
   // 値の型に合わせて分岐
   switch(src->getValueID()) {
@@ -135,13 +147,13 @@ void LlvmAsmLoader::load_constant(FunctionContext& fc, uint8_t* dst, const llvm:
       map_func.insert(std::make_pair(func, addr));
       load_function(func);
     }
-    *reinterpret_cast<vaddr_t*>(dst) = map_func.at(func);
+    *reinterpret_cast<vaddr_t*>(get_ptr_by_dest(fc, dst)) = map_func.at(func);
   } return;
 
     //case llvm::Value::GlobalAliasVal: {} break;
   case llvm::Value::GlobalVariableVal: {
     assert(map_global.find(src) != map_global.end());
-    *reinterpret_cast<vaddr_t*>(dst) = map_global.at(src);
+    *reinterpret_cast<vaddr_t*>(get_ptr_by_dest(fc, dst)) = map_global.at(src);
   } break;
 
   case llvm::Value::UndefValueVal: {
@@ -180,7 +192,7 @@ void LlvmAsmLoader::load_constant(FunctionContext& fc, uint8_t* dst, const llvm:
 
     //case llvm::Value::ConstantVectorVal: {} break;
   case llvm::Value::ConstantPointerNullVal: {
-    *reinterpret_cast<vaddr_t*>(dst) = VADDR_NULL;
+    *reinterpret_cast<vaddr_t*>(get_ptr_by_dest(fc, dst)) = VADDR_NULL;
   } break;
 
     //case llvm::Value::MDNodeVal: {} break;
@@ -197,13 +209,13 @@ void LlvmAsmLoader::load_constant(FunctionContext& fc, uint8_t* dst, const llvm:
 }
 
 // LLVMの定数(DataArray)を仮想マシンにロードする。
-void LlvmAsmLoader::load_data(FunctionContext& fc, uint8_t* dst, const llvm::ConstantDataArray* src) {
-  memcpy(dst, src->getRawDataValues().data(),
+void LlvmAsmLoader::load_data(FunctionContext& fc, ValueDest dst, const llvm::ConstantDataArray* src) {
+  memcpy(get_ptr_by_dest(fc, dst), src->getRawDataValues().data(),
 	 data_layout->getTypeAllocSize(src->getType()));
 }
 
 // LLVMの定数(Expr)を仮想マシンにロードする。
-void LlvmAsmLoader::load_expr(FunctionContext& fc, uint8_t* dst, const llvm::ConstantExpr* src) {
+void LlvmAsmLoader::load_expr(FunctionContext& fc, ValueDest dst, const llvm::ConstantExpr* src) {
   switch(src->getOpcode()) {
     // case llvm::Instruction::Trunc:
     // case llvm::Instruction::ZExt:
@@ -221,7 +233,7 @@ void LlvmAsmLoader::load_expr(FunctionContext& fc, uint8_t* dst, const llvm::Con
     // 変換元の定数を読み込む
     int k = assign_operand(fc, src->getOperand(0));
     // 変換先を0埋め
-    memset(dst, 0, data_layout->getTypeAllocSize(src->getType()));
+    memset(get_ptr_by_dest(fc, dst), 0, data_layout->getTypeAllocSize(src->getType()));
     // データをそのままコピー
     uint8_t* src_ptr;
     if (map_global.find(src->getOperand(0)) != map_global.end()) {
@@ -234,7 +246,7 @@ void LlvmAsmLoader::load_expr(FunctionContext& fc, uint8_t* dst, const llvm::Con
       size = data_layout->getTypeAllocSize(src->getType());
     }
     
-    memcpy(dst, src_ptr, size);
+    memcpy(get_ptr_by_dest(fc, dst), src_ptr, size);
   } break;
 
     // case llvm::Instruction::AddrSpaceCast: {} break; //CastOps
@@ -286,7 +298,7 @@ void LlvmAsmLoader::load_expr(FunctionContext& fc, uint8_t* dst, const llvm::Con
       }
     }
     // TODO 範囲チェック
-    *reinterpret_cast<vaddr_t*>(dst) = target_value + delta;
+    *reinterpret_cast<vaddr_t*>(get_ptr_by_dest(fc, dst)) = target_value + delta;
   } break;
 
     // case Instruction::ICmp:
@@ -300,14 +312,14 @@ void LlvmAsmLoader::load_expr(FunctionContext& fc, uint8_t* dst, const llvm::Con
 }
 
 // LLVMの定数(Floating-point)を仮想マシンにロードする。
-void LlvmAsmLoader::load_float(FunctionContext& fc, uint8_t* dst, const llvm::ConstantFP* src) {
+void LlvmAsmLoader::load_float(FunctionContext& fc, ValueDest dst, const llvm::ConstantFP* src) {
   switch(src->getType()->getTypeID()) {
   case llvm::Type::FloatTyID: {
-    *reinterpret_cast<float*>(dst) = src->getValueAPF().convertToFloat();
+    *reinterpret_cast<float*>(get_ptr_by_dest(fc, dst)) = src->getValueAPF().convertToFloat();
   } break;
 
   case llvm::Type::DoubleTyID: {
-    *reinterpret_cast<double*>(dst) = src->getValueAPF().convertToDouble();
+    *reinterpret_cast<double*>(get_ptr_by_dest(fc, dst)) = src->getValueAPF().convertToDouble();
   } break;
 
   default: {
@@ -872,19 +884,24 @@ void LlvmAsmLoader::load_globals(const llvm::Module::GlobalListType& variables) 
     const llvm::GlobalVariable* gl =
       static_cast<const llvm::GlobalVariable*>(it->first);
     if (gl->hasInitializer()) {
-      load_constant(fc, vm.get_raw_addr(it->second), gl->getInitializer());
+      ValueDest dst;
+      dst.is_k = false;
+      dst.addr.ptr = vm.get_raw_addr(it->second);
+      load_constant(fc, dst, gl->getInitializer());
     }
   }
+  // ダミー定数領域には書き込まれていないはず
+  assert(k.size() == 0);
 }
 
 // LLVMの定数(Int)を仮想マシンにロードする。
-void LlvmAsmLoader::load_int(FunctionContext& fc, uint8_t* dst, const llvm::ConstantInt* src) {
+void LlvmAsmLoader::load_int(FunctionContext& fc, ValueDest dst, const llvm::ConstantInt* src) {
   if (src->getBitWidth() <= 0 || 64 < src->getBitWidth()) {
     print_debug("unsupport bit width : %d\n", src->getBitWidth());
     throw_error(Error::UNSUPPORT);
   }
 
-  memcpy(dst, src->getValue().getRawData(),
+  memcpy(get_ptr_by_dest(fc, dst), src->getValue().getRawData(),
 	 ((src->getBitWidth() - 1) / 8) + 1);
 }
 
@@ -1020,7 +1037,7 @@ void LlvmAsmLoader::load_module(llvm::Module* module) {
 }
 
 // LLVMの定数(struct)を仮想マシンにロードする。
-void LlvmAsmLoader::load_struct(FunctionContext& fc, uint8_t* dst, const llvm::ConstantStruct* src) {
+void LlvmAsmLoader::load_struct(FunctionContext& fc, ValueDest dst, const llvm::ConstantStruct* src) {
   // Typeの要素数とOperandsの要素数は同じはず
   assert(src->getType()->getNumElements() == src->getNumOperands());
   
@@ -1028,7 +1045,7 @@ void LlvmAsmLoader::load_struct(FunctionContext& fc, uint8_t* dst, const llvm::C
   int sum_size = 0;
   for (unsigned int i = 0; i < src->getNumOperands(); i ++) {
     int one_size = data_layout->getTypeAllocSize(src->getOperand(i)->getType());
-    load_constant(fc, dst + sum_size, src->getOperand(i));
+    load_constant(fc, relocate_dest(dst, sum_size), src->getOperand(i));
     sum_size += one_size;
   }
 }
@@ -1115,7 +1132,7 @@ vaddr_t LlvmAsmLoader::load_type(const llvm::Type* type, bool sign) {
 }
 
 // LLVMの定数(0うめ領域)を仮想マシンにロードする。
-void LlvmAsmLoader::load_zero(FunctionContext& fc, uint8_t* dst, const llvm::ConstantAggregateZero* src) {
+void LlvmAsmLoader::load_zero(FunctionContext& fc, ValueDest dst, const llvm::ConstantAggregateZero* src) {
   // 領域サイズを取得
   assert(data_layout->getTypeAllocSize(src->getType()) != 0);
   assert(data_layout->getTypeStoreSize(src->getType()) ==
@@ -1123,11 +1140,21 @@ void LlvmAsmLoader::load_zero(FunctionContext& fc, uint8_t* dst, const llvm::Con
   unsigned int size = data_layout->getTypeAllocSize(src->getType());
 
   // 0クリア
-  memset(dst, 0, size);
+  memset(get_ptr_by_dest(fc, dst), 0, size);
 }
 
 // 現在解析中の関数の命令配列に命令を追記する。
 void LlvmAsmLoader::push_code(FunctionContext& fc, Opcode opcode, int operand) {
   fc.code.push_back(Instruction::make_instruction(opcode, operand));
   print_debug("push code %02x %08x(%d)\n", opcode, operand, operand);
+}
+
+// 現在あるValueDestを元に、相対位置を変化させたValueDestを作成する。
+LlvmAsmLoader::ValueDest LlvmAsmLoader::relocate_dest(ValueDest dst, int diff) {
+  if (dst.is_k) {
+    dst.addr.k += diff;
+  } else {
+    dst.addr.ptr += diff;
+  }
+  return dst;
 }

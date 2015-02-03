@@ -71,6 +71,18 @@ namespace usagi {
       std::map<const llvm::Type*, int> loaded_type;
     };
 
+    /// 値の格納先(拡張可能な定数領域k or 固定の定数領域
+    struct ValueDest {
+      /// 拡張可能な定数領域kを指す場合true
+      bool is_k;
+      union {
+	/// 拡張可能な定数領域kの先頭からの位置
+	int k;
+	/// 固定の定数領域へのポインタ
+	uint8_t* ptr;
+      } addr;
+    };
+
     /// LLVMのコンテキスト(複数ファイルを読み込むときに使い回す)
     llvm::LLVMContext& context;
     /// ロード先仮想マシン
@@ -114,37 +126,47 @@ namespace usagi {
     int assign_operand(FunctionContext& fc, const llvm::Value* v);
 
     /**
+     * 値の格納先ValueDestから実際の格納位置のポインタを取得する。
+     * 実際の格納位置のポインタはassign_operand等、他の関数を呼び出したタイミングで
+     * 変わってしまう可能性があるので、memcpyや実際の読み書きの直前で取得すること。
+     * @param fc 解析中の関数の命令/変数
+     * @param dst 値の格納先ValueDest
+     * @return 実際の格納位置地のポインタ
+     */
+    uint8_t* get_ptr_by_dest(FunctionContext& fc, ValueDest dst);
+
+    /**
      * LLVMの定数(配列)を仮想マシンにロードする。
      * @param src LLVMの定数(配列)
      */
-    void load_array(FunctionContext& fc, uint8_t* dst, const llvm::ConstantArray* src);
+    void load_array(FunctionContext& fc, ValueDest dst, const llvm::ConstantArray* src);
 
     /**
      * LLVMの定数を仮想マシンにロードする。
      * @param constant LLVMの定数基底
      */
-    void load_constant(FunctionContext& fc, uint8_t* dst, const llvm::Constant* src);
+    void load_constant(FunctionContext& fc, ValueDest dst, const llvm::Constant* src);
 
     /**
      * LLVMの定数(DataArray)を仮想マシンにロードする。
      * @param data_array LLVMの定数
      * @return 
      */
-    void load_data(FunctionContext& fc, uint8_t* dst, const llvm::ConstantDataArray* src);
+    void load_data(FunctionContext& fc, ValueDest dst, const llvm::ConstantDataArray* src);
 
     /**
      * LLVMの定数(Expr)を仮想マシンにロードする。
      * @param expr LLVMの定数(Expr)基底
      * @return 
      */
-    void load_expr(FunctionContext& fc, uint8_t* dst, const llvm::ConstantExpr* src);
+    void load_expr(FunctionContext& fc, ValueDest dst, const llvm::ConstantExpr* src);
 
     /**
      * LLVMの定数(Floating-point)を仮想マシンにロードする。
      * @param src llvmの定数(Floating-point)
      * @return
      */
-    void load_float(FunctionContext& fc, uint8_t* dst, const llvm::ConstantFP* src);
+    void load_float(FunctionContext& fc, ValueDest dst, const llvm::ConstantFP* src);
 
     /**
      * LLVMの関数を仮想マシンにロードする。
@@ -163,7 +185,7 @@ namespace usagi {
      * @param src LLVMの定数(Int)
      * @return
      */
-    void load_int(FunctionContext& fc, uint8_t* dst, const llvm::ConstantInt* src);
+    void load_int(FunctionContext& fc, ValueDest dst, const llvm::ConstantInt* src);
 
     /**
      * LLVMのモジュールを仮想マシンにロードする。
@@ -176,7 +198,7 @@ namespace usagi {
      * @param src LLVMの定数(struct)
      * @return
      */
-    void load_struct(FunctionContext& fc, uint8_t* dst, const llvm::ConstantStruct* src);
+    void load_struct(FunctionContext& fc, ValueDest dst, const llvm::ConstantStruct* src);
 
     /**
      * LLVMの型を仮想マシンにロードする。
@@ -191,7 +213,7 @@ namespace usagi {
      * @param src LLVMの定数(0うめ領域)
      * @return
      */
-    void load_zero(FunctionContext& fc, uint8_t* dst, const llvm::ConstantAggregateZero* src);
+    void load_zero(FunctionContext& fc, ValueDest dst, const llvm::ConstantAggregateZero* src);
 
     /**
      * 現在解析中の関数の命令配列に命令を追記する。
@@ -200,5 +222,13 @@ namespace usagi {
      * @param operand オペランド
      */
     void push_code(FunctionContext& fc, Opcode opcode, int operand);
+
+    /**
+     * 現在あるValueDestを元に、相対位置を変化させたValueDestを作成する。
+     * @param dst 現在あるValueDest
+     * @param diff 相対移動量
+     * @return dstをdiff分だけずらしたValueDest
+     */
+    ValueDest relocate_dest(ValueDest dst, int diff);
   };
 }
