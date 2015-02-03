@@ -30,6 +30,11 @@ vm_int_t TypeBased::get(uint8_t* src) {
   throw_error(Error::INST_VIOLATION);
 }
 
+// 比較命令(isnan(a) || isnan(b))に対応した演算を行う。
+bool TypeBased::is_or_nans(uint8_t* a, uint8_t* b) {
+  throw_error(Error::INST_VIOLATION);
+}
+
 /**
  * TypeBaseクラスの2項演算子はすべてVOILATIONとする。
  * @param op メソッド名
@@ -54,7 +59,7 @@ M_BINARY_OPERATOR_VIOLATION(op_xor); // xor
 M_BINARY_OPERATOR_VIOLATION(op_equal);         // a==b
 M_BINARY_OPERATOR_VIOLATION(op_greater);       // a>b
 M_BINARY_OPERATOR_VIOLATION(op_greater_equal); // a>=b
-M_BINARY_OPERATOR_VIOLATION(op_nans);          // isnan(a) || isnan(b)
+M_BINARY_OPERATOR_VIOLATION(op_not_nans);      // !isnan(a) && !isnan(b)
 M_BINARY_OPERATOR_VIOLATION(op_not_equal);     // a!=b
 
 #undef M_BINARY_OPERATOR_VIOLATION
@@ -79,6 +84,35 @@ template <typename T> void TypeExtended<T>::copy(uint8_t* dst, uint8_t* src) {
 // 値を読み込む
 template <typename T> vm_int_t TypeExtended<T>::get(uint8_t* src) {
   return static_cast<vm_int_t>(*reinterpret_cast<T*>(src));
+}
+
+// 比較命令(isnan(a) || isnan(b))に対応した演算を行う。
+template <typename T> bool TypeExtended<T>::is_or_nans(uint8_t* a, uint8_t* b) {
+  // 整数演算ではサポートしない機能
+  throw_error(Error::INST_VIOLATION);
+}
+
+namespace usagi {
+
+  // 比較命令(isnan(a) || isnan(b))に対応した演算を行う。
+  template<> bool TypeExtended<double>::is_or_nans(uint8_t* a, uint8_t* b) {
+    if (std::isnan(*reinterpret_cast<double*>(a)) ||
+	std::isnan(*reinterpret_cast<double*>(b))) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  // 比較命令(isnan(a) || isnan(b))に対応した演算を行う。
+  template<> bool TypeExtended<float>::is_or_nans(uint8_t* a, uint8_t* b) {
+    if (std::isnan(*reinterpret_cast<float*>(a)) ||
+	std::isnan(*reinterpret_cast<float*>(b))) {
+      return true;
+    } else {
+      return false;
+    }
+  }
 }
 
 /**
@@ -144,31 +178,31 @@ namespace usagi {
   M_BINARY_OPERATOR_UNSUPPORT(op_xor, float); // xor
 
   // 比較演算のうち、整数型で未対応のもの
-  M_BINARY_OPERATOR_UNSUPPORT(op_nans, int8_t);
-  M_BINARY_OPERATOR_UNSUPPORT(op_nans, int16_t);
-  M_BINARY_OPERATOR_UNSUPPORT(op_nans, int32_t);
-  M_BINARY_OPERATOR_UNSUPPORT(op_nans, int64_t);
-  M_BINARY_OPERATOR_UNSUPPORT(op_nans, uint8_t);
-  M_BINARY_OPERATOR_UNSUPPORT(op_nans, uint16_t);
-  M_BINARY_OPERATOR_UNSUPPORT(op_nans, uint32_t);
-  M_BINARY_OPERATOR_UNSUPPORT(op_nans, uint64_t);
+  M_BINARY_OPERATOR_UNSUPPORT(op_not_nans, int8_t);
+  M_BINARY_OPERATOR_UNSUPPORT(op_not_nans, int16_t);
+  M_BINARY_OPERATOR_UNSUPPORT(op_not_nans, int32_t);
+  M_BINARY_OPERATOR_UNSUPPORT(op_not_nans, int64_t);
+  M_BINARY_OPERATOR_UNSUPPORT(op_not_nans, uint8_t);
+  M_BINARY_OPERATOR_UNSUPPORT(op_not_nans, uint16_t);
+  M_BINARY_OPERATOR_UNSUPPORT(op_not_nans, uint32_t);
+  M_BINARY_OPERATOR_UNSUPPORT(op_not_nans, uint64_t);
 
 #undef M_BINARY_OPERATOR_UNSUPPORT
 
-  // 比較命令(isnan(a) || isnan(b))に対応した演算を行う。
-  template<> void TypeExtended<double>::op_nans(uint8_t* dst, uint8_t* a, uint8_t* b) {
-    if (std::isnan(*reinterpret_cast<double*>(a)) ||
-	std::isnan(*reinterpret_cast<double*>(b))) {
+  // 比較命令(!isnan(a) && !isnan(b))に対応した演算を行う。
+  template<> void TypeExtended<double>::op_not_nans(uint8_t* dst, uint8_t* a, uint8_t* b) {
+    if (!std::isnan(*reinterpret_cast<double*>(a)) &&
+	!std::isnan(*reinterpret_cast<double*>(b))) {
       *dst = 0xff;
     } else {
       *dst = 0x00;
     }
   }
 
-  // 比較命令(isnan(a) || isnan(b))に対応した演算を行う。
-  template<> void TypeExtended<float>::op_nans(uint8_t* dst, uint8_t* a, uint8_t* b) {
-    if (std::isnan(*reinterpret_cast<float*>(a)) ||
-	std::isnan(*reinterpret_cast<float*>(b))) {
+  // 比較命令(!isnan(a) && !isnan(b))に対応した演算を行う。
+  template<> void TypeExtended<float>::op_not_nans(uint8_t* dst, uint8_t* a, uint8_t* b) {
+    if (!std::isnan(*reinterpret_cast<float*>(a)) &&
+	!std::isnan(*reinterpret_cast<float*>(b))) {
       *dst = 0xff;
     } else {
       *dst = 0x00;

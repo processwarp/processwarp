@@ -348,6 +348,9 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 
     // 定数
     std::vector<uint8_t> k;
+    // 定数の最初に0x00(false)と0xff(true)をロードできるように確保しておく
+    k.push_back(0x00);
+    k.push_back(0xff);
     // 変数
     std::map<const llvm::Value*, int> stack_values;
     
@@ -743,7 +746,13 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 		    assign_operand(fc, &inst));
 
 	  switch(inst.getPredicate()){
-	    // icmpの比較演算を作るためのマクロ
+	    /**
+	     * icmpの比較演算を作るためのマクロ
+	     * @param PRE CmpInst::Predicateのメンバ
+	     * @param OPC VMの命令
+	     * @param FOP 比較対象左辺値
+	     * @param SOP 比較対象右辺値
+	     */
 #define M_ICMP_OPERATOR(PRE, OPC, FOP, SOP)				\
 	    case llvm::CmpInst::Predicate::PRE: {			\
 	      push_code(fc, Opcode::SET_VALUE, assign_operand(fc, inst.getOperand(FOP))); \
@@ -763,6 +772,84 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 #undef M_ICMP_OPERATOR
 
 	  default: {
+	    assert(false);
+	  } break;
+	  }
+	} break;
+
+	case llvm::Instruction::FCmp: {
+	  const llvm::FCmpInst& inst = static_cast<const llvm::FCmpInst&>(*i);
+	  assert(inst.isFPPredicate());
+	  // set_type <ty>
+	  push_code(fc, Opcode::SET_TYPE, assign_type(fc, inst.getOperand(0)->getType()));
+	  // set_output <result>
+	  push_code(fc, Opcode::SET_OUTPUT, assign_operand(fc, &inst));
+
+	  switch(inst.getPredicate()){
+	    /**
+	     * fcmpの比較演算を作るためのマクロ
+	     * @param PRE CmpInst::Predicateのメンバ
+	     * @param OPC VMの命令
+	     * @param FOP 比較対象左辺値
+	     * @param SOP 比較対象右辺値
+	     */
+#define M_FCMP_OPERATOR1(PRE, OPC, FOP, SOP)				\
+	    case llvm::CmpInst::PRE: {					\
+	      push_code(fc, Opcode::SET_VALUE, assign_operand(fc, inst.getOperand(FOP))); \
+	      push_code(fc, Opcode::OPC, assign_operand(fc, inst.getOperand(SOP))); \
+	    } break;
+
+	    M_FCMP_OPERATOR1(FCMP_OEQ, EQUAL, 0, 1); // =
+	    M_FCMP_OPERATOR1(FCMP_OGT, GREATER, 0, 1);  // >
+	    M_FCMP_OPERATOR1(FCMP_OGE, GREATER_EQUAL, 0, 1); // >=
+	    M_FCMP_OPERATOR1(FCMP_OLT, GREATER_EQUAL, 1, 0); // <
+	    M_FCMP_OPERATOR1(FCMP_OLE, GREATER, 1, 0); // <=
+	    M_FCMP_OPERATOR1(FCMP_ONE, NOT_EQUAL, 0, 1); // !=
+	    M_FCMP_OPERATOR1(FCMP_ORD, NOT_NANS, 0, 1); // !isnan(v) && !isnan(A)
+#undef M_FCMP_OPERATOR1
+
+#define M_FCMP_OPERATOR2(PRE, OPC, FOP, SOP)				\
+	    case llvm::CmpInst::PRE: {					\
+	      push_code(fc, Opcode::SET_VALUE, assign_operand(fc, inst.getOperand(FOP))); \
+	      push_code(fc, Opcode::OR_NANS, assign_operand(fc, inst.getOperand(SOP))); \
+	      push_code(fc, Opcode::OPC, assign_operand(fc, inst.getOperand(SOP))); \
+	    } break;
+
+	    M_FCMP_OPERATOR2(FCMP_UEQ, EQUAL, 0, 1); // =
+	    M_FCMP_OPERATOR2(FCMP_UGT, GREATER, 0, 1);  // >
+	    M_FCMP_OPERATOR2(FCMP_UGE, GREATER_EQUAL, 0, 1); // >=
+	    M_FCMP_OPERATOR2(FCMP_ULT, GREATER_EQUAL, 1, 0); // <
+	    M_FCMP_OPERATOR2(FCMP_ULE, GREATER, 1, 0); // <=
+	    M_FCMP_OPERATOR2(FCMP_UNE, NOT_EQUAL, 0, 1); // !=
+#undef M_FCMP_OPERATOR2
+
+	  case llvm::CmpInst::FCMP_UNO: { // isnan(v) || isnan(A)
+	    push_code(fc, Opcode::SET_VALUE, assign_operand(fc, inst.getOperand(0)));
+	    push_code(fc, Opcode::OR_NANS, assign_operand(fc, inst.getOperand(1))); \
+	    // OR_NANSを使い比較不能かどうか調べ、pc+1分、NOPを埋めることで都合をつける。
+	    push_code(fc, Opcode::NOP, 0);
+	  } break;
+
+	  case llvm::CmpInst::FCMP_FALSE: { // false
+	    // set_output <result>
+	    push_code(fc, Opcode::SET_OUTPUT, assign_operand(fc, &inst));
+	    // set_value 定数
+	    push_code(fc, Opcode::SET_VALUE, -1); // 0x00をk(0)に割り当てておく
+	    // copy sizeof(<ty>)
+	    push_code(fc, Opcode::COPY, 1);
+	  } break;
+
+	  case llvm::CmpInst::FCMP_TRUE: { // true
+	    // set_output <result>
+	    push_code(fc, Opcode::SET_OUTPUT, assign_operand(fc, &inst));
+	    // set_value 定数
+	    push_code(fc, Opcode::SET_VALUE, -2); // 0xffをk(1)に割り当てておく
+	    // copy sizeof(<ty>)
+	    push_code(fc, Opcode::COPY, 1);
+	  } break;
+
+	  default: {
+	    print_debug("predicate %d\n", inst.getPredicate());
 	    assert(false);
 	  } break;
 	  }

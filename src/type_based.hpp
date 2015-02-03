@@ -38,6 +38,14 @@ namespace usagi {
     virtual vm_int_t get(uint8_t* src);
 
     /**
+     * 比較命令(isnan(a) || isnan(b))に対応した演算を行う。
+     * @param dst 出力先
+     * @param a
+     * @param b
+     */
+    virtual bool is_or_nans(uint8_t* a, uint8_t* b);
+
+    /**
      * add命令に対応した加算を行う。
      * @param dst 出力先
      * @param a
@@ -86,12 +94,12 @@ namespace usagi {
     virtual void op_greater_equal(uint8_t* dst, uint8_t* a, uint8_t* b);
 
     /**
-     * 比較命令(isnan(a) || isnan(b))に対応した演算を行う。
+     * 比較命令(!isnan(a) && !isnan(b))に対応した演算を行う。
      * @param dst 出力先
      * @param a
      * @param b
      */
-    virtual void op_nans(uint8_t* dst, uint8_t* a, uint8_t* b);
+    virtual void op_not_nans(uint8_t* dst, uint8_t* a, uint8_t* b);
 
     /**
      * 比較命令(a!=b)に対応した演算を行う。
@@ -193,6 +201,14 @@ namespace usagi {
     vm_int_t get(uint8_t* src) override;
 
     /**
+     * 比較命令(isnan(a) || isnan(b))に対応した演算を行う。
+     * @param dst 出力先
+     * @param a
+     * @param b
+     */
+    bool is_or_nans(uint8_t* a, uint8_t* b) override;
+
+    /**
      * add命令に対応した加算を行う。
      * @param dst 出力先
      * @param a
@@ -241,12 +257,12 @@ namespace usagi {
     void op_greater_equal(uint8_t* dst, uint8_t* a, uint8_t* b) override;
 
     /**
-     * 比較命令(isnan(a) || isnan(b))に対応した演算を行う。
+     * 比較命令(!isnan(a) && !isnan(b))に対応した演算を行う。
      * @param dst 出力先
      * @param a
      * @param b
      */
-    void op_nans(uint8_t* dst, uint8_t* a, uint8_t* b) override;
+    void op_not_nans(uint8_t* dst, uint8_t* a, uint8_t* b) override;
 
     /**
      * 比較命令(a!=b)に対応した演算を行う。

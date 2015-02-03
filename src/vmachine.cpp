@@ -328,6 +328,11 @@ void VMachine::execute(int max_clock) {
 	M_BINARY_OPERATOR(OR,  op_or);  // or
 	M_BINARY_OPERATOR(XOR, op_xor); // xor
 
+      case Opcode::COPY: {
+	int operand = Instruction::get_operand_value(code);
+	memcpy(stackinfo.output_cache, stackinfo.value_cache, operand);
+      } break;
+
       case Opcode::SET_ADR: {
 	OperandRet operand = get_operand(code, op_param);
 	stackinfo.address = *reinterpret_cast<vaddr_t*>(operand.cache);
@@ -466,7 +471,15 @@ void VMachine::execute(int max_clock) {
 	M_BINARY_OPERATOR(NOT_EQUAL,     op_not_equal);     // o = v != A
 	M_BINARY_OPERATOR(GREATER,       op_greater);       // o = v > A
 	M_BINARY_OPERATOR(GREATER_EQUAL, op_greater_equal); // o = v >= A
-	M_BINARY_OPERATOR(NANS,          op_nans);          // o = isnan(v) || isnan(A)
+	M_BINARY_OPERATOR(NOT_NANS,      op_not_nans);      // o = !isnan(v) && !isnan(A)
+
+      case Opcode::OR_NANS: {
+	OperandRet operand = get_operand(code, op_param);
+	if (stackinfo.type_cache1->is_or_nans(stackinfo.value_cache, operand.cache)) {
+	  *stackinfo.output_cache = 0xff;
+	  stackinfo.pc += 1; // 次の命令をスキップ
+	}
+      } break;
 
       default: {
 	// EXTRAARGを含む想定外の命令

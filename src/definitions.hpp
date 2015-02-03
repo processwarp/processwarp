@@ -164,7 +164,7 @@ namespace usagi {
       NOT_EQUAL,
       GREATER,
       GREATER_EQUAL,
-      NANS, // 40
+      NOT_NANS, // 40
       OR_NANS,
       SELECT,
       VA_ARG,
