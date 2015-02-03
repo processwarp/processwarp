@@ -729,16 +729,19 @@ M_READ_INTRINSIC_PARAM(read_intrinsic_param_i64, int64_t, TY_UI64);
 // 組み込み関数をVMに登録する。
 void VMachine::regist_intrinsic_func(const std::string& name,
 				     intrinsic_func_t func, int i64) {
-  print_debug("regist_intrinsic_func:%p\n", func);
-  intrinsic_funcs.insert(std::make_pair(name,
-					std::make_pair(func, IntrinsicFuncParam({.i64 = i64}))));
+  IntrinsicFuncParam param;
+  param.i64 = i64;
+  intrinsic_funcs.insert
+    (std::make_pair(name, std::make_pair(func, param)));
 }
 
 // 組み込み関数をVMに登録する。
 void VMachine::regist_intrinsic_func(const std::string& name,
 				     intrinsic_func_t func, void* ptr) {
-  intrinsic_funcs.insert(std::make_pair(name,
-					std::make_pair(func, IntrinsicFuncParam({.ptr = ptr}))));
+  IntrinsicFuncParam param;
+  param.ptr = ptr;
+  intrinsic_funcs.insert
+    (std::make_pair(name, std::make_pair(func, param)));
 }
 
 // StackInfoのキャッシュを解決し、実行前の状態にする。

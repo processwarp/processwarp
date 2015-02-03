@@ -30,15 +30,12 @@ void LlvmIntrinsic::memcpy(VMachine& vm, Thread& th, IntrinsicFuncParam p,
   } break;
   }
   // アライメントを取得
-  int32_t p_align = VMachine::read_intrinsic_param_i32(src, &seek);
-  p_align = 0; // 利用しないので警告回避用に0を代入
+  /*int32_t p_align =*/VMachine::read_intrinsic_param_i32(src, &seek);
   // 実行順番の制約(VMでは実行順番を入れ替えないので無視する)を取得
-  int8_t p_isvolation = VMachine::read_intrinsic_param_i8(src, &seek);
-  p_isvolation = 0; // 利用しないので警告回避用に0を代入
+  /*int8_t p_isvolation =*/VMachine::read_intrinsic_param_i8(src, &seek);
 
   // 読み込んだパラメタ長と渡されたパラメタ長は同じはず
-  print_debug("size %ld, read %d\n", src.size(), seek);
-  assert(src.size() == seek);
+  assert(static_cast<signed>(src.size()) == seek);
   std::memcpy(vm.get_raw_addr(p_dst),
 	      vm.get_raw_addr(p_src),
 	      static_cast<size_t>(p_size));
