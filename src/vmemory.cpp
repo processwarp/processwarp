@@ -66,7 +66,8 @@ vaddr_t assign_addr(std::map<vaddr_t, T>& store_map,
   
   if (addr != VADDR_NON) {
     // タイプが整合していること、アドレスが空いていること。
-    if (type != (addr & AddrType::AD_MASK) ||
+    if ((type != (addr & AddrType::AD_MASK) &&
+	 (type | AddrType::AD_CONSTANT) != (addr & AddrType::AD_MASK)) ||
 	store_map.find(addr) != store_map.end()) {
       print_debug("type:%016" PRIx64 ", addr:%016" PRIx64 "\n", type, addr);
       throw_error(Error::SPEC_VIOLATION);
