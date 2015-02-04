@@ -192,12 +192,46 @@ FuncStore& VMemory::alloc_func(const Symbols::Symbol& name,
     (std::make_pair(addr, FuncStore(addr, name, ret_type))).first->second;
 }
 
-// メモリ空間に複合型領域を確保する。
-TypeStore& VMemory::alloc_type(size_t size,
-			       unsigned int alignment,
-			       const std::vector<vaddr_t>& member,
-			       vaddr_t addr) {
-  print_debug("alloc_type size:%ld, alignment:%d, addr:%016" PRIx64 "\n", size, alignment, addr);
+// メモリ空間に配列型領域を確保する。
+TypeStore& VMemory::alloc_type_array(size_t size,
+				     unsigned int alignment,
+				     vaddr_t element,
+				     unsigned int num,
+				     vaddr_t addr) {
+  print_debug("alloc_type_array size:%ld, alignment:%d, element:%016" PRIx64
+	      ", num:%d, addr:%016" PRIx64 "\n",
+	      size, alignment, element, num, addr);
+  // 空きアドレスの検索
+  addr = assign_addr(type_store_map, type_reserved,
+		     static_cast<vaddr_t>(AddrType::AD_TYPE),
+		     &last_free[static_cast<vaddr_t>(AddrType::AD_TYPE) >> 60],
+		     addr);
+
+  return type_store_map.insert
+    (std::make_pair(addr, TypeStore(addr, TypeKind::TK_ARRAY, size, alignment, element, num))).
+    first->second;
+}
+
+// メモリ空間に基本型の型領域を確保する。
+TypeStore& VMemory::alloc_type_basic(size_t size,
+				     unsigned int alignment,
+				     vaddr_t addr) {
+  print_debug("alloc_type_basic size:%ld, alignment:%d addr:%016" PRIx64 "\n",
+	      size, alignment, addr);
+  // 基本型はVADDR_NONなし
+  assert(addr != VADDR_NON);
+  //
+  return type_store_map.insert
+    (std::make_pair(addr, TypeStore(addr, alignment, size))).first->second;
+}
+
+// メモリ空間に構造体の型領域を確保する。
+TypeStore& VMemory::alloc_type_struct(size_t size,
+				      unsigned int alignment,
+				      const std::vector<vaddr_t>& member,
+				      vaddr_t addr) {
+  print_debug("alloc_type_struct size:%ld, alignment:%d, addr:%016" PRIx64 "\n",
+	      size, alignment, addr);
   // 空きアドレスの検索
   addr = assign_addr(type_store_map, type_reserved,
 		     static_cast<vaddr_t>(AddrType::AD_TYPE),
@@ -209,12 +243,13 @@ TypeStore& VMemory::alloc_type(size_t size,
 }
 
 // メモリ空間に配列型領域を確保する。
-TypeStore& VMemory::alloc_type(size_t size,
-			       unsigned int alignment,
-			       vaddr_t element,
-			       unsigned int num,
-			       vaddr_t addr) {
-  print_debug("alloc_type size:%ld, alignment:%d, element:%016" PRIx64 ", num:%d, addr:%016" PRIx64 "\n",
+TypeStore& VMemory::alloc_type_vector(size_t size,
+				      unsigned int alignment,
+				      vaddr_t element,
+				      unsigned int num,
+				      vaddr_t addr) {
+  print_debug("alloc_type_vector size:%ld, alignment:%d, element:%016" PRIx64
+	      ", num:%d, addr:%016" PRIx64 "\n",
 	      size, alignment, element, num, addr);
   // 空きアドレスの検索
   addr = assign_addr(type_store_map, type_reserved,
@@ -223,7 +258,8 @@ TypeStore& VMemory::alloc_type(size_t size,
 		     addr);
 
   return type_store_map.insert
-    (std::make_pair(addr, TypeStore(addr, size, alignment, element, num))).first->second;
+    (std::make_pair(addr, TypeStore(addr, TypeKind::TK_VECTOR, size, alignment, element, num))).
+    first->second;
 }
 
 // 指定されたデータ領域を開放する。

@@ -231,18 +231,20 @@ picojson::value Convert::export_func(const FuncStore& src, Related& related) {
 picojson::value Convert::export_type(const TypeStore& src, Related& related) {
   picojson::object dst;
 
-  // 構造のサイズ
-  dst.insert(std::make_pair("size", num2json(src.size)));
-  // アライメント
-  dst.insert(std::make_pair("alignment", num2json(src.alignment)));
-  
-  if (src.is_array) {
-    // 配列の情報を出力
-    dst.insert(std::make_pair("element", vaddr2json(src.element)));
-    dst.insert(std::make_pair("num",     num2json(src.num)));
-    
-  } else {
-    // 構造のメンバの配列を出力
+  switch (src.kind) {
+  case TypeKind::TK_BASIC: {
+    // 基本型はすべてのVMで同じなのでexportしない
+    assert(false);
+  } break;
+
+  case TypeKind::TK_STRUCT: {
+    // 種類
+    dst.insert(std::make_pair("kind", picojson::value("S")));
+    // サイズ
+    dst.insert(std::make_pair("size", num2json(src.size)));
+    // アライメント
+    dst.insert(std::make_pair("alignment", num2json(src.alignment)));
+    // 構造体のメンバ
     picojson::array member;
     member.resize(src.member.size());
     for (int i = 0, size = src.member.size(); i < size; i ++) {
@@ -250,6 +252,29 @@ picojson::value Convert::export_type(const TypeStore& src, Related& related) {
       related.insert(src.member.at(i));
     }
     dst.insert(std::make_pair("member", picojson::value(member)));
+  } break;
+
+  case TypeKind::TK_ARRAY:
+  case TypeKind::TK_VECTOR: {
+    // 種類
+    if (src.kind == TypeKind::TK_ARRAY) {
+      dst.insert(std::make_pair("kind", picojson::value("A")));
+    } else {
+      dst.insert(std::make_pair("kind", picojson::value("V")));
+    }
+    // サイズ
+    dst.insert(std::make_pair("size", num2json(src.size)));
+    // アライメント
+    dst.insert(std::make_pair("alignment", num2json(src.alignment)));
+    // 要素の型
+    dst.insert(std::make_pair("element", vaddr2json(src.element)));
+    // 要素数
+    dst.insert(std::make_pair("num", num2json(src.num)));
+  } break;
+
+  default: {
+    assert(false);
+  } break;
   }
 
   return picojson::value(dst);
@@ -310,16 +335,9 @@ void Convert::import_func(vaddr_t addr, const picojson::object& src) {
 
 // JSONからTypeStoreを復元する。
 void Convert::import_type(vaddr_t addr, const picojson::object& src) {
-  if (src.find("element") != src.end()) {
-    // 配列情報のインポート
-    vmemory.alloc_type(json2num<size_t>(src.at("size")),
-		       json2num<unsigned int>(src.at("alignment")),
-		       json2vaddr(src.at("element")),
-		       json2num<unsigned int>(src.at("num")),
-		       addr);
-
-  } else {
-    // 構造情報のインポート
+  std::string kind = src.at("kind").get<std::string>();
+  if (kind == "S") {
+    // 構造体
     picojson::array member = src.at("member").get<picojson::array>();
     std::vector<vaddr_t> work;
     work.resize(member.size());
@@ -327,9 +345,28 @@ void Convert::import_type(vaddr_t addr, const picojson::object& src) {
       work.at(i) = json2vaddr(member.at(i));
     }
 
-    vmemory.alloc_type(json2num<size_t>(src.at("size")),
-		       json2num<unsigned int>(src.at("alignment")),
-		       work, addr);
+    vmemory.alloc_type_struct(json2num<size_t>(src.at("size")),
+			      json2num<unsigned int>(src.at("alignment")),
+			      work, addr);
+
+  } else if (kind == "A") {
+    // 配列
+    vmemory.alloc_type_array(json2num<size_t>(src.at("size")),
+			     json2num<unsigned int>(src.at("alignment")),
+			     json2vaddr(src.at("element")),
+			     json2num<unsigned int>(src.at("num")),
+			     addr);
+
+  } else if (kind == "V") {
+    // vector
+    vmemory.alloc_type_vector(json2num<size_t>(src.at("size")),
+			      json2num<unsigned int>(src.at("alignment")),
+			      json2vaddr(src.at("element")),
+			      json2num<unsigned int>(src.at("num")),
+			      addr);
+
+  } else {
+    assert(false);
   }
 }
 

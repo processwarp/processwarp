@@ -79,26 +79,34 @@ namespace usagi {
     void close();
 
     /**
-     * 基本型情報を作成する。
-     * @param type 基本型。
-     * @return 作成した値。
-     */
-    TypeStore& create_type(BasicType type);
-
-    /**
-     * 配列型情報を作成する。
+     * 配列型の型情報を作成する。
      * @param element 配列のメンバの型のアドレス
      * @param num 配列の要素数
      * @return 作成した値。
      */
-    TypeStore& create_type(vaddr_t element, unsigned int num);
+    TypeStore& create_type_array(vaddr_t element, unsigned int num);
 
     /**
-     * 複合型情報を作成する。
+     * 基本型の型情報を作成する。
+     * @param type 基本型。
+     * @return 作成した値。
+     */
+    TypeStore& create_type_basic(BasicType type);
+
+    /**
+     * 構造体の型情報を作成する。
      * @param member 複合型のメンバ型のアドレス
      * @return 作成した値。
      */
-    TypeStore& create_type(const std::vector<vaddr_t>& member);
+    TypeStore& create_type_struct(const std::vector<vaddr_t>& member);
+
+    /**
+     * vectorの型情報を作成する。
+     * @param element vectorのメンバの型のアドレス
+     * @param num vectorの要素数
+     * @return 作成した値。
+     */
+    TypeStore& create_type_vector(vaddr_t element, unsigned int num);
 
     /**
      * ネイティブ関数を指定アドレスに展開する。

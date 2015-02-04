@@ -98,6 +98,14 @@ namespace usagi {
     FC_EXTERNAL     = 0x03, ///< ライブラリなど外部の関数
   };
 
+  /** 型の種類 */
+  enum TypeKind {
+    TK_BASIC,  ///< 基本型
+    TK_STRUCT, ///< 構造体
+    TK_ARRAY,  ///< 配列
+    TK_VECTOR, ///< vector
+  };
+
   /** 基本型に予約するアドレス */
   enum BasicType : vaddr_t {
     TY_VOID     = 0x0000000000000001, ///< void型

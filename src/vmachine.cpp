@@ -637,31 +637,35 @@ void VMachine::close() {
   //*/
 }
 
-// 基本型情報を作成する。
-TypeStore& VMachine::create_type(BasicType type) {
-  // 型のアドレスを持つValueを作成
-  print_debug("create_type(basic)\n");
-  print_debug("\taddr\t:%016" PRIx64 "\n", type);
+// 配列型の型情報を作成する。
+TypeStore& VMachine::create_type_array(vaddr_t element, unsigned int num) {
+  // サイズ、アライメントを計算
+  std::vector<vaddr_t> member(num, element);
+  std::pair<size_t, unsigned int> info = calc_type_size(member);
   
+  // 領域を確保
+  return vmemory.alloc_type_array(info.first, info.second, element, num);
+}
+
+// 基本型の型情報を作成する。
+TypeStore& VMachine::create_type_basic(BasicType type) {
+  // 基本型はVMにより登録してあるものだけなので、ソレを戻す。
   return vmemory.get_type(type);
 }
 
-// 配列型情報を作成する。
-TypeStore& VMachine::create_type(vaddr_t element, unsigned int num) {
-  // サイズ、アライメントを計算
-  std::vector<vaddr_t> member;
-  member.push_back(element);
-  std::pair<size_t, unsigned int> info = calc_type_size(member);
-  
+// 構造体の型情報を作成する。
+TypeStore& VMachine::create_type_struct(const std::vector<vaddr_t>& member) {
   // 領域を確保
-  return vmemory.alloc_type(info.first * num, info.second, element, num);
+  std::pair<size_t, unsigned int> info = calc_type_size(member);
+  return vmemory.alloc_type_struct(info.first, info.second, member);
 }
 
-// 複合型情報を作成する。
-TypeStore& VMachine::create_type(const std::vector<vaddr_t>& member) {
-  // 領域を確保
+// vectorの型情報を作成する。
+TypeStore& VMachine::create_type_vector(vaddr_t element, unsigned int num) {
+  std::vector<vaddr_t> member(num, element);
   std::pair<size_t, unsigned int> info = calc_type_size(member);
-  return vmemory.alloc_type(info.first, info.second, member);
+  // 領域を確保
+  return vmemory.alloc_type_vector(info.first, info.second, element, num);
 }
 
 // ネイティブ関数を指定アドレスに展開する。
@@ -889,13 +893,9 @@ void VMachine::set_global_value(const std::string& name, vaddr_t addr) {
 
 // VMの初期設定をする。
 void VMachine::setup() {
-  // BasicTypeのメンバをsize0, alignment0のTY_VOIDにしておくことで、getelementptrの
-  // 計算で余計に計算しても問題が起きない
-  std::vector<vaddr_t> basic_type_dummy;
-  basic_type_dummy.push_back(BasicType::TY_VOID);
 
-#define M_ALLOC_BASIC_TYPE(s, a, t)			\
-  vmemory.alloc_type((s), (a), basic_type_dummy, (t));	\
+#define M_ALLOC_BASIC_TYPE(s, a, t)		\
+  vmemory.alloc_type_basic((s), (a), (t));	\
   intrinsic_addrs.insert(t)
 
   // 基本型を登録

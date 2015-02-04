@@ -810,10 +810,10 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 
 #define M_FCMP_OPERATOR2(PRE, OPC, FOP, SOP)				\
 	    case llvm::CmpInst::PRE: {					\
-	      push_code(fc, Opcode::SET_VALUE, assign_operand(fc, inst.getOperand(FOP))); \
-	      push_code(fc, Opcode::OR_NANS, assign_operand(fc, inst.getOperand(SOP))); \
-	      push_code(fc, Opcode::OPC, assign_operand(fc, inst.getOperand(SOP))); \
-	    } break;
+	    push_code(fc, Opcode::SET_VALUE, assign_operand(fc, inst.getOperand(FOP))); \
+	    push_code(fc, Opcode::OR_NANS, assign_operand(fc, inst.getOperand(SOP))); \
+	    push_code(fc, Opcode::OPC, assign_operand(fc, inst.getOperand(SOP))); \
+	  } break;
 
 	    M_FCMP_OPERATOR2(FCMP_UEQ, EQUAL, 0, 1); // =
 	    M_FCMP_OPERATOR2(FCMP_UGT, GREATER, 0, 1);  // >
@@ -1073,11 +1073,19 @@ void LlvmAsmLoader::load_module(llvm::Module* module) {
     } else if (VMemory::addr_is_type(addr)) {
       TypeStore& type = vm.vmemory.get_type(addr);
       print_debug("type:\t%016" PRIx64 "\n", addr);
-      if (type.is_array) {
-	print_debug("\t%016" PRIx64 " x %d\n", type.element, type.num);
-      } else {
+      switch(type.kind) {
+      case TypeKind::TK_BASIC: break;
+      case TypeKind::TK_STRUCT: {
 	for (auto it = type.member.begin(); it != type.member.end(); it ++)
 	  print_debug("\t%016" PRIx64 "\n", *it);
+      } break;
+      case TypeKind::TK_ARRAY: 
+	print_debug("\t[%016" PRIx64 " x %d]\n", type.element, type.num);
+	break;
+      case TypeKind::TK_VECTOR:
+	print_debug("\t<%016" PRIx64 " x %d>\n", type.element, type.num);
+	break;
+      default: assert(false);
       }
 
     } else { // data
@@ -1165,7 +1173,7 @@ vaddr_t LlvmAsmLoader::load_type(const llvm::Type* type, bool sign) {
     return exist->second;
   }
 
-  // 基本方の判定
+  // 基本型の判定
   BasicType addr;
   switch(type->getTypeID()) {
     // 1:1t対応するもの
@@ -1214,26 +1222,36 @@ vaddr_t LlvmAsmLoader::load_type(const llvm::Type* type, bool sign) {
     for (int i = 0, size = type->getStructNumElements(); i < size; i ++) {
       member.push_back(load_type(type->getStructElementType(i), false));
     }
-    TypeStore& store = vm.create_type(member);
+    TypeStore& store = vm.create_type_struct(member);
     loaded_type.insert(std::make_pair(type, store.addr));
     return store.addr;
   } break;
 
   case llvm::Type::ArrayTyID: {
     TypeStore& store =
-      vm.create_type(load_type(type->getArrayElementType(), false),
-		     type->getArrayNumElements());
+      vm.create_type_array(load_type(type->getArrayElementType(), false),
+			   type->getArrayNumElements());
     loaded_type.insert(std::make_pair(type, store.addr));
     return store.addr;
   } break;
 
+  case llvm::Type::VectorTyID: {
+    TypeStore& store =
+      vm.create_type_vector(load_type(type->getVectorElementType(), false),
+			    type->getVectorNumElements());
+    loaded_type.insert(std::make_pair(type, store.addr));
+    return store.addr;
+
+  } break;
+
   default:
+    type->dump();
     throw_error_message(Error::UNSUPPORT, "type:" + Util::num2dec_str(type->getTypeID()));
     break;
   }
   
   // 基本型をvmachineから払い出し、キャッシュに登録
-  TypeStore& store = vm.create_type(addr);
+  TypeStore& store = vm.create_type_basic(addr);
   loaded_type.insert(std::make_pair(type, store.addr));
   return store.addr;
 }

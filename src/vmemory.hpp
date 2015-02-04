@@ -90,22 +90,7 @@ namespace usagi {
 			  vaddr_t addr = VADDR_NON);
 
     /**
-     * メモリ空間に複合型領域を確保する。
-     * 同一アドレスに型領域が確保されていた場合、エラーとなる。
-     * 同一のデータ構造に対しては、既存のアドレスを割り当てる。
-     * @param size 構造のサイズ(Byte)
-     * @param alignment アライメント(Byte)
-     * @param member 構造のメンバの配列
-     * @param addr 確保先仮想アドレス。VADDR_NONを指定すると空いているアドレスを割り当てる。
-     * @return 確保したアドレスと領域。
-     */
-    TypeStore& alloc_type(size_t size,
-			  unsigned int alignment,
-			  const std::vector<vaddr_t>& member,
-			  vaddr_t addr = VADDR_NON);
-    
-    /**
-     * メモリ空間に配列型領域を確保する。
+     * メモリ空間に配列の型領域を確保する。
      * 同一アドレスに型領域が確保されていた場合、エラーとなる。
      * 同一のデータ構造に対しては、既存のアドレスを割り当てる。
      * @param size 構造のサイズ(Byte)
@@ -115,11 +100,56 @@ namespace usagi {
      * @param addr 確保先仮想アドレス。VADDR_NONを指定すると空いているアドレスを割り当てる。
      * @return 確保したアドレスと領域。
      */
-    TypeStore& alloc_type(size_t size,
-			  unsigned int alignment,
-			  vaddr_t element,
-			  unsigned int num,
-			  vaddr_t addr = VADDR_NON);
+    TypeStore& alloc_type_array(size_t size,
+				unsigned int alignment,
+				vaddr_t element,
+				unsigned int num,
+				vaddr_t addr = VADDR_NON);
+
+    /**
+     * メモリ空間に基本型の型領域を確保する。
+     * 同一アドレスに型領域が確保されていた場合、エラーとなる。
+     * 同一のデータ構造に対しては、既存のアドレスを割り当てる。
+     * @param size 構造のサイズ(Byte)
+     * @param alignment アライメント(Byte)
+     * @param addr 確保先仮想アドレス。
+     * @return 確保したアドレスと領域。
+     */
+    TypeStore& alloc_type_basic(size_t size,
+				unsigned int alignment,
+				vaddr_t addr);
+
+    /**
+     * メモリ空間に構造体の型領域を確保する。
+     * 同一アドレスに型領域が確保されていた場合、エラーとなる。
+     * 同一のデータ構造に対しては、既存のアドレスを割り当てる。
+     * @param size 構造のサイズ(Byte)
+     * @param alignment アライメント(Byte)
+     * @param member 構造のメンバの配列
+     * @param addr 確保先仮想アドレス。VADDR_NONを指定すると空いているアドレスを割り当てる。
+     * @return 確保したアドレスと領域。
+     */
+    TypeStore& alloc_type_struct(size_t size,
+				 unsigned int alignment,
+				 const std::vector<vaddr_t>& member,
+				 vaddr_t addr = VADDR_NON);
+
+    /**
+     * メモリ空間にvectorの型領域を確保する。
+     * 同一アドレスに型領域が確保されていた場合、エラーとなる。
+     * 同一のデータ構造に対しては、既存のアドレスを割り当てる。
+     * @param size 構造のサイズ(Byte)
+     * @param alignment アライメント(Byte)
+     * @param element 配列の要素の型
+     * @param num 配列の要素数
+     * @param addr 確保先仮想アドレス。VADDR_NONを指定すると空いているアドレスを割り当てる。
+     * @return 確保したアドレスと領域。
+     */
+    TypeStore& alloc_type_vector(size_t size,
+				 unsigned int alignment,
+				 vaddr_t element,
+				 unsigned int num,
+				 vaddr_t addr = VADDR_NON);
 
     /**
      * 指定されたデータ領域を開放する。
