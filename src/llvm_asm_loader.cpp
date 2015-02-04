@@ -587,6 +587,10 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 
 #undef M_BIN_OPERATOR
 	  
+	case llvm::Instruction::ExtractValue: {
+	  assert(false);
+	} break;
+
 	case llvm::Instruction::Alloca: {
 	  const llvm::AllocaInst& inst = static_cast<const llvm::AllocaInst&>(*i);
 	  // set_type <type>
@@ -607,8 +611,8 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 	  // set_align <alignment>
 	  push_code(fc, Opcode::SET_ALIGN,
 		    inst.getAlignment());
-	  // set_adr <pointer>
-	  push_code(fc, Opcode::SET_ADR,
+	  // set_ptr <pointer>
+	  push_code(fc, Opcode::SET_PTR,
 		    assign_operand(fc, inst.getPointerOperand()));
 	  // load <result>
 	  push_code(fc, Opcode::LOAD,
@@ -623,8 +627,8 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 	  // set_align <alignment>
 	  push_code(fc, Opcode::SET_ALIGN,
 		    inst.getAlignment());
-	  // set_adr <pointer>
-	  push_code(fc, Opcode::SET_ADR,
+	  // set_ptr <pointer>
+	  push_code(fc, Opcode::SET_PTR,
 		    assign_operand(fc, inst.getPointerOperand()));
 	  // store <value>
 	  push_code(fc, Opcode::STORE,
@@ -634,7 +638,7 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 	case llvm::Instruction::GetElementPtr: {
 	  const llvm::GetElementPtrInst& inst = static_cast<const llvm::GetElementPtrInst&>(*i);
 	  // set_ptr <ptrval>
-	  push_code(fc, Opcode::SET_ADR,
+	  push_code(fc, Opcode::SET_PTR,
 		    assign_operand(fc, inst.getPointerOperand()));
 
 	  llvm::Type* op_type = inst.getPointerOperandType()->getPointerElementType();

@@ -333,7 +333,7 @@ void VMachine::execute(int max_clock) {
 	memcpy(stackinfo.output_cache, stackinfo.value_cache, operand);
       } break;
 
-      case Opcode::SET_ADR: {
+      case Opcode::SET_PTR: {
 	OperandRet operand = get_operand(code, op_param);
 	stackinfo.address = *reinterpret_cast<vaddr_t*>(operand.cache);
 	stackinfo.address_cache = get_cache(stackinfo.address, vmemory);

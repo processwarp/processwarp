@@ -152,7 +152,7 @@ namespace usagi {
       OR,
       XOR,
       COPY,
-      SET_ADR, // 20
+      SET_PTR, // 20
       SET_ALIGN,
       ADD_ADR,
       MUL_ADR,
