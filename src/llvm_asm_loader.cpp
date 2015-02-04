@@ -145,7 +145,7 @@ void LlvmAsmLoader::load_constant(FunctionContext& fc, ValueDest dst, const llvm
     if (map_func.find(func) == map_func.end()) {
       vaddr_t addr = vm.reserve_func_addr();
       map_func.insert(std::make_pair(func, addr));
-      load_function(func);
+      left_func.insert(func);
     }
     *reinterpret_cast<vaddr_t*>(get_ptr_by_dest(fc, dst)) = map_func.at(func);
   } return;
@@ -341,6 +341,7 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
     vm.deploy_function(function->getName(),
 		       load_type(function->getReturnType(), false),
 		       addr);
+    left_func.erase(function);
 
   } else {
     // 通常の関数(VMで解釈、実行する)
@@ -1022,6 +1023,7 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
     vm.deploy_function_normal(function->getName().str(),
 			      load_type(function->getReturnType(), false),
 			      prop, addr);
+    left_func.erase(function);
   }
 }
 
@@ -1104,13 +1106,14 @@ void LlvmAsmLoader::load_module(llvm::Module* module) {
   for (auto fn = module->begin(); fn != module->end(); fn ++) {
     vaddr_t addr = vm.reserve_func_addr();
     map_func.insert(std::make_pair(fn, addr));
+    left_func.insert(fn);
     /// todo: スレッドローカル、セクション、公開の扱い
     vm.set_global_value(fn->getName().str(), addr);
   }
 
   // 関数の読み込み
-  for (auto fn = module->begin(); fn != module->end(); fn ++) {
-    load_function(fn);
+  while (!left_func.empty()) {
+    load_function(*left_func.begin());
   }
 
   // AliasListは未対応
@@ -1348,7 +1351,6 @@ void LlvmAsmLoader::load_zero(FunctionContext& fc, ValueDest dst, const llvm::Co
 // 現在解析中の関数の命令配列に命令を追記する。
 void LlvmAsmLoader::push_code(FunctionContext& fc, Opcode opcode, int operand) {
   fc.code.push_back(Instruction::make_instruction(opcode, operand));
-  print_debug("push code %02x %08x(%d)\n", opcode, operand, operand);
 }
 
 // 現在あるValueDestを元に、相対位置を変化させたValueDestを作成する。

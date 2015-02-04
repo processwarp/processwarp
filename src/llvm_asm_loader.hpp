@@ -92,6 +92,8 @@ namespace usagi {
 
     /// 関数とアドレスの対応関係
     std::map<const llvm::Function*, vaddr_t> map_func;
+    /// ロード待ちの関数一覧
+    std::set<const llvm::Function*> left_func;
 
     /// ロード済のグローバル変数の集合
     std::set<const llvm::Value*> loaded_global;
