@@ -340,6 +340,13 @@ void VMachine::execute(int max_clock) {
 	print_debug("address = %016" PRIx64 "\n", stackinfo.address);
       } break;
 
+      case Opcode::SET_ADR: {
+	OperandRet operand = get_operand(code, op_param);
+	stackinfo.address = operand.addr;
+	stackinfo.address_cache = operand.cache;
+	print_debug("address = %016" PRIx64 "\n", stackinfo.address);
+      } break;
+
       case Opcode::SET_ALIGN: {
 	int operand = Instruction::get_operand_value(code);
 	stackinfo.alignment = operand;

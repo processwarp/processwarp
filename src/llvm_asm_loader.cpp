@@ -588,7 +588,80 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 #undef M_BIN_OPERATOR
 	  
 	case llvm::Instruction::ExtractValue: {
-	  assert(false);
+	  const llvm::ExtractValueInst& inst = static_cast<const llvm::ExtractValueInst&>(*i);
+	  // set_type <type>
+	  push_code(fc, Opcode::SET_TYPE, assign_type(fc, inst.getType()));
+	  // set_align 0
+	  push_code(fc, Opcode::SET_ALIGN, 0);
+	  // set_adr <val>
+	  push_code(fc, Opcode::SET_ADR, assign_operand(fc, inst.getAggregateOperand()));
+	  // add_adr <>
+	  int diff = 0;
+	  llvm::Type* type = inst.getAggregateOperand()->getType();
+	  for (auto idx = inst.idx_begin(); idx != inst.idx_end(); idx ++) {
+	    if (llvm::SequentialType::classof(type)) {
+	      // 配列の場合、1要素のサイズxN
+	      type = static_cast<const llvm::SequentialType*>(type)->getElementType();
+	      diff += data_layout->getTypeAllocSize(type) * *idx;
+
+	    } else if (llvm::StructType::classof(type)) {
+	      // 構造体の場合、N-1番目までの要素のサイズの合計
+	      unsigned int j = 0;
+	      for (j = 0; j + 1 < *idx; j++) {
+		diff += data_layout->getTypeAllocSize
+		  (static_cast<const llvm::StructType*>(type)->getElementType(j));
+	      }
+	      type = static_cast<const llvm::StructType*>(type)->getElementType(j);
+
+	    } else {
+	      assert(false);
+	    }
+	  }
+	  push_code(fc, Opcode::ADD_ADR, diff);
+	  // load <result>
+	  push_code(fc, Opcode::LOAD, assign_operand(fc, &inst));
+	} break;
+
+	case llvm::Instruction::InsertValue: {
+	  const llvm::InsertValueInst& inst = static_cast<const llvm::InsertValueInst&>(*i);
+	  // set_output <result>
+	  push_code(fc, Opcode::SET_OUTPUT, assign_operand(fc, &inst));
+	  // set_value <val>
+	  push_code(fc, Opcode::SET_VALUE, assign_operand(fc, inst.getAggregateOperand()));
+	  // copy sizeof(<val>)
+	  push_code(fc, Opcode::COPY, data_layout->getTypeAllocSize(inst.getType()));
+	  // set_type <type>
+	  push_code(fc, Opcode::SET_TYPE,
+		    assign_type(fc, inst.getInsertedValueOperand()->getType()));
+	  // set_align 0
+	  push_code(fc, Opcode::SET_ALIGN, 0);
+	  // set_adr <val>
+	  push_code(fc, Opcode::SET_ADR, assign_operand(fc, inst.getAggregateOperand()));
+	  // add_adr <>
+	  int diff = 0;
+	  llvm::Type* type = inst.getAggregateOperand()->getType();
+	  for (auto idx = inst.idx_begin(); idx != inst.idx_end(); idx ++) {
+	    if (llvm::SequentialType::classof(type)) {
+	      // 配列の場合、1要素のサイズxN
+	      type = static_cast<const llvm::SequentialType*>(type)->getElementType();
+	      diff += data_layout->getTypeAllocSize(type) * *idx;
+
+	    } else if (llvm::StructType::classof(type)) {
+	      // 構造体の場合、N-1番目までの要素のサイズの合計
+	      unsigned int j = 0;
+	      for (j = 0; j + 1 < *idx; j++) {
+		diff += data_layout->getTypeAllocSize
+		  (static_cast<const llvm::StructType*>(type)->getElementType(j));
+	      }
+	      type = static_cast<const llvm::StructType*>(type)->getElementType(j);
+
+	    } else {
+	      assert(false);
+	    }
+	  }
+	  push_code(fc, Opcode::ADD_ADR, diff);
+	  // store <val>
+	  push_code(fc, Opcode::STORE, assign_operand(fc, inst.getInsertedValueOperand()));
 	} break;
 
 	case llvm::Instruction::Alloca: {
