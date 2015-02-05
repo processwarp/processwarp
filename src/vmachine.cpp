@@ -135,7 +135,7 @@ void VMachine::execute(int max_clock) {
     if (thread.stackinfos.size() == 1) return;
 
     StackInfo& stackinfo = *(thread.stackinfos.back().get());
-    resolve_stackinfo_cache(&stackinfo);
+    resolve_stackinfo_cache(&thread, &stackinfo);
 
     const FuncStore& func = *stackinfo.func_cache;
     const std::vector<instruction_t>& insts = func.normal_prop.code;
@@ -228,9 +228,13 @@ void VMachine::execute(int max_clock) {
 	    throw_error(Error::TYPE_VIOLATION);
 
 	  // 可変長引数分がある場合、別領域を作成
-	  new_stackinfo->var_arg = v_malloc(work.size(), false);
-	  new_stackinfo->alloca_addrs.push_back(new_stackinfo->var_arg);
-	  v_memcpy(new_stackinfo->var_arg, work.data(), work.size());
+	  if (work.size() != 0) {
+	    new_stackinfo->var_arg = v_malloc(work.size(), false);
+	    new_stackinfo->alloca_addrs.push_back(new_stackinfo->var_arg);
+	    v_memcpy(new_stackinfo->var_arg, work.data(), work.size());
+	  } else {
+	    new_stackinfo->var_arg = VADDR_NON;
+	  }
 	  
 	  if (is_tailcall) {
 	    // 末尾再帰の場合、既存のstackinfoを削除
@@ -239,7 +243,7 @@ void VMachine::execute(int max_clock) {
 	    thread.stackinfos.pop_back();
 	  } else {
 	    stackinfo.pc ++;
-	    assert(false);
+	    // TODO assert(false);
 	    // 末尾再帰でない場合、callinfosを追加
 	  }
 	  thread.stackinfos.push_back(std::unique_ptr<StackInfo>(new_stackinfo.release()));
@@ -299,8 +303,8 @@ void VMachine::execute(int max_clock) {
 	  }
 
 	} else {
-	  stackinfo.type_cache1 = &stackinfo.type_complex;
-	  stackinfo.type_complex.type_store = &store;
+	  stackinfo.type_cache1 = &thread.type_complex;
+	  thread.type_complex.type_store = &store;
 	}
 	stackinfo.type_cache2 = &store;
       } break;
@@ -722,6 +726,22 @@ uint8_t* VMachine::get_raw_addr(vaddr_t addr) {
   return reinterpret_cast<uint8_t*>(store.head.get() + VMemory::get_addr_lower(addr));
 }
 
+// 型依存の演算インスタンスを取得する。
+TypeBased* VMachine::get_type_based(vaddr_t type) {
+  // 複合型に対する演算命令
+  static TypeComplex type_complex;
+  if (type < sizeof(TYPE_BASES) / sizeof(TYPE_BASES[0])) {
+    // 存在する基本型の場合、TYPE_BASESからインスタンスを取得
+    assert(TYPE_BASES[type] != nullptr);
+    return TYPE_BASES[type];
+    
+  } else {
+    // 複合型の場合、type_complexを使う。
+    type_complex.type_store = &vmemory.get_type(type);
+    return &type_complex;
+  }
+}
+
 /**
  * 組み込み関数用に引数を取り出すメソッドを作成するマクロ。
  * @param name メソッド名
@@ -769,52 +789,52 @@ void VMachine::regist_intrinsic_func(const std::string& name,
 }
 
 // StackInfoのキャッシュを解決し、実行前の状態にする。
-void VMachine::resolve_stackinfo_cache(StackInfo* target) {
+void VMachine::resolve_stackinfo_cache(Thread* thread, StackInfo* stackinfo) {
   // 関数
-  if (target->func != VADDR_NON) {
-    target->func_cache = &vmemory.get_func(target->func);
+  if (stackinfo->func != VADDR_NON) {
+    stackinfo->func_cache = &vmemory.get_func(stackinfo->func);
   } else {
-    target->func_cache = nullptr;
+    stackinfo->func_cache = nullptr;
   }
   // スタック領域
-  if (target->stack != VADDR_NON) {
-    target->stack_cache = &vmemory.get_data(target->stack);
+  if (stackinfo->stack != VADDR_NON) {
+    stackinfo->stack_cache = &vmemory.get_data(stackinfo->stack);
   } else {
-    target->stack_cache = nullptr;
+    stackinfo->stack_cache = nullptr;
   }
   // 操作対象の型
-  if (target->type != VADDR_NON) {
-    target->type_cache2 = &vmemory.get_type(target->type);
-    if (target->type < sizeof(TYPE_BASES) / sizeof(TYPE_BASES[0])) {
-      target->type_cache1 = TYPE_BASES[target->type];
-      if (target->type_cache1 == nullptr) {
+  if (stackinfo->type != VADDR_NON) {
+    stackinfo->type_cache2 = &vmemory.get_type(stackinfo->type);
+    if (stackinfo->type < sizeof(TYPE_BASES) / sizeof(TYPE_BASES[0])) {
+      stackinfo->type_cache1 = TYPE_BASES[stackinfo->type];
+      if (stackinfo->type_cache1 == nullptr) {
 	assert(false); // TODO 未対応の型
       }
     } else {
-      target->type_cache1 = &target->type_complex;
-      target->type_complex.type_store = target->type_cache2;
+      stackinfo->type_cache1 = &(thread->type_complex);
+      thread->type_complex.type_store = stackinfo->type_cache2;
     }
   } else {
-    target->type_cache1 = nullptr;
-    target->type_cache2 = nullptr;
+    stackinfo->type_cache1 = nullptr;
+    stackinfo->type_cache2 = nullptr;
   }
   // 格納先アドレス
-  if (target->output != VADDR_NON) {
-    target->output_cache = get_cache(target->output, vmemory);
+  if (stackinfo->output != VADDR_NON) {
+    stackinfo->output_cache = get_cache(stackinfo->output, vmemory);
   } else {
-    target->output_cache = nullptr;
+    stackinfo->output_cache = nullptr;
   }
   // 値レジスタ
-  if (target->value != VADDR_NON) {
-    target->value_cache = get_cache(target->value, vmemory);
+  if (stackinfo->value != VADDR_NON) {
+    stackinfo->value_cache = get_cache(stackinfo->value, vmemory);
   } else {
-    target->value_cache = nullptr;
+    stackinfo->value_cache = nullptr;
   }
   // アドレスレジスタ
-  if (target->address != VADDR_NON) {
-    target->address_cache = get_cache(target->address, vmemory);
+  if (stackinfo->address != VADDR_NON) {
+    stackinfo->address_cache = get_cache(stackinfo->address, vmemory);
   } else {
-    target->address_cache = nullptr;
+    stackinfo->address_cache = nullptr;
   }
 }
 

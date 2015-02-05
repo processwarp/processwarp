@@ -12,8 +12,13 @@ namespace usagi {
    */
   class Thread {
   public:
-    /** CallInfo */
+    /// 呼び出し階層
     typedef std::vector<std::unique_ptr<StackInfo>> StackInfos;
+
+    /// 呼び出し階層
     StackInfos stackinfos;
+
+    /// 複合型に対する演算命令
+    TypeComplex type_complex;
   };
 }

@@ -5,6 +5,19 @@
 #include <iomanip>
 #include <iostream>
 
+#ifndef NDEBUG
+#include <llvm/IR/Constants.h>
+#include <llvm/IR/DerivedTypes.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IR/Instructions.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Value.h>
+#include <llvm/IR/ValueSymbolTable.h>
+#include <llvm/AsmParser/Parser.h>
+#include <llvm/Support/ManagedStatic.h>
+#include <llvm/Support/SourceMgr.h>
+#endif
+
 #include "definitions.hpp"
 
 namespace usagi {
@@ -88,5 +101,13 @@ namespace usagi {
     AtDeath atdeath
 #endif
 
+#ifdef NDEBUG
+#define save_llvm_instruction(I) //
+#define print_llvm_instruction() //
+#else
+    static const llvm::Instruction* llvm_instruction;
+#define save_llvm_instruction(I) Util::llvm_instruction = (I)
+#define print_llvm_instruction() Util::llvm_instruction->dump();
+#endif
   };
 }

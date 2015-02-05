@@ -111,6 +111,25 @@ int LlvmAsmLoader::assign_operand(FunctionContext& fc, const llvm::Value* v) {
   return 0;
 }
 
+// LLVMの定数をロードした実アドレスを取得する。
+LlvmAsmLoader::ValueDest LlvmAsmLoader::get_loaded_ptr(FunctionContext& fc,
+						       const llvm::Constant* src) {
+  ValueDest dest;
+  if (map_global.find(src) != map_global.end()) {
+    // グローバル変数
+    dest.is_k = false;
+    dest.addr.ptr = vm.get_raw_addr(map_global.at(src));
+    
+  } else {
+    // ローカル定数
+    int k = assign_operand(fc, src);
+    assert(k < 0); // 正の場合、変数なのでアドレスを確定できない。
+    dest.is_k = true;
+    dest.addr.k = -k - 1;
+  }
+  return dest;
+}
+
 // 値の格納先ValueDestから実際の格納位置のポインタを取得する。
 uint8_t* LlvmAsmLoader::get_ptr_by_dest(FunctionContext& fc, ValueDest dst) {
   if (dst.is_k) {
@@ -217,35 +236,47 @@ void LlvmAsmLoader::load_data(FunctionContext& fc, ValueDest dst, const llvm::Co
 // LLVMの定数(Expr)を仮想マシンにロードする。
 void LlvmAsmLoader::load_expr(FunctionContext& fc, ValueDest dst, const llvm::ConstantExpr* src) {
   switch(src->getOpcode()) {
-    // case llvm::Instruction::Trunc:
-    // case llvm::Instruction::ZExt:
-    // case llvm::Instruction::SExt:
-    // case llvm::Instruction::FPTrunc:
-    // case llvm::Instruction::FPExt:
-    // case llvm::Instruction::UIToFP:
-    // case llvm::Instruction::SIToFP:
-    // case llvm::Instruction::FPToUI:
-    // case llvm::Instruction::FPToSI:
-    // case llvm::Instruction::PtrToInt:
-    // case llvm::Instruction::IntToPtr:
+    /**
+     * ConstantExprのうち、型キャストを行う
+     * @param INS 命令
+     * @param DSI キャスト先の型が符号ありの場合true
+     * @param SSI キャスト元の型が符号ありの場合true
+     */
+#define M_LOAD_EXPR_CONV(INS, DSI, SSI)					\
+    case llvm::Instruction::INS: {					\
+      assert(src->getNumOperands() == 1);				\
+      vaddr_t dst_type = load_type(src->getType(), DSI);		\
+      vaddr_t src_type = load_type(src->getOperand(0)->getType(), SSI); \
+      TypeBased* src_op = vm.get_type_based(src_type);			\
+      src_op->type_cast(get_ptr_by_dest(fc, dst), dst_type,		\
+			get_ptr_by_dest(fc, get_loaded_ptr(fc, src)));	\
+    } break;
+
+    M_LOAD_EXPR_CONV(Trunc, false, false);
+    M_LOAD_EXPR_CONV(ZExt, false, false);
+    M_LOAD_EXPR_CONV(SExt, true, false);
+    M_LOAD_EXPR_CONV(FPTrunc, false, false);
+    M_LOAD_EXPR_CONV(FPExt, false, false);
+    M_LOAD_EXPR_CONV(UIToFP, false, false);
+    M_LOAD_EXPR_CONV(SIToFP, false, true);
+    M_LOAD_EXPR_CONV(FPToUI, false, false);
+    M_LOAD_EXPR_CONV(FPToSI, true, false);
+    M_LOAD_EXPR_CONV(PtrToInt, false, false);
+    M_LOAD_EXPR_CONV(IntToPtr, false, false);
+#undef M_LOAD_EXPR_CONV
 
   case llvm::Instruction::BitCast: {
-    // 変換元の定数を読み込む
-    int k = assign_operand(fc, src->getOperand(0));
     // 変換先を0埋め
     memset(get_ptr_by_dest(fc, dst), 0, data_layout->getTypeAllocSize(src->getType()));
-    // データをそのままコピー
-    uint8_t* src_ptr;
-    if (map_global.find(src->getOperand(0)) != map_global.end()) {
-      src_ptr = vm.get_raw_addr(map_global.at(src->getOperand(0)));
-    } else {
-      src_ptr = fc.k.data() - k - 1;
-    }
+    // 変換元の定数を読み込む
+    assert(assign_operand(fc, src->getOperand(0)) < 0);
+    uint8_t* src_ptr = fc.k.data() - assign_operand(fc, src->getOperand(0)) - 1;
     size_t size = data_layout->getTypeAllocSize(src->getOperand(0)->getType());
     if (size > data_layout->getTypeAllocSize(src->getType())) {
       size = data_layout->getTypeAllocSize(src->getType());
     }
     
+    // データをそのままコピー
     memcpy(get_ptr_by_dest(fc, dst), src_ptr, size);
   } break;
 
@@ -305,6 +336,7 @@ void LlvmAsmLoader::load_expr(FunctionContext& fc, ValueDest dst, const llvm::Co
     // case Instruction::FCmp: {} break; // Cmp
 
   default: {
+    src->dump();
     print_debug("unsupport expr : %d %s\n", src->getOpcode(), src->getOpcodeName());
     throw_error(Error::UNSUPPORT);
   } break;
@@ -386,7 +418,7 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 
       // 命令を解析する
       for (auto i = block->begin(); i != block->end(); i ++) {
-	i->dump();
+	save_llvm_instruction(i); // デバッグ用に命令を保存
 	// LLVMに対応した命令に置き換え
 	switch(i->getOpcode()) {
 	case llvm::Instruction::Ret: {
@@ -1120,7 +1152,7 @@ void LlvmAsmLoader::load_module(llvm::Module* module) {
   if (module->getAliasList().size() != 0) {
     throw_error(Error::UNSUPPORT);
   }
-
+  //*
   // デバッグ用にダンプを出力
   std::set<vaddr_t> all = vm.vmemory.get_alladdr();
   for (auto it = all.begin(); it != all.end(); it ++) {
@@ -1229,6 +1261,7 @@ void LlvmAsmLoader::load_module(llvm::Module* module) {
       }
     }
   }
+  //*/
 }
 
 // LLVMの定数(struct)を仮想マシンにロードする。

@@ -66,6 +66,7 @@ M_BINARY_OPERATOR_VIOLATION(op_not_equal);     // a!=b
 
 // type_cast命令に対応したキャスト演算を行う。
 void TypeBased::type_cast(uint8_t* dst, vaddr_t type, uint8_t* src) {
+  print_llvm_instruction();
   throw_error(Error::INST_VIOLATION);
 }
 
@@ -262,9 +263,27 @@ template <typename T> void TypeExtended<T>::type_cast(uint8_t* dst, vaddr_t type
   }
 }
 
+// bit_cast命令に対応したキャスト演算を行う。
+void TypePointer::bit_cast(uint8_t* dst, size_t size, uint8_t* src) {
+  // コピーサイズはvaddr_tのサイズと同じはず
+  assert(size == sizeof(vaddr_t));
+  *reinterpret_cast<vaddr_t*>(dst) = *reinterpret_cast<vaddr_t*>(src);
+}
+
 // 値をコピーする。
 void TypePointer::copy(uint8_t* dst, uint8_t* src) {
   *reinterpret_cast<vaddr_t*>(dst) = *reinterpret_cast<vaddr_t*>(src);
+}
+
+// type_cast命令に対応したキャスト演算を行う。
+void TypePointer::type_cast(uint8_t* dst, vaddr_t type, uint8_t* src) {
+  // ポインタと同じ64ビット長整数への変換にのみ対応
+  if (type == BasicType::TY_UI64 || type == BasicType::TY_SI64) {
+    *reinterpret_cast<vaddr_t*>(dst) = *reinterpret_cast<uint64_t*>(src);
+    
+  } else {
+    throw_error_message(Error::CAST_VIOLATION, Util::vaddr2str(type));
+  }
 }
 
 // 値をコピーする。

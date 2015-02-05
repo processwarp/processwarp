@@ -168,6 +168,13 @@ namespace usagi {
     uint8_t* get_raw_addr(vaddr_t addr);
 
     /**
+     * 型依存の演算インスタンスを取得する。
+     * @param type 方に割り当てたアドレス。
+     * @return 型依存の演算インスタンス。
+     */
+    TypeBased* get_type_based(vaddr_t type);
+
+    /**
      * 組み込み関数用に引数を取り出す(ポインタ)。
      * 読み出そうとした引数が格納された型と異なったり、オーバーフローした場合エラーとなる。
      * @param src 呼び出しパラメタ格納先。
@@ -232,9 +239,10 @@ namespace usagi {
 
     /**
      * StackInfoのキャッシュを解決し、実行前の状態にする。
-     * @param target キャッシュ解決対象のStackInfo
+     * @param thread stackinfoが所属するThread
+     * @param stackinfo キャッシュ解決対象のStackInfo
      */
-    void resolve_stackinfo_cache(StackInfo* target);
+    void resolve_stackinfo_cache(Thread* thread, StackInfo* stackinfo);
 
     /**
      * 関数のアドレスを予約する。

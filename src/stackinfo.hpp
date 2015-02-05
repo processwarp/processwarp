@@ -70,9 +70,6 @@ namespace usagi {
     /// アドレスレジスタキャッシュ
     uint8_t* address_cache;
 
-    /// 複合型に対する演算命令
-    TypeComplex type_complex;
-
     /**
      * コンストラクタ。
      * @param func_ 関数

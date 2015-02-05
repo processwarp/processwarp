@@ -52,6 +52,8 @@ static const char* OPCODE_STR[] = {
   "VA_ARG",
 };
 
+const llvm::Instruction* Util::llvm_instruction;
+
 // 未実装機能を表すメソッド。
 void Util::_fixme(long line, const char* file, std::string mesg) {
     std::cerr.setf(std::ios::dec);

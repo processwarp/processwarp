@@ -128,6 +128,14 @@ namespace usagi {
     int assign_operand(FunctionContext& fc, const llvm::Value* v);
 
     /**
+     * LLVMの定数をロードした実アドレスを取得する。
+     * @param fc 解析中の関数の命令/変数
+     * @param src LLVMの定数
+     * @return 定数がロードされている場所
+     */
+    ValueDest get_loaded_ptr(FunctionContext& fc, const llvm::Constant* src);
+
+    /**
      * 値の格納先ValueDestから実際の格納位置のポインタを取得する。
      * 実際の格納位置のポインタはassign_operand等、他の関数を呼び出したタイミングで
      * 変わってしまう可能性があるので、memcpyや実際の読み書きの直前で取得すること。

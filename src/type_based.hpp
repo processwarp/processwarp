@@ -6,7 +6,7 @@ namespace usagi {
   class TypeStore;
 
   /**
-   * 型によって動作が変わる命令の基底クラス
+   * 型依存の演算クラス。
    */
   class TypeBased {
   public:
@@ -343,11 +343,27 @@ namespace usagi {
   class TypePointer : public TypeBased {
   public:
     /**
+     * bit_cast命令に対応したキャスト演算を行う。
+     * @param dst 出力先
+     * @param size 出力サイズ
+     * @param src 入力元
+     */
+    void bit_cast(uint8_t* dst, size_t size, uint8_t* src) override;
+
+    /**
      * 値をコピーする。
      * @param dst コピー先
      * @param src コピー元
      */
     void copy(uint8_t* dst, uint8_t* src) override;
+
+    /**
+     * type_cast命令に対応したキャスト演算を行う。
+     * @param dst 出力先
+     * @param type 出力型
+     * @param src 入力元
+     */
+    void type_cast(uint8_t* dst, vaddr_t type, uint8_t* src) override;
   };
 
   /**
