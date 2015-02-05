@@ -25,7 +25,8 @@ static const char* OPCODE_STR[] = {
   "OR",
   "XOR",
   "COPY",
-  "SET_ADR", // 20
+  "SET_PTR", // 20
+  "SET_ADR",
   "SET_ALIGN",
   "ADD_ADR",
   "MUL_ADR",
@@ -34,8 +35,8 @@ static const char* OPCODE_STR[] = {
   "STORE",
   "ALLOC",
   "FREE",
-  "ALLOCA",
-  "TEST", // 30
+  "ALLOCA", // 30
+  "TEST",
   "TEST_EQ",
   "JUMP",
   "PHI",
@@ -44,8 +45,8 @@ static const char* OPCODE_STR[] = {
   "EQUAL",
   "NOT_EQUAL",
   "GREATER",
-  "GREATER_EQUAL",
-  "NANS", // 40
+  "GREATER_EQUAL", // 40
+  "NANS",
   "OR_NANS",
   "SELECT",
   "VA_ARG",
