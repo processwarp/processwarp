@@ -66,6 +66,7 @@ static TypeBased* TYPE_BASES[] = {
   nullptr,
   nullptr,
   nullptr,
+  nullptr,
   nullptr, // 30
   nullptr, // 31
   new TypeExtended<float>(), // 32 float
