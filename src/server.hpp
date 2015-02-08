@@ -16,19 +16,16 @@ namespace usagi {
   class Server {
   public:
     /**
-     * サーバの繰り返しルーチン。
-     * @return エラーメッセージ。
+     * サーバ動作モード
      */
-    std::string loop();
+    enum RunMode {
+      APPLICATION, ///< アプリケーション
+      DAEMON,      ///< デーモン
+    };
 
-    /**
-     * サーバの機動ルーチン。
-     * @param conf サーバ機動設定
-     * @return エラーメッセージ
-     */
-    std::string start(const picojson::object& conf);
+    /** サーバ動作モード */
+    RunMode run_mode;
 
-  private:
     /** サーバ名称 */
     std::string server_name;
 
@@ -63,5 +60,16 @@ namespace usagi {
      * @param command コマンド
      */
     void command_warp_out(const picojson::object& command);
+
+    /**
+     * サーバの繰り返しルーチン。
+     */
+    void loop();
+
+    /**
+     * サーバの機動ルーチン。
+     * @param conf サーバ機動設定
+     */
+    void start(const picojson::object& conf);
   };
 }

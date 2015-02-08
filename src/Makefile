@@ -57,7 +57,7 @@ llvm_intrinsic.o:llvm_intrinsic.cpp llvm_intrinsic.hpp vmachine.hpp
 data_store.hpp:definitions.hpp
 data_store.o:
 server.hpp:definitions.hpp vmachine.hpp xmpp.hpp
-server.o:server.cpp convert.hpp llvm_asm_loader.hpp server.hpp
+server.o:server.cpp convert.hpp error.hpp llvm_asm_loader.hpp server.hpp
 stackinfo.hpp:definitions.hpp type_based.hpp
 stackinfo.o:data_store.hpp func_store.hpp stackinfo.hpp
 symbols.hpp:

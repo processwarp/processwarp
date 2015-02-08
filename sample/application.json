@@ -1,15 +1,10 @@
 {
+    "mode":"application",
+    
     "network":"xmpp",
     "xmpp":{
 	"server":"llamerada.net",
 	"jid":"account1@llamerada.net",
 	"password":"passwd1"
-    },
-
-    "mode":"file",
-    "file":{
-	"mode":"file",
-	"filename":"../sample/hello6.ll",
-	"args":[]
     }
 }

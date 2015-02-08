@@ -132,7 +132,10 @@ void VMachine::execute(int max_clock) {
   Thread& thread = *(threads.front().get());
  re_entry: {
     // ciが1段の場合、終了
-    if (thread.stackinfos.size() == 1) return;
+    if (thread.stackinfos.size() == 1) {
+      status = FINISH;
+      return;
+    }
 
     StackInfo& stackinfo = *(thread.stackinfos.back().get());
     resolve_stackinfo_cache(&thread, &stackinfo);

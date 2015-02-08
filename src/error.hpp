@@ -14,6 +14,8 @@ namespace usagi {
   class Error {
   public:
     enum Reason {
+      CONFIGURE,  ///< 設定ファイルの読み込みに失敗
+      PROTOCOL,   ///< 通信の解析に失敗
       PARSE,      ///< 入力ファイルのパースに失敗
       UNSUPPORT,  ///< 未サポートの機能(LLVMの仕様のうち)
       SPEC_VIOLATION, ///< 仕様違反

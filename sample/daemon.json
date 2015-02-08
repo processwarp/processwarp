@@ -1,4 +1,6 @@
 {
+    "mode":"daemon",
+    
     "network":"xmpp",
     "xmpp":{
 	"server":"llamerada.net",
@@ -6,5 +8,5 @@
 	"password":"passwd2"
     },
 
-    "mode":"none"
+    "files":[]
 }

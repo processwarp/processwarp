@@ -1,6 +1,7 @@
 
 #include <cstdlib>
 #include <fstream>
+#include <getopt.h>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -17,43 +18,23 @@ using namespace usagi;
 /**
  * エントリーポイント。
  */
-/*
-int main(const int argc, const char* argv[]) {
-  if(argc != 2) return (EXIT_FAILURE);
-  
-  try {
-    VMachine vmachine;
-    vmachine.setup();
-
-    { // VMにLLVMファイルを読み込む
-      LlvmAsmLoader loader(vmachine);
-      loader.load_file(argv[1]);
-    }
-    std::vector<std::string> args;
-    vmachine.run(args);
-    vmachine.execute(100);
-
-    vmachine.close();
-
-    print_debug("bye!\n");
-    return(EXIT_SUCCESS);
-
-  } catch(const Error& e) {
-    print_debug("Exception code:%d  message:%s\n", e.reason, e.mesg.c_str());
-    return(EXIT_FAILURE);
-  }
-}
-/*/
 int main(int argc, char* argv[]) {
-  // コマンド解析
-  if (argc == 2) {
-    picojson::object conf;
+  int opt, option_index;
+  picojson::object conf;
 
-    { // 設定ファイルを開く
-      std::ifstream conf_file(argv[1]);
+  option long_options[] = {
+    {"config", required_argument, nullptr, 'c'},
+    {"llvm",   required_argument, nullptr, 'l'},
+    {0, 0, 0, 0} // terminate
+  };
+
+  while((opt = getopt_long(argc, argv, "ac:l:", long_options, &option_index)) != -1) {
+    switch(opt) {
+    case 'c': { // 設定ファイルを読み込む
+      std::ifstream conf_file(optarg);
       if (!conf_file.is_open()) {
-	std::cerr << "can't open configure-file." << std::endl;
-	goto on_error;
+	std::cerr << "Can't open configure-file." << std::endl;
+	return EXIT_FAILURE;
       }
       
       // 設定ファイルをJSONとして解析
@@ -65,32 +46,61 @@ int main(int argc, char* argv[]) {
 	goto on_error;
       }
       conf = v.get<picojson::object>();
-    }
+    } break;
 
-    Server server;
-    std::string err = server.start(conf);
-    if (err != "") {
-      std::cerr << err << std::endl;
+    case 'l': {
+      // 'files'ディレクティブがない場合作る
+      if (conf.find("file") == conf.end()) {
+	conf.insert(std::make_pair("files", picojson::value(picojson::array())));
+      }
+      // 'files'の中にファイルに対応したディレクティブを作る
+      picojson::object file;
+      file.insert(std::make_pair("type", picojson::value(std::string("llvm"))));
+      file.insert(std::make_pair("path", picojson::value(std::string(optarg))));
+      file.insert(std::make_pair("args", picojson::value(picojson::array())));
+      
+      picojson::array& files = conf.at("files").get<picojson::array>();
+      files.push_back(picojson::value(file));
+    } break;
+
+    case ':':
+    case '?': {
+      printf("Unknown or required argument option -%c\n", opt);
       goto on_error;
+    } break;
     }
-    
-    while((err = server.loop()) == "") {
-      // エラーが発生しなければループを継続
-    }
-    std::cerr << err << std::endl;
-    goto on_error;
-
-  } else {
-    std::cerr << "you must select configure-file." << std::endl;
-    goto on_error;
   }
-  
-  // 正常終了
-  return 0;
 
-  // 異常終了
+  // '--'以降のオプションを一番最後のfileディレクティブのargsに格納する。
+  for (int i = optind; i < argc; i ++) {
+    // 一番最後のfileディレクティブを取得、ディレクティブがない場合エラー
+    if (conf.find("files") == conf.end()) goto on_error;
+    picojson::array& files = conf.at("files").get<picojson::array>();
+    if (files.size() == 0) goto on_error;
+    picojson::object& file = files.back().get<picojson::object>();
+    // argsディレクティブを取得、ティレクティブがない場合作成
+    if (file.find("args") == file.end()) {
+      file.insert(std::make_pair("args", picojson::value(picojson::array())));
+    }
+    picojson::array& args = file.at("args").get<picojson::array>();
+    args.push_back(picojson::value(argv[i]));
+  }
+
+  { // サーバ起動
+    Server server;
+    server.start(conf);
+
+    // デーモンか、実行中のアプリケーションがある間、ループし続ける
+    while(server.run_mode == Server::DAEMON ||
+	  server.vms.size() != 0) {
+      server.loop();
+    }
+
+    // 正常終了
+    return EXIT_SUCCESS;
+  }
+
  on_error:
-  std::cerr << "usage: usagi configure-file" << std::endl;
-  return 1;
+  printf("Usage : COMMAND -c path [-l path [-- ...]]\n");
+  return EXIT_FAILURE;
 }
-//*/
