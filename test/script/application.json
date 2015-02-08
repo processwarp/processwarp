@@ -1,0 +1,10 @@
+{
+    "mode":"application",
+    
+    "network":"xmpp",
+    "xmpp":{
+	"server":"llamerada.net",
+	"jid":"account1@llamerada.net",
+	"password":"passwd1"
+    }
+}
