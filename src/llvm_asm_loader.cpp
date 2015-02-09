@@ -820,6 +820,36 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 		    assign_operand(fc, inst.getValueOperand()));
 	} break;
 
+	case llvm::Instruction::AtomicRMW: {
+	  const llvm::AtomicRMWInst& inst = static_cast<const llvm::AtomicRMWInst&>(*i);
+	  
+	  switch(inst.getOperation()) {
+#define M_ATOMIC_RMW(INS, OP, SI)					\
+	  case llvm::AtomicRMWInst::INS: {				\
+	    /* set_type <ty> */						\
+	    push_code(fc, Opcode::SET_TYPE, assign_type(fc, inst.getValOperand()->getType(), SI)); \
+	    /* set_ov_ptr <pointer> */					\
+	    push_code(fc, Opcode::SET_OV_PTR, assign_operand(fc, inst.getPointerOperand())); \
+	    /* <operation> <value> */					\
+	    push_code(fc, Opcode::OP, assign_operand(fc, inst.getValOperand())); \
+	  } break;
+
+	    M_ATOMIC_RMW(Xchg, SET, false);
+	    M_ATOMIC_RMW(Add,  ADD, false);
+	    M_ATOMIC_RMW(Sub,  SUB, false);
+	    M_ATOMIC_RMW(And,  AND, false);
+	    M_ATOMIC_RMW(Nand, NAND, false);
+	    M_ATOMIC_RMW(Or,   OR,  false);
+	    M_ATOMIC_RMW(Xor,  XOR, false);
+	    M_ATOMIC_RMW(Max,  MAX, true);
+	    M_ATOMIC_RMW(Min,  MIN, true);
+	    M_ATOMIC_RMW(UMax, MAX, false);
+	    M_ATOMIC_RMW(UMin, MIN, false);
+#undef M_ATOMIC_RMW
+	  default: assert(false);
+	  }
+	} break;
+
 	case llvm::Instruction::GetElementPtr: {
 	  const llvm::GetElementPtrInst& inst = static_cast<const llvm::GetElementPtrInst&>(*i);
 	  // set_ptr <ptrval>
