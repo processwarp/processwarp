@@ -24,16 +24,16 @@ define i32 @_Z7nothingPKc(i8* nocapture readnone %str) #0 {
   ret i32 0
 }
 
-; Function Attrs: uwtable
+; Function Attrs: nounwind uwtable
 define i32 @main() #1 {
   %1 = load i32 ()** @globally1, align 8, !tbaa !1
-  %2 = tail call i32 %1()
+  %2 = tail call i32 %1() #3
   %3 = load i32 ()** @globally2, align 8, !tbaa !1
-  %4 = tail call i32 %3()
-  %5 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([21 x i8]* @.str, i64 0, i64 0), i32 26, i32 26, i32 90, i32 90, i32 %2, i32 %4)
-  %6 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([7 x i8]* @.str1, i64 0, i64 0), i32 1, i32 0)
-  %7 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str2, i64 0, i64 0), i32 0, i32 1)
-  %8 = tail call i32 @puts(i8* getelementptr inbounds ([11 x i8]* @.str4, i64 0, i64 0))
+  %4 = tail call i32 %3() #3
+  %5 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([21 x i8]* @.str, i64 0, i64 0), i32 26, i32 26, i32 90, i32 90, i32 %2, i32 %4) #3
+  %6 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([7 x i8]* @.str1, i64 0, i64 0), i32 1, i32 0) #3
+  %7 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str2, i64 0, i64 0), i32 0, i32 1) #3
+  %8 = tail call i32 @puts(i8* getelementptr inbounds ([11 x i8]* @.str4, i64 0, i64 0)) #3
   ret i32 0
 }
 
@@ -44,8 +44,9 @@ declare i32 @printf(i8* nocapture readonly, ...) #2
 declare i32 @puts(i8* nocapture readonly) #2
 
 attributes #0 = { nounwind readnone uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #1 = { uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #1 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #2 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #3 = { nounwind }
 
 !llvm.ident = !{!0}
 

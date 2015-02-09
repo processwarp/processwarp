@@ -11,16 +11,16 @@ define i32 @main() #0 {
   %1 = load <4 x float>* bitcast (i8* getelementptr inbounds ([21 x i8]* @buffer, i64 0, i64 5) to <4 x float>*), align 1, !tbaa !1
   %bitcast = extractelement <4 x float> %1, i32 0
   %2 = fpext float %bitcast to double
-  %3 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i64 0, i64 0), double %2)
+  %3 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i64 0, i64 0), double %2) #2
   %4 = extractelement <4 x float> %1, i32 1
   %5 = fpext float %4 to double
-  %6 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i64 0, i64 0), double %5)
+  %6 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i64 0, i64 0), double %5) #2
   %7 = extractelement <4 x float> %1, i32 2
   %8 = fpext float %7 to double
-  %9 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i64 0, i64 0), double %8)
+  %9 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i64 0, i64 0), double %8) #2
   %10 = extractelement <4 x float> %1, i32 3
   %11 = fpext float %10 to double
-  %12 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i64 0, i64 0), double %11)
+  %12 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i64 0, i64 0), double %11) #2
   ret i32 0
 }
 

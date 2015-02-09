@@ -26,17 +26,17 @@ define i32 @main() #0 {
   %6 = getelementptr [5 x double]* %load, i64 0, i64 4
   store double 4.213000e+01, double* %6, align 16
   %7 = call i32 @getloadavg(double* %2, i32 5) #1
-  %8 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str, i64 0, i64 0), i32 %7)
+  %8 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str, i64 0, i64 0), i32 %7) #1
   %9 = load double* %2, align 16, !tbaa !1
-  %10 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([16 x i8]* @.str1, i64 0, i64 0), double %9)
+  %10 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([16 x i8]* @.str1, i64 0, i64 0), double %9) #1
   %11 = load double* %3, align 8, !tbaa !1
-  %12 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([16 x i8]* @.str2, i64 0, i64 0), double %11)
+  %12 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([16 x i8]* @.str2, i64 0, i64 0), double %11) #1
   %13 = load double* %4, align 16, !tbaa !1
-  %14 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([16 x i8]* @.str3, i64 0, i64 0), double %13)
+  %14 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([16 x i8]* @.str3, i64 0, i64 0), double %13) #1
   %15 = load double* %5, align 8, !tbaa !1
-  %16 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([16 x i8]* @.str4, i64 0, i64 0), double %15)
+  %16 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([16 x i8]* @.str4, i64 0, i64 0), double %15) #1
   %17 = load double* %6, align 16, !tbaa !1
-  %18 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([16 x i8]* @.str5, i64 0, i64 0), double %17)
+  %18 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([16 x i8]* @.str5, i64 0, i64 0), double %17) #1
   call void @llvm.lifetime.end(i64 40, i8* %1) #1
   ret i32 0
 }

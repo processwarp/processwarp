@@ -48,7 +48,7 @@ define void @_Z9ReadMonthPKc(i8* %month) #0 {
 ; <label>:4                                       ; preds = %0
   %5 = getelementptr inbounds %struct.tm* %value, i64 0, i32 4
   %6 = load i32* %5, align 8, !tbaa !1
-  %7 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str1, i64 0, i64 0), i8* %month, i32 %6)
+  %7 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str1, i64 0, i64 0), i8* %month, i32 %6) #1
   br label %8
 
 ; <label>:8                                       ; preds = %4, %0
@@ -154,8 +154,8 @@ define i32 @main() #0 {
   %40 = load i32* %39, align 4, !tbaa !12
   %41 = getelementptr inbounds %struct.tm* %tm, i64 0, i32 0
   %42 = load i32* %41, align 8, !tbaa !13
-  %43 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([26 x i8]* @.str4, i64 0, i64 0), i8* %8, i8* %26, i32 %31, i32 %33, i32 %36, i32 %38, i32 %40, i32 %42)
-  %putchar = call i32 @putchar(i32 10)
+  %43 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([26 x i8]* @.str4, i64 0, i64 0), i8* %8, i8* %26, i32 %31, i32 %33, i32 %36, i32 %38, i32 %40, i32 %42) #1
+  %putchar = call i32 @putchar(i32 10) #1
   %44 = bitcast %struct.tm* %value.i to i8*
   call void @llvm.lifetime.start(i64 56, i8* %44) #1
   call void @llvm.memset.p0i8.i64(i8* %44, i8 0, i64 56, i32 8, i1 false) #1

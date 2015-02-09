@@ -20,7 +20,7 @@ define void @_Z4Testdddd(double %_testVu, double %_testVv, double %_testWu, doub
   %2 = load double* @testVv, align 8, !tbaa !1
   %3 = load double* @testWu, align 8, !tbaa !1
   %4 = load double* @testWv, align 8, !tbaa !1
-  %5 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([37 x i8]* @.str1, i64 0, i64 0), double %1, double %2, double %3, double %4)
+  %5 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([37 x i8]* @.str1, i64 0, i64 0), double %1, double %2, double %3, double %4) #2
   ret void
 }
 

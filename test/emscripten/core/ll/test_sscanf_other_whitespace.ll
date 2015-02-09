@@ -31,7 +31,7 @@ define i32 @main() #0 {
   %4 = call i32 (i8*, i8*, ...)* @sscanf(i8* %3, i8* getelementptr inbounds ([8 x i8]* @.str10, i64 0, i64 0), i32* %x, i32* %y) #2
   %5 = load i32* %x, align 4, !tbaa !1
   %6 = load i32* %y, align 4, !tbaa !1
-  %7 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str11, i64 0, i64 0), i32 %5, i32 %6)
+  %7 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str11, i64 0, i64 0), i32 %5, i32 %6) #2
   %indvars.iv.next = add nuw nsw i64 %indvars.iv, 1
   %exitcond = icmp eq i64 %indvars.iv.next, 10
   br i1 %exitcond, label %8, label %1

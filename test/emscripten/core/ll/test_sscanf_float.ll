@@ -36,7 +36,7 @@ define i32 @main() #0 {
   %17 = fpext float %16 to double
   %18 = load float* %f9, align 4, !tbaa !1
   %19 = fpext float %18 to double
-  %20 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([37 x i8]* @.str2, i64 0, i64 0), double %3, double %5, double %7, double %9, double %11, double %13, double %15, double %17, double %19)
+  %20 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([37 x i8]* @.str2, i64 0, i64 0), double %3, double %5, double %7, double %9, double %11, double %13, double %15, double %17, double %19) #2
   ret i32 0
 }
 

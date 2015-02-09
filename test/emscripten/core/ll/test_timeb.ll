@@ -6,25 +6,25 @@ target triple = "x86_64-pc-linux-gnu"
 
 @.str = private unnamed_addr constant [5 x i8] c"*%d\0A\00", align 1
 @.str1 = private unnamed_addr constant [16 x i8] c"tb.time > 10000\00", align 1
-@.str2 = private unnamed_addr constant [19 x i8] c"tmp/test_timeb.cpp\00", align 1
+@.str2 = private unnamed_addr constant [19 x i8] c"cpp/test_timeb.cpp\00", align 1
 @__PRETTY_FUNCTION__.main = private unnamed_addr constant [11 x i8] c"int main()\00", align 1
 @.str3 = private unnamed_addr constant [17 x i8] c"tb.timezone == 0\00", align 1
 @.str4 = private unnamed_addr constant [16 x i8] c"tb.dstflag == 0\00", align 1
 
-; Function Attrs: uwtable
+; Function Attrs: nounwind uwtable
 define i32 @main() #0 {
   %tb = alloca %struct.timeb, align 8
   %1 = getelementptr inbounds %struct.timeb* %tb, i64 0, i32 2
   store i16 1, i16* %1, align 2, !tbaa !1
-  %2 = call i32 @ftime(%struct.timeb* %tb)
-  %3 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([5 x i8]* @.str, i64 0, i64 0), i32 %2)
+  %2 = call i32 @ftime(%struct.timeb* %tb) #4
+  %3 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([5 x i8]* @.str, i64 0, i64 0), i32 %2) #4
   %4 = getelementptr inbounds %struct.timeb* %tb, i64 0, i32 0
   %5 = load i64* %4, align 8, !tbaa !7
   %6 = icmp sgt i64 %5, 10000
   br i1 %6, label %8, label %7
 
 ; <label>:7                                       ; preds = %0
-  call void @__assert_fail(i8* getelementptr inbounds ([16 x i8]* @.str1, i64 0, i64 0), i8* getelementptr inbounds ([19 x i8]* @.str2, i64 0, i64 0), i32 9, i8* getelementptr inbounds ([11 x i8]* @__PRETTY_FUNCTION__.main, i64 0, i64 0)) #4
+  call void @__assert_fail(i8* getelementptr inbounds ([16 x i8]* @.str1, i64 0, i64 0), i8* getelementptr inbounds ([19 x i8]* @.str2, i64 0, i64 0), i32 9, i8* getelementptr inbounds ([11 x i8]* @__PRETTY_FUNCTION__.main, i64 0, i64 0)) #5
   unreachable
 
 ; <label>:8                                       ; preds = %0
@@ -33,7 +33,7 @@ define i32 @main() #0 {
   br i1 %10, label %12, label %11
 
 ; <label>:11                                      ; preds = %8
-  call void @__assert_fail(i8* getelementptr inbounds ([17 x i8]* @.str3, i64 0, i64 0), i8* getelementptr inbounds ([19 x i8]* @.str2, i64 0, i64 0), i32 10, i8* getelementptr inbounds ([11 x i8]* @__PRETTY_FUNCTION__.main, i64 0, i64 0)) #4
+  call void @__assert_fail(i8* getelementptr inbounds ([17 x i8]* @.str3, i64 0, i64 0), i8* getelementptr inbounds ([19 x i8]* @.str2, i64 0, i64 0), i32 10, i8* getelementptr inbounds ([11 x i8]* @__PRETTY_FUNCTION__.main, i64 0, i64 0)) #5
   unreachable
 
 ; <label>:12                                      ; preds = %8
@@ -43,7 +43,7 @@ define i32 @main() #0 {
   br i1 %15, label %17, label %16
 
 ; <label>:16                                      ; preds = %12
-  call void @__assert_fail(i8* getelementptr inbounds ([16 x i8]* @.str4, i64 0, i64 0), i8* getelementptr inbounds ([19 x i8]* @.str2, i64 0, i64 0), i32 11, i8* getelementptr inbounds ([11 x i8]* @__PRETTY_FUNCTION__.main, i64 0, i64 0)) #4
+  call void @__assert_fail(i8* getelementptr inbounds ([16 x i8]* @.str4, i64 0, i64 0), i8* getelementptr inbounds ([19 x i8]* @.str2, i64 0, i64 0), i32 11, i8* getelementptr inbounds ([11 x i8]* @__PRETTY_FUNCTION__.main, i64 0, i64 0)) #5
   unreachable
 
 ; <label>:17                                      ; preds = %12
@@ -58,11 +58,12 @@ declare i32 @ftime(%struct.timeb*) #2
 ; Function Attrs: noreturn nounwind
 declare void @__assert_fail(i8*, i8*, i32, i8*) #3
 
-attributes #0 = { uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #0 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #2 = { "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #3 = { noreturn nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #4 = { noreturn nounwind }
+attributes #4 = { nounwind }
+attributes #5 = { noreturn nounwind }
 
 !llvm.ident = !{!0}
 

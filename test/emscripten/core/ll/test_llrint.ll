@@ -10,7 +10,7 @@ define i32 @main() #0 {
   %2 = tail call i64 @llrint(double 6.000000e-01) #2
   %3 = tail call i64 @llrint(double 1.250000e+00) #2
   %4 = tail call i64 @llrint(double 0x4270000000000AAC) #2
-  %5 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([21 x i8]* @.str, i64 0, i64 0), i64 %1, i64 %2, i64 %3, i64 %4)
+  %5 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([21 x i8]* @.str, i64 0, i64 0), i64 %1, i64 %2, i64 %3, i64 %4) #2
   ret i32 0
 }
 

@@ -18,18 +18,18 @@ define i32 @main() #0 {
   %1 = getelementptr inbounds %struct.utsname* %u, i64 0, i32 0, i64 0
   call void @llvm.lifetime.start(i64 390, i8* %1) #1
   %2 = call i32 @uname(%struct.utsname* %u) #1
-  %3 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str, i64 0, i64 0), i32 %2)
-  %4 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i8* %1)
+  %3 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str, i64 0, i64 0), i32 %2) #1
+  %4 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i8* %1) #1
   %5 = getelementptr inbounds %struct.utsname* %u, i64 0, i32 1, i64 0
-  %6 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @.str2, i64 0, i64 0), i8* %5)
+  %6 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @.str2, i64 0, i64 0), i8* %5) #1
   %7 = getelementptr inbounds %struct.utsname* %u, i64 0, i32 2, i64 0
-  %8 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str3, i64 0, i64 0), i8* %7)
+  %8 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str3, i64 0, i64 0), i8* %7) #1
   %9 = getelementptr inbounds %struct.utsname* %u, i64 0, i32 3, i64 0
-  %10 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str4, i64 0, i64 0), i8* %9)
+  %10 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str4, i64 0, i64 0), i8* %9) #1
   %11 = getelementptr inbounds %struct.utsname* %u, i64 0, i32 4, i64 0
-  %12 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str5, i64 0, i64 0), i8* %11)
+  %12 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str5, i64 0, i64 0), i8* %11) #1
   %13 = call i32 @uname(%struct.utsname* null) #1
-  %14 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str6, i64 0, i64 0), i32 %13)
+  %14 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str6, i64 0, i64 0), i32 %13) #1
   call void @llvm.lifetime.end(i64 390, i8* %1) #1
   ret i32 0
 }

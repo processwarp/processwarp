@@ -59,7 +59,7 @@ define i32 @main() #0 {
   br i1 %18, label %19, label %21
 
 ; <label>:19                                      ; preds = %16, %13, %10, %7, %4, %0
-  %20 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([19 x i8]* @.str12, i64 0, i64 0))
+  %20 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([19 x i8]* @.str12, i64 0, i64 0)) #1
   call void @exit(i32 1) #4
   unreachable
 
@@ -108,7 +108,7 @@ define i32 @main() #0 {
   %53 = add nsw i32 %52, 1900
   %54 = getelementptr inbounds %struct.tm* %tm, i64 0, i32 2
   %55 = load i32* %54, align 8, !tbaa !8
-  %56 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([51 x i8]* @.str13, i64 0, i64 0), i32 %48, i32 %50, i32 %53, i32 %55, i32 %27, i32 %24)
+  %56 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([51 x i8]* @.str13, i64 0, i64 0), i32 %48, i32 %50, i32 %53, i32 %55, i32 %27, i32 %24) #1
   call void @exit(i32 1) #4
   unreachable
 
@@ -118,7 +118,7 @@ define i32 @main() #0 {
   br i1 %59, label %60, label %62
 
 ; <label>:60                                      ; preds = %57
-  %61 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([21 x i8]* @.str15, i64 0, i64 0))
+  %61 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([21 x i8]* @.str15, i64 0, i64 0)) #1
   call void @exit(i32 1) #4
   unreachable
 
@@ -158,12 +158,12 @@ define i32 @main() #0 {
 ; <label>:85                                      ; preds = %62
   %86 = add nsw i32 %76, 1
   %87 = add nsw i32 %79, 1900
-  %88 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([51 x i8]* @.str16, i64 0, i64 0), i32 %86, i32 %73, i32 %87, i32 %70, i32 %67, i32 %64)
+  %88 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([51 x i8]* @.str16, i64 0, i64 0), i32 %86, i32 %73, i32 %87, i32 %70, i32 %67, i32 %64) #1
   call void @exit(i32 1) #4
   unreachable
 
 ; <label>:89                                      ; preds = %62
-  %90 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([3 x i8]* @.str17, i64 0, i64 0))
+  %90 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([3 x i8]* @.str17, i64 0, i64 0)) #1
   call void @llvm.lifetime.end(i64 56, i8* %1) #1
   ret i32 0
 }

@@ -12,29 +12,29 @@ target triple = "x86_64-pc-linux-gnu"
 @.str4 = private unnamed_addr constant [86 x i8] c"With the whole expression, a matched substring \22%.*s\22 is found at position %d to %d.\0A\00", align 1
 @.str5 = private unnamed_addr constant [84 x i8] c"With the sub-expression, a matched substring \22%.*s\22 is found at position %d to %d.\0A\00", align 1
 
-; Function Attrs: uwtable
+; Function Attrs: nounwind uwtable
 define i32 @main() #0 {
   %preg = alloca %struct.re_pattern_buffer, align 8
   %pmatch = alloca [2 x %struct.regmatch_t], align 16
   %1 = bitcast %struct.re_pattern_buffer* %preg to i8*
   call void @llvm.lifetime.start(i64 64, i8* %1) #1
-  %2 = call i32 @regcomp(%struct.re_pattern_buffer* %preg, i8* getelementptr inbounds ([18 x i8]* @.str1, i64 0, i64 0), i32 0)
+  %2 = call i32 @regcomp(%struct.re_pattern_buffer* %preg, i8* getelementptr inbounds ([18 x i8]* @.str1, i64 0, i64 0), i32 0) #1
   %3 = icmp eq i32 %2, 0
   br i1 %3, label %6, label %4
 
 ; <label>:4                                       ; preds = %0
-  %5 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([42 x i8]* @.str2, i64 0, i64 0), i32 %2)
+  %5 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([42 x i8]* @.str2, i64 0, i64 0), i32 %2) #1
   call void @exit(i32 1) #5
   unreachable
 
 ; <label>:6                                       ; preds = %0
   %7 = getelementptr inbounds [2 x %struct.regmatch_t]* %pmatch, i64 0, i64 0
-  %8 = call i32 @regexec(%struct.re_pattern_buffer* %preg, i8* getelementptr inbounds ([35 x i8]* @.str, i64 0, i64 0), i64 2, %struct.regmatch_t* %7, i32 0)
+  %8 = call i32 @regexec(%struct.re_pattern_buffer* %preg, i8* getelementptr inbounds ([35 x i8]* @.str, i64 0, i64 0), i64 2, %struct.regmatch_t* %7, i32 0) #1
   %9 = icmp eq i32 %8, 0
   br i1 %9, label %12, label %10
 
 ; <label>:10                                      ; preds = %6
-  %11 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([46 x i8]* @.str3, i64 0, i64 0), i8* getelementptr inbounds ([35 x i8]* @.str, i64 0, i64 0), i8* getelementptr inbounds ([18 x i8]* @.str1, i64 0, i64 0), i32 %8)
+  %11 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([46 x i8]* @.str3, i64 0, i64 0), i8* getelementptr inbounds ([35 x i8]* @.str, i64 0, i64 0), i8* getelementptr inbounds ([18 x i8]* @.str1, i64 0, i64 0), i32 %8) #1
   br label %31
 
 ; <label>:12                                      ; preds = %6
@@ -46,7 +46,7 @@ define i32 @main() #0 {
   %18 = sext i32 %16 to i64
   %19 = getelementptr inbounds [35 x i8]* @.str, i64 0, i64 %18
   %20 = add nsw i32 %14, -1
-  %21 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([86 x i8]* @.str4, i64 0, i64 0), i32 %17, i8* %19, i32 %16, i32 %20)
+  %21 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([86 x i8]* @.str4, i64 0, i64 0), i32 %17, i8* %19, i32 %16, i32 %20) #1
   %22 = getelementptr inbounds [2 x %struct.regmatch_t]* %pmatch, i64 0, i64 1, i32 1
   %23 = load i32* %22, align 4, !tbaa !1
   %24 = getelementptr inbounds [2 x %struct.regmatch_t]* %pmatch, i64 0, i64 1, i32 0
@@ -55,11 +55,11 @@ define i32 @main() #0 {
   %27 = sext i32 %25 to i64
   %28 = getelementptr inbounds [35 x i8]* @.str, i64 0, i64 %27
   %29 = add nsw i32 %23, -1
-  %30 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([84 x i8]* @.str5, i64 0, i64 0), i32 %26, i8* %28, i32 %25, i32 %29)
+  %30 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([84 x i8]* @.str5, i64 0, i64 0), i32 %26, i8* %28, i32 %25, i32 %29) #1
   br label %31
 
 ; <label>:31                                      ; preds = %12, %10
-  call void @regfree(%struct.re_pattern_buffer* %preg)
+  call void @regfree(%struct.re_pattern_buffer* %preg) #1
   call void @llvm.lifetime.end(i64 64, i8* %1) #1
   ret i32 0
 }
@@ -82,7 +82,7 @@ declare void @regfree(%struct.re_pattern_buffer*) #2
 ; Function Attrs: nounwind
 declare void @llvm.lifetime.end(i64, i8* nocapture) #1
 
-attributes #0 = { uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #0 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind }
 attributes #2 = { "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #3 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }

@@ -29,12 +29,12 @@ define i32 @main() #0 {
   %5 = load i32* %y, align 4, !tbaa !1
   %6 = load i8* %1, align 1, !tbaa !5
   %7 = sext i8 %6 to i32
-  %8 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([55 x i8]* @.str2, i64 0, i64 0), i8* getelementptr inbounds ([12 x i8]* @.str, i64 0, i64 0), i32 %3, i32 %4, i32 %5, i32 %7, i32 %2)
+  %8 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([55 x i8]* @.str2, i64 0, i64 0), i8* getelementptr inbounds ([12 x i8]* @.str, i64 0, i64 0), i32 %3, i32 %4, i32 %5, i32 %7, i32 %2) #1
   %9 = call i32 (i8*, i8*, ...)* @sscanf(i8* getelementptr inbounds ([12 x i8]* @.str, i64 0, i64 0), i8* getelementptr inbounds ([10 x i8]* @.str3, i64 0, i64 0), i32* %d, i32* %m, i8* %1) #1
   %10 = load i32* %d, align 4, !tbaa !1
   %11 = load i32* %m, align 4, !tbaa !1
   %12 = load i32* %y, align 4, !tbaa !1
-  %13 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([55 x i8]* @.str4, i64 0, i64 0), i8* getelementptr inbounds ([12 x i8]* @.str, i64 0, i64 0), i32 %10, i32 %11, i32 %12, i8* %1, i32 %9)
+  %13 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([55 x i8]* @.str4, i64 0, i64 0), i8* getelementptr inbounds ([12 x i8]* @.str, i64 0, i64 0), i32 %10, i32 %11, i32 %12, i8* %1, i32 %9) #1
   %14 = call i32 (i8*, i8*, ...)* @sscanf(i8* getelementptr inbounds ([11 x i8]* @.str5, i64 0, i64 0), i8* getelementptr inbounds ([12 x i8]* @.str1, i64 0, i64 0), i32* %d5, i32* %m4, i32* %y3, i8* %c2) #1
   %15 = icmp eq i32 %14, 3
   br i1 %15, label %16, label %21
@@ -43,11 +43,11 @@ define i32 @main() #0 {
   %17 = load i32* %d5, align 4, !tbaa !1
   %18 = load i32* %m4, align 4, !tbaa !1
   %19 = load i32* %y3, align 4, !tbaa !1
-  %20 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([41 x i8]* @.str6, i64 0, i64 0), i8* getelementptr inbounds ([11 x i8]* @.str5, i64 0, i64 0), i32 %17, i32 %18, i32 %19)
+  %20 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([41 x i8]* @.str6, i64 0, i64 0), i8* getelementptr inbounds ([11 x i8]* @.str5, i64 0, i64 0), i32 %17, i32 %18, i32 %19) #1
   br label %23
 
 ; <label>:21                                      ; preds = %0
-  %22 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([36 x i8]* @.str7, i64 0, i64 0), i32 %14)
+  %22 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([36 x i8]* @.str7, i64 0, i64 0), i32 %14) #1
   br label %23
 
 ; <label>:23                                      ; preds = %21, %16

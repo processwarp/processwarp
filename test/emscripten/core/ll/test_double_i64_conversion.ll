@@ -4,7 +4,7 @@ target triple = "x86_64-pc-linux-gnu"
 
 @.str = private unnamed_addr constant [62 x i8] c"%.20g converted to int64 returns %lld, not %lld as expected!\0A\00", align 1
 @.str1 = private unnamed_addr constant [11 x i8] c"eq(0.0, 0)\00", align 1
-@.str2 = private unnamed_addr constant [35 x i8] c"tmp/test_double_i64_conversion.cpp\00", align 1
+@.str2 = private unnamed_addr constant [35 x i8] c"cpp/test_double_i64_conversion.cpp\00", align 1
 @__PRETTY_FUNCTION__.main = private unnamed_addr constant [11 x i8] c"int main()\00", align 1
 @.str3 = private unnamed_addr constant [12 x i8] c"eq(-0.0, 0)\00", align 1
 @.str4 = private unnamed_addr constant [11 x i8] c"eq(0.1, 0)\00", align 1
@@ -60,7 +60,7 @@ define zeroext i1 @_Z2eqdl(double %d, i64 %i) #0 {
   br i1 %2, label %5, label %3
 
 ; <label>:3                                       ; preds = %0
-  %4 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([62 x i8]* @.str, i64 0, i64 0), double %d, i64 %1, i64 %i)
+  %4 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([62 x i8]* @.str, i64 0, i64 0), double %d, i64 %1, i64 %i) #4
   br label %5
 
 ; <label>:5                                       ; preds = %3, %0

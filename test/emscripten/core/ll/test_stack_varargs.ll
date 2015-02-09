@@ -7,7 +7,7 @@ target triple = "x86_64-pc-linux-gnu"
 
 ; Function Attrs: nounwind uwtable
 define void @_Z4funci(i32 %i) #0 {
-  %1 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([118 x i8]* @.str, i64 0, i64 0), i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i)
+  %1 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([118 x i8]* @.str, i64 0, i64 0), i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i, i32 %i) #2
   ret void
 }
 

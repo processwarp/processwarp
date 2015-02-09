@@ -6,7 +6,7 @@ target triple = "x86_64-pc-linux-gnu"
 @.str1 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
 @.str2 = private unnamed_addr constant [12 x i8] c"[%d,%d,%d] \00", align 1
 @.str3 = private unnamed_addr constant [39 x i8] c"memcmp(buffer + i, buffer + j, k) == 0\00", align 1
-@.str4 = private unnamed_addr constant [27 x i8] c"tmp/test_memcpy_memcmp.cpp\00", align 1
+@.str4 = private unnamed_addr constant [27 x i8] c"cpp/test_memcpy_memcmp.cpp\00", align 1
 @__PRETTY_FUNCTION__.main = private unnamed_addr constant [11 x i8] c"int main()\00", align 1
 @.str5 = private unnamed_addr constant [38 x i8] c"memcmp(buffer + i, buffer + j, k) > 0\00", align 1
 @.str6 = private unnamed_addr constant [38 x i8] c"memcmp(buffer + i, buffer + j, k) < 0\00", align 1
@@ -42,7 +42,7 @@ define void @_Z4dumpPh(i8* nocapture readonly %buffer) #0 {
   %2 = getelementptr inbounds i8* %buffer, i64 %indvars.iv
   %3 = load i8* %2, align 1, !tbaa !4
   %4 = zext i8 %3 to i32
-  %5 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([5 x i8]* @.str, i64 0, i64 0), i32 %4)
+  %5 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([5 x i8]* @.str, i64 0, i64 0), i32 %4) #2
   %indvars.iv.next = add nuw nsw i64 %indvars.iv, 1
   %exitcond = icmp eq i64 %indvars.iv.next, 47
   br i1 %exitcond, label %6, label %1
@@ -51,7 +51,7 @@ define void @_Z4dumpPh(i8* nocapture readonly %buffer) #0 {
   %7 = getelementptr inbounds i8* %buffer, i64 47
   %8 = load i8* %7, align 1, !tbaa !4
   %9 = zext i8 %8 to i32
-  %10 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str1, i64 0, i64 0), i32 %9)
+  %10 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str1, i64 0, i64 0), i32 %9) #2
   ret void
 }
 
@@ -101,7 +101,7 @@ define i32 @main() #0 {
 
 vector.ph:                                        ; preds = %15
   %19 = trunc i64 %indvars.iv to i32
-  %20 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([12 x i8]* @.str2, i64 0, i64 0), i32 %5, i32 %4, i32 %19)
+  %20 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([12 x i8]* @.str2, i64 0, i64 0), i32 %5, i32 %4, i32 %19) #2
   br label %vector.body
 
 vector.body:                                      ; preds = %vector.body, %vector.ph

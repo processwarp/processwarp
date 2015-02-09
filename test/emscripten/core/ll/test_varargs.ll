@@ -44,12 +44,12 @@ define void @_Z4varyPKcz(i8* nocapture readonly %s, ...) #0 {
   call void @llvm.va_start(i8* %2)
   %3 = getelementptr inbounds [20 x i8]* %d, i64 0, i64 0
   %4 = call i32 @vsnprintf(i8* %3, i64 20, i8* %s, %struct.__va_list_tag* %1) #1
-  %5 = call i32 @puts(i8* %3)
+  %5 = call i32 @puts(i8* %3) #1
   %6 = getelementptr inbounds [1 x %struct.__va_list_tag]* %tempva, i64 0, i64 0
   %7 = bitcast [1 x %struct.__va_list_tag]* %tempva to i8*
   call void @llvm.va_copy(i8* %7, i8* %2)
   %8 = call i32 @vsnprintf(i8* %3, i64 20, i8* %s, %struct.__va_list_tag* %6) #1
-  %9 = call i32 @puts(i8* %3)
+  %9 = call i32 @puts(i8* %3) #1
   call void @llvm.va_end(i8* %2)
   ret void
 }
@@ -80,7 +80,7 @@ define void @_Z5vary2cPKcz(i8 signext %color, i8* nocapture readonly %s, ...) #0
   store i8 %color, i8* %3, align 16, !tbaa !1
   %4 = getelementptr inbounds [21 x i8]* %d, i64 0, i64 1
   %5 = call i32 @vsnprintf(i8* %4, i64 20, i8* %s, %struct.__va_list_tag* %1) #1
-  %6 = call i32 @puts(i8* %3)
+  %6 = call i32 @puts(i8* %3) #1
   call void @llvm.va_end(i8* %2)
   ret void
 }
@@ -120,13 +120,13 @@ define void @_Z33varargs_listoffsets_list_evaluateiP13__va_list_tagi(i32 %count,
   %.in = phi i8* [ %11, %8 ], [ %14, %13 ]
   %17 = bitcast i8* %.in to i8**
   %18 = load i8** %17, align 8
-  %19 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([3 x i8]* @.str, i64 0, i64 0), i8* %18)
+  %19 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([3 x i8]* @.str, i64 0, i64 0), i8* %18) #1
   %20 = add nsw i32 %.01, -1
   %21 = icmp sgt i32 %20, 0
   br i1 %21, label %5, label %._crit_edge
 
 ._crit_edge:                                      ; preds = %16, %0
-  %putchar = tail call i32 @putchar(i32 10)
+  %putchar = tail call i32 @putchar(i32 10) #1
   ret void
 }
 
@@ -660,20 +660,20 @@ define double @_Z7getMaxDiz(i32 %num, ...) #0 {
   ret double %maxx.0.lcssa
 }
 
-; Function Attrs: uwtable
-define i32 @main(i32 %argc, i8** nocapture readnone %argv) #3 {
+; Function Attrs: nounwind uwtable
+define i32 @main(i32 %argc, i8** nocapture readnone %argv) #0 {
   tail call void (i8*, ...)* @_Z4varyPKcz(i8* getelementptr inbounds ([15 x i8]* @.str24, i64 0, i64 0), i32 0, i32 24)
   tail call void (i8*, ...)* @_Z4varyPKcz(i8* getelementptr inbounds ([9 x i8]* @.str25, i64 0, i64 0))
   tail call void (i8, i8*, ...)* @_Z5vary2cPKcz(i8 signext 81, i8* getelementptr inbounds ([4 x i8]* @.str26, i64 0, i64 0), i32 85)
   %1 = tail call i32 (i32, ...)* @_Z7getMaxiiz(i32 6, i32 2, i32 5, i32 21, i32 4, i32 -10, i32 19)
-  %2 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([11 x i8]* @.str27, i64 0, i64 0), i32 %1)
+  %2 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([11 x i8]* @.str27, i64 0, i64 0), i32 %1) #1
   %3 = tail call double (i32, ...)* @_Z7getMaxDiz(i32 6, double 2.100000e+00, double 5.100000e+00, double 2.210000e+01, double 4.100000e+00, double -1.010000e+01, double 1.910000e+01, double 2.000000e+00)
   %4 = fptrunc double %3 to float
   %5 = fpext float %4 to double
-  %6 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str28, i64 0, i64 0), double %5)
+  %6 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str28, i64 0, i64 0), double %5) #1
   %7 = icmp eq i32 %argc, 1211
   %8 = select i1 %7, void (i8*, ...)* null, void (i8*, ...)* @_Z4varyPKcz
-  tail call void (i8*, ...)* %8(i8* getelementptr inbounds ([12 x i8]* @.str29, i64 0, i64 0), i32 22, i32 199)
+  tail call void (i8*, ...)* %8(i8* getelementptr inbounds ([12 x i8]* @.str29, i64 0, i64 0), i32 22, i32 199) #1
   tail call void (i32, i32, ...)* @_Z24varargs_listoffsets_argsiiz(i32 undef, i32 5, i8* getelementptr inbounds ([4 x i8]* @.str2, i64 0, i64 0), i8* getelementptr inbounds ([4 x i8]* @.str3, i64 0, i64 0), i8* getelementptr inbounds ([4 x i8]* @.str4, i64 0, i64 0), i8* getelementptr inbounds ([4 x i8]* @.str5, i64 0, i64 0), i8* getelementptr inbounds ([4 x i8]* @.str6, i64 0, i64 0), i8* getelementptr inbounds ([8 x i8]* @.str7, i64 0, i64 0), i8* getelementptr inbounds ([8 x i8]* @.str8, i64 0, i64 0), i8* getelementptr inbounds ([8 x i8]* @.str9, i64 0, i64 0), i8* getelementptr inbounds ([8 x i8]* @.str10, i64 0, i64 0), i8* getelementptr inbounds ([8 x i8]* @.str11, i64 0, i64 0), i8* getelementptr inbounds ([8 x i8]* @.str12, i64 0, i64 0), i8* getelementptr inbounds ([8 x i8]* @.str13, i64 0, i64 0), i8* getelementptr inbounds ([8 x i8]* @.str14, i64 0, i64 0), i8* getelementptr inbounds ([8 x i8]* @.str15, i64 0, i64 0), i8* getelementptr inbounds ([8 x i8]* @.str16, i64 0, i64 0), i8* getelementptr inbounds ([9 x i8]* @.str17, i64 0, i64 0), i8* getelementptr inbounds ([9 x i8]* @.str18, i64 0, i64 0), i8* getelementptr inbounds ([9 x i8]* @.str19, i64 0, i64 0), i8* getelementptr inbounds ([9 x i8]* @.str20, i64 0, i64 0), i8* getelementptr inbounds ([9 x i8]* @.str21, i64 0, i64 0), i8* getelementptr inbounds ([9 x i8]* @.str22, i64 0, i64 0), i8* getelementptr inbounds ([9 x i8]* @.str23, i64 0, i64 0)) #1
   ret i32 0
 }
@@ -690,7 +690,6 @@ declare void @llvm.lifetime.end(i64, i8* nocapture) #1
 attributes #0 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind }
 attributes #2 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #3 = { uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 
 !llvm.ident = !{!0}
 

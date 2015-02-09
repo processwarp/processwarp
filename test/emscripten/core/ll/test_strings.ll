@@ -31,26 +31,26 @@ define i32 @main(i32 %argc, i8** nocapture readonly %argv) #0 {
   %3 = load i32* %xx, align 4, !tbaa !1
   %4 = load i32* %yy, align 4, !tbaa !1
   %5 = load i32* %zz, align 4, !tbaa !1
-  %6 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([16 x i8]* @.str2, i64 0, i64 0), i32 %2, i32 %3, i32 %4, i32 %5, i8* %1)
-  %7 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str3, i64 0, i64 0), i32 %argc)
+  %6 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([16 x i8]* @.str2, i64 0, i64 0), i32 %2, i32 %3, i32 %4, i32 %5, i8* %1) #2
+  %7 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str3, i64 0, i64 0), i32 %argc) #2
   %8 = getelementptr inbounds i8** %argv, i64 1
   %9 = load i8** %8, align 8, !tbaa !5
-  %10 = call i32 @puts(i8* %9)
+  %10 = call i32 @puts(i8* %9) #2
   %11 = getelementptr inbounds i8** %argv, i64 2
   %12 = load i8** %11, align 8, !tbaa !5
-  %13 = call i32 @puts(i8* %12)
+  %13 = call i32 @puts(i8* %12) #2
   %14 = getelementptr inbounds i8** %argv, i64 3
   %15 = load i8** %14, align 8, !tbaa !5
   %16 = call i64 @strtol(i8* nocapture %15, i8** null, i32 10) #2
   %17 = trunc i64 %16 to i32
   %18 = add nsw i32 %17, 2
-  %19 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str3, i64 0, i64 0), i32 %18)
-  %20 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str3, i64 0, i64 0), i64 5)
-  %21 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str5, i64 0, i64 0), i64 0)
-  %puts = call i32 @puts(i8* getelementptr inbounds ([16 x i8]* @str, i64 0, i64 0))
-  %puts4 = call i32 @puts(i8* getelementptr inbounds ([11 x i8]* @str16, i64 0, i64 0))
+  %19 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str3, i64 0, i64 0), i32 %18) #2
+  %20 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str3, i64 0, i64 0), i64 5) #2
+  %21 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str5, i64 0, i64 0), i64 0) #2
+  %puts = call i32 @puts(i8* getelementptr inbounds ([16 x i8]* @str, i64 0, i64 0)) #2
+  %puts4 = call i32 @puts(i8* getelementptr inbounds ([11 x i8]* @str16, i64 0, i64 0)) #2
   %22 = call noalias i8* @strdup(i8* getelementptr inbounds ([5 x i8]* @.str8, i64 0, i64 0)) #2
-  %puts5 = call i32 @puts(i8* %22)
+  %puts5 = call i32 @puts(i8* %22) #2
   call void @free(i8* %22) #2
   %23 = getelementptr inbounds [1024 x i8]* %three, i64 0, i64 0
   call void @llvm.lifetime.start(i64 1024, i8* %23) #2
@@ -74,7 +74,7 @@ define i32 @main(i32 %argc, i8** nocapture readonly %argv) #0 {
   %39 = add nsw i32 %argc, 2
   %40 = sext i32 %39 to i64
   %41 = call i8* @strncpy(i8* %35, i8* %38, i64 %40) #2
-  %42 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str11, i64 0, i64 0), i8* %23)
+  %42 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str11, i64 0, i64 0), i8* %23) #2
   call void @llvm.lifetime.end(i64 1024, i8* %23) #2
   %43 = getelementptr inbounds [1000 x i8]* %three3, i64 0, i64 0
   call void @llvm.lifetime.start(i64 1000, i8* %43) #2
@@ -84,8 +84,8 @@ define i32 @main(i32 %argc, i8** nocapture readonly %argv) #0 {
   %47 = call i8* @strcpy(i8* %43, i8* %46) #2
   %48 = getelementptr inbounds [48 x i8]* @.str13, i64 0, i64 %34
   %49 = call i8* @strcat(i8* %43, i8* %48) #2
-  %50 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([10 x i8]* @.str14, i64 0, i64 0), i8* %43)
-  %51 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([15 x i8]* @.str15, i64 0, i64 0), i8* %49)
+  %50 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([10 x i8]* @.str14, i64 0, i64 0), i8* %43) #2
+  %51 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([15 x i8]* @.str15, i64 0, i64 0), i8* %49) #2
   call void @llvm.lifetime.end(i64 1000, i8* %43) #2
   ret i32 0
 }

@@ -2,7 +2,7 @@
 target datalayout = "e-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-pc-linux-gnu"
 
-@.str1 = private unnamed_addr constant [21 x i8] c"tmp/test_memcpy2.cpp\00", align 1
+@.str1 = private unnamed_addr constant [21 x i8] c"cpp/test_memcpy2.cpp\00", align 1
 @__PRETTY_FUNCTION__.main = private unnamed_addr constant [11 x i8] c"int main()\00", align 1
 @.str2 = private unnamed_addr constant [26 x i8] c"memcmp(dest, src, k) == 0\00", align 1
 @str = private unnamed_addr constant [4 x i8] c"ok.\00"

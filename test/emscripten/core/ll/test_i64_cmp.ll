@@ -31,7 +31,7 @@ define i32 @main(i32 %argc, i8** nocapture readnone %argv) #1 {
   %11 = zext i1 %10 to i32
   %12 = icmp slt i32 %3, -12
   %13 = zext i1 %12 to i32
-  %14 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([21 x i8]* @.str, i64 0, i64 0), i32 %argc, i32 %2, i32 %5, i32 %8, i32 %11, i32 %13)
+  %14 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([21 x i8]* @.str, i64 0, i64 0), i32 %argc, i32 %2, i32 %5, i32 %8, i32 %11, i32 %13) #3
   ret i32 0
 }
 
@@ -41,6 +41,7 @@ declare i32 @printf(i8* nocapture readonly, ...) #2
 attributes #0 = { nounwind readnone uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #2 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #3 = { nounwind }
 
 !llvm.ident = !{!0}
 

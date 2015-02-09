@@ -71,7 +71,7 @@ define i32 @main() #0 {
   %27 = trunc i64 %26 to i32
   %28 = lshr i64 %26, 32
   %29 = trunc i64 %28 to i32
-  %30 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([35 x i8]* @.str, i64 0, i64 0), i8* %16, i32 %20, i32 %21, i32 %24, i32 %27, i32 %29)
+  %30 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([35 x i8]* @.str, i64 0, i64 0), i8* %16, i32 %20, i32 %21, i32 %24, i32 %27, i32 %29) #1
   %indvars.iv.next = add nuw nsw i64 %indvars.iv, 1
   %exitcond = icmp eq i64 %indvars.iv.next, 12
   br i1 %exitcond, label %31, label %5

@@ -102,7 +102,7 @@ _Z11simdAveragePfi.exit:                          ; preds = %.lr.ph.i1
   %20 = fadd float %19, %18
   %21 = fdiv float %20, 1.000000e+05
   %22 = fpext float %21 to double
-  %23 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([24 x i8]* @.str, i64 0, i64 0), double %22)
+  %23 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([24 x i8]* @.str, i64 0, i64 0), double %22) #2
   call void @llvm.lifetime.end(i64 400000, i8* %1) #2
   ret i32 0
 }

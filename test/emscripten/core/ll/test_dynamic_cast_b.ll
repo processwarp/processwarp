@@ -25,7 +25,7 @@ target triple = "x86_64-pc-linux-gnu"
 @_ZTV8CDerived = linkonce_odr unnamed_addr constant [3 x i8*] [i8* null, i8* bitcast ({ i8*, i8*, i8* }* @_ZTI8CDerived to i8*), i8* bitcast (void (%class.CBase*)* @_ZN5CBase5dummyEv to i8*)]
 @_ZTV5CBase = linkonce_odr unnamed_addr constant [3 x i8*] [i8* null, i8* bitcast ({ i8*, i8* }* @_ZTI5CBase to i8*), i8* bitcast (void (%class.CBase*)* @_ZN5CBase5dummyEv to i8*)]
 
-; Function Attrs: uwtable
+; Function Attrs: nounwind uwtable
 define i32 @main() #0 {
   %1 = tail call noalias i8* @_Znwm(i64 8) #5
   %2 = bitcast i8* %1 to i32 (...)***
@@ -39,30 +39,30 @@ define i32 @main() #0 {
   %7 = tail call i8* @__dynamic_cast(i8* %1, i8* bitcast ({ i8*, i8* }* @_ZTI5CBase to i8*), i8* bitcast ({ i8*, i8*, i8* }* @_ZTI11CDerivedest to i8*), i64 0) #6
   %phitmp = icmp ne i8* %7, null
   %8 = zext i1 %phitmp to i32
-  %9 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str, i64 0, i64 0), i32 %8)
+  %9 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str, i64 0, i64 0), i32 %8) #6
   %10 = tail call i8* @__dynamic_cast(i8* %1, i8* bitcast ({ i8*, i8* }* @_ZTI5CBase to i8*), i8* bitcast ({ i8*, i8*, i8* }* @_ZTI8CDerived to i8*), i64 0) #6
   %phitmp1 = icmp ne i8* %10, null
   %11 = zext i1 %phitmp1 to i32
-  %12 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str1, i64 0, i64 0), i32 %11)
-  %13 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str2, i64 0, i64 0), i32 1)
+  %12 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str1, i64 0, i64 0), i32 %11) #6
+  %13 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str2, i64 0, i64 0), i32 1) #6
   %14 = tail call i8* @__dynamic_cast(i8* %3, i8* bitcast ({ i8*, i8* }* @_ZTI5CBase to i8*), i8* bitcast ({ i8*, i8*, i8* }* @_ZTI11CDerivedest to i8*), i64 0) #6
   %phitmp2 = icmp ne i8* %14, null
   %15 = zext i1 %phitmp2 to i32
-  %16 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str3, i64 0, i64 0), i32 %15)
+  %16 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str3, i64 0, i64 0), i32 %15) #6
   %17 = tail call i8* @__dynamic_cast(i8* %3, i8* bitcast ({ i8*, i8* }* @_ZTI5CBase to i8*), i8* bitcast ({ i8*, i8*, i8* }* @_ZTI8CDerived to i8*), i64 0) #6
   %phitmp3 = icmp ne i8* %17, null
   %18 = zext i1 %phitmp3 to i32
-  %19 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str4, i64 0, i64 0), i32 %18)
-  %20 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str5, i64 0, i64 0), i32 1)
+  %19 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str4, i64 0, i64 0), i32 %18) #6
+  %20 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str5, i64 0, i64 0), i32 1) #6
   %21 = tail call i8* @__dynamic_cast(i8* %5, i8* bitcast ({ i8*, i8* }* @_ZTI5CBase to i8*), i8* bitcast ({ i8*, i8*, i8* }* @_ZTI11CDerivedest to i8*), i64 0) #6
   %phitmp4 = icmp ne i8* %21, null
   %22 = zext i1 %phitmp4 to i32
-  %23 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str6, i64 0, i64 0), i32 %22)
+  %23 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str6, i64 0, i64 0), i32 %22) #6
   %24 = tail call i8* @__dynamic_cast(i8* %5, i8* bitcast ({ i8*, i8* }* @_ZTI5CBase to i8*), i8* bitcast ({ i8*, i8*, i8* }* @_ZTI8CDerived to i8*), i64 0) #6
   %phitmp5 = icmp ne i8* %24, null
   %25 = zext i1 %phitmp5 to i32
-  %26 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str7, i64 0, i64 0), i32 %25)
-  %27 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str8, i64 0, i64 0), i32 1)
+  %26 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str7, i64 0, i64 0), i32 %25) #6
+  %27 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str8, i64 0, i64 0), i32 1) #6
   ret i32 0
 }
 
@@ -80,12 +80,12 @@ define linkonce_odr void @_ZN5CBase5dummyEv(%class.CBase* nocapture %this) unnam
   ret void
 }
 
-attributes #0 = { uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #0 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nobuiltin "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #2 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #3 = { nounwind readonly }
 attributes #4 = { nounwind readnone uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #5 = { builtin }
+attributes #5 = { builtin nounwind }
 attributes #6 = { nounwind }
 
 !llvm.ident = !{!0}

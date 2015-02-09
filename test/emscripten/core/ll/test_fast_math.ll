@@ -25,7 +25,7 @@ define i32 @main(i32 %argc, i8** nocapture readonly %argv) #0 {
 
 ._crit_edge:                                      ; preds = %.lr.ph, %0
   %total.0.lcssa = phi double [ 0.000000e+00, %0 ], [ %4, %.lr.ph ]
-  %6 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([11 x i8]* @.str, i64 0, i64 0), double %total.0.lcssa)
+  %6 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([11 x i8]* @.str, i64 0, i64 0), double %total.0.lcssa) #2
   ret i32 0
 }
 

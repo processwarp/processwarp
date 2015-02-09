@@ -3,7 +3,7 @@ target datalayout = "e-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-pc-linux-gnu"
 
 @.str1 = private unnamed_addr constant [35 x i8] c"buffer[i] == (char)((i * i) % 256)\00", align 1
-@.str2 = private unnamed_addr constant [26 x i8] c"tmp/test_corruption_3.cpp\00", align 1
+@.str2 = private unnamed_addr constant [26 x i8] c"cpp/test_corruption_3.cpp\00", align 1
 @__PRETTY_FUNCTION__.main = private unnamed_addr constant [23 x i8] c"int main(int, char **)\00", align 1
 @str = private unnamed_addr constant [7 x i8] c"all ok\00"
 

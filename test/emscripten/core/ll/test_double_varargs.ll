@@ -145,9 +145,9 @@ define double @_Z17func_int_double_2iiz(i32 %unused1, i32 %unused2, ...) #0 {
 ; Function Attrs: nounwind uwtable
 define i32 @main() #0 {
   %1 = tail call double (i32, ...)* @_Z17func_int_double_1iz(i32 undef, i32 5, double 1.000000e+01)
-  %2 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i64 0, i64 0), double %1)
+  %2 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i64 0, i64 0), double %1) #1
   %3 = tail call double (i32, i32, ...)* @_Z17func_int_double_2iiz(i32 undef, i32 undef, i32 5, double 1.000000e+01)
-  %4 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i64 0, i64 0), double %3)
+  %4 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i64 0, i64 0), double %3) #1
   ret i32 0
 }
 

@@ -5,7 +5,7 @@ target triple = "x86_64-pc-linux-gnu"
 %struct.option = type { i8*, i32, i32*, i32 }
 
 @optind = external global i32
-@_ZZ4mainE12long_options = internal global [7 x { i8*, i32, i32*, i32, [4 x i8] }] [{ i8*, i32, i32*, i32, [4 x i8] } { i8* getelementptr inbounds ([4 x i8]* @.str, i32 0, i32 0), i32 1, i32* null, i32 0, [4 x i8] undef }, { i8*, i32, i32*, i32, [4 x i8] } { i8* getelementptr inbounds ([7 x i8]* @.str1, i32 0, i32 0), i32 0, i32* null, i32 0, [4 x i8] undef }, { i8*, i32, i32*, i32, [4 x i8] } { i8* getelementptr inbounds ([7 x i8]* @.str2, i32 0, i32 0), i32 1, i32* null, i32 0, [4 x i8] undef }, { i8*, i32, i32*, i32, [4 x i8] } { i8* getelementptr inbounds ([8 x i8]* @.str3, i32 0, i32 0), i32 0, i32* null, i32 0, [4 x i8] undef }, { i8*, i32, i32*, i32, [4 x i8] } { i8* getelementptr inbounds ([7 x i8]* @.str4, i32 0, i32 0), i32 1, i32* null, i32 99, [4 x i8] undef }, { i8*, i32, i32*, i32, [4 x i8] } { i8* getelementptr inbounds ([5 x i8]* @.str5, i32 0, i32 0), i32 1, i32* null, i32 0, [4 x i8] undef }, { i8*, i32, i32*, i32, [4 x i8] } { i8* null, i32 0, i32* null, i32 0, [4 x i8] undef }], align 16
+@_ZZ4mainE12long_options = internal global <{ { i8*, i32, i32*, i32, [4 x i8] }, { i8*, i32, i32*, i32, [4 x i8] }, { i8*, i32, i32*, i32, [4 x i8] }, { i8*, i32, i32*, i32, [4 x i8] }, { i8*, i32, i32*, i32, [4 x i8] }, { i8*, i32, i32*, i32, [4 x i8] }, { i8*, i32, i32*, i32, [4 x i8] } }> <{ { i8*, i32, i32*, i32, [4 x i8] } { i8* getelementptr inbounds ([4 x i8]* @.str, i32 0, i32 0), i32 1, i32* null, i32 0, [4 x i8] undef }, { i8*, i32, i32*, i32, [4 x i8] } { i8* getelementptr inbounds ([7 x i8]* @.str1, i32 0, i32 0), i32 0, i32* null, i32 0, [4 x i8] undef }, { i8*, i32, i32*, i32, [4 x i8] } { i8* getelementptr inbounds ([7 x i8]* @.str2, i32 0, i32 0), i32 1, i32* null, i32 0, [4 x i8] undef }, { i8*, i32, i32*, i32, [4 x i8] } { i8* getelementptr inbounds ([8 x i8]* @.str3, i32 0, i32 0), i32 0, i32* null, i32 0, [4 x i8] undef }, { i8*, i32, i32*, i32, [4 x i8] } { i8* getelementptr inbounds ([7 x i8]* @.str4, i32 0, i32 0), i32 1, i32* null, i32 99, [4 x i8] undef }, { i8*, i32, i32*, i32, [4 x i8] } { i8* getelementptr inbounds ([5 x i8]* @.str5, i32 0, i32 0), i32 1, i32* null, i32 0, [4 x i8] undef }, { i8*, i32, i32*, i32, [4 x i8] } { i8* null, i32 0, i32* null, i32 0, [4 x i8] undef } }>, align 16
 @.str = private unnamed_addr constant [4 x i8] c"add\00", align 1
 @.str1 = private unnamed_addr constant [7 x i8] c"append\00", align 1
 @.str2 = private unnamed_addr constant [7 x i8] c"delete\00", align 1
@@ -37,7 +37,7 @@ define i32 @main(i32 %argc, i8** %argv) #0 {
   %2 = icmp ne i32 %1, 0
   %3 = select i1 %2, i32 %1, i32 1
   store i32 0, i32* %option_index, align 4, !tbaa !1
-  %4 = call i32 @getopt_long(i32 %argc, i8** %argv, i8* getelementptr inbounds ([10 x i8]* @.str6, i64 0, i64 0), %struct.option* bitcast ([7 x { i8*, i32, i32*, i32, [4 x i8] }]* @_ZZ4mainE12long_options to %struct.option*), i32* %option_index) #3
+  %4 = call i32 @getopt_long(i32 %argc, i8** %argv, i8* getelementptr inbounds ([10 x i8]* @.str6, i64 0, i64 0), %struct.option* bitcast (<{ { i8*, i32, i32*, i32, [4 x i8] }, { i8*, i32, i32*, i32, [4 x i8] }, { i8*, i32, i32*, i32, [4 x i8] }, { i8*, i32, i32*, i32, [4 x i8] }, { i8*, i32, i32*, i32, [4 x i8] }, { i8*, i32, i32*, i32, [4 x i8] }, { i8*, i32, i32*, i32, [4 x i8] } }>* @_ZZ4mainE12long_options to %struct.option*), i32* %option_index) #3
   switch i32 %4, label %30 [
     i32 -1, label %32
     i32 0, label %5
@@ -54,19 +54,19 @@ define i32 @main(i32 %argc, i8** %argv) #0 {
 ; <label>:5                                       ; preds = %.backedge
   %6 = load i32* %option_index, align 4, !tbaa !1
   %7 = sext i32 %6 to i64
-  %8 = getelementptr inbounds [7 x %struct.option]* bitcast ([7 x { i8*, i32, i32*, i32, [4 x i8] }]* @_ZZ4mainE12long_options to [7 x %struct.option]*), i64 0, i64 %7, i32 0
+  %8 = getelementptr inbounds [7 x %struct.option]* bitcast (<{ { i8*, i32, i32*, i32, [4 x i8] }, { i8*, i32, i32*, i32, [4 x i8] }, { i8*, i32, i32*, i32, [4 x i8] }, { i8*, i32, i32*, i32, [4 x i8] }, { i8*, i32, i32*, i32, [4 x i8] }, { i8*, i32, i32*, i32, [4 x i8] }, { i8*, i32, i32*, i32, [4 x i8] } }>* @_ZZ4mainE12long_options to [7 x %struct.option]*), i64 0, i64 %7, i32 0
   %9 = load i8** %8, align 16, !tbaa !5
-  %10 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([10 x i8]* @.str7, i64 0, i64 0), i8* %9)
+  %10 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([10 x i8]* @.str7, i64 0, i64 0), i8* %9) #3
   %11 = load i8** @optarg, align 8, !tbaa !8
   %12 = icmp eq i8* %11, null
   br i1 %12, label %15, label %13
 
 ; <label>:13                                      ; preds = %5
-  %14 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str8, i64 0, i64 0), i8* %11)
+  %14 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str8, i64 0, i64 0), i8* %11) #3
   br label %15
 
 ; <label>:15                                      ; preds = %13, %5
-  %putchar = call i32 @putchar(i32 10)
+  %putchar = call i32 @putchar(i32 10) #3
   br label %.backedge
 
 ; <label>:16                                      ; preds = %.backedge, %.backedge, %.backedge
@@ -80,7 +80,7 @@ define i32 @main(i32 %argc, i8** %argv) #0 {
   br label %20
 
 ; <label>:20                                      ; preds = %19, %16
-  %21 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([11 x i8]* @.str11, i64 0, i64 0), i32 %4)
+  %21 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([11 x i8]* @.str11, i64 0, i64 0), i32 %4) #3
   br label %.backedge
 
 ; <label>:22                                      ; preds = %.backedge
@@ -93,16 +93,16 @@ define i32 @main(i32 %argc, i8** %argv) #0 {
 
 ; <label>:24                                      ; preds = %.backedge
   %25 = load i8** @optarg, align 8, !tbaa !8
-  %26 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([26 x i8]* @.str14, i64 0, i64 0), i8* %25)
+  %26 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([26 x i8]* @.str14, i64 0, i64 0), i8* %25) #3
   br label %.backedge
 
 ; <label>:27                                      ; preds = %.backedge
   %28 = load i8** @optarg, align 8, !tbaa !8
-  %29 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([26 x i8]* @.str15, i64 0, i64 0), i8* %28)
+  %29 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([26 x i8]* @.str15, i64 0, i64 0), i8* %28) #3
   br label %.backedge
 
 ; <label>:30                                      ; preds = %.backedge
-  %31 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([42 x i8]* @.str16, i64 0, i64 0), i32 %4)
+  %31 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([42 x i8]* @.str16, i64 0, i64 0), i32 %4) #3
   br label %.backedge
 
 ; <label>:32                                      ; preds = %.backedge
@@ -111,7 +111,7 @@ define i32 @main(i32 %argc, i8** %argv) #0 {
   br i1 %34, label %35, label %47
 
 ; <label>:35                                      ; preds = %32
-  %36 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([27 x i8]* @.str17, i64 0, i64 0))
+  %36 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([27 x i8]* @.str17, i64 0, i64 0)) #3
   %37 = load i32* @optind, align 4, !tbaa !1
   %38 = icmp slt i32 %37, %argc
   br i1 %38, label %.lr.ph, label %._crit_edge
@@ -123,13 +123,13 @@ define i32 @main(i32 %argc, i8** %argv) #0 {
   %41 = sext i32 %39 to i64
   %42 = getelementptr inbounds i8** %argv, i64 %41
   %43 = load i8** %42, align 8, !tbaa !8
-  %44 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str18, i64 0, i64 0), i8* %43)
+  %44 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str18, i64 0, i64 0), i8* %43) #3
   %45 = load i32* @optind, align 4, !tbaa !1
   %46 = icmp slt i32 %45, %argc
   br i1 %46, label %.lr.ph, label %._crit_edge
 
 ._crit_edge:                                      ; preds = %.lr.ph, %35
-  %putchar3 = call i32 @putchar(i32 10)
+  %putchar3 = call i32 @putchar(i32 10) #3
   br label %47
 
 ; <label>:47                                      ; preds = %._crit_edge, %32

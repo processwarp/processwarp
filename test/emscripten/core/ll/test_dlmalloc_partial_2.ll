@@ -12,7 +12,7 @@ define noalias i8* @malloc(i64 %size) #0 {
 
 ; Function Attrs: nounwind uwtable
 define i32 @main() #1 {
-  %1 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str, i64 0, i64 0), i8* inttoptr (i64 123 to i8*))
+  %1 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str, i64 0, i64 0), i8* inttoptr (i64 123 to i8*)) #3
   tail call void @free(i8* inttoptr (i64 123 to i8*)) #3
   %puts = tail call i32 @puts(i8* getelementptr inbounds ([16 x i8]* @str, i64 0, i64 0))
   ret i32 1

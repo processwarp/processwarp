@@ -6,7 +6,7 @@ target triple = "x86_64-pc-linux-gnu"
 
 @buffy = global [102400 x %struct.Struct] zeroinitializer, align 16
 @.str = private unnamed_addr constant [35 x i8] c"buffy[i].x == 0 && buffy[i].y == 0\00", align 1
-@.str1 = private unnamed_addr constant [22 x i8] c"tmp/test_bigarray.cpp\00", align 1
+@.str1 = private unnamed_addr constant [22 x i8] c"cpp/test_bigarray.cpp\00", align 1
 @__PRETTY_FUNCTION__.main = private unnamed_addr constant [11 x i8] c"int main()\00", align 1
 @.str2 = private unnamed_addr constant [6 x i8] c"*%d*\0A\00", align 1
 
@@ -54,7 +54,7 @@ define i32 @main() #0 {
 ; <label>:19                                      ; preds = %.preheader
   %20 = load i8* getelementptr inbounds ([102400 x %struct.Struct]* @buffy, i64 0, i64 34133, i32 0), align 8, !tbaa !1
   %21 = sext i8 %20 to i32
-  %22 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([6 x i8]* @.str2, i64 0, i64 0), i32 %21)
+  %22 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([6 x i8]* @.str2, i64 0, i64 0), i32 %21) #4
   ret i32 0
 }
 
@@ -68,6 +68,7 @@ attributes #0 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointe
 attributes #1 = { noreturn nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #2 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #3 = { noreturn nounwind }
+attributes #4 = { nounwind }
 
 !llvm.ident = !{!0}
 

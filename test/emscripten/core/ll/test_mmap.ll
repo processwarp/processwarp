@@ -3,7 +3,7 @@ target datalayout = "e-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-pc-linux-gnu"
 
 @.str = private unnamed_addr constant [23 x i8] c"munmap(map, 5000) == 0\00", align 1
-@.str1 = private unnamed_addr constant [18 x i8] c"tmp/test_mmap.cpp\00", align 1
+@.str1 = private unnamed_addr constant [18 x i8] c"cpp/test_mmap.cpp\00", align 1
 @__PRETTY_FUNCTION__.main = private unnamed_addr constant [23 x i8] c"int main(int, char **)\00", align 1
 @.str2 = private unnamed_addr constant [21 x i8] c"map != ((void *) -1)\00", align 1
 @.str3 = private unnamed_addr constant [12 x i8] c"map[i] == i\00", align 1
@@ -86,7 +86,7 @@ vector.body:                                      ; preds = %vector.body, %9
   unreachable
 
 ; <label>:32                                      ; preds = %28
-  %33 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([12 x i8]* @.str5, i64 0, i64 0))
+  %33 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([12 x i8]* @.str5, i64 0, i64 0)) #3
   ret i32 0
 }
 

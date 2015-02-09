@@ -12,7 +12,7 @@ define i32 @main() #0 {
   %4 = tail call double @erfc(double 1.000000e+00) #2
   %5 = tail call double @erfc(double 3.000000e+00) #2
   %6 = tail call double @erfc(double -1.500000e+00) #2
-  %7 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([42 x i8]* @.str, i64 0, i64 0), double %1, double %2, double %3, double %4, double %5, double %6)
+  %7 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([42 x i8]* @.str, i64 0, i64 0), double %1, double %2, double %3, double %4, double %5, double %6) #2
   ret i32 0
 }
 

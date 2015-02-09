@@ -19,7 +19,7 @@ define i32 @main(i32 %argc, i8** nocapture readnone %argv) #0 {
   %d1.0 = phi i64 [ %5, %2 ], [ 2222758749, %0 ]
   %q.0 = phi i64 [ %4, %2 ], [ 1419063521, %0 ]
   %7 = mul i64 %q.0, %d1.0
-  %8 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([5 x i8]* @.str, i64 0, i64 0), i64 %7)
+  %8 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([5 x i8]* @.str, i64 0, i64 0), i64 %7) #2
   ret i32 0
 }
 
@@ -28,6 +28,7 @@ declare i32 @printf(i8* nocapture readonly, ...) #1
 
 attributes #0 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #2 = { nounwind }
 
 !llvm.ident = !{!0}
 

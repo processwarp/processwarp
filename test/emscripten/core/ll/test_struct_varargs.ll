@@ -67,8 +67,8 @@ define void @_Z3fooiz(i32 %unused, ...) #0 {
   %35 = bitcast i8* %.in1 to double*
   %36 = load double* %35, align 8
   call void @llvm.va_end(i8* %1)
-  %37 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i64 0, i64 0), i32 %21)
-  %38 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str1, i64 0, i64 0), double %36)
+  %37 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i64 0, i64 0), i32 %21) #1
+  %38 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str1, i64 0, i64 0), double %36) #1
   ret void
 }
 

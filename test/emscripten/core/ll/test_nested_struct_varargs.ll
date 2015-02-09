@@ -26,10 +26,10 @@ define void @_Z3fooiz(i32 %unused, ...) #0 {
   call void @llvm.va_end(i8* %1)
   %6 = getelementptr inbounds %struct.C* %c, i64 0, i32 1, i32 0
   %7 = load i32* %6, align 4, !tbaa !9
-  %8 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i64 0, i64 0), i32 %7)
+  %8 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i64 0, i64 0), i32 %7) #1
   %9 = getelementptr inbounds %struct.C* %c, i64 0, i32 2, i32 0
   %10 = load double* %9, align 8, !tbaa !13
-  %11 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str1, i64 0, i64 0), double %10)
+  %11 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str1, i64 0, i64 0), double %10) #1
   %puts = call i32 @puts(i8* %5)
   ret void
 }

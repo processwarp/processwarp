@@ -4,7 +4,7 @@ target triple = "x86_64-pc-linux-gnu"
 
 @str = private unnamed_addr constant [12 x i8] c"*zzcheezzz*\00"
 
-; Function Attrs: uwtable
+; Function Attrs: nounwind uwtable
 define i32 @main(i32 %argc, i8** nocapture readnone %argv) #0 {
   %puts.i = tail call i32 @puts(i8* getelementptr inbounds ([12 x i8]* @str, i64 0, i64 0)) #1
   ret i32 0
@@ -13,7 +13,7 @@ define i32 @main(i32 %argc, i8** nocapture readnone %argv) #0 {
 ; Function Attrs: nounwind
 declare i32 @puts(i8* nocapture readonly) #1
 
-attributes #0 = { uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #0 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind }
 
 !llvm.ident = !{!0}

@@ -35,7 +35,7 @@ define i32 @main() #0 {
   %7 = zext i1 %6 to i32
   call void @llvm.lifetime.end(i64 8, i8* %1)
   call void @llvm.lifetime.end(i64 8, i8* %2)
-  %8 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i32 0, double 1.000000e+00, i32 %7)
+  %8 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i32 0, double 1.000000e+00, i32 %7) #1
   call void @llvm.lifetime.start(i64 8, i8* %1)
   call void @llvm.lifetime.start(i64 8, i8* %2)
   store volatile double 3.333000e+00, double* %y.i, align 8
@@ -47,7 +47,7 @@ define i32 @main() #0 {
   %13 = zext i1 %12 to i32
   call void @llvm.lifetime.end(i64 8, i8* %1)
   call void @llvm.lifetime.end(i64 8, i8* %2)
-  %14 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i32 1, double 3.333000e+00, i32 %13)
+  %14 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i32 1, double 3.333000e+00, i32 %13) #1
   call void @llvm.lifetime.start(i64 8, i8* %1)
   call void @llvm.lifetime.start(i64 8, i8* %2)
   store volatile double 0x7FF0000000000000, double* %y.i, align 8
@@ -59,7 +59,7 @@ define i32 @main() #0 {
   %19 = zext i1 %18 to i32
   call void @llvm.lifetime.end(i64 8, i8* %1)
   call void @llvm.lifetime.end(i64 8, i8* %2)
-  %20 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i32 2, double 0x7FF0000000000000, i32 %19)
+  %20 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i32 2, double 0x7FF0000000000000, i32 %19) #1
   call void @llvm.lifetime.start(i64 8, i8* %1)
   call void @llvm.lifetime.start(i64 8, i8* %2)
   store volatile double 0x7FF8000000000000, double* %y.i, align 8
@@ -71,7 +71,7 @@ define i32 @main() #0 {
   %25 = zext i1 %24 to i32
   call void @llvm.lifetime.end(i64 8, i8* %1)
   call void @llvm.lifetime.end(i64 8, i8* %2)
-  %26 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i32 3, double 0x7FF8000000000000, i32 %25)
+  %26 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i32 3, double 0x7FF8000000000000, i32 %25) #1
   call void @llvm.lifetime.start(i64 8, i8* %1)
   call void @llvm.lifetime.start(i64 8, i8* %2)
   store volatile double 0xFFF0000000000000, double* %y.i, align 8
@@ -83,7 +83,7 @@ define i32 @main() #0 {
   %31 = zext i1 %30 to i32
   call void @llvm.lifetime.end(i64 8, i8* %1)
   call void @llvm.lifetime.end(i64 8, i8* %2)
-  %32 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i32 4, double 0xFFF0000000000000, i32 %31)
+  %32 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i32 4, double 0xFFF0000000000000, i32 %31) #1
   call void @llvm.lifetime.start(i64 8, i8* %1)
   call void @llvm.lifetime.start(i64 8, i8* %2)
   store volatile double 0.000000e+00, double* %y.i, align 8
@@ -95,7 +95,7 @@ define i32 @main() #0 {
   %37 = zext i1 %36 to i32
   call void @llvm.lifetime.end(i64 8, i8* %1)
   call void @llvm.lifetime.end(i64 8, i8* %2)
-  %38 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i32 5, double 0.000000e+00, i32 %37)
+  %38 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i32 5, double 0.000000e+00, i32 %37) #1
   call void @llvm.lifetime.start(i64 8, i8* %1)
   call void @llvm.lifetime.start(i64 8, i8* %2)
   store volatile double 0.000000e+00, double* %y.i, align 8
@@ -107,7 +107,7 @@ define i32 @main() #0 {
   %43 = zext i1 %42 to i32
   call void @llvm.lifetime.end(i64 8, i8* %1)
   call void @llvm.lifetime.end(i64 8, i8* %2)
-  %44 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i32 6, double 0.000000e+00, i32 %43)
+  %44 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i32 6, double 0.000000e+00, i32 %43) #1
   call void @llvm.lifetime.start(i64 8, i8* %1)
   call void @llvm.lifetime.start(i64 8, i8* %2)
   store volatile double 0xC19D5AD6CC000000, double* %y.i, align 8
@@ -119,7 +119,7 @@ define i32 @main() #0 {
   %49 = zext i1 %48 to i32
   call void @llvm.lifetime.end(i64 8, i8* %1)
   call void @llvm.lifetime.end(i64 8, i8* %2)
-  %50 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i32 7, double 0xC19D5AD6CC000000, i32 %49)
+  %50 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i32 7, double 0xC19D5AD6CC000000, i32 %49) #1
   call void @llvm.lifetime.start(i64 8, i8* %1)
   call void @llvm.lifetime.start(i64 8, i8* %2)
   store volatile double 1.200000e+201, double* %y.i, align 8
@@ -131,7 +131,7 @@ define i32 @main() #0 {
   %55 = zext i1 %54 to i32
   call void @llvm.lifetime.end(i64 8, i8* %1)
   call void @llvm.lifetime.end(i64 8, i8* %2)
-  %56 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i32 8, double 1.200000e+201, i32 %55)
+  %56 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i32 8, double 1.200000e+201, i32 %55) #1
   ret i32 0
 }
 

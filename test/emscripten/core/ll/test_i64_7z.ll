@@ -17,7 +17,7 @@ define i32 @main(i32 %argc, i8** nocapture readonly %argv) #0 {
   %4 = load i8* %3, align 1, !tbaa !7
   %5 = sext i8 %4 to i64
   store i64 %5, i64* @b, align 8, !tbaa !1
-  %6 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([7 x i8]* @.str, i64 0, i64 0), i64 %1, i64 %5)
+  %6 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([7 x i8]* @.str, i64 0, i64 0), i64 %1, i64 %5) #3
   %7 = load i64* @a, align 8, !tbaa !1
   %8 = load i64* @b, align 8, !tbaa !1
   %uadd = tail call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %7, i64 %8)
@@ -31,11 +31,11 @@ define i32 @main(i32 %argc, i8** nocapture readonly %argv) #0 {
   br i1 %13, label %14, label %16
 
 ; <label>:14                                      ; preds = %10, %0
-  %15 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([15 x i8]* @.str1, i64 0, i64 0), i64 %7, i64 %8)
+  %15 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([15 x i8]* @.str1, i64 0, i64 0), i64 %7, i64 %8) #3
   br label %18
 
 ; <label>:16                                      ; preds = %10
-  %17 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([16 x i8]* @.str2, i64 0, i64 0), i64 %7, i64 %8)
+  %17 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([16 x i8]* @.str2, i64 0, i64 0), i64 %7, i64 %8) #3
   br label %18
 
 ; <label>:18                                      ; preds = %16, %14
@@ -51,6 +51,7 @@ declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #2
 attributes #0 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #2 = { nounwind readnone }
+attributes #3 = { nounwind }
 
 !llvm.ident = !{!0}
 
