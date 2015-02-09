@@ -11,12 +11,12 @@ define void (i32, i32)* @_Z5getIti(i32 %x) #0 {
   ret void (i32, i32)* %2
 }
 
-; Function Attrs: uwtable
+; Function Attrs: nounwind uwtable
 define i32 @main(i32 %argc, i8** nocapture readnone %argv) #1 {
   %1 = icmp slt i32 %argc, 100
   %2 = select i1 %1, void (i32, i32)* (i32)* @_Z5getIti, void (i32, i32)* (i32)* null
-  %3 = tail call void (i32, i32)* (i32)* %2(i32 %argc)
-  %4 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([6 x i8]* @.str, i64 0, i64 0), void (i32, i32)* %3)
+  %3 = tail call void (i32, i32)* (i32)* %2(i32 %argc) #3
+  %4 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([6 x i8]* @.str, i64 0, i64 0), void (i32, i32)* %3) #3
   ret i32 0
 }
 
@@ -24,8 +24,9 @@ define i32 @main(i32 %argc, i8** nocapture readnone %argv) #1 {
 declare i32 @printf(i8* nocapture readonly, ...) #2
 
 attributes #0 = { noinline nounwind readnone uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #1 = { uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #1 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #2 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #3 = { nounwind }
 
 !llvm.ident = !{!0}
 

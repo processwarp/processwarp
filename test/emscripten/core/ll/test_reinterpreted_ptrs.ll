@@ -17,14 +17,14 @@ define i32 @_ZNK3Foo6getBarEv(%class.Foo* nocapture readonly %this) #0 align 2 {
   ret i32 %3
 }
 
-; Function Attrs: uwtable
+; Function Attrs: nounwind uwtable
 define i32 @main(i32 %argc, i8** nocapture readnone %argv) #1 {
 _ZL7runTestv.exit:
   %0 = load %class.Foo** @magic2, align 8, !tbaa !7
   %1 = load %class.Foo** @magic1, align 8, !tbaa !7
   %2 = icmp eq %class.Foo* %0, %1
   %. = select i1 %2, i8* getelementptr inbounds ([7 x i8]* @.str1, i64 0, i64 0), i8* getelementptr inbounds ([7 x i8]* @.str2, i64 0, i64 0)
-  %puts.i = tail call i32 @puts(i8* %.)
+  %puts.i = tail call i32 @puts(i8* %.) #2
   ret i32 0
 }
 
@@ -32,7 +32,7 @@ _ZL7runTestv.exit:
 declare i32 @puts(i8* nocapture readonly) #2
 
 attributes #0 = { nounwind readonly uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #1 = { uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #1 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #2 = { nounwind }
 
 !llvm.ident = !{!0}

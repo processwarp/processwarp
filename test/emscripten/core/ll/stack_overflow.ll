@@ -8,7 +8,7 @@ target triple = "x86_64-pc-linux-gnu"
 ; Function Attrs: nounwind uwtable
 define void @_Z3actPVi(i32* nocapture readonly %a) #0 {
   %1 = load volatile i32* %a, align 4, !tbaa !1
-  %2 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([12 x i8]* @.str, i64 0, i64 0), i32 %1)
+  %2 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([12 x i8]* @.str, i64 0, i64 0), i32 %1) #2
   %3 = load volatile i32* %a, align 4, !tbaa !1
   %4 = sext i32 %3 to i64
   %5 = alloca i8, i64 %4, align 1
@@ -16,17 +16,10 @@ define void @_Z3actPVi(i32* nocapture readonly %a) #0 {
   %7 = trunc i64 %6 to i32
   %8 = load volatile i32* %a, align 4, !tbaa !1
   %9 = icmp slt i32 %7, %8
-  br i1 %9, label %10, label %13
-
-; <label>:10                                      ; preds = %0
-  %11 = getelementptr inbounds i32* %a, i64 -1
-  %12 = load volatile i32* %a, align 4, !tbaa !1
-  br label %13
-
-; <label>:13                                      ; preds = %10, %0
-  %.0 = phi i32* [ %11, %10 ], [ %a, %0 ]
-  %14 = load volatile i32* %.0, align 4, !tbaa !1
-  call void @_Z7recursei(i32 %14)
+  %10 = getelementptr inbounds i32* %a, i64 -1
+  %.a = select i1 %9, i32* %10, i32* %a
+  %11 = load volatile i32* %.a, align 4, !tbaa !1
+  call void @_Z7recursei(i32 %11)
   ret void
 }
 
@@ -36,7 +29,7 @@ declare i32 @printf(i8* nocapture readonly, ...) #1
 ; Function Attrs: nounwind uwtable
 define void @_Z7recursei(i32 %x) #0 {
   %a = alloca i32, align 4
-  %1 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([12 x i8]* @.str1, i64 0, i64 0), i32 %x)
+  %1 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([12 x i8]* @.str1, i64 0, i64 0), i32 %x) #2
   store volatile i32 %x, i32* %a, align 4, !tbaa !1
   %2 = mul nsw i32 %x, %x
   %3 = icmp slt i32 %2, %x

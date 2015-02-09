@@ -14,7 +14,7 @@ target triple = "x86_64-pc-linux-gnu"
 ; Function Attrs: nounwind uwtable
 define i32 @main() #0 {
   %data = alloca [7 x i8], align 1
-  %1 = tail call %struct._IO_FILE* @fopen(i8* getelementptr inbounds ([6 x i8]* @.str, i64 0, i64 0), i8* getelementptr inbounds ([3 x i8]* @.str1, i64 0, i64 0))
+  %1 = tail call %struct._IO_FILE* @fopen(i8* getelementptr inbounds ([6 x i8]* @.str, i64 0, i64 0), i8* getelementptr inbounds ([3 x i8]* @.str1, i64 0, i64 0)) #3
   %2 = icmp eq %struct._IO_FILE* %1, null
   br i1 %2, label %3, label %4
 
@@ -23,8 +23,8 @@ define i32 @main() #0 {
   unreachable
 
 ; <label>:4                                       ; preds = %0
-  %5 = tail call i32 @fclose(%struct._IO_FILE* %1)
-  %6 = tail call %struct._IO_FILE* @fopen(i8* getelementptr inbounds ([6 x i8]* @.str, i64 0, i64 0), i8* getelementptr inbounds ([3 x i8]* @.str2, i64 0, i64 0))
+  %5 = tail call i32 @fclose(%struct._IO_FILE* %1) #3
+  %6 = tail call %struct._IO_FILE* @fopen(i8* getelementptr inbounds ([6 x i8]* @.str, i64 0, i64 0), i8* getelementptr inbounds ([3 x i8]* @.str2, i64 0, i64 0)) #3
   %7 = icmp eq %struct._IO_FILE* %6, null
   br i1 %7, label %8, label %9
 
@@ -35,8 +35,8 @@ define i32 @main() #0 {
 ; <label>:9                                       ; preds = %4
   %10 = getelementptr inbounds [7 x i8]* %data, i64 0, i64 0
   call void @llvm.memcpy.p0i8.p0i8.i64(i8* %10, i8* getelementptr inbounds ([7 x i8]* @_ZZ4mainE4data, i64 0, i64 0), i64 7, i32 1, i1 false)
-  %11 = call i64 @fwrite(i8* %10, i64 1, i64 7, %struct._IO_FILE* %6)
-  %12 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str3, i64 0, i64 0), i64 %11)
+  %11 = call i64 @fwrite(i8* %10, i64 1, i64 7, %struct._IO_FILE* %6) #3
+  %12 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str3, i64 0, i64 0), i64 %11) #3
   ret i32 0
 }
 

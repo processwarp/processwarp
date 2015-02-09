@@ -23,29 +23,29 @@ define i32 @main() #0 {
   %4 = zext i1 %3 to i32
   %5 = shl nuw nsw i32 %4, 5
   %6 = or i32 %5, 5
-  %7 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([30 x i8]* @.str, i64 0, i64 0), i32 5, i32 23, i32 10, i32 19, i32 %2, i32 %4, i32 %6, i32 1, i32 0)
+  %7 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([30 x i8]* @.str, i64 0, i64 0), i32 5, i32 23, i32 10, i32 19, i32 %2, i32 %4, i32 %6, i32 1, i32 0) #2
   store i64 -1, i64* %hash, align 8, !tbaa !7
-  %8 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([6 x i8]* @.str1, i64 0, i64 0), i32 0, i64 -1)
-  %putchar = call i32 @putchar(i32 44)
-  %9 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([6 x i8]* @.str1, i64 0, i64 0), i32 1, i64 576460752303423487)
-  %putchar.1 = call i32 @putchar(i32 44)
-  %10 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([6 x i8]* @.str1, i64 0, i64 0), i32 2, i64 18014398509481983)
-  %putchar.2 = call i32 @putchar(i32 44)
-  %11 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([6 x i8]* @.str1, i64 0, i64 0), i32 3, i64 562949953421311)
-  %putchar.3 = call i32 @putchar(i32 44)
-  %12 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([6 x i8]* @.str1, i64 0, i64 0), i32 4, i64 17592186044415)
-  %putchar.4 = call i32 @putchar(i32 44)
-  %13 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([6 x i8]* @.str1, i64 0, i64 0), i32 5, i64 549755813887)
-  %putchar.5 = call i32 @putchar(i32 44)
-  %14 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([6 x i8]* @.str1, i64 0, i64 0), i32 6, i64 17179869183)
-  %putchar.6 = call i32 @putchar(i32 44)
-  %15 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([6 x i8]* @.str1, i64 0, i64 0), i32 7, i64 536870911)
-  %putchar.7 = call i32 @putchar(i32 44)
-  %16 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([6 x i8]* @.str1, i64 0, i64 0), i32 8, i64 16777215)
+  %8 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([6 x i8]* @.str1, i64 0, i64 0), i32 0, i64 -1) #2
+  %putchar = call i32 @putchar(i32 44) #2
+  %9 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([6 x i8]* @.str1, i64 0, i64 0), i32 1, i64 576460752303423487) #2
+  %putchar.1 = call i32 @putchar(i32 44) #2
+  %10 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([6 x i8]* @.str1, i64 0, i64 0), i32 2, i64 18014398509481983) #2
+  %putchar.2 = call i32 @putchar(i32 44) #2
+  %11 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([6 x i8]* @.str1, i64 0, i64 0), i32 3, i64 562949953421311) #2
+  %putchar.3 = call i32 @putchar(i32 44) #2
+  %12 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([6 x i8]* @.str1, i64 0, i64 0), i32 4, i64 17592186044415) #2
+  %putchar.4 = call i32 @putchar(i32 44) #2
+  %13 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([6 x i8]* @.str1, i64 0, i64 0), i32 5, i64 549755813887) #2
+  %putchar.5 = call i32 @putchar(i32 44) #2
+  %14 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([6 x i8]* @.str1, i64 0, i64 0), i32 6, i64 17179869183) #2
+  %putchar.6 = call i32 @putchar(i32 44) #2
+  %15 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([6 x i8]* @.str1, i64 0, i64 0), i32 7, i64 536870911) #2
+  %putchar.7 = call i32 @putchar(i32 44) #2
+  %16 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([6 x i8]* @.str1, i64 0, i64 0), i32 8, i64 16777215) #2
   %puts = call i32 @puts(i8* getelementptr inbounds ([2 x i8]* @str, i64 0, i64 0))
-  %17 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str4, i64 0, i64 0), i32 56, i32 9)
-  %18 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([10 x i8]* @.str5, i64 0, i64 0), i32 320434)
-  %19 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str6, i64 0, i64 0), i64 21, i64* %hash)
+  %17 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str4, i64 0, i64 0), i32 56, i32 9) #2
+  %18 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([10 x i8]* @.str5, i64 0, i64 0), i32 320434) #2
+  %19 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str6, i64 0, i64 0), i64 21, i64* %hash) #2
   ret i32 0
 }
 

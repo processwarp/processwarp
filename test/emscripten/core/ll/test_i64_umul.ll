@@ -19,7 +19,7 @@ define i32 @main() #0 {
 
 .lr.ph:                                           ; preds = %.lr.ph, %0
   %6 = load volatile i64* %testu64a, align 8
-  %7 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([18 x i8]* @.str, i64 0, i64 0), i64 %6)
+  %7 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([18 x i8]* @.str, i64 0, i64 0), i64 %6) #2
   %8 = load volatile i64* %testu64a, align 8
   %9 = lshr i64 %8, 1
   store volatile i64 %9, i64* %testu64a, align 8
@@ -39,6 +39,7 @@ declare i32 @printf(i8* nocapture readonly, ...) #1
 
 attributes #0 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #2 = { nounwind }
 
 !llvm.ident = !{!0}
 

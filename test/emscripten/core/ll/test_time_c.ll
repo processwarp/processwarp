@@ -10,7 +10,7 @@ define i32 @main() #0 {
   %1 = call i64 @time(i64* null) #2
   store i64 %1, i64* %t, align 8, !tbaa !1
   %2 = call i8* @ctime(i64* %t) #2
-  %3 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([10 x i8]* @.str, i64 0, i64 0), i8* %2)
+  %3 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([10 x i8]* @.str, i64 0, i64 0), i8* %2) #2
   ret i32 0
 }
 

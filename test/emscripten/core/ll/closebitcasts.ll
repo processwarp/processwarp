@@ -45,7 +45,7 @@ define i32 @main(i32 %argc, i8** nocapture readnone %argv) #0 {
   br i1 %23, label %25, label %21
 
 ; <label>:25                                      ; preds = %21
-  %26 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([5 x i8]* @.str, i64 0, i64 0), i32 %z.0)
+  %26 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([5 x i8]* @.str, i64 0, i64 0), i32 %z.0) #2
   %27 = fpext float %x.sroa.0.0.in to double
   %28 = fpext float %y.sroa.0.0.in to double
   %29 = fmul double %28, %28
@@ -76,7 +76,7 @@ define i32 @main(i32 %argc, i8** nocapture readnone %argv) #0 {
 ._crit_edge:                                      ; preds = %.lr.ph, %25
   %h.0.lcssa = phi i32 [ %40, %25 ], [ %44, %.lr.ph ]
   %l.0.lcssa = phi i32 [ %35, %25 ], [ %43, %.lr.ph ]
-  %47 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str1, i64 0, i64 0), i32 %l.0.lcssa, i32 %h.0.lcssa)
+  %47 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str1, i64 0, i64 0), i32 %l.0.lcssa, i32 %h.0.lcssa) #2
   ret i32 0
 }
 
@@ -85,6 +85,7 @@ declare i32 @printf(i8* nocapture readonly, ...) #1
 
 attributes #0 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #2 = { nounwind }
 
 !llvm.ident = !{!0}
 

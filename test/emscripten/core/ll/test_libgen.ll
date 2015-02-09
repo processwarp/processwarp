@@ -36,68 +36,68 @@ define i32 @main() #0 {
   call void @llvm.memcpy.p0i8.p0i8.i64(i8* %1, i8* getelementptr inbounds ([16 x i8]* @_ZZ4mainE3p1x, i64 0, i64 0), i64 16, i32 16, i1 false)
   %2 = getelementptr inbounds [16 x i8]* %p1x, i64 0, i64 0
   call void @llvm.memcpy.p0i8.p0i8.i64(i8* %2, i8* getelementptr inbounds ([16 x i8]* @_ZZ4mainE3p1x, i64 0, i64 0), i64 16, i32 16, i1 false)
-  %3 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([7 x i8]* @.str, i64 0, i64 0), i8* %1)
+  %3 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([7 x i8]* @.str, i64 0, i64 0), i8* %1) #1
   %4 = call i8* @dirname(i8* %2) #1
   %5 = call i8* @__xpg_basename(i8* %1) #1
-  %6 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str1, i64 0, i64 0), i8* %4, i8* %5)
+  %6 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str1, i64 0, i64 0), i8* %4, i8* %5) #1
   %7 = getelementptr inbounds [16 x i8]* %p2, i64 0, i64 0
   call void @llvm.memcpy.p0i8.p0i8.i64(i8* %7, i8* getelementptr inbounds ([16 x i8]* @_ZZ4mainE3p2x, i64 0, i64 0), i64 16, i32 16, i1 false)
   %8 = getelementptr inbounds [16 x i8]* %p2x, i64 0, i64 0
   call void @llvm.memcpy.p0i8.p0i8.i64(i8* %8, i8* getelementptr inbounds ([16 x i8]* @_ZZ4mainE3p2x, i64 0, i64 0), i64 16, i32 16, i1 false)
-  %9 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([7 x i8]* @.str, i64 0, i64 0), i8* %7)
+  %9 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([7 x i8]* @.str, i64 0, i64 0), i8* %7) #1
   %10 = call i8* @dirname(i8* %8) #1
   %11 = call i8* @__xpg_basename(i8* %7) #1
-  %12 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str1, i64 0, i64 0), i8* %10, i8* %11)
+  %12 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str1, i64 0, i64 0), i8* %10, i8* %11) #1
   %13 = getelementptr inbounds [16 x i8]* %p3, i64 0, i64 0
   call void @llvm.memcpy.p0i8.p0i8.i64(i8* %13, i8* getelementptr inbounds ([16 x i8]* @_ZZ4mainE3p3x, i64 0, i64 0), i64 16, i32 16, i1 false)
   %14 = getelementptr inbounds [16 x i8]* %p3x, i64 0, i64 0
   call void @llvm.memcpy.p0i8.p0i8.i64(i8* %14, i8* getelementptr inbounds ([16 x i8]* @_ZZ4mainE3p3x, i64 0, i64 0), i64 16, i32 16, i1 false)
-  %15 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([7 x i8]* @.str, i64 0, i64 0), i8* %13)
+  %15 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([7 x i8]* @.str, i64 0, i64 0), i8* %13) #1
   %16 = call i8* @dirname(i8* %14) #1
   %17 = call i8* @__xpg_basename(i8* %13) #1
-  %18 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str1, i64 0, i64 0), i8* %16, i8* %17)
+  %18 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str1, i64 0, i64 0), i8* %16, i8* %17) #1
   %19 = getelementptr inbounds [16 x i8]* %p4, i64 0, i64 0
   call void @llvm.memcpy.p0i8.p0i8.i64(i8* %19, i8* getelementptr inbounds ([16 x i8]* @_ZZ4mainE3p4x, i64 0, i64 0), i64 16, i32 16, i1 false)
   %20 = getelementptr inbounds [16 x i8]* %p4x, i64 0, i64 0
   call void @llvm.memcpy.p0i8.p0i8.i64(i8* %20, i8* getelementptr inbounds ([16 x i8]* @_ZZ4mainE3p4x, i64 0, i64 0), i64 16, i32 16, i1 false)
-  %21 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([7 x i8]* @.str, i64 0, i64 0), i8* %19)
+  %21 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([7 x i8]* @.str, i64 0, i64 0), i8* %19) #1
   %22 = call i8* @dirname(i8* %20) #1
   %23 = call i8* @__xpg_basename(i8* %19) #1
-  %24 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str1, i64 0, i64 0), i8* %22, i8* %23)
+  %24 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str1, i64 0, i64 0), i8* %22, i8* %23) #1
   %25 = getelementptr inbounds [16 x i8]* %p5, i64 0, i64 0
   call void @llvm.memcpy.p0i8.p0i8.i64(i8* %25, i8* getelementptr inbounds ([16 x i8]* @_ZZ4mainE3p5x, i64 0, i64 0), i64 16, i32 16, i1 false)
   %26 = getelementptr inbounds [16 x i8]* %p5x, i64 0, i64 0
   call void @llvm.memcpy.p0i8.p0i8.i64(i8* %26, i8* getelementptr inbounds ([16 x i8]* @_ZZ4mainE3p5x, i64 0, i64 0), i64 16, i32 16, i1 false)
-  %27 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([7 x i8]* @.str, i64 0, i64 0), i8* %25)
+  %27 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([7 x i8]* @.str, i64 0, i64 0), i8* %25) #1
   %28 = call i8* @dirname(i8* %26) #1
   %29 = call i8* @__xpg_basename(i8* %25) #1
-  %30 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str1, i64 0, i64 0), i8* %28, i8* %29)
+  %30 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str1, i64 0, i64 0), i8* %28, i8* %29) #1
   %31 = getelementptr inbounds [16 x i8]* %p6, i64 0, i64 0
   call void @llvm.memcpy.p0i8.p0i8.i64(i8* %31, i8* getelementptr inbounds ([16 x i8]* @_ZZ4mainE3p6x, i64 0, i64 0), i64 16, i32 16, i1 false)
   %32 = getelementptr inbounds [16 x i8]* %p6x, i64 0, i64 0
   call void @llvm.memcpy.p0i8.p0i8.i64(i8* %32, i8* getelementptr inbounds ([16 x i8]* @_ZZ4mainE3p6x, i64 0, i64 0), i64 16, i32 16, i1 false)
-  %33 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([7 x i8]* @.str, i64 0, i64 0), i8* %31)
+  %33 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([7 x i8]* @.str, i64 0, i64 0), i8* %31) #1
   %34 = call i8* @dirname(i8* %32) #1
   %35 = call i8* @__xpg_basename(i8* %31) #1
-  %36 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str1, i64 0, i64 0), i8* %34, i8* %35)
+  %36 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str1, i64 0, i64 0), i8* %34, i8* %35) #1
   %37 = getelementptr inbounds [16 x i8]* %p7, i64 0, i64 0
   call void @llvm.memcpy.p0i8.p0i8.i64(i8* %37, i8* getelementptr inbounds ([16 x i8]* @_ZZ4mainE3p7x, i64 0, i64 0), i64 16, i32 16, i1 false)
   %38 = getelementptr inbounds [16 x i8]* %p7x, i64 0, i64 0
   call void @llvm.memcpy.p0i8.p0i8.i64(i8* %38, i8* getelementptr inbounds ([16 x i8]* @_ZZ4mainE3p7x, i64 0, i64 0), i64 16, i32 16, i1 false)
-  %39 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([7 x i8]* @.str, i64 0, i64 0), i8* %37)
+  %39 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([7 x i8]* @.str, i64 0, i64 0), i8* %37) #1
   %40 = call i8* @dirname(i8* %38) #1
   %41 = call i8* @__xpg_basename(i8* %37) #1
-  %42 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str1, i64 0, i64 0), i8* %40, i8* %41)
+  %42 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str1, i64 0, i64 0), i8* %40, i8* %41) #1
   %43 = getelementptr inbounds [16 x i8]* %p8, i64 0, i64 0
   call void @llvm.memset.p0i8.i64(i8* %43, i8 0, i64 16, i32 16, i1 false)
   %44 = getelementptr inbounds [16 x i8]* %p8x, i64 0, i64 0
   call void @llvm.memset.p0i8.i64(i8* %44, i8 0, i64 16, i32 16, i1 false)
   %45 = call i8* @dirname(i8* %44) #1
   %46 = call i8* @__xpg_basename(i8* %43) #1
-  %47 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([20 x i8]* @.str2, i64 0, i64 0), i8* %45, i8* %46)
+  %47 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([20 x i8]* @.str2, i64 0, i64 0), i8* %45, i8* %46) #1
   %48 = call i8* @dirname(i8* null) #1
   %49 = call i8* @__xpg_basename(i8* null) #1
-  %50 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([19 x i8]* @.str3, i64 0, i64 0), i8* %48, i8* %49)
+  %50 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([19 x i8]* @.str3, i64 0, i64 0), i8* %48, i8* %49) #1
   ret i32 0
 }
 

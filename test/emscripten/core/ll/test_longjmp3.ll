@@ -26,24 +26,24 @@ define void @_Z11setjmp_funcP9jmp_statei(%struct.jmp_state* nocapture %s, i32 %l
   %puts1 = call i32 @puts(i8* getelementptr inbounds ([29 x i8]* @str5, i64 0, i64 0))
   %6 = load [1 x %struct.__jmp_buf_tag]** %1, align 8, !tbaa !1
   %7 = getelementptr inbounds [1 x %struct.__jmp_buf_tag]* %6, i64 0, i64 0
-  call void @longjmp(%struct.__jmp_buf_tag* %7, i32 1) #4
+  call void @longjmp(%struct.__jmp_buf_tag* %7, i32 1) #5
   unreachable
 
 ; <label>:8                                       ; preds = %0
   %9 = getelementptr inbounds [1 x %struct.__jmp_buf_tag]* %c_jmp, i64 0, i64 0
-  %10 = call i32 @_setjmp(%struct.__jmp_buf_tag* %9) #1
+  %10 = call i32 @_setjmp(%struct.__jmp_buf_tag* %9) #6
   %11 = icmp eq i32 %10, 0
   br i1 %11, label %12, label %15
 
 ; <label>:12                                      ; preds = %8
-  %13 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([41 x i8]* @.str1, i64 0, i64 0), i32 %level)
+  %13 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([41 x i8]* @.str1, i64 0, i64 0), i32 %level) #1
   store [1 x %struct.__jmp_buf_tag]* %c_jmp, [1 x %struct.__jmp_buf_tag]** %1, align 8, !tbaa !1
   %14 = add nsw i32 %level, 1
   call void @_Z11setjmp_funcP9jmp_statei(%struct.jmp_state* %s, i32 %14)
   br label %20
 
 ; <label>:15                                      ; preds = %8
-  %16 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([44 x i8]* @.str2, i64 0, i64 0), i32 %level)
+  %16 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([44 x i8]* @.str2, i64 0, i64 0), i32 %level) #1
   %17 = icmp eq [1 x %struct.__jmp_buf_tag]* %2, null
   br i1 %17, label %20, label %18
 
@@ -51,11 +51,11 @@ define void @_Z11setjmp_funcP9jmp_statei(%struct.jmp_state* nocapture %s, i32 %l
   %puts = call i32 @puts(i8* getelementptr inbounds ([46 x i8]* @str, i64 0, i64 0))
   store [1 x %struct.__jmp_buf_tag]* %2, [1 x %struct.__jmp_buf_tag]** %1, align 8, !tbaa !1
   %19 = getelementptr inbounds [1 x %struct.__jmp_buf_tag]* %2, i64 0, i64 0
-  call void @longjmp(%struct.__jmp_buf_tag* %19, i32 1) #4
+  call void @longjmp(%struct.__jmp_buf_tag* %19, i32 1) #5
   unreachable
 
 ; <label>:20                                      ; preds = %15, %12
-  %21 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([36 x i8]* @.str4, i64 0, i64 0), i32 %level)
+  %21 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([36 x i8]* @.str4, i64 0, i64 0), i32 %level) #1
   call void @llvm.lifetime.end(i64 200, i8* %3) #1
   ret void
 }
@@ -69,8 +69,8 @@ declare i32 @printf(i8* nocapture readonly, ...) #2
 ; Function Attrs: noreturn nounwind
 declare void @longjmp(%struct.__jmp_buf_tag*, i32) #3
 
-; Function Attrs: nounwind
-declare i32 @_setjmp(%struct.__jmp_buf_tag*) #2
+; Function Attrs: nounwind returns_twice
+declare i32 @_setjmp(%struct.__jmp_buf_tag*) #4
 
 ; Function Attrs: nounwind
 declare void @llvm.lifetime.end(i64, i8* nocapture) #1
@@ -91,7 +91,9 @@ attributes #0 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointe
 attributes #1 = { nounwind }
 attributes #2 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #3 = { noreturn nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #4 = { noreturn nounwind }
+attributes #4 = { nounwind returns_twice "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #5 = { noreturn nounwind }
+attributes #6 = { nounwind returns_twice }
 
 !llvm.ident = !{!0}
 

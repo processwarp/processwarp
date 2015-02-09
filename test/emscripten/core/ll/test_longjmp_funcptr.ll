@@ -14,7 +14,7 @@ target triple = "x86_64-pc-linux-gnu"
 ; Function Attrs: noreturn nounwind uwtable
 define void @_Z6secondv() #0 {
   %puts = tail call i32 @puts(i8* getelementptr inbounds ([7 x i8]* @str, i64 0, i64 0))
-  tail call void @longjmp(%struct.__jmp_buf_tag* getelementptr inbounds ([1 x %struct.__jmp_buf_tag]* @_ZL3buf, i64 0, i64 0), i32 1) #5
+  tail call void @longjmp(%struct.__jmp_buf_tag* getelementptr inbounds ([1 x %struct.__jmp_buf_tag]* @_ZL3buf, i64 0, i64 0), i32 1) #6
   unreachable
 }
 
@@ -24,22 +24,22 @@ declare i32 @printf(i8* nocapture readonly, ...) #1
 ; Function Attrs: noreturn nounwind
 declare void @longjmp(%struct.__jmp_buf_tag*, i32) #2
 
-; Function Attrs: uwtable
+; Function Attrs: nounwind uwtable
 define void @_Z5firstv() #3 {
   %1 = load void ()** @fp, align 8, !tbaa !1
-  tail call void %1()
+  tail call void %1() #5
   %puts = tail call i32 @puts(i8* getelementptr inbounds ([6 x i8]* @str3, i64 0, i64 0))
   ret void
 }
 
-; Function Attrs: uwtable
+; Function Attrs: nounwind uwtable
 define i32 @main(i32 %argc, i8** nocapture readnone %argv) #3 {
   %x = alloca i32, align 4
   %1 = icmp eq i32 %argc, 200
   %2 = select i1 %1, void ()* null, void ()* @_Z6secondv
   store void ()* %2, void ()** @fp, align 8, !tbaa !1
   store volatile i32 0, i32* %x, align 4
-  %3 = tail call i32 @_setjmp(%struct.__jmp_buf_tag* getelementptr inbounds ([1 x %struct.__jmp_buf_tag]* @_ZL3buf, i64 0, i64 0)) #4
+  %3 = call i32 @_setjmp(%struct.__jmp_buf_tag* getelementptr inbounds ([1 x %struct.__jmp_buf_tag]* @_ZL3buf, i64 0, i64 0)) #7
   %4 = icmp eq i32 %3, 0
   %5 = load volatile i32* %x, align 4
   br i1 %4, label %6, label %9
@@ -48,30 +48,32 @@ define i32 @main(i32 %argc, i8** nocapture readnone %argv) #3 {
   %7 = add nsw i32 %5, 1
   store volatile i32 %7, i32* %x, align 4
   %8 = load void ()** @fp, align 8, !tbaa !1
-  tail call void %8()
-  %puts.i = tail call i32 @puts(i8* getelementptr inbounds ([6 x i8]* @str3, i64 0, i64 0))
+  call void %8() #5
+  %puts.i = call i32 @puts(i8* getelementptr inbounds ([6 x i8]* @str3, i64 0, i64 0)) #5
   br label %11
 
 ; <label>:9                                       ; preds = %0
-  %10 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([10 x i8]* @.str2, i64 0, i64 0), i32 %5)
+  %10 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([10 x i8]* @.str2, i64 0, i64 0), i32 %5) #5
   br label %11
 
 ; <label>:11                                      ; preds = %9, %6
   ret i32 0
 }
 
-; Function Attrs: nounwind
-declare i32 @_setjmp(%struct.__jmp_buf_tag*) #1
+; Function Attrs: nounwind returns_twice
+declare i32 @_setjmp(%struct.__jmp_buf_tag*) #4
 
 ; Function Attrs: nounwind
-declare i32 @puts(i8* nocapture readonly) #4
+declare i32 @puts(i8* nocapture readonly) #5
 
 attributes #0 = { noreturn nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #2 = { noreturn nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #3 = { uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #4 = { nounwind }
-attributes #5 = { noreturn nounwind }
+attributes #3 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #4 = { nounwind returns_twice "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #5 = { nounwind }
+attributes #6 = { noreturn nounwind }
+attributes #7 = { nounwind returns_twice }
 
 !llvm.ident = !{!0}
 

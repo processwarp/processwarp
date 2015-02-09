@@ -16,8 +16,8 @@ define i32 @main() #0 {
   %2 = getelementptr inbounds [16 x i8]* %pDay, i64 0, i64 0
   %3 = getelementptr inbounds [16 x i8]* %pYear, i64 0, i64 0
   %4 = call i32 (i8*, i8*, ...)* @sscanf(i8* getelementptr inbounds ([12 x i8]* @.str1, i64 0, i64 0), i8* getelementptr inbounds ([7 x i8]* @.str2, i64 0, i64 0), i8* %1, i8* %2, i8* %3) #2
-  %5 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i64 0, i64 0), i32 %4)
-  %6 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([28 x i8]* @.str3, i64 0, i64 0), i8* %2, i8* %1, i8* %3)
+  %5 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i64 0, i64 0), i32 %4) #2
+  %6 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([28 x i8]* @.str3, i64 0, i64 0), i8* %2, i8* %1, i8* %3) #2
   ret i32 0
 }
 

@@ -31,7 +31,7 @@ define i32 @main() #0 {
 
 .lr.ph:                                           ; preds = %.lr.ph, %.lr.ph4
   %phrase.01 = phi i8* [ %8, %.lr.ph ], [ %5, %.lr.ph4 ]
-  %7 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([10 x i8]* @.str3, i64 0, i64 0), i8* %word.02, i8* %phrase.01)
+  %7 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([10 x i8]* @.str3, i64 0, i64 0), i8* %word.02, i8* %phrase.01) #1
   %8 = call i8* @strtok_r(i8* null, i8* getelementptr inbounds ([7 x i8]* @.str, i64 0, i64 0), i8** %brkb) #1
   %9 = icmp eq i8* %8, null
   br i1 %9, label %._crit_edge, label %.lr.ph

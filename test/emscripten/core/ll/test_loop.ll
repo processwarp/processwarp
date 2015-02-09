@@ -37,7 +37,7 @@ define i32 @main() #0 {
 
 .loopexit:                                        ; preds = %12, %1
   %x.1 = phi i32 [ %13, %12 ], [ %5, %1 ]
-  %14 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([6 x i8]* @.str1, i64 0, i64 0), i32 %x.1)
+  %14 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([6 x i8]* @.str1, i64 0, i64 0), i32 %x.1) #2
   ret i32 0
 }
 

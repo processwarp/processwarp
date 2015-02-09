@@ -13,7 +13,7 @@ define i32 @main() #0 {
   %2 = getelementptr inbounds [33 x i8]* %str, i64 0, i64 15
   %3 = getelementptr inbounds [33 x i8]* %str, i64 0, i64 16
   call void @llvm.memmove.p0i8.p0i8.i64(i8* %2, i8* %3, i64 17, i32 1, i1 false)
-  %4 = call i32 @puts(i8* %1)
+  %4 = call i32 @puts(i8* %1) #1
   call void @llvm.lifetime.end(i64 33, i8* %1) #1
   ret i32 0
 }

@@ -15,11 +15,11 @@ define i32 @main() #0 {
   %3 = alloca i8, i64 %2, align 16
   %4 = sext i32 %1 to i64
   %5 = call i32 (i8*, i64, i8*, ...)* @snprintf(i8* %3, i64 %4, i8* getelementptr inbounds ([12 x i8]* @.str, i64 0, i64 0), i8* getelementptr inbounds ([14 x i8]* @.str1, i64 0, i64 0), i32 25, double 1.345000e+00) #2
-  %6 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str2, i64 0, i64 0), i32 %1, i8* %3)
+  %6 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str2, i64 0, i64 0), i32 %1, i8* %3) #2
   store i8* null, i8** %buff, align 8, !tbaa !1
   %7 = call i32 (i8**, i8*, ...)* @asprintf(i8** %buff, i8* getelementptr inbounds ([12 x i8]* @.str3, i64 0, i64 0), i32 21, i32 95) #2
   %8 = load i8** %buff, align 8, !tbaa !1
-  %9 = call i32 @puts(i8* %8)
+  %9 = call i32 @puts(i8* %8) #2
   ret i32 0
 }
 

@@ -102,7 +102,7 @@ middle.block32:                                   ; preds = %vector.body31
   br i1 %exitcond24, label %26, label %.preheader8
 
 ; <label>:26                                      ; preds = %25
-  %27 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([12 x i8]* @.str2, i64 0, i64 0), i32 %sum.4)
+  %27 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([12 x i8]* @.str2, i64 0, i64 0), i32 %sum.4) #1
   call void @llvm.lifetime.end(i64 256, i8* %1) #1
   ret i32 1
 }

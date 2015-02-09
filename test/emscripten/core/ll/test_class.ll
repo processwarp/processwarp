@@ -31,7 +31,7 @@ define i32 @main() #0 {
   %13 = fdiv float %12, 1.399680e+05
   %14 = fpext float %8 to double
   %15 = fpext float %13 to double
-  %16 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str, i64 0, i64 0), double %14, double %15)
+  %16 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str, i64 0, i64 0), double %14, double %15) #2
   %17 = fcmp une float %8, %13
   %18 = zext i1 %17 to i32
   %count.1 = add nsw i32 %18, %count.02
@@ -40,7 +40,7 @@ define i32 @main() #0 {
   br i1 %exitcond, label %20, label %1
 
 ; <label>:20                                      ; preds = %1
-  %21 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([6 x i8]* @.str1, i64 0, i64 0), i32 %count.1)
+  %21 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([6 x i8]* @.str1, i64 0, i64 0), i32 %count.1) #2
   ret i32 0
 }
 
@@ -49,6 +49,7 @@ declare i32 @printf(i8* nocapture readonly, ...) #1
 
 attributes #0 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #2 = { nounwind }
 
 !llvm.ident = !{!0}
 

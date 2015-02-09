@@ -11,7 +11,7 @@ define i32 @main() #0 {
   %1 = call i8* @fcvt(double 0x400921FB54411744, i32 7, i32* %decimal, i32* %sign) #2
   %2 = load i32* %decimal, align 4, !tbaa !1
   %3 = load i32* %sign, align 4, !tbaa !1
-  %4 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([56 x i8]* @.str, i64 0, i64 0), double 0x400921FB54411744, i8* %1, i32 %2, i32 %3)
+  %4 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([56 x i8]* @.str, i64 0, i64 0), double 0x400921FB54411744, i8* %1, i32 %2, i32 %3) #2
   ret i32 0
 }
 

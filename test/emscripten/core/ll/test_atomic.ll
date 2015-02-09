@@ -11,28 +11,28 @@ define i32 @main() #0 {
   %1 = atomicrmw add i32* %x, i32 5 seq_cst
   %2 = add i32 %1, 5
   %3 = load i32* %x, align 4, !tbaa !1
-  %4 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str, i64 0, i64 0), i32 %3, i32 %2)
+  %4 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str, i64 0, i64 0), i32 %3, i32 %2) #2
   store i32 10, i32* %x, align 4, !tbaa !1
   %5 = atomicrmw add i32* %x, i32 5 seq_cst
   %6 = load i32* %x, align 4, !tbaa !1
-  %7 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str, i64 0, i64 0), i32 %6, i32 %5)
+  %7 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str, i64 0, i64 0), i32 %6, i32 %5) #2
   store i32 10, i32* %x, align 4, !tbaa !1
   %8 = atomicrmw xchg i32* %x, i32 6 seq_cst
   %9 = load i32* %x, align 4, !tbaa !1
-  %10 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str, i64 0, i64 0), i32 %9, i32 %8)
+  %10 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str, i64 0, i64 0), i32 %9, i32 %8) #2
   store i32 10, i32* %x, align 4, !tbaa !1
   %11 = cmpxchg i32* %x, i32 9, i32 7 seq_cst seq_cst
   %12 = extractvalue { i32, i1 } %11, 0
   %13 = icmp eq i32 %12, 9
   %14 = zext i1 %13 to i32
   %15 = load i32* %x, align 4, !tbaa !1
-  %16 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str, i64 0, i64 0), i32 %15, i32 %14)
+  %16 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str, i64 0, i64 0), i32 %15, i32 %14) #2
   %17 = cmpxchg i32* %x, i32 10, i32 7 seq_cst seq_cst
   %18 = extractvalue { i32, i1 } %17, 0
   %19 = icmp eq i32 %18, 10
   %20 = zext i1 %19 to i32
   %21 = load i32* %x, align 4, !tbaa !1
-  %22 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str, i64 0, i64 0), i32 %21, i32 %20)
+  %22 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str, i64 0, i64 0), i32 %21, i32 %20) #2
   ret i32 0
 }
 
@@ -41,6 +41,7 @@ declare i32 @printf(i8* nocapture readonly, ...) #1
 
 attributes #0 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #2 = { nounwind }
 
 !llvm.ident = !{!0}
 

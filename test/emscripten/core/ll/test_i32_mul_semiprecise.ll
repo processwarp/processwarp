@@ -49,25 +49,25 @@ define i32 @main() #0 {
 
 _Z6seedMTj.exit.preheader:                        ; preds = %1
   %8 = load i32* getelementptr inbounds ([624 x i32]* @_ZL5state, i64 0, i64 0), align 16, !tbaa !1
-  %9 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str, i64 0, i64 0), i32 0, i32 %8)
+  %9 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str, i64 0, i64 0), i32 0, i32 %8) #2
   %10 = load i32* getelementptr inbounds ([624 x i32]* @_ZL5state, i64 0, i64 1), align 4, !tbaa !1
-  %11 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str, i64 0, i64 0), i32 1, i32 %10)
+  %11 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str, i64 0, i64 0), i32 1, i32 %10) #2
   %12 = load i32* getelementptr inbounds ([624 x i32]* @_ZL5state, i64 0, i64 2), align 8, !tbaa !1
-  %13 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str, i64 0, i64 0), i32 2, i32 %12)
+  %13 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str, i64 0, i64 0), i32 2, i32 %12) #2
   %14 = load i32* getelementptr inbounds ([624 x i32]* @_ZL5state, i64 0, i64 3), align 4, !tbaa !1
-  %15 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str, i64 0, i64 0), i32 3, i32 %14)
+  %15 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str, i64 0, i64 0), i32 3, i32 %14) #2
   %16 = load i32* getelementptr inbounds ([624 x i32]* @_ZL5state, i64 0, i64 4), align 16, !tbaa !1
-  %17 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str, i64 0, i64 0), i32 4, i32 %16)
+  %17 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str, i64 0, i64 0), i32 4, i32 %16) #2
   %18 = load i32* getelementptr inbounds ([624 x i32]* @_ZL5state, i64 0, i64 5), align 4, !tbaa !1
-  %19 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str, i64 0, i64 0), i32 5, i32 %18)
+  %19 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str, i64 0, i64 0), i32 5, i32 %18) #2
   %20 = load i32* getelementptr inbounds ([624 x i32]* @_ZL5state, i64 0, i64 6), align 8, !tbaa !1
-  %21 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str, i64 0, i64 0), i32 6, i32 %20)
+  %21 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str, i64 0, i64 0), i32 6, i32 %20) #2
   %22 = load i32* getelementptr inbounds ([624 x i32]* @_ZL5state, i64 0, i64 7), align 4, !tbaa !1
-  %23 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str, i64 0, i64 0), i32 7, i32 %22)
+  %23 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str, i64 0, i64 0), i32 7, i32 %22) #2
   %24 = load i32* getelementptr inbounds ([624 x i32]* @_ZL5state, i64 0, i64 8), align 16, !tbaa !1
-  %25 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str, i64 0, i64 0), i32 8, i32 %24)
+  %25 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str, i64 0, i64 0), i32 8, i32 %24) #2
   %26 = load i32* getelementptr inbounds ([624 x i32]* @_ZL5state, i64 0, i64 9), align 4, !tbaa !1
-  %27 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str, i64 0, i64 0), i32 9, i32 %26)
+  %27 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str, i64 0, i64 0), i32 9, i32 %26) #2
   ret i32 0
 }
 
@@ -76,6 +76,7 @@ declare i32 @printf(i8* nocapture readonly, ...) #1
 
 attributes #0 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #2 = { nounwind }
 
 !llvm.ident = !{!0}
 

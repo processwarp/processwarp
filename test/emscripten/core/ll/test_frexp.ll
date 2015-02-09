@@ -4,18 +4,18 @@ target triple = "x86_64-pc-linux-gnu"
 
 @.str = private unnamed_addr constant [12 x i8] c"%f=%f*2^%d\0A\00", align 1
 @.str1 = private unnamed_addr constant [29 x i8] c"fabs(expected - value) < tol\00", align 1
-@.str2 = private unnamed_addr constant [19 x i8] c"tmp/test_frexp.cpp\00", align 1
+@.str2 = private unnamed_addr constant [19 x i8] c"cpp/test_frexp.cpp\00", align 1
 @__PRETTY_FUNCTION__._Z10test_valued = private unnamed_addr constant [24 x i8] c"void test_value(double)\00", align 1
 @.str3 = private unnamed_addr constant [43 x i8] c"x == 0 || (fabs(x) >= 5e-1 && fabs(x) < 1)\00", align 1
 
-; Function Attrs: uwtable
+; Function Attrs: nounwind uwtable
 define void @_Z10test_valued(double %value) #0 {
   %exponent = alloca i32, align 4
   %1 = call double @frexp(double %value, i32* %exponent) #4
   %2 = load i32* %exponent, align 4, !tbaa !1
-  %3 = tail call double @ldexp(double 1.000000e+00, i32 %2)
+  %3 = tail call double @ldexp(double 1.000000e+00, i32 %2) #4
   %4 = fmul double %1, %3
-  %5 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([12 x i8]* @.str, i64 0, i64 0), double %value, double %1, i32 %2)
+  %5 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([12 x i8]* @.str, i64 0, i64 0), double %value, double %1, i32 %2) #4
   %6 = fsub double %4, %value
   %7 = tail call double @fabs(double %6) #5
   %8 = fcmp olt double %7, 1.000000e-16
@@ -56,7 +56,7 @@ declare double @fabs(double) #2
 ; Function Attrs: noreturn nounwind
 declare void @__assert_fail(i8*, i8*, i32, i8*) #3
 
-; Function Attrs: uwtable
+; Function Attrs: nounwind uwtable
 define i32 @main() #0 {
   tail call void @_Z10test_valued(double 0.000000e+00)
   tail call void @_Z10test_valued(double 1.001000e+02)
@@ -70,7 +70,7 @@ define i32 @main() #0 {
 
 declare double @ldexp(double, i32)
 
-attributes #0 = { uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #0 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #2 = { nounwind readnone "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #3 = { noreturn nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }

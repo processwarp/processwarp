@@ -29,7 +29,7 @@ define i32 @main() #0 {
   %1 = getelementptr inbounds %struct.timespec* %ts, i64 0, i32 0
   %2 = getelementptr inbounds %struct.timespec* %ts, i64 0, i32 1
   %3 = call i32* @__errno_location() #4
-  %4 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([44 x i8]* @.str, i64 0, i64 0), i8* getelementptr inbounds ([1 x i8]* @.str1, i64 0, i64 0), i32 0)
+  %4 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([44 x i8]* @.str, i64 0, i64 0), i8* getelementptr inbounds ([1 x i8]* @.str1, i64 0, i64 0), i32 0) #3
   %5 = call i32 @clock_getres(i32 0, %struct.timespec* %ts) #3
   %6 = icmp eq i32 %5, 0
   br i1 %6, label %8, label %7
@@ -47,7 +47,7 @@ define i32 @main() #0 {
   br i1 %or.cond, label %._crit_edge, label %14
 
 ._crit_edge:                                      ; preds = %8
-  %13 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([48 x i8]* @.str4, i64 0, i64 0), i64 %9, i64 %11)
+  %13 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([48 x i8]* @.str4, i64 0, i64 0), i64 %9, i64 %11) #3
   br label %15
 
 ; <label>:14                                      ; preds = %8
@@ -58,7 +58,7 @@ define i32 @main() #0 {
   %16 = call i32 @clock_gettime(i32 0, %struct.timespec* %ts) #3
   %17 = icmp ne i32 %16, 0
   %18 = select i1 %17, i8* getelementptr inbounds ([22 x i8]* @.str6, i64 0, i64 0), i8* getelementptr inbounds ([18 x i8]* @.str7, i64 0, i64 0)
-  %19 = call i32 (i8*, ...)* @printf(i8* %18)
+  %19 = call i32 (i8*, ...)* @printf(i8* %18) #3
   store i32 0, i32* %3, align 4, !tbaa !7
   %20 = call i32 @clock_settime(i32 0, %struct.timespec* %ts) #3
   %21 = icmp eq i32 %20, 0
@@ -82,7 +82,7 @@ define i32 @main() #0 {
   br label %28
 
 ; <label>:28                                      ; preds = %27, %26, %22
-  %29 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([44 x i8]* @.str, i64 0, i64 0), i8* getelementptr inbounds ([2 x i8]* @.str2, i64 0, i64 0), i32 1)
+  %29 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([44 x i8]* @.str, i64 0, i64 0), i8* getelementptr inbounds ([2 x i8]* @.str2, i64 0, i64 0), i32 1) #3
   %30 = call i32 @clock_getres(i32 1, %struct.timespec* %ts) #3
   %31 = icmp eq i32 %30, 0
   br i1 %31, label %55, label %54
@@ -156,14 +156,14 @@ define i32 @main() #0 {
   br label %62
 
 ._crit_edge15:                                    ; preds = %55
-  %61 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([48 x i8]* @.str4, i64 0, i64 0), i64 %56, i64 %58)
+  %61 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([48 x i8]* @.str4, i64 0, i64 0), i64 %56, i64 %58) #3
   br label %62
 
 ; <label>:62                                      ; preds = %._crit_edge15, %60, %54
   %63 = call i32 @clock_gettime(i32 1, %struct.timespec* %ts) #3
   %64 = icmp ne i32 %63, 0
   %65 = select i1 %64, i8* getelementptr inbounds ([22 x i8]* @.str6, i64 0, i64 0), i8* getelementptr inbounds ([18 x i8]* @.str7, i64 0, i64 0)
-  %66 = call i32 (i8*, ...)* @printf(i8* %65)
+  %66 = call i32 (i8*, ...)* @printf(i8* %65) #3
   store i32 0, i32* %3, align 4, !tbaa !7
   %67 = call i32 @clock_settime(i32 1, %struct.timespec* %ts) #3
   %68 = icmp eq i32 %67, 0
@@ -187,7 +187,7 @@ define i32 @main() #0 {
   br label %75
 
 ; <label>:75                                      ; preds = %74, %73, %72
-  %76 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([43 x i8]* @.str12, i64 0, i64 0), i32 42)
+  %76 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([43 x i8]* @.str12, i64 0, i64 0), i32 42) #3
   %77 = call i32 @clock_gettime(i32 42, %struct.timespec* %ts1) #3
   %78 = icmp eq i32 %77, 0
   br i1 %78, label %35, label %32

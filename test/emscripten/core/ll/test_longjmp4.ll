@@ -19,7 +19,7 @@ define void @_Z10first_funcP9jmp_state(%struct.jmp_state* nocapture %s) #0 {
   call void @llvm.lifetime.start(i64 200, i8* %2) #1
   store volatile i32 0, i32* %once, align 4
   %3 = getelementptr inbounds [1 x %struct.__jmp_buf_tag]* %c_jmp, i64 0, i64 0
-  %4 = call i32 @_setjmp(%struct.__jmp_buf_tag* %3) #1
+  %4 = call i32 @_setjmp(%struct.__jmp_buf_tag* %3) #6
   %5 = icmp eq i32 %4, 0
   br i1 %5, label %6, label %7
 
@@ -31,7 +31,7 @@ define void @_Z10first_funcP9jmp_state(%struct.jmp_state* nocapture %s) #0 {
 
 ; <label>:7                                       ; preds = %0
   %8 = load volatile i32* %once, align 4
-  %9 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([48 x i8]* @.str1, i64 0, i64 0), i32 %8)
+  %9 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([48 x i8]* @.str1, i64 0, i64 0), i32 %8) #1
   %10 = load volatile i32* %once, align 4
   %11 = icmp eq i32 %10, 0
   br i1 %11, label %12, label %15
@@ -41,7 +41,7 @@ define void @_Z10first_funcP9jmp_state(%struct.jmp_state* nocapture %s) #0 {
   store volatile i32 1, i32* %once, align 4
   %13 = load [1 x %struct.__jmp_buf_tag]** %1, align 8, !tbaa !1
   %14 = getelementptr inbounds [1 x %struct.__jmp_buf_tag]* %13, i64 0, i64 0
-  call void @longjmp(%struct.__jmp_buf_tag* %14, i32 1) #5
+  call void @longjmp(%struct.__jmp_buf_tag* %14, i32 1) #7
   unreachable
 
 ; <label>:15                                      ; preds = %7
@@ -52,23 +52,23 @@ define void @_Z10first_funcP9jmp_state(%struct.jmp_state* nocapture %s) #0 {
 ; Function Attrs: nounwind
 declare void @llvm.lifetime.start(i64, i8* nocapture) #1
 
-; Function Attrs: nounwind
+; Function Attrs: nounwind returns_twice
 declare i32 @_setjmp(%struct.__jmp_buf_tag*) #2
 
 ; Function Attrs: nounwind
-declare i32 @printf(i8* nocapture readonly, ...) #2
+declare i32 @printf(i8* nocapture readonly, ...) #3
 
 ; Function Attrs: noreturn nounwind uwtable
-define void @_Z11second_funcP9jmp_state(%struct.jmp_state* nocapture readonly %s) #3 {
+define void @_Z11second_funcP9jmp_state(%struct.jmp_state* nocapture readonly %s) #4 {
   %1 = getelementptr inbounds %struct.jmp_state* %s, i64 0, i32 0
   %2 = load [1 x %struct.__jmp_buf_tag]** %1, align 8, !tbaa !1
   %3 = getelementptr inbounds [1 x %struct.__jmp_buf_tag]* %2, i64 0, i64 0
-  tail call void @longjmp(%struct.__jmp_buf_tag* %3, i32 1) #5
+  tail call void @longjmp(%struct.__jmp_buf_tag* %3, i32 1) #7
   unreachable
 }
 
 ; Function Attrs: noreturn nounwind
-declare void @longjmp(%struct.__jmp_buf_tag*, i32) #4
+declare void @longjmp(%struct.__jmp_buf_tag*, i32) #5
 
 ; Function Attrs: nounwind
 declare void @llvm.lifetime.end(i64, i8* nocapture) #1
@@ -87,10 +87,12 @@ declare i32 @puts(i8* nocapture readonly) #1
 
 attributes #0 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind }
-attributes #2 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #3 = { noreturn nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #4 = { noreturn nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #5 = { noreturn nounwind }
+attributes #2 = { nounwind returns_twice "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #3 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #4 = { noreturn nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #5 = { noreturn nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #6 = { nounwind returns_twice }
+attributes #7 = { noreturn nounwind }
 
 !llvm.ident = !{!0}
 

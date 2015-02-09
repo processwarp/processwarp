@@ -56,7 +56,7 @@ define i64 @_Z28ccv_cache_generate_signaturePcilz(i8* nocapture readonly %msg, i
   %.in = phi i8* [ %17, %13 ], [ %21, %19 ]
   %24 = bitcast i8* %.in to i32*
   %25 = load i32* %24, align 4
-  %26 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str1, i64 0, i64 0), i32 %25)
+  %26 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str1, i64 0, i64 0), i32 %25) #2
   %.pre = sext i32 %len to i64
   br label %28
 
@@ -116,7 +116,7 @@ define i32 @main(i32 %argc, i8** nocapture %argv) #0 {
 
 ; <label>:15                                      ; preds = %13, %11
   %x.0 = phi i64 [ %12, %11 ], [ %14, %13 ]
-  %16 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([6 x i8]* @.str4, i64 0, i64 0), i64 %x.0)
+  %16 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([6 x i8]* @.str4, i64 0, i64 0), i64 %x.0) #2
   %indvars.iv.next = add nuw nsw i64 %indvars.iv, 1
   %lftr.wideiv = trunc i64 %indvars.iv.next to i32
   %exitcond = icmp eq i32 %lftr.wideiv, %argc

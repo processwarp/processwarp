@@ -16,7 +16,7 @@ define void @_Z6printyPKcz(i8* nocapture readonly %f, ...) #0 {
   %3 = bitcast [1 x %struct.__va_list_tag]* %args to i8*
   call void @llvm.va_start(i8* %3)
   %4 = call i32 @vsnprintf(i8* %1, i64 256, i8* %f, %struct.__va_list_tag* %2) #1
-  %5 = call i32 @puts(i8* %1)
+  %5 = call i32 @puts(i8* %1) #1
   call void @llvm.va_end(i8* %3)
   call void @llvm.lifetime.end(i64 256, i8* %1) #1
   ret void

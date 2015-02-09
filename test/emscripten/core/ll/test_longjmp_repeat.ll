@@ -13,13 +13,13 @@ target triple = "x86_64-pc-linux-gnu"
 define i32 @main() #0 {
   %x = alloca i32, align 4
   store volatile i32 0, i32* %x, align 4
-  %1 = tail call i32 @_setjmp(%struct.__jmp_buf_tag* getelementptr inbounds ([1 x %struct.__jmp_buf_tag]* @_ZL3buf, i64 0, i64 0)) #3
-  %2 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([11 x i8]* @.str, i64 0, i64 0), i32 %1)
+  %1 = call i32 @_setjmp(%struct.__jmp_buf_tag* getelementptr inbounds ([1 x %struct.__jmp_buf_tag]* @_ZL3buf, i64 0, i64 0)) #4
+  %2 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([11 x i8]* @.str, i64 0, i64 0), i32 %1) #5
   %3 = load volatile i32* %x, align 4
   %4 = add nsw i32 %3, 1
   store volatile i32 %4, i32* %x, align 4
   %5 = load volatile i32* %x, align 4
-  %6 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([6 x i8]* @.str1, i64 0, i64 0), i32 %5)
+  %6 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([6 x i8]* @.str1, i64 0, i64 0), i32 %5) #5
   %7 = load volatile i32* %x, align 4
   %8 = icmp slt i32 %7, 4
   br i1 %8, label %9, label %12
@@ -27,7 +27,7 @@ define i32 @main() #0 {
 ; <label>:9                                       ; preds = %0
   %10 = load volatile i32* %x, align 4
   %11 = shl nsw i32 %10, 1
-  tail call void @longjmp(%struct.__jmp_buf_tag* getelementptr inbounds ([1 x %struct.__jmp_buf_tag]* @_ZL3buf, i64 0, i64 0), i32 %11) #4
+  call void @longjmp(%struct.__jmp_buf_tag* getelementptr inbounds ([1 x %struct.__jmp_buf_tag]* @_ZL3buf, i64 0, i64 0), i32 %11) #6
   unreachable
 
 ; <label>:12                                      ; preds = %0
@@ -37,17 +37,19 @@ define i32 @main() #0 {
 ; Function Attrs: nounwind
 declare i32 @printf(i8* nocapture readonly, ...) #1
 
-; Function Attrs: nounwind
-declare i32 @_setjmp(%struct.__jmp_buf_tag*) #1
+; Function Attrs: nounwind returns_twice
+declare i32 @_setjmp(%struct.__jmp_buf_tag*) #2
 
 ; Function Attrs: noreturn nounwind
-declare void @longjmp(%struct.__jmp_buf_tag*, i32) #2
+declare void @longjmp(%struct.__jmp_buf_tag*, i32) #3
 
 attributes #0 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #2 = { noreturn nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #3 = { nounwind }
-attributes #4 = { noreturn nounwind }
+attributes #2 = { nounwind returns_twice "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #3 = { noreturn nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #4 = { nounwind returns_twice }
+attributes #5 = { nounwind }
+attributes #6 = { noreturn nounwind }
 
 !llvm.ident = !{!0}
 

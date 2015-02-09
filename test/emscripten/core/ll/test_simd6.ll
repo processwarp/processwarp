@@ -7,7 +7,7 @@ target triple = "x86_64-pc-linux-gnu"
 @nan = global <4 x float> zeroinitializer, align 16
 @one = global <4 x float> zeroinitializer, align 16
 @.str = private unnamed_addr constant [48 x i8] c"memcmp(&result, &expected, sizeof(__m128)) == 0\00", align 1
-@.str1 = private unnamed_addr constant [19 x i8] c"tmp/test_simd6.cpp\00", align 1
+@.str1 = private unnamed_addr constant [19 x i8] c"cpp/test_simd6.cpp\00", align 1
 @__PRETTY_FUNCTION__.main = private unnamed_addr constant [11 x i8] c"int main()\00", align 1
 @.str2 = private unnamed_addr constant [5 x i8] c"DONE\00", align 1
 
@@ -171,7 +171,7 @@ define i32 @main() #0 {
   unreachable
 
 ; <label>:82                                      ; preds = %74
-  %83 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([5 x i8]* @.str2, i64 0, i64 0))
+  %83 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([5 x i8]* @.str2, i64 0, i64 0)) #5
   ret i32 0
 }
 

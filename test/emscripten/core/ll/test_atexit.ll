@@ -14,13 +14,13 @@ declare i32 @atexit(void ()*) #1
 
 ; Function Attrs: nounwind uwtable
 define internal void @_ZL6cleanAv() #0 {
-  %putchar = tail call i32 @putchar(i32 65)
+  %putchar = tail call i32 @putchar(i32 65) #2
   ret void
 }
 
 ; Function Attrs: nounwind uwtable
 define internal void @_ZL6cleanBv() #0 {
-  %putchar = tail call i32 @putchar(i32 66)
+  %putchar = tail call i32 @putchar(i32 66) #2
   ret void
 }
 

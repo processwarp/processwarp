@@ -16,7 +16,7 @@ define i32 @_Z3cmpPKvS0_(i8* nocapture readonly %key, i8* nocapture readonly %me
   ret i32 %5
 }
 
-; Function Attrs: uwtable
+; Function Attrs: nounwind uwtable
 define void @_Z11printResultPiS_j(i32* nocapture readonly %needle, i32* readonly %haystack, i32 %len) #1 {
   %1 = icmp eq i32 %len, 0
   br i1 %1, label %bsearch.exit.thread, label %.lr.ph.i.preheader
@@ -63,7 +63,7 @@ bsearch.exit.thread:                              ; preds = %bsearch.exit, %5, %
   br label %20
 
 ; <label>:18                                      ; preds = %bsearch.exit
-  %19 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str1, i64 0, i64 0), i32 %11)
+  %19 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str1, i64 0, i64 0), i32 %11) #3
   br label %20
 
 ; <label>:20                                      ; preds = %18, %bsearch.exit.thread
@@ -73,7 +73,7 @@ bsearch.exit.thread:                              ; preds = %bsearch.exit, %5, %
 ; Function Attrs: nounwind
 declare i32 @printf(i8* nocapture readonly, ...) #2
 
-; Function Attrs: uwtable
+; Function Attrs: nounwind uwtable
 define i32 @main() #1 {
   %a = alloca [6 x i32], align 16
   %b = alloca i64, align 8
@@ -121,11 +121,11 @@ bsearch.exit.i:                                   ; preds = %15
   br i1 %18, label %bsearch.exit.thread.i, label %19
 
 bsearch.exit.thread.i:                            ; preds = %bsearch.exit.i, %6, %.outer.loopexit.i.i
-  %puts.i = call i32 @puts(i8* getelementptr inbounds ([5 x i8]* @str, i64 0, i64 0))
+  %puts.i = call i32 @puts(i8* getelementptr inbounds ([5 x i8]* @str, i64 0, i64 0)) #3
   br label %_Z11printResultPiS_j.exit
 
 ; <label>:19                                      ; preds = %bsearch.exit.i
-  %20 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str1, i64 0, i64 0), i32 %12)
+  %20 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str1, i64 0, i64 0), i32 %12) #3
   br label %_Z11printResultPiS_j.exit
 
 _Z11printResultPiS_j.exit:                        ; preds = %19, %bsearch.exit.thread.i
@@ -166,11 +166,11 @@ bsearch.exit.i6:                                  ; preds = %31
   br i1 %34, label %bsearch.exit.thread.i8, label %35
 
 bsearch.exit.thread.i8:                           ; preds = %bsearch.exit.i6, %22, %.outer.loopexit.i.i1
-  %puts.i7 = call i32 @puts(i8* getelementptr inbounds ([5 x i8]* @str, i64 0, i64 0))
+  %puts.i7 = call i32 @puts(i8* getelementptr inbounds ([5 x i8]* @str, i64 0, i64 0)) #3
   br label %.lr.ph.i.i13
 
 ; <label>:35                                      ; preds = %bsearch.exit.i6
-  %36 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str1, i64 0, i64 0), i32 %28)
+  %36 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str1, i64 0, i64 0), i32 %28) #3
   br label %.lr.ph.i.i13
 
 .outer.loopexit.i.i10:                            ; preds = %40
@@ -206,11 +206,11 @@ bsearch.exit.i15:                                 ; preds = %47
   br i1 %50, label %bsearch.exit.thread.i17, label %51
 
 bsearch.exit.thread.i17:                          ; preds = %bsearch.exit.i15, %38, %.outer.loopexit.i.i10
-  %puts.i16 = call i32 @puts(i8* getelementptr inbounds ([5 x i8]* @str, i64 0, i64 0))
+  %puts.i16 = call i32 @puts(i8* getelementptr inbounds ([5 x i8]* @str, i64 0, i64 0)) #3
   br label %_Z11printResultPiS_j.exit18
 
 ; <label>:51                                      ; preds = %bsearch.exit.i15
-  %52 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str1, i64 0, i64 0), i32 %44)
+  %52 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str1, i64 0, i64 0), i32 %44) #3
   br label %_Z11printResultPiS_j.exit18
 
 _Z11printResultPiS_j.exit18:                      ; preds = %51, %bsearch.exit.thread.i17
@@ -249,11 +249,11 @@ bsearch.exit.i24:                                 ; preds = %63
   br i1 %66, label %bsearch.exit.thread.i26, label %67
 
 bsearch.exit.thread.i26:                          ; preds = %bsearch.exit.i24, %55, %.outer.loopexit.i.i19
-  %puts.i25 = call i32 @puts(i8* getelementptr inbounds ([5 x i8]* @str, i64 0, i64 0))
+  %puts.i25 = call i32 @puts(i8* getelementptr inbounds ([5 x i8]* @str, i64 0, i64 0)) #3
   br label %.lr.ph.i.i31
 
 ; <label>:67                                      ; preds = %bsearch.exit.i24
-  %68 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str1, i64 0, i64 0), i32 %61)
+  %68 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str1, i64 0, i64 0), i32 %61) #3
   br label %.lr.ph.i.i31
 
 .outer.loopexit.i.i28:                            ; preds = %72
@@ -289,11 +289,11 @@ bsearch.exit.i33:                                 ; preds = %79
   br i1 %82, label %bsearch.exit.thread.i35, label %83
 
 bsearch.exit.thread.i35:                          ; preds = %bsearch.exit.i33, %70, %.outer.loopexit.i.i28
-  %puts.i34 = call i32 @puts(i8* getelementptr inbounds ([5 x i8]* @str, i64 0, i64 0))
+  %puts.i34 = call i32 @puts(i8* getelementptr inbounds ([5 x i8]* @str, i64 0, i64 0)) #3
   br label %_Z11printResultPiS_j.exit36
 
 ; <label>:83                                      ; preds = %bsearch.exit.i33
-  %84 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str1, i64 0, i64 0), i32 %76)
+  %84 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str1, i64 0, i64 0), i32 %76) #3
   br label %_Z11printResultPiS_j.exit36
 
 _Z11printResultPiS_j.exit36:                      ; preds = %83, %bsearch.exit.thread.i35
@@ -307,7 +307,7 @@ declare void @llvm.memcpy.p0i8.p0i8.i64(i8* nocapture, i8* nocapture readonly, i
 declare i32 @puts(i8* nocapture readonly) #3
 
 attributes #0 = { nounwind readonly uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #1 = { uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #1 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #2 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #3 = { nounwind }
 

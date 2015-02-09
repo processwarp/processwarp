@@ -15,15 +15,15 @@ define i32 @main() #0 {
   store i16 -32061, i16* %wordEntry, align 2
   %1 = bitcast i16* %wordEntry to i8*
   %2 = call i32 @strncmp(i8* getelementptr inbounds ([5 x i8]* @.str, i64 0, i64 0), i8* %1, i64 2) #3
-  %3 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([29 x i8]* @.str1, i64 0, i64 0), i32 %2)
+  %3 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([29 x i8]* @.str1, i64 0, i64 0), i32 %2) #4
   store i16 -32061, i16* %wordEntry2, align 2
   %4 = bitcast i16* %wordEntry2 to i8*
   %5 = call i32 @strncasecmp(i8* getelementptr inbounds ([5 x i8]* @.str, i64 0, i64 0), i8* %4, i64 2) #3
-  %6 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([33 x i8]* @.str2, i64 0, i64 0), i32 %5)
+  %6 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([33 x i8]* @.str2, i64 0, i64 0), i32 %5) #4
   store i16 -32061, i16* %wordEntry5, align 2
   %7 = bitcast i16* %wordEntry5 to i8*
   %8 = call i32 @memcmp(i8* getelementptr inbounds ([5 x i8]* @.str, i64 0, i64 0), i8* %7, i64 2) #3
-  %9 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([28 x i8]* @.str3, i64 0, i64 0), i32 %8)
+  %9 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([28 x i8]* @.str3, i64 0, i64 0), i32 %8) #4
   ret i32 0
 }
 
@@ -43,6 +43,7 @@ attributes #0 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointe
 attributes #1 = { nounwind readonly "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #2 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #3 = { nounwind readonly }
+attributes #4 = { nounwind }
 
 !llvm.ident = !{!0}
 

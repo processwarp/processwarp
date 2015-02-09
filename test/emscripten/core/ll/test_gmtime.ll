@@ -6,7 +6,7 @@ target triple = "x86_64-pc-linux-gnu"
 
 @.str = private unnamed_addr constant [20 x i8] c"yday: %d, hour: %d\0A\00", align 1
 @.str1 = private unnamed_addr constant [21 x i8] c"yday == ptm->tm_yday\00", align 1
-@.str2 = private unnamed_addr constant [20 x i8] c"tmp/test_gmtime.cpp\00", align 1
+@.str2 = private unnamed_addr constant [20 x i8] c"cpp/test_gmtime.cpp\00", align 1
 @__PRETTY_FUNCTION__.main = private unnamed_addr constant [11 x i8] c"int main()\00", align 1
 @str = private unnamed_addr constant [4 x i8] c"ok!\00"
 
@@ -31,7 +31,7 @@ define i32 @main() #0 {
   %10 = call %struct.tm* @gmtime(i64* %t) #3
   %11 = getelementptr inbounds %struct.tm* %10, i64 0, i32 7
   %12 = load i32* %11, align 4, !tbaa !5
-  %13 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([20 x i8]* @.str, i64 0, i64 0), i32 %12, i32 %hour.01)
+  %13 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([20 x i8]* @.str, i64 0, i64 0), i32 %12, i32 %hour.01) #3
   %14 = icmp eq i32 %yday.02, -1
   %15 = load i32* %11, align 4, !tbaa !5
   br i1 %14, label %19, label %16

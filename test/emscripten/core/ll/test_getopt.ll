@@ -40,14 +40,14 @@ define i32 @main(i32 %argc, i8** %argv) #0 {
 
 ; <label>:7                                       ; preds = %1
   %8 = load i32* @optind, align 4, !tbaa !5
-  %9 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([30 x i8]* @.str2, i64 0, i64 0), i32 %flags.0.ph, i32 %tfnd.0, i32 %8)
+  %9 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([30 x i8]* @.str2, i64 0, i64 0), i32 %flags.0.ph, i32 %tfnd.0, i32 %8) #3
   %10 = load i32* @optind, align 4, !tbaa !5
   %11 = icmp slt i32 %10, %argc
   br i1 %11, label %15, label %12
 
 ; <label>:12                                      ; preds = %7
   %13 = load %struct._IO_FILE** @stderr, align 8, !tbaa !1
-  %14 = tail call i64 @fwrite(i8* getelementptr inbounds ([33 x i8]* @.str3, i64 0, i64 0), i64 32, i64 1, %struct._IO_FILE* %13) #4
+  %14 = tail call i64 @fwrite(i8* getelementptr inbounds ([33 x i8]* @.str3, i64 0, i64 0), i64 32, i64 1, %struct._IO_FILE* %13) #6
   tail call void @exit(i32 1) #5
   unreachable
 
@@ -55,7 +55,7 @@ define i32 @main(i32 %argc, i8** %argv) #0 {
   %16 = sext i32 %10 to i64
   %17 = getelementptr inbounds i8** %argv, i64 %16
   %18 = load i8** %17, align 8, !tbaa !1
-  %19 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([20 x i8]* @.str4, i64 0, i64 0), i8* %18)
+  %19 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([20 x i8]* @.str4, i64 0, i64 0), i8* %18) #3
   tail call void @exit(i32 0) #5
   unreachable
 }
@@ -79,8 +79,9 @@ attributes #0 = { noreturn nounwind uwtable "less-precise-fpmad"="false" "no-fra
 attributes #1 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #2 = { noreturn nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #3 = { nounwind }
-attributes #4 = { cold }
+attributes #4 = { cold nounwind }
 attributes #5 = { noreturn nounwind }
+attributes #6 = { cold }
 
 !llvm.ident = !{!0}
 

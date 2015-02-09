@@ -30,7 +30,7 @@ define i32 @main() #0 {
   %20 = zext i1 %19 to i32
   %21 = icmp eq i64 %10, 3735928559
   %22 = zext i1 %21 to i32
-  %23 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @.str1, i64 0, i64 0), i32 %12, i32 %14, i32 %16, i32 %18, i32 %20, i32 %22)
+  %23 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @.str1, i64 0, i64 0), i32 %12, i32 %14, i32 %16, i32 %18, i32 %20, i32 %22) #2
   ret i32 0
 }
 

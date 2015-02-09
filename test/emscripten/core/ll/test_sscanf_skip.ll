@@ -15,14 +15,14 @@ define i32 @main() #0 {
   %large = alloca i64, align 8
   %val2 = alloca i64, align 8
   %1 = call i32 (i8*, i8*, ...)* @sscanf(i8* getelementptr inbounds ([12 x i8]* @.str1, i64 0, i64 0), i8* getelementptr inbounds ([13 x i8]* @.str2, i64 0, i64 0), i32* %val1) #2
-  %2 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i64 0, i64 0), i32 %1)
+  %2 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i64 0, i64 0), i32 %1) #2
   %3 = load i32* %val1, align 4, !tbaa !1
-  %4 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i64 0, i64 0), i32 %3)
+  %4 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i64 0, i64 0), i32 %3) #2
   %5 = call i32 (i8*, i8*, ...)* @sscanf(i8* getelementptr inbounds ([43 x i8]* @.str3, i64 0, i64 0), i8* getelementptr inbounds ([19 x i8]* @.str4, i64 0, i64 0), i64* %large, i64* %val2) #2
-  %6 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i64 0, i64 0), i32 %5)
+  %6 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i64 0, i64 0), i32 %5) #2
   %7 = load i64* %large, align 8, !tbaa !5
   %8 = load i64* %val2, align 8, !tbaa !5
-  %9 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str5, i64 0, i64 0), i64 %7, i64 %8)
+  %9 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str5, i64 0, i64 0), i64 %7, i64 %8) #2
   ret i32 0
 }
 

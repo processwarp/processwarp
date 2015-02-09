@@ -6,11 +6,11 @@ target triple = "x86_64-pc-linux-gnu"
 
 ; Function Attrs: nounwind uwtable
 define i32 @main() #0 {
-  %1 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i32 0, double -1.000000e+00, double 0xBFD5555555555555)
-  %2 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i32 1, double 0x3FD5555555555555, double -1.000000e+00)
-  %3 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i32 2, double 0xBFD5555555555555, double 1.000000e+00)
-  %4 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i32 3, double 1.000000e+00, double 0x3FD5555555555555)
-  %putchar = tail call i32 @putchar(i32 10)
+  %1 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i32 0, double -1.000000e+00, double 0xBFD5555555555555) #2
+  %2 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i32 1, double 0x3FD5555555555555, double -1.000000e+00) #2
+  %3 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i32 2, double 0xBFD5555555555555, double 1.000000e+00) #2
+  %4 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i32 3, double 1.000000e+00, double 0x3FD5555555555555) #2
+  %putchar = tail call i32 @putchar(i32 10) #2
   ret i32 0
 }
 

@@ -28,7 +28,7 @@ define i32 @main() #0 {
   store i32 2, i32* getelementptr inbounds ([10 x i32]* @commonblock.1, i64 0, i64 8), align 16, !tbaa !1
   store i32 1, i32* getelementptr inbounds ([10 x i32]* @commonblock.0, i64 0, i64 9), align 4, !tbaa !1
   store i32 2, i32* getelementptr inbounds ([10 x i32]* @commonblock.1, i64 0, i64 9), align 4, !tbaa !1
-  %1 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str, i64 0, i64 0), i32 1, i32 2)
+  %1 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str, i64 0, i64 0), i32 1, i32 2) #2
   ret i32 0
 }
 
@@ -37,6 +37,7 @@ declare i32 @printf(i8* nocapture readonly, ...) #1
 
 attributes #0 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #2 = { nounwind }
 
 !llvm.ident = !{!0}
 

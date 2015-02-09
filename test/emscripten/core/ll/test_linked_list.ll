@@ -98,7 +98,7 @@ define i32 @main() #0 {
   br i1 %46, label %47, label %40
 
 ; <label>:47                                      ; preds = %40
-  %48 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str, i64 0, i64 0), i32 %43, %struct.worker_args* null)
+  %48 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str, i64 0, i64 0), i32 %43, %struct.worker_args* null) #1
   call void @llvm.lifetime.end(i64 160, i8* %9) #1
   ret i32 0
 }

@@ -20,7 +20,7 @@ define i32 @main() #0 {
   tail call void asm sideeffect "#comment1", "~{dirflag},~{fpsr},~{flags}"() #2, !srcloc !2
   tail call void asm sideeffect "#comment2", "~{dirflag},~{fpsr},~{flags}"() #2, !srcloc !3
   tail call void asm sideeffect "#comment3\0A#comment4\0A", "~{dirflag},~{fpsr},~{flags}"() #2, !srcloc !4
-  %2 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([6 x i8]* @.str, i64 0, i64 0), double %1)
+  %2 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([6 x i8]* @.str, i64 0, i64 0), double %1) #2
   ret i32 0
 }
 

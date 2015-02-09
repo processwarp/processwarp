@@ -20,7 +20,7 @@ define i32 @main() #0 {
   %6 = fpext float %5 to double
   %7 = load float* %g, align 4, !tbaa !5
   %8 = fpext float %7 to double
-  %9 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([19 x i8]* @.str2, i64 0, i64 0), i32 %2, double %4, double %6, double %8)
+  %9 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([19 x i8]* @.str2, i64 0, i64 0), i32 %2, double %4, double %6, double %8) #2
   ret i32 0
 }
 

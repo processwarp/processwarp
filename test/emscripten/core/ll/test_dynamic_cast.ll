@@ -13,17 +13,17 @@ target triple = "x86_64-pc-linux-gnu"
 @_ZTV7Derived = linkonce_odr unnamed_addr constant [3 x i8*] [i8* null, i8* bitcast ({ i8*, i8*, i8* }* @_ZTI7Derived to i8*), i8* bitcast (void (%struct.Support*)* @_ZN7Support1fEv to i8*)]
 @str = private unnamed_addr constant [4 x i8] c"f()\00"
 
-; Function Attrs: uwtable
+; Function Attrs: nounwind uwtable
 define i32 @main() #0 {
-  %1 = tail call noalias i8* @_Znwm(i64 8) #5
+  %1 = tail call noalias i8* @_Znwm(i64 8) #4
   %2 = bitcast i8* %1 to i32 (...)***
   store i32 (...)** bitcast (i8** getelementptr inbounds ([3 x i8*]* @_ZTV7Derived, i64 0, i64 2) to i32 (...)**), i32 (...)*** %2, align 8, !tbaa !1
-  %3 = tail call i8* @__dynamic_cast(i8* %1, i8* bitcast ({ i8*, i8* }* @_ZTI7Support to i8*), i8* bitcast ({ i8*, i8*, i8* }* @_ZTI7Derived to i8*), i64 0) #4
+  %3 = tail call i8* @__dynamic_cast(i8* %1, i8* bitcast ({ i8*, i8* }* @_ZTI7Support to i8*), i8* bitcast ({ i8*, i8*, i8* }* @_ZTI7Derived to i8*), i64 0) #3
   %4 = bitcast i8* %3 to %struct.Support*
   %5 = bitcast i8* %3 to void (%struct.Support*)***
   %6 = load void (%struct.Support*)*** %5, align 8, !tbaa !1
   %7 = load void (%struct.Support*)** %6, align 8
-  tail call void %7(%struct.Support* %4)
+  tail call void %7(%struct.Support* %4) #3
   ret i32 0
 }
 
@@ -34,20 +34,19 @@ declare noalias i8* @_Znwm(i64) #1
 declare i8* @__dynamic_cast(i8*, i8*, i8*, i64) #2
 
 ; Function Attrs: nounwind uwtable
-define linkonce_odr void @_ZN7Support1fEv(%struct.Support* nocapture readnone %this) unnamed_addr #3 align 2 {
+define linkonce_odr void @_ZN7Support1fEv(%struct.Support* nocapture readnone %this) unnamed_addr #0 align 2 {
   %puts = tail call i32 @puts(i8* getelementptr inbounds ([4 x i8]* @str, i64 0, i64 0))
   ret void
 }
 
 ; Function Attrs: nounwind
-declare i32 @puts(i8* nocapture readonly) #4
+declare i32 @puts(i8* nocapture readonly) #3
 
-attributes #0 = { uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #0 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nobuiltin "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #2 = { nounwind readonly }
-attributes #3 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #4 = { nounwind }
-attributes #5 = { builtin }
+attributes #3 = { nounwind }
+attributes #4 = { builtin nounwind }
 
 !llvm.ident = !{!0}
 

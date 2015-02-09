@@ -64,7 +64,7 @@ middle.block2026:                                 ; preds = %vector.body2025
   %rdx.shuf2046 = shufflevector <4 x i32> %bin.rdx2045, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx2047 = add <4 x i32> %bin.rdx2045, %rdx.shuf2046
   %18 = extractelement <4 x i32> %bin.rdx2047, i32 0
-  %19 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 1, i32 %18)
+  %19 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 1, i32 %18) #2
   br label %20
 
 ; <label>:20                                      ; preds = %20, %middle.block2026
@@ -111,7 +111,7 @@ middle.block2002:                                 ; preds = %vector.body2001
   %rdx.shuf2022 = shufflevector <4 x i32> %bin.rdx2021, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx2023 = add <4 x i32> %bin.rdx2021, %rdx.shuf2022
   %37 = extractelement <4 x i32> %bin.rdx2023, i32 0
-  %38 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 2, i32 %37)
+  %38 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 2, i32 %37) #2
   br label %39
 
 ; <label>:39                                      ; preds = %39, %middle.block2002
@@ -157,7 +157,7 @@ middle.block1978:                                 ; preds = %vector.body1977
   %rdx.shuf1998 = shufflevector <4 x i32> %bin.rdx1997, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx1999 = add <4 x i32> %bin.rdx1997, %rdx.shuf1998
   %55 = extractelement <4 x i32> %bin.rdx1999, i32 0
-  %56 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 3, i32 %55)
+  %56 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 3, i32 %55) #2
   br label %57
 
 ; <label>:57                                      ; preds = %57, %middle.block1978
@@ -204,7 +204,7 @@ middle.block1954:                                 ; preds = %vector.body1953
   %rdx.shuf1974 = shufflevector <4 x i32> %bin.rdx1973, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx1975 = add <4 x i32> %bin.rdx1973, %rdx.shuf1974
   %74 = extractelement <4 x i32> %bin.rdx1975, i32 0
-  %75 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 4, i32 %74)
+  %75 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 4, i32 %74) #2
   br label %76
 
 ; <label>:76                                      ; preds = %76, %middle.block1954
@@ -250,7 +250,7 @@ middle.block1930:                                 ; preds = %vector.body1929
   %rdx.shuf1950 = shufflevector <4 x i32> %bin.rdx1949, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx1951 = add <4 x i32> %bin.rdx1949, %rdx.shuf1950
   %92 = extractelement <4 x i32> %bin.rdx1951, i32 0
-  %93 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 5, i32 %92)
+  %93 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 5, i32 %92) #2
   br label %94
 
 ; <label>:94                                      ; preds = %94, %middle.block1930
@@ -296,7 +296,7 @@ middle.block1906:                                 ; preds = %vector.body1905
   %rdx.shuf1926 = shufflevector <4 x i32> %bin.rdx1925, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx1927 = add <4 x i32> %bin.rdx1925, %rdx.shuf1926
   %110 = extractelement <4 x i32> %bin.rdx1927, i32 0
-  %111 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 6, i32 %110)
+  %111 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 6, i32 %110) #2
   br label %112
 
 ; <label>:112                                     ; preds = %112, %middle.block1906
@@ -342,7 +342,7 @@ middle.block1882:                                 ; preds = %vector.body1881
   %rdx.shuf1902 = shufflevector <4 x i32> %bin.rdx1901, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx1903 = add <4 x i32> %bin.rdx1901, %rdx.shuf1902
   %128 = extractelement <4 x i32> %bin.rdx1903, i32 0
-  %129 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 7, i32 %128)
+  %129 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 7, i32 %128) #2
   br label %130
 
 ; <label>:130                                     ; preds = %130, %middle.block1882
@@ -389,7 +389,7 @@ middle.block1858:                                 ; preds = %vector.body1857
   %rdx.shuf1878 = shufflevector <4 x i32> %bin.rdx1877, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx1879 = add <4 x i32> %bin.rdx1877, %rdx.shuf1878
   %147 = extractelement <4 x i32> %bin.rdx1879, i32 0
-  %148 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 8, i32 %147)
+  %148 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 8, i32 %147) #2
   br label %149
 
 ; <label>:149                                     ; preds = %149, %middle.block1858
@@ -435,7 +435,7 @@ middle.block1834:                                 ; preds = %vector.body1833
   %rdx.shuf1854 = shufflevector <4 x i32> %bin.rdx1853, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx1855 = add <4 x i32> %bin.rdx1853, %rdx.shuf1854
   %165 = extractelement <4 x i32> %bin.rdx1855, i32 0
-  %166 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 9, i32 %165)
+  %166 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 9, i32 %165) #2
   br label %167
 
 ; <label>:167                                     ; preds = %167, %middle.block1834
@@ -481,7 +481,7 @@ middle.block1810:                                 ; preds = %vector.body1809
   %rdx.shuf1830 = shufflevector <4 x i32> %bin.rdx1829, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx1831 = add <4 x i32> %bin.rdx1829, %rdx.shuf1830
   %183 = extractelement <4 x i32> %bin.rdx1831, i32 0
-  %184 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 10, i32 %183)
+  %184 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 10, i32 %183) #2
   br label %185
 
 ; <label>:185                                     ; preds = %185, %middle.block1810
@@ -527,7 +527,7 @@ middle.block1786:                                 ; preds = %vector.body1785
   %rdx.shuf1806 = shufflevector <4 x i32> %bin.rdx1805, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx1807 = add <4 x i32> %bin.rdx1805, %rdx.shuf1806
   %201 = extractelement <4 x i32> %bin.rdx1807, i32 0
-  %202 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 16, i32 %201)
+  %202 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 16, i32 %201) #2
   br label %203
 
 ; <label>:203                                     ; preds = %203, %middle.block1786
@@ -573,7 +573,7 @@ middle.block1762:                                 ; preds = %vector.body1761
   %rdx.shuf1782 = shufflevector <4 x i32> %bin.rdx1781, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx1783 = add <4 x i32> %bin.rdx1781, %rdx.shuf1782
   %219 = extractelement <4 x i32> %bin.rdx1783, i32 0
-  %220 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 32, i32 %219)
+  %220 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 32, i32 %219) #2
   br label %221
 
 ; <label>:221                                     ; preds = %221, %middle.block1762
@@ -619,7 +619,7 @@ middle.block1738:                                 ; preds = %vector.body1737
   %rdx.shuf1758 = shufflevector <4 x i32> %bin.rdx1757, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx1759 = add <4 x i32> %bin.rdx1757, %rdx.shuf1758
   %237 = extractelement <4 x i32> %bin.rdx1759, i32 0
-  %238 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 64, i32 %237)
+  %238 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 64, i32 %237) #2
   br label %239
 
 ; <label>:239                                     ; preds = %239, %middle.block1738
@@ -664,7 +664,7 @@ middle.block1714:                                 ; preds = %vector.body1713
   %rdx.shuf1734 = shufflevector <4 x i32> %bin.rdx1733, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx1735 = add <4 x i32> %bin.rdx1733, %rdx.shuf1734
   %254 = extractelement <4 x i32> %bin.rdx1735, i32 0
-  %255 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 128, i32 %254)
+  %255 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 128, i32 %254) #2
   br label %256
 
 ; <label>:256                                     ; preds = %256, %middle.block1714
@@ -709,7 +709,7 @@ middle.block1690:                                 ; preds = %vector.body1689
   %rdx.shuf1710 = shufflevector <4 x i32> %bin.rdx1709, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx1711 = add <4 x i32> %bin.rdx1709, %rdx.shuf1710
   %271 = extractelement <4 x i32> %bin.rdx1711, i32 0
-  %272 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 256, i32 %271)
+  %272 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 256, i32 %271) #2
   br label %273
 
 ; <label>:273                                     ; preds = %273, %middle.block1690
@@ -754,7 +754,7 @@ middle.block1666:                                 ; preds = %vector.body1665
   %rdx.shuf1686 = shufflevector <4 x i32> %bin.rdx1685, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx1687 = add <4 x i32> %bin.rdx1685, %rdx.shuf1686
   %288 = extractelement <4 x i32> %bin.rdx1687, i32 0
-  %289 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 512, i32 %288)
+  %289 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 512, i32 %288) #2
   br label %290
 
 ; <label>:290                                     ; preds = %290, %middle.block1666
@@ -799,7 +799,7 @@ middle.block1642:                                 ; preds = %vector.body1641
   %rdx.shuf1662 = shufflevector <4 x i32> %bin.rdx1661, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx1663 = add <4 x i32> %bin.rdx1661, %rdx.shuf1662
   %305 = extractelement <4 x i32> %bin.rdx1663, i32 0
-  %306 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 1024, i32 %305)
+  %306 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 1024, i32 %305) #2
   br label %.preheader280
 
 .preheader280:                                    ; preds = %middle.block1618, %middle.block1642
@@ -852,7 +852,7 @@ middle.block1618:                                 ; preds = %vector.body1617
   %rdx.shuf1638 = shufflevector <4 x i32> %bin.rdx1637, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx1639 = add <4 x i32> %bin.rdx1637, %rdx.shuf1638
   %326 = extractelement <4 x i32> %bin.rdx1639, i32 0
-  %327 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 %313, i32 %326)
+  %327 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 %313, i32 %326) #2
   %indvars.iv.next596 = add nuw nsw i64 %indvars.iv595, 10
   %328 = trunc i64 %indvars.iv.next596 to i32
   %329 = icmp slt i32 %328, 100
@@ -910,7 +910,7 @@ middle.block1594:                                 ; preds = %vector.body1593
   %rdx.shuf1614 = shufflevector <4 x i32> %bin.rdx1613, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx1615 = add <4 x i32> %bin.rdx1613, %rdx.shuf1614
   %349 = extractelement <4 x i32> %bin.rdx1615, i32 0
-  %350 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 1, i32 %349)
+  %350 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 1, i32 %349) #2
   br label %351
 
 ; <label>:351                                     ; preds = %351, %middle.block1594
@@ -957,7 +957,7 @@ middle.block1570:                                 ; preds = %vector.body1569
   %bin.rdx1591 = add <4 x i32> %bin.rdx1589, %rdx.shuf1590
   %367 = extractelement <4 x i32> %bin.rdx1591, i32 0
   %368 = bitcast i16* %357 to i8*
-  %369 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 2, i32 %367)
+  %369 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 2, i32 %367) #2
   br label %370
 
 ; <label>:370                                     ; preds = %370, %middle.block1570
@@ -1004,7 +1004,7 @@ middle.block1546:                                 ; preds = %vector.body1545
   %rdx.shuf1566 = shufflevector <4 x i32> %bin.rdx1565, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx1567 = add <4 x i32> %bin.rdx1565, %rdx.shuf1566
   %387 = extractelement <4 x i32> %bin.rdx1567, i32 0
-  %388 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 3, i32 %387)
+  %388 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 3, i32 %387) #2
   br label %389
 
 ; <label>:389                                     ; preds = %389, %middle.block1546
@@ -1052,7 +1052,7 @@ middle.block1522:                                 ; preds = %vector.body1521
   %bin.rdx1543 = add <4 x i32> %bin.rdx1541, %rdx.shuf1542
   %406 = extractelement <4 x i32> %bin.rdx1543, i32 0
   %407 = bitcast i16* %395 to i8*
-  %408 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 4, i32 %406)
+  %408 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 4, i32 %406) #2
   br label %409
 
 ; <label>:409                                     ; preds = %409, %middle.block1522
@@ -1099,7 +1099,7 @@ middle.block1498:                                 ; preds = %vector.body1497
   %rdx.shuf1518 = shufflevector <4 x i32> %bin.rdx1517, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx1519 = add <4 x i32> %bin.rdx1517, %rdx.shuf1518
   %426 = extractelement <4 x i32> %bin.rdx1519, i32 0
-  %427 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 5, i32 %426)
+  %427 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 5, i32 %426) #2
   br label %428
 
 ; <label>:428                                     ; preds = %428, %middle.block1498
@@ -1146,7 +1146,7 @@ middle.block1474:                                 ; preds = %vector.body1473
   %rdx.shuf1494 = shufflevector <4 x i32> %bin.rdx1493, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx1495 = add <4 x i32> %bin.rdx1493, %rdx.shuf1494
   %445 = extractelement <4 x i32> %bin.rdx1495, i32 0
-  %446 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 6, i32 %445)
+  %446 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 6, i32 %445) #2
   br label %447
 
 ; <label>:447                                     ; preds = %447, %middle.block1474
@@ -1193,7 +1193,7 @@ middle.block1450:                                 ; preds = %vector.body1449
   %rdx.shuf1470 = shufflevector <4 x i32> %bin.rdx1469, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx1471 = add <4 x i32> %bin.rdx1469, %rdx.shuf1470
   %464 = extractelement <4 x i32> %bin.rdx1471, i32 0
-  %465 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 7, i32 %464)
+  %465 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 7, i32 %464) #2
   br label %466
 
 ; <label>:466                                     ; preds = %466, %middle.block1450
@@ -1240,7 +1240,7 @@ middle.block1426:                                 ; preds = %vector.body1425
   %rdx.shuf1446 = shufflevector <4 x i32> %bin.rdx1445, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx1447 = add <4 x i32> %bin.rdx1445, %rdx.shuf1446
   %483 = extractelement <4 x i32> %bin.rdx1447, i32 0
-  %484 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 8, i32 %483)
+  %484 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 8, i32 %483) #2
   br label %485
 
 ; <label>:485                                     ; preds = %485, %middle.block1426
@@ -1287,7 +1287,7 @@ middle.block1402:                                 ; preds = %vector.body1401
   %rdx.shuf1422 = shufflevector <4 x i32> %bin.rdx1421, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx1423 = add <4 x i32> %bin.rdx1421, %rdx.shuf1422
   %502 = extractelement <4 x i32> %bin.rdx1423, i32 0
-  %503 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 9, i32 %502)
+  %503 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 9, i32 %502) #2
   br label %504
 
 ; <label>:504                                     ; preds = %504, %middle.block1402
@@ -1334,7 +1334,7 @@ middle.block1378:                                 ; preds = %vector.body1377
   %rdx.shuf1398 = shufflevector <4 x i32> %bin.rdx1397, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx1399 = add <4 x i32> %bin.rdx1397, %rdx.shuf1398
   %521 = extractelement <4 x i32> %bin.rdx1399, i32 0
-  %522 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 10, i32 %521)
+  %522 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 10, i32 %521) #2
   br label %523
 
 ; <label>:523                                     ; preds = %523, %middle.block1378
@@ -1381,7 +1381,7 @@ middle.block1354:                                 ; preds = %vector.body1353
   %rdx.shuf1374 = shufflevector <4 x i32> %bin.rdx1373, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx1375 = add <4 x i32> %bin.rdx1373, %rdx.shuf1374
   %540 = extractelement <4 x i32> %bin.rdx1375, i32 0
-  %541 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 16, i32 %540)
+  %541 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 16, i32 %540) #2
   br label %542
 
 ; <label>:542                                     ; preds = %542, %middle.block1354
@@ -1428,7 +1428,7 @@ middle.block1330:                                 ; preds = %vector.body1329
   %rdx.shuf1350 = shufflevector <4 x i32> %bin.rdx1349, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx1351 = add <4 x i32> %bin.rdx1349, %rdx.shuf1350
   %559 = extractelement <4 x i32> %bin.rdx1351, i32 0
-  %560 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 32, i32 %559)
+  %560 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 32, i32 %559) #2
   br label %561
 
 ; <label>:561                                     ; preds = %561, %middle.block1330
@@ -1475,7 +1475,7 @@ middle.block1306:                                 ; preds = %vector.body1305
   %rdx.shuf1326 = shufflevector <4 x i32> %bin.rdx1325, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx1327 = add <4 x i32> %bin.rdx1325, %rdx.shuf1326
   %578 = extractelement <4 x i32> %bin.rdx1327, i32 0
-  %579 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 64, i32 %578)
+  %579 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 64, i32 %578) #2
   br label %580
 
 ; <label>:580                                     ; preds = %580, %middle.block1306
@@ -1520,7 +1520,7 @@ middle.block1282:                                 ; preds = %vector.body1281
   %rdx.shuf1302 = shufflevector <4 x i32> %bin.rdx1301, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx1303 = add <4 x i32> %bin.rdx1301, %rdx.shuf1302
   %595 = extractelement <4 x i32> %bin.rdx1303, i32 0
-  %596 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 128, i32 %595)
+  %596 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 128, i32 %595) #2
   br label %597
 
 ; <label>:597                                     ; preds = %597, %middle.block1282
@@ -1565,7 +1565,7 @@ middle.block1258:                                 ; preds = %vector.body1257
   %rdx.shuf1278 = shufflevector <4 x i32> %bin.rdx1277, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx1279 = add <4 x i32> %bin.rdx1277, %rdx.shuf1278
   %612 = extractelement <4 x i32> %bin.rdx1279, i32 0
-  %613 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 256, i32 %612)
+  %613 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 256, i32 %612) #2
   br label %614
 
 ; <label>:614                                     ; preds = %614, %middle.block1258
@@ -1610,7 +1610,7 @@ middle.block1234:                                 ; preds = %vector.body1233
   %rdx.shuf1254 = shufflevector <4 x i32> %bin.rdx1253, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx1255 = add <4 x i32> %bin.rdx1253, %rdx.shuf1254
   %629 = extractelement <4 x i32> %bin.rdx1255, i32 0
-  %630 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 512, i32 %629)
+  %630 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 512, i32 %629) #2
   br label %631
 
 ; <label>:631                                     ; preds = %631, %middle.block1234
@@ -1655,7 +1655,7 @@ middle.block1210:                                 ; preds = %vector.body1209
   %rdx.shuf1230 = shufflevector <4 x i32> %bin.rdx1229, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx1231 = add <4 x i32> %bin.rdx1229, %rdx.shuf1230
   %646 = extractelement <4 x i32> %bin.rdx1231, i32 0
-  %647 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 1024, i32 %646)
+  %647 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 1024, i32 %646) #2
   br label %.preheader224
 
 .preheader224:                                    ; preds = %middle.block1186, %middle.block1210
@@ -1709,7 +1709,7 @@ middle.block1186:                                 ; preds = %vector.body1185
   %rdx.shuf1206 = shufflevector <4 x i32> %bin.rdx1205, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx1207 = add <4 x i32> %bin.rdx1205, %rdx.shuf1206
   %668 = extractelement <4 x i32> %bin.rdx1207, i32 0
-  %669 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 %654, i32 %668)
+  %669 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 %654, i32 %668) #2
   %indvars.iv.next468 = add nuw nsw i64 %indvars.iv467, 10
   %670 = trunc i64 %indvars.iv.next468 to i32
   %671 = icmp slt i32 %670, 100
@@ -1764,7 +1764,7 @@ middle.block1162:                                 ; preds = %vector.body1161
   %rdx.shuf1182 = shufflevector <4 x i32> %bin.rdx1181, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx1183 = add <4 x i32> %bin.rdx1181, %rdx.shuf1182
   %688 = extractelement <4 x i32> %bin.rdx1183, i32 0
-  %689 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 1, i32 %688)
+  %689 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 1, i32 %688) #2
   br label %690
 
 ; <label>:690                                     ; preds = %690, %middle.block1162
@@ -1809,7 +1809,7 @@ middle.block1138:                                 ; preds = %vector.body1137
   %bin.rdx1159 = add <4 x i32> %bin.rdx1157, %rdx.shuf1158
   %704 = extractelement <4 x i32> %bin.rdx1159, i32 0
   %705 = bitcast i32* %695 to i8*
-  %706 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 2, i32 %704)
+  %706 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 2, i32 %704) #2
   br label %707
 
 ; <label>:707                                     ; preds = %707, %middle.block1138
@@ -1853,7 +1853,7 @@ middle.block1114:                                 ; preds = %vector.body1113
   %rdx.shuf1134 = shufflevector <4 x i32> %bin.rdx1133, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx1135 = add <4 x i32> %bin.rdx1133, %rdx.shuf1134
   %721 = extractelement <4 x i32> %bin.rdx1135, i32 0
-  %722 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 3, i32 %721)
+  %722 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 3, i32 %721) #2
   br label %723
 
 ; <label>:723                                     ; preds = %723, %middle.block1114
@@ -1897,7 +1897,7 @@ middle.block1090:                                 ; preds = %vector.body1089
   %bin.rdx1111 = add <4 x i32> %bin.rdx1109, %rdx.shuf1110
   %736 = extractelement <4 x i32> %bin.rdx1111, i32 0
   %737 = bitcast i32* %728 to i8*
-  %738 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 4, i32 %736)
+  %738 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 4, i32 %736) #2
   br label %739
 
 ; <label>:739                                     ; preds = %739, %middle.block1090
@@ -1941,7 +1941,7 @@ middle.block1066:                                 ; preds = %vector.body1065
   %rdx.shuf1086 = shufflevector <4 x i32> %bin.rdx1085, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx1087 = add <4 x i32> %bin.rdx1085, %rdx.shuf1086
   %753 = extractelement <4 x i32> %bin.rdx1087, i32 0
-  %754 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 5, i32 %753)
+  %754 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 5, i32 %753) #2
   br label %755
 
 ; <label>:755                                     ; preds = %755, %middle.block1066
@@ -1985,7 +1985,7 @@ middle.block1042:                                 ; preds = %vector.body1041
   %rdx.shuf1062 = shufflevector <4 x i32> %bin.rdx1061, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx1063 = add <4 x i32> %bin.rdx1061, %rdx.shuf1062
   %769 = extractelement <4 x i32> %bin.rdx1063, i32 0
-  %770 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 6, i32 %769)
+  %770 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 6, i32 %769) #2
   br label %771
 
 ; <label>:771                                     ; preds = %771, %middle.block1042
@@ -2029,7 +2029,7 @@ middle.block1018:                                 ; preds = %vector.body1017
   %rdx.shuf1038 = shufflevector <4 x i32> %bin.rdx1037, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx1039 = add <4 x i32> %bin.rdx1037, %rdx.shuf1038
   %785 = extractelement <4 x i32> %bin.rdx1039, i32 0
-  %786 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 7, i32 %785)
+  %786 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 7, i32 %785) #2
   br label %787
 
 ; <label>:787                                     ; preds = %787, %middle.block1018
@@ -2073,7 +2073,7 @@ middle.block994:                                  ; preds = %vector.body993
   %rdx.shuf1014 = shufflevector <4 x i32> %bin.rdx1013, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx1015 = add <4 x i32> %bin.rdx1013, %rdx.shuf1014
   %801 = extractelement <4 x i32> %bin.rdx1015, i32 0
-  %802 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 8, i32 %801)
+  %802 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 8, i32 %801) #2
   br label %803
 
 ; <label>:803                                     ; preds = %803, %middle.block994
@@ -2117,7 +2117,7 @@ middle.block970:                                  ; preds = %vector.body969
   %rdx.shuf990 = shufflevector <4 x i32> %bin.rdx989, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx991 = add <4 x i32> %bin.rdx989, %rdx.shuf990
   %817 = extractelement <4 x i32> %bin.rdx991, i32 0
-  %818 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 9, i32 %817)
+  %818 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 9, i32 %817) #2
   br label %819
 
 ; <label>:819                                     ; preds = %819, %middle.block970
@@ -2161,7 +2161,7 @@ middle.block946:                                  ; preds = %vector.body945
   %rdx.shuf966 = shufflevector <4 x i32> %bin.rdx965, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx967 = add <4 x i32> %bin.rdx965, %rdx.shuf966
   %833 = extractelement <4 x i32> %bin.rdx967, i32 0
-  %834 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 10, i32 %833)
+  %834 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 10, i32 %833) #2
   br label %835
 
 ; <label>:835                                     ; preds = %835, %middle.block946
@@ -2205,7 +2205,7 @@ middle.block922:                                  ; preds = %vector.body921
   %rdx.shuf942 = shufflevector <4 x i32> %bin.rdx941, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx943 = add <4 x i32> %bin.rdx941, %rdx.shuf942
   %849 = extractelement <4 x i32> %bin.rdx943, i32 0
-  %850 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 16, i32 %849)
+  %850 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 16, i32 %849) #2
   br label %851
 
 ; <label>:851                                     ; preds = %851, %middle.block922
@@ -2249,7 +2249,7 @@ middle.block898:                                  ; preds = %vector.body897
   %rdx.shuf918 = shufflevector <4 x i32> %bin.rdx917, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx919 = add <4 x i32> %bin.rdx917, %rdx.shuf918
   %865 = extractelement <4 x i32> %bin.rdx919, i32 0
-  %866 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 32, i32 %865)
+  %866 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 32, i32 %865) #2
   br label %867
 
 ; <label>:867                                     ; preds = %867, %middle.block898
@@ -2293,7 +2293,7 @@ middle.block874:                                  ; preds = %vector.body873
   %rdx.shuf894 = shufflevector <4 x i32> %bin.rdx893, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx895 = add <4 x i32> %bin.rdx893, %rdx.shuf894
   %881 = extractelement <4 x i32> %bin.rdx895, i32 0
-  %882 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 64, i32 %881)
+  %882 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 64, i32 %881) #2
   br label %883
 
 ; <label>:883                                     ; preds = %883, %middle.block874
@@ -2335,7 +2335,7 @@ middle.block850:                                  ; preds = %vector.body849
   %rdx.shuf870 = shufflevector <4 x i32> %bin.rdx869, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx871 = add <4 x i32> %bin.rdx869, %rdx.shuf870
   %895 = extractelement <4 x i32> %bin.rdx871, i32 0
-  %896 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 128, i32 %895)
+  %896 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 128, i32 %895) #2
   br label %897
 
 ; <label>:897                                     ; preds = %897, %middle.block850
@@ -2377,7 +2377,7 @@ middle.block826:                                  ; preds = %vector.body825
   %rdx.shuf846 = shufflevector <4 x i32> %bin.rdx845, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx847 = add <4 x i32> %bin.rdx845, %rdx.shuf846
   %909 = extractelement <4 x i32> %bin.rdx847, i32 0
-  %910 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 256, i32 %909)
+  %910 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 256, i32 %909) #2
   br label %911
 
 ; <label>:911                                     ; preds = %911, %middle.block826
@@ -2419,7 +2419,7 @@ middle.block802:                                  ; preds = %vector.body801
   %rdx.shuf822 = shufflevector <4 x i32> %bin.rdx821, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx823 = add <4 x i32> %bin.rdx821, %rdx.shuf822
   %923 = extractelement <4 x i32> %bin.rdx823, i32 0
-  %924 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 512, i32 %923)
+  %924 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 512, i32 %923) #2
   br label %925
 
 ; <label>:925                                     ; preds = %925, %middle.block802
@@ -2461,7 +2461,7 @@ middle.block778:                                  ; preds = %vector.body777
   %rdx.shuf798 = shufflevector <4 x i32> %bin.rdx797, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx799 = add <4 x i32> %bin.rdx797, %rdx.shuf798
   %937 = extractelement <4 x i32> %bin.rdx799, i32 0
-  %938 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 1024, i32 %937)
+  %938 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 1024, i32 %937) #2
   br label %.preheader
 
 .preheader:                                       ; preds = %middle.block, %middle.block778
@@ -2512,7 +2512,7 @@ middle.block:                                     ; preds = %vector.body
   %rdx.shuf774 = shufflevector <4 x i32> %bin.rdx773, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
   %bin.rdx775 = add <4 x i32> %bin.rdx773, %rdx.shuf774
   %956 = extractelement <4 x i32> %bin.rdx775, i32 0
-  %957 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 %944, i32 %956)
+  %957 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 %944, i32 %956) #2
   %indvars.iv.next340 = add nuw nsw i64 %indvars.iv339, 10
   %958 = trunc i64 %indvars.iv.next340 to i32
   %959 = icmp slt i32 %958, 100

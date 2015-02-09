@@ -27,20 +27,20 @@ define i32 @main() #0 {
   br i1 %3, label %6, label %4
 
 ; <label>:4                                       ; preds = %0
-  %5 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([30 x i8]* @.str2, i64 0, i64 0), i32 undef)
+  %5 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([30 x i8]* @.str2, i64 0, i64 0), i32 undef) #1
   br label %6
 
 ; <label>:6                                       ; preds = %4, %0
   %7 = load i32* %l, align 4, !tbaa !1
-  %8 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([27 x i8]* @.str3, i64 0, i64 0), i8* %1, i32 %7)
+  %8 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([27 x i8]* @.str3, i64 0, i64 0), i8* %1, i32 %7) #1
   %9 = call i32 (i8*, i8*, ...)* @sscanf(i8* getelementptr inbounds ([11 x i8]* @.str4, i64 0, i64 0), i8* getelementptr inbounds ([6 x i8]* @.str5, i64 0, i64 0), i8* %1, i32* %l) #1
   %10 = load i32* %l, align 4, !tbaa !1
-  %11 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([10 x i8]* @.str6, i64 0, i64 0), i32 %9, i8* %1, i32 %10)
+  %11 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([10 x i8]* @.str6, i64 0, i64 0), i32 %9, i8* %1, i32 %10) #1
   %12 = call i32 (i8*, i8*, ...)* @sscanf(i8* getelementptr inbounds ([11 x i8]* @.str7, i64 0, i64 0), i8* getelementptr inbounds ([8 x i8]* @.str8, i64 0, i64 0), i32* %a, i32* %b, i32* %c) #1
   %13 = load i32* %a, align 4, !tbaa !1
   %14 = load i32* %b, align 4, !tbaa !1
   %15 = load i32* %c, align 4, !tbaa !1
-  %16 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str9, i64 0, i64 0), i32 %12, i32 %13, i32 %14, i32 %15)
+  %16 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str9, i64 0, i64 0), i32 %12, i32 %13, i32 %14, i32 %15) #1
   call void @llvm.lifetime.end(i64 80, i8* %1) #1
   ret i32 0
 }
