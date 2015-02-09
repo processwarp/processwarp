@@ -953,6 +953,11 @@ void VMachine::setup() {
   regist_intrinsic_func("llvm.memcpy.p0i8.p0i8.i32", LlvmIntrinsic::memcpy, 32);
   regist_intrinsic_func("llvm.memcpy.p0i8.p0i8.i64", LlvmIntrinsic::memcpy, 64);
 
+  regist_intrinsic_func("llvm.memset.p0i8.i8",  LlvmIntrinsic::memset, 8);
+  regist_intrinsic_func("llvm.memset.p0i8.i16", LlvmIntrinsic::memset, 16);
+  regist_intrinsic_func("llvm.memset.p0i8.i32", LlvmIntrinsic::memset, 32);
+  regist_intrinsic_func("llvm.memset.p0i8.i64", LlvmIntrinsic::memset, 64);
+
   // Cの標準ライブラリをロード
   /*
     void* dl_handle = dlopen(, RTLD_LAZY);

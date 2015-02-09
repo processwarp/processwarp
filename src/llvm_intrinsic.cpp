@@ -40,3 +40,34 @@ void LlvmIntrinsic::memcpy(VMachine& vm, Thread& th, IntrinsicFuncParam p,
 	      vm.get_raw_addr(p_src),
 	      static_cast<size_t>(p_size));
 }
+
+// memset関数。
+void LlvmIntrinsic::memset(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+			   vaddr_t dst, std::vector<uint8_t>& src) {
+  int seek = 0;
+  // 設定先先アドレスを取得
+  vaddr_t p_dst = VMachine::read_intrinsic_param_ptr(src, &seek);
+  // 設定値を取得
+  uint8_t p_val = VMachine::read_intrinsic_param_i8(src, &seek);
+  // 設定サイズを取得
+  uint64_t p_len;
+  switch(p.i64) {
+  case 8:  p_len = static_cast<int64_t>(VMachine::read_intrinsic_param_i8 (src, &seek)); break;
+  case 16: p_len = static_cast<int64_t>(VMachine::read_intrinsic_param_i16(src, &seek)); break;
+  case 32: p_len = static_cast<int64_t>(VMachine::read_intrinsic_param_i32(src, &seek)); break;
+  case 64: p_len = static_cast<int64_t>(VMachine::read_intrinsic_param_i64(src, &seek)); break;
+
+  default: {
+    print_debug("p.i64 %" PRIu64 "\n", p.i64);
+    assert(false);
+  } break;
+  }
+  // アライメントを取得
+  /*int32_t p_align =*/VMachine::read_intrinsic_param_i32(src, &seek);
+  // 実行順番の制約(VMでは実行順番を入れ替えないので無視する)を取得
+  /*int8_t p_isvolation =*/VMachine::read_intrinsic_param_i8(src, &seek);
+  
+  // 読み込んだパラメタ長と渡されたパラメタ長は同じはず
+  assert(static_cast<signed>(src.size()) == seek);
+  std::memset(vm.get_raw_addr(p_dst), p_val, static_cast<size_t>(p_len));
+}
