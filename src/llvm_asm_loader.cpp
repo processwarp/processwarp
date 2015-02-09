@@ -824,6 +824,11 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 	  const llvm::AtomicRMWInst& inst = static_cast<const llvm::AtomicRMWInst&>(*i);
 	  
 	  switch(inst.getOperation()) {
+	    /**
+	     * @param INS AtomicRMWの演算
+	     * @param OP 対応する仮想マシンのOpcode
+	     * @param SI 符号あり演算の場合trueを指定する。
+	     */
 #define M_ATOMIC_RMW(INS, OP, SI)					\
 	  case llvm::AtomicRMWInst::INS: {				\
 	    /* set_type <ty> */						\
