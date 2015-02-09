@@ -74,17 +74,20 @@ int LlvmAsmLoader::assign_operand(FunctionContext& fc, const llvm::Value* v) {
     return sv_find->second;
   }
 
-  if (llvm::Constant::classof(v)) {
-    assert(data_layout->getTypeAllocSize(v->getType()) != 0);
-    assert(data_layout->getTypeStoreSize(v->getType()) ==
-	   data_layout->getTypeAllocSize(v->getType()));
+  // 異なる変数に同一のアドレスを割り当てないように最低1byteを確保する。
+  int size = data_layout->getTypeAllocSize(v->getType());
+  if (size == 0) size = 1;
+
+  // 割り当てサイズの確認
+  assert(data_layout->getTypeStoreSize(v->getType()) ==
+	 data_layout->getTypeAllocSize(v->getType()));
     
+  if (llvm::Constant::classof(v)) {
     // 既存の定数の場合、その番号を戻す。
     if (fc.loaded_value.find(v) != fc.loaded_value.end()) {
       return fc.loaded_value.at(v);
     }
 
-    int size = data_layout->getTypeAllocSize(v->getType());
     // 既存の定数でない場合、末尾に割り当てる。
     int k = fc.k.size();
     ValueDest dst;
@@ -99,11 +102,7 @@ int LlvmAsmLoader::assign_operand(FunctionContext& fc, const llvm::Value* v) {
   } else {
     // 既存のローカル変数でない場合、末尾に割り当てている。
     fc.stack_value.insert(std::make_pair(v, fc.stack_sum));
-
-    assert(data_layout->getTypeAllocSize(v->getType()) != 0);
-    assert(data_layout->getTypeStoreSize(v->getType()) ==
-	   data_layout->getTypeAllocSize(v->getType()));
-    fc.stack_sum += data_layout->getTypeStoreSize(v->getType());
+    fc.stack_sum += size;
 
     return fc.stack_value.find(v)->second;
   }
@@ -1065,19 +1064,21 @@ void LlvmAsmLoader::load_globals(const llvm::Module::GlobalListType& variables) 
   // 定数の合計サイズを計算する
   vaddr_t sum = 0;
   for (auto gl = variables.begin(); gl != variables.end(); gl ++) {
+    // 異なる変数に同一のアドレスを割り当てないように最低1byteを確保する。
+    size_t size = data_layout->getTypeAllocSize(gl->getType()->getElementType());
+    if (size == 0) size = 1;
+    
     // 割り当てサイズの確認
-    assert(data_layout->getTypeAllocSize(gl->getType()->getElementType()) != 0);
     assert(data_layout->getTypeAllocSize(gl->getType()->getElementType()) ==
 	   data_layout->getTypeStoreSize(gl->getType()->getElementType()));
 
     if (gl->isConstant()) {
       // 定数の場合、仮のアドレスを割り当てる
       map_global.insert(std::make_pair(gl, sum));
-      sum += data_layout->getTypeAllocSize(gl->getType()->getElementType());
+      sum += size;
 
     } else {
       // 変数の場合、それぞれのアドレスを確保する
-      size_t size = data_layout->getTypeAllocSize(gl->getType()->getElementType());
       vaddr_t new_addr = vm.v_malloc(size, false);
       map_global.insert(std::make_pair(gl, new_addr));
     }
@@ -1372,7 +1373,6 @@ vaddr_t LlvmAsmLoader::load_type(const llvm::Type* type, bool sign) {
 // LLVMの定数(0うめ領域)を仮想マシンにロードする。
 void LlvmAsmLoader::load_zero(FunctionContext& fc, ValueDest dst, const llvm::ConstantAggregateZero* src) {
   // 領域サイズを取得
-  assert(data_layout->getTypeAllocSize(src->getType()) != 0);
   assert(data_layout->getTypeStoreSize(src->getType()) ==
 	 data_layout->getTypeAllocSize(src->getType()));
   unsigned int size = data_layout->getTypeAllocSize(src->getType());
