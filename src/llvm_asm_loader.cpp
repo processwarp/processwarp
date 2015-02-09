@@ -500,6 +500,32 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 	  push_code(fc, Opcode::JUMP, block_alias.at(inst.getDefaultDest()));
 	} break;
 
+	case llvm::Instruction::Invoke: {
+	  const llvm::InvokeInst& inst = static_cast<const llvm::InvokeInst&>(*i);
+	  // インラインアセンブラ未対応
+	  if (!inst.getType()->isVoidTy()) {
+	    // 戻り値の型
+	    push_code(fc, Opcode::SET_TYPE, assign_type(fc, inst.getType()));
+	    // 出力先
+	    push_code(fc, Opcode::SET_OUTPUT, assign_operand(fc, &inst));
+	  }
+
+	  // CALL命令、関数
+	  push_code(fc, Opcode::CALL, assign_operand(fc, inst.getCalledValue()));
+	  // 正常時、異常時のジャンプ先を追加
+	  push_code(fc, Opcode::EXTRA, block_alias.at(inst.getNormalDest()));
+	  push_code(fc, Opcode::EXTRA, block_alias.at(inst.getUnwindDest()));
+
+	  // 引数部分の命令(引数の型、引数〜)を追加
+	  for (unsigned int arg_idx = 0, num = inst.getNumArgOperands();
+	       arg_idx < num; arg_idx ++) {
+	    push_code(fc, Opcode::EXTRA,
+		      assign_type(fc, inst.getArgOperand(arg_idx)->getType()));
+	    push_code(fc, Opcode::EXTRA,
+		      assign_operand(fc, inst.getArgOperand(arg_idx)));
+	  }
+	} break;
+
 	case llvm::Instruction::Unreachable: {
 	  // const llvm::UnreachableInst& inst = static_cast<const llvm::Unreachable&>(*i);
 	  // Unreachableはコンパイラの最適化のためだけにあるので、何も実行しなくて良い。
