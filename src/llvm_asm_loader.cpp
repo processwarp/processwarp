@@ -378,7 +378,6 @@ void LlvmAsmLoader::load_expr(FunctionContext& fc, ValueDest dst, const llvm::Co
       M_CCMP_OPERATOR1(ICmpInst::ICMP_ULE, false, op_greater, 1, 0);
     default: {
       print_llvm_instruction();
-      src->dump();
       assert(false);
     } break;
 
@@ -736,12 +735,13 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 
 	case llvm::Instruction::InsertValue: {
 	  const llvm::InsertValueInst& inst = static_cast<const llvm::InsertValueInst&>(*i);
+	  // set_type <aggregate type>
+	  push_code(fc, Opcode::SET_TYPE,
+		    assign_type(fc, inst.getAggregateOperand()->getType()));
 	  // set_output <result>
 	  push_code(fc, Opcode::SET_OUTPUT, assign_operand(fc, &inst));
-	  // set_value <val>
-	  push_code(fc, Opcode::SET_VALUE, assign_operand(fc, inst.getAggregateOperand()));
-	  // copy sizeof(<val>)
-	  push_code(fc, Opcode::COPY, data_layout->getTypeAllocSize(inst.getType()));
+	  // set <val>
+	  push_code(fc, Opcode::SET, assign_operand(fc, inst.getAggregateOperand()));
 	  // set_type <type>
 	  push_code(fc, Opcode::SET_TYPE,
 		    assign_type(fc, inst.getInsertedValueOperand()->getType()));
@@ -1020,21 +1020,21 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 	  } break;
 
 	  case llvm::CmpInst::FCMP_FALSE: { // false
+	    // set_type <i8?>
+	    push_code(fc, Opcode::SET_TYPE, assign_type(fc, inst.getType()));
 	    // set_output <result>
 	    push_code(fc, Opcode::SET_OUTPUT, assign_operand(fc, &inst));
-	    // set_value 定数
-	    push_code(fc, Opcode::SET_VALUE, -1); // 0x00をk(0)に割り当てておく
-	    // copy sizeof(<ty>)
-	    push_code(fc, Opcode::COPY, 1);
+	    // set 定数
+	    push_code(fc, Opcode::SET, -1); // 0x00をk(0)に割り当てておく
 	  } break;
 
 	  case llvm::CmpInst::FCMP_TRUE: { // true
+	    // set_type <i8>
+	    push_code(fc, Opcode::SET_TYPE, assign_type(fc, inst.getType()));
 	    // set_output <result>
 	    push_code(fc, Opcode::SET_OUTPUT, assign_operand(fc, &inst));
-	    // set_value 定数
-	    push_code(fc, Opcode::SET_VALUE, -2); // 0xffをk(1)に割り当てておく
-	    // copy sizeof(<ty>)
-	    push_code(fc, Opcode::COPY, 1);
+	    // set 定数
+	    push_code(fc, Opcode::SET, -2); // 0xffをk(1)に割り当てておく
 	  } break;
 
 	  default: {

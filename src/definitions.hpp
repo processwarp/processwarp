@@ -137,10 +137,10 @@ namespace usagi {
       CALL,
       TAILCALL,
       RETURN,
-      UNWIND,
       SET_TYPE,
       SET_OUTPUT,
       SET_VALUE,
+      SET_OV_PTR,
       ADD,
       SUB, // 10
       MUL,
@@ -149,20 +149,22 @@ namespace usagi {
       SHL,
       SHR,
       AND,
+      NAND,
       OR,
       XOR,
-      COPY,
-      SET_PTR, // 20
+      MAX, // 20
+      MIN,
+      SET,
+      SET_PTR,
       SET_ADR,
       SET_ALIGN,
       ADD_ADR,
       MUL_ADR,
       GET_ADR,
       LOAD,
-      STORE,
-      ALLOC,
-      FREE,
-      ALLOCA, // 30
+      STORE, // 30
+      CMPXCHG,
+      ALLOCA,
       TEST,
       TEST_EQ,
       JUMP,
@@ -170,9 +172,9 @@ namespace usagi {
       TYPE_CAST,
       BIT_CAST,
       EQUAL,
-      NOT_EQUAL,
+      NOT_EQUAL, // 40
       GREATER,
-      GREATER_EQUAL, // 40
+      GREATER_EQUAL,
       NOT_NANS,
       OR_NANS,
       SELECT,

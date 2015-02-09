@@ -336,9 +336,9 @@ void VMachine::execute(int max_clock) {
 	M_BINARY_OPERATOR(OR,  op_or);  // or
 	M_BINARY_OPERATOR(XOR, op_xor); // xor
 
-      case Opcode::COPY: {
-	int operand = Instruction::get_operand_value(code);
-	memcpy(stackinfo.output_cache, stackinfo.value_cache, operand);
+      case Opcode::SET: {
+	OperandRet operand = get_operand(code, op_param);
+	memcpy(stackinfo.output_cache, operand.cache, stackinfo.type_cache2->size);
       } break;
 
       case Opcode::SET_PTR: {
