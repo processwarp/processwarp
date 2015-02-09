@@ -331,11 +331,65 @@ void LlvmAsmLoader::load_expr(FunctionContext& fc, ValueDest dst, const llvm::Co
     *reinterpret_cast<vaddr_t*>(get_ptr_by_dest(fc, dst)) = target_value + delta;
   } break;
 
-    // case Instruction::ICmp:
-    // case Instruction::FCmp: {} break; // Cmp
+  case llvm::Instruction::ICmp:
+  case llvm::Instruction::FCmp: {
+    switch(src->getPredicate()) {
+#define M_CCMP_OPERATOR1(PRE, SI, OP, FOP, SOP)				\
+      case llvm::PRE: {							\
+	vaddr_t op_type = load_type(src->getOperand(0)->getType(), SI); \
+	TypeBased* op = vm.get_type_based(op_type);			\
+	op->OP(get_ptr_by_dest(fc, dst),				\
+	       get_ptr_by_dest(fc, get_loaded_ptr(fc, src->getOperand(FOP))), \
+	       get_ptr_by_dest(fc, get_loaded_ptr(fc, src->getOperand(SOP)))); \
+      } break;
+
+    case llvm::FCmpInst::FCMP_FALSE: {
+      *get_ptr_by_dest(fc, dst) = 0x00;
+    } break;
+
+      M_CCMP_OPERATOR1(FCmpInst::FCMP_OEQ, false, op_equal, 0, 1);
+      M_CCMP_OPERATOR1(FCmpInst::FCMP_OGT, false, op_greater, 0, 1);
+      M_CCMP_OPERATOR1(FCmpInst::FCMP_OGE, false, op_greater_equal, 0, 1);
+      M_CCMP_OPERATOR1(FCmpInst::FCMP_OLT, false, op_greater_equal, 1, 0);
+      M_CCMP_OPERATOR1(FCmpInst::FCMP_OLE, false, op_greater, 1, 0);
+      M_CCMP_OPERATOR1(FCmpInst::FCMP_ONE, false, op_not_equal, 0, 1);
+      M_CCMP_OPERATOR1(FCmpInst::FCMP_ORD, false, op_not_nans, 0, 1);
+
+      // FCmpInst::FCMP_UNO
+      // FCmpInst::FCMP_UEQ
+      // FCmpInst::FCMP_UGT
+      // FCmpInst::FCMP_UGE
+      // FCmpInst::FCMP_ULT
+      // FCmpInst::FCMP_ULE
+      // FCmpInst::FCMP_UNE
+    case llvm::FCmpInst::FCMP_TRUE: {
+      *get_ptr_by_dest(fc, dst) = 0xff;
+    } break;
+
+      M_CCMP_OPERATOR1(ICmpInst::ICMP_EQ, false, op_equal, 0, 1);
+      M_CCMP_OPERATOR1(ICmpInst::ICMP_NE, false, op_not_equal, 0, 1);
+      M_CCMP_OPERATOR1(ICmpInst::ICMP_SGT, true, op_greater, 0, 1);
+      M_CCMP_OPERATOR1(ICmpInst::ICMP_SGE, true, op_greater_equal, 0, 1);
+      M_CCMP_OPERATOR1(ICmpInst::ICMP_SLT, true, op_greater_equal, 1, 0);
+      M_CCMP_OPERATOR1(ICmpInst::ICMP_SLE, true, op_greater, 1, 0);
+      M_CCMP_OPERATOR1(ICmpInst::ICMP_UGT, false, op_greater, 0, 1);
+      M_CCMP_OPERATOR1(ICmpInst::ICMP_UGE, false, op_greater_equal, 0, 1);
+      M_CCMP_OPERATOR1(ICmpInst::ICMP_ULT, false, op_greater_equal, 1, 0);
+      M_CCMP_OPERATOR1(ICmpInst::ICMP_ULE, false, op_greater, 1, 0);
+    default: {
+      print_llvm_instruction();
+      src->dump();
+      assert(false);
+    } break;
+
+#undef M_CCMP_OPERATOR1
+    }
+  } break;
+
+    //
 
   default: {
-    src->dump();
+    print_llvm_instruction();
     print_debug("unsupport expr : %d %s\n", src->getOpcode(), src->getOpcodeName());
     throw_error(Error::UNSUPPORT);
   } break;

@@ -275,6 +275,24 @@ void TypePointer::copy(uint8_t* dst, uint8_t* src) {
   *reinterpret_cast<vaddr_t*>(dst) = *reinterpret_cast<vaddr_t*>(src);
 }
 
+// 比較命令(a==b)に対応した演算を行う。
+void TypePointer::op_equal(uint8_t* dst, uint8_t* a, uint8_t* b) {
+  if (*reinterpret_cast<vaddr_t*>(a) == *reinterpret_cast<vaddr_t*>(b)) {
+    *reinterpret_cast<uint8_t*>(dst) = 0xff;
+  } else {
+    *reinterpret_cast<uint8_t*>(dst) = 0x00;
+  }
+}
+
+// 比較命令(a!=b)に対応した演算を行う。
+void TypePointer::op_not_equal(uint8_t* dst, uint8_t* a, uint8_t* b) {
+  if (*reinterpret_cast<vaddr_t*>(a) == *reinterpret_cast<vaddr_t*>(b)) {
+    *reinterpret_cast<uint8_t*>(dst) = 0x00;
+  } else {
+    *reinterpret_cast<uint8_t*>(dst) = 0xff;
+  }
+}
+
 // type_cast命令に対応したキャスト演算を行う。
 void TypePointer::type_cast(uint8_t* dst, vaddr_t type, uint8_t* src) {
   // ポインタと同じ64ビット長整数への変換にのみ対応

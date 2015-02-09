@@ -358,6 +358,22 @@ namespace usagi {
     void copy(uint8_t* dst, uint8_t* src) override;
 
     /**
+     * 比較命令(a==b)に対応した演算を行う。
+     * @param dst 出力先
+     * @param a
+     * @param b
+     */
+    void op_equal(uint8_t* dst, uint8_t* a, uint8_t* b) override;
+
+    /**
+     * 比較命令(a!=b)に対応した演算を行う。
+     * @param dst 出力先
+     * @param a
+     * @param b
+     */
+    void op_not_equal(uint8_t* dst, uint8_t* a, uint8_t* b) override;
+
+    /**
      * type_cast命令に対応したキャスト演算を行う。
      * @param dst 出力先
      * @param type 出力型
