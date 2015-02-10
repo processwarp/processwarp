@@ -890,8 +890,11 @@ void VMachine::run(std::vector<std::string> args) {
   FuncStore& main_func = vmemory.get_func(it_main_func->second);
 
   // main関数用のスタックを確保する
-  DataStore& main_stack = vmemory.alloc_data(main_func.normal_prop.stack_size, false);
-  
+  DataStore* main_stack = nullptr;
+  if (main_func.normal_prop.stack_size != 0) {
+    main_stack = &vmemory.alloc_data(main_func.normal_prop.stack_size, false);
+  }
+
   // maink関数の内容に応じて、init_stackを作成する
   DataStore* init_stack;
   if (main_func.normal_prop.arg_num == 2) {
@@ -917,8 +920,8 @@ void VMachine::run(std::vector<std::string> args) {
     // main関数のスタックの先頭にargc, argvを格納する
     vm_int_t argc = args.size();
     vaddr_t  argv = init_stack->addr + ret_size;
-    memcpy(main_stack.head.get(), &argc, sizeof(argc));
-    memcpy(main_stack.head.get() + 4, &argv, sizeof(argv));
+    memcpy(main_stack->head.get(), &argc, sizeof(argc));
+    memcpy(main_stack->head.get() + 4, &argv, sizeof(argv));
     
   } else if (main_func.normal_prop.arg_num != 0) {
     // int main()でもint main(int, char**)でもないようだ
@@ -936,9 +939,13 @@ void VMachine::run(std::vector<std::string> args) {
   init_stackinfo->output_cache = init_stack->head.get();
   init_thread->stackinfos.push_back(std::unique_ptr<StackInfo>(init_stackinfo));
   
-  StackInfo* main_stackinfo = new StackInfo(main_func.addr,
-					    init_stack->addr,
-					    0, 0, main_stack.addr);
+  StackInfo* main_stackinfo;
+  if (main_stack != nullptr) {
+    main_stackinfo = new StackInfo(main_func.addr, init_stack->addr, 0, 0, main_stack->addr);
+  } else {
+    main_stackinfo = new StackInfo(main_func.addr, init_stack->addr, 0, 0, VADDR_NON);
+  }
+
   init_thread->stackinfos.push_back(std::unique_ptr<StackInfo>(main_stackinfo));
 
   status = ACTIVE;
