@@ -462,6 +462,7 @@ void VMachine::execute(int max_clock) {
 	    stackinfo.type_cache1->copy(stackinfo.output_cache, operand.cache);
 	  }
 	  count += 2;
+	  if (insts.size() <= stackinfo.pc + count + 1) break;
 	  code  = insts.at(stackinfo.pc + count);
 	  code2 = insts.at(stackinfo.pc + count + 1);
 	}
