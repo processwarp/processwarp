@@ -190,6 +190,7 @@ void VMachine::execute(int max_clock) {
 			 (new_func.normal_prop.stack_size != 0 ?
 			  vmemory.alloc_data(new_func.normal_prop.stack_size, false).addr :
 			  VADDR_NON)));
+	resolve_stackinfo_cache(&thread, new_stackinfo.get());
 
 	// 引数を集める
 	unsigned int args = 0;
