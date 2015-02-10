@@ -1425,6 +1425,12 @@ vaddr_t LlvmAsmLoader::load_type(const llvm::Type* type, bool sign) {
 	addr = BasicType::TY_SI32;
       } else if (type->getIntegerBitWidth() <= 64) {
 	addr = BasicType::TY_SI64;
+      } else if (type->getIntegerBitWidth() <= 128) {
+	addr = BasicType::TY_SI128;
+      } else if (type->getIntegerBitWidth() <= 256) {
+	addr = BasicType::TY_SI256;
+      } else if (type->getIntegerBitWidth() <= 512) {
+	addr = BasicType::TY_SI512;
       } else {
 	throw_error_message(Error::UNSUPPORT,
 			    "integer bit-width:" +
@@ -1439,6 +1445,12 @@ vaddr_t LlvmAsmLoader::load_type(const llvm::Type* type, bool sign) {
 	addr = BasicType::TY_UI32;
       } else if (type->getIntegerBitWidth() <= 64) {
 	addr = BasicType::TY_UI64;
+      } else if (type->getIntegerBitWidth() <= 128) {
+	addr = BasicType::TY_UI128;
+      } else if (type->getIntegerBitWidth() <= 256) {
+	addr = BasicType::TY_UI256;
+      } else if (type->getIntegerBitWidth() <= 512) {
+	addr = BasicType::TY_UI512;
       } else {
 	throw_error_message(Error::UNSUPPORT,
 			    "integer bit-width:" +
