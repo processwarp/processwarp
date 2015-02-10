@@ -1288,7 +1288,7 @@ void LlvmAsmLoader::load_globals(const llvm::Module::GlobalListType& variables) 
 
 // LLVMの定数(Int)を仮想マシンにロードする。
 void LlvmAsmLoader::load_int(FunctionContext& fc, ValueDest dst, const llvm::ConstantInt* src) {
-  if (src->getBitWidth() <= 0 || 64 < src->getBitWidth()) {
+  if (src->getBitWidth() <= 0 || 512 < src->getBitWidth()) {
     print_debug("unsupport bit width : %d\n", src->getBitWidth());
     throw_error(Error::UNSUPPORT);
   }

@@ -937,10 +937,16 @@ void VMachine::setup() {
   M_ALLOC_BASIC_TYPE(2,  2,  BasicType::TY_UI16);
   M_ALLOC_BASIC_TYPE(4,  4,  BasicType::TY_UI32);
   M_ALLOC_BASIC_TYPE(8,  8,  BasicType::TY_UI64);
+  M_ALLOC_BASIC_TYPE(16, 16, BasicType::TY_UI128);
+  M_ALLOC_BASIC_TYPE(32, 32, BasicType::TY_UI256);
+  M_ALLOC_BASIC_TYPE(64, 64, BasicType::TY_UI512);
   M_ALLOC_BASIC_TYPE(1,  1,  BasicType::TY_SI8);
   M_ALLOC_BASIC_TYPE(2,  2,  BasicType::TY_SI16);
   M_ALLOC_BASIC_TYPE(4,  4,  BasicType::TY_SI32);
   M_ALLOC_BASIC_TYPE(8,  8,  BasicType::TY_SI64);
+  M_ALLOC_BASIC_TYPE(16, 16, BasicType::TY_SI128);
+  M_ALLOC_BASIC_TYPE(32, 32, BasicType::TY_SI256);
+  M_ALLOC_BASIC_TYPE(64, 64, BasicType::TY_SI512);
   M_ALLOC_BASIC_TYPE(4,  4,  BasicType::TY_F32);
   M_ALLOC_BASIC_TYPE(8,  8,  BasicType::TY_F64);
   M_ALLOC_BASIC_TYPE(16, 16, BasicType::TY_F128);
