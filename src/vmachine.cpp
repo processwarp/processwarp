@@ -11,6 +11,7 @@
 #include "func_store.hpp"
 #include "instruction.hpp"
 #include "intrinsic_libc.hpp"
+#include "intrinsic_memory.hpp"
 #include "stackinfo.hpp"
 #include "type_based.hpp"
 #include "util.hpp"
@@ -955,6 +956,7 @@ void VMachine::setup() {
 
   // VMの組み込み関数をロード
   IntrinsicLibc::regist(*this);
+  IntrinsicMemory::regist(*this);
 
   // Cの標準ライブラリをロード
   /*
