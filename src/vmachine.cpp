@@ -533,6 +533,8 @@ void VMachine::call_external(external_func_t func,
   // 戻り値の型変換
   ffi_type* ffi_ret_type = nullptr;
   switch(ret_type) {
+  case BasicType::TY_VOID: ffi_ret_type = &ffi_type_void;   break;
+  case BasicType::TY_POINTER: ffi_ret_type = &ffi_type_pointer; break;
   case BasicType::TY_UI8:  ffi_ret_type = &ffi_type_uint8;  break;
   case BasicType::TY_UI16: ffi_ret_type = &ffi_type_uint16; break;
   case BasicType::TY_UI32: ffi_ret_type = &ffi_type_uint32; break;
@@ -541,6 +543,8 @@ void VMachine::call_external(external_func_t func,
   case BasicType::TY_SI16: ffi_ret_type = &ffi_type_sint16; break;
   case BasicType::TY_SI32: ffi_ret_type = &ffi_type_sint32; break;
   case BasicType::TY_SI64: ffi_ret_type = &ffi_type_sint64; break;
+  case BasicType::TY_F32:  ffi_ret_type = &ffi_type_float;  break;
+  case BasicType::TY_F64:  ffi_ret_type = &ffi_type_double; break;
 
   default: {
     fixme(Util::vaddr2str(ret_type));
@@ -603,6 +607,16 @@ void VMachine::call_external(external_func_t func,
 
     case BasicType::TY_SI64: {
       ffi_arg_types.push_back(&ffi_type_sint64);
+      ffi_args.push_back(args.data() + seek + sizeof(vaddr_t));
+    } break;
+
+    case BasicType::TY_F32: {
+      ffi_arg_types.push_back(&ffi_type_float);
+      ffi_args.push_back(args.data() + seek + sizeof(vaddr_t));
+    } break;
+
+    case BasicType::TY_F64: {
+      ffi_arg_types.push_back(&ffi_type_double);
       ffi_args.push_back(args.data() + seek + sizeof(vaddr_t));
     } break;
 
