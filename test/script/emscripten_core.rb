@@ -51,7 +51,7 @@ Dir.chdir(LL_PATH) do
           Dir.chdir(EMSCRIPTEN_CORE_PATH) do
             Dir.glob("#{File.basename(fname, ".ll")}.{txt,out}") .each do |fname_test|
               test = File.read(fname_test)
-              is_success = true if test == out
+              is_success = true if test.sub("\r", '').strip() == out.sub("\r", '').strip()
             end
           end
           if is_success then
