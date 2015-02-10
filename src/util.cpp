@@ -51,6 +51,7 @@ static const char* OPCODE_STR[] = {
   "NANS",
   "OR_NANS",
   "SELECT",
+  "SHUFFLE",
   "VA_ARG",
 };
 

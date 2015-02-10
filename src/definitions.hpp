@@ -187,6 +187,7 @@ namespace usagi {
       NOT_NANS,
       OR_NANS,
       SELECT,
+      SHUFFLE,
       VA_ARG,
   };
 }

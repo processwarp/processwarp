@@ -699,7 +699,63 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 	} break;
 
 #undef M_BIN_OPERATOR
-	  
+
+	case llvm::Instruction::ExtractElement: {
+	  const llvm::ExtractElementInst& inst = static_cast<const llvm::ExtractElementInst&>(*i);
+	  // set_type <type>
+	  push_code(fc, Opcode::SET_TYPE, assign_type(fc, inst.getType()));
+	  // set_align 0
+	  push_code(fc, Opcode::SET_ALIGN, 0);
+	  // set_adr <val>
+	  push_code(fc, Opcode::SET_ADR, assign_operand(fc, inst.getVectorOperand()));
+	  // set_value <n>
+	  push_code(fc, Opcode::SET_VALUE, assign_operand(fc, inst.getIndexOperand()));
+	  // mul_adr <sizeof ty>
+	  push_code(fc, Opcode::MUL_ADR,
+		    data_layout->getTypeAllocSize(inst.getVectorOperandType()->getElementType()));
+	  // load <result>
+	  push_code(fc, Opcode::LOAD, assign_operand(fc, &inst));
+	} break;
+
+	case llvm::Instruction::InsertElement: {
+	  const llvm::InsertElementInst& inst = static_cast<const llvm::InsertElementInst&>(*i);
+	  // set_type <n x <ty>>
+	  push_code(fc, Opcode::SET_TYPE, assign_type(fc, inst.getType()));
+	  // set_output <result>
+	  push_code(fc, Opcode::SET_OUTPUT, assign_operand(fc, &inst));
+	  // set <val>
+	  push_code(fc, Opcode::SET, assign_operand(fc, inst.getOperand(0)));
+	  // set_type <type>
+	  push_code(fc, Opcode::SET_TYPE, assign_type(fc, inst.getType()->getElementType()));
+	  // set_align 0
+	  push_code(fc, Opcode::SET_ALIGN, 0);
+	  // set_adr <val>
+	  push_code(fc, Opcode::SET_ADR, assign_operand(fc, inst.getOperand(0)));
+	  // set_value <n>
+	  push_code(fc, Opcode::SET_VALUE, assign_operand(fc, inst.getOperand(2)));
+	  // mul_adr <sizeof ty>
+	  push_code(fc, Opcode::MUL_ADR,
+		    data_layout->getTypeAllocSize(inst.getType()->getElementType()));
+	  // store <val>
+	  push_code(fc, Opcode::STORE, assign_operand(fc, inst.getOperand(1)));
+	} break;
+
+	case llvm::Instruction::ShuffleVector: {
+	  const llvm::ShuffleVectorInst& inst = static_cast<const llvm::ShuffleVectorInst&>(*i);
+	  // set_type <n x <ty>>
+	  push_code(fc, Opcode::SET_TYPE, assign_type(fc, inst.getOperand(0)->getType()));
+	  // set_output <result>
+	  push_code(fc, Opcode::SET_OUTPUT, assign_operand(fc, &inst));
+	  // set_value <v1>
+	  push_code(fc, Opcode::SET_VALUE, assign_operand(fc, inst.getOperand(0)));
+	  // shuffle <m>
+	  push_code(fc, Opcode::SHUFFLE, inst.getType()->getNumElements());
+	  // extra <mask>
+	  push_code(fc, Opcode::EXTRA, assign_operand(fc, inst.getMask()));
+	  // extra <v2>
+	  push_code(fc, Opcode::EXTRA, assign_operand(fc, inst.getOperand(1)));
+	} break;
+
 	case llvm::Instruction::ExtractValue: {
 	  const llvm::ExtractValueInst& inst = static_cast<const llvm::ExtractValueInst&>(*i);
 	  // set_type <type>
