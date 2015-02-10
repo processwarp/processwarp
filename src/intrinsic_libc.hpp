@@ -21,6 +21,18 @@ namespace usagi {
 		       vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
+     * memmove関数。
+     * srcから取り出すパラメタは以下のとおり。
+     * vaddr_t dst 移動先。
+     * vaddr_t src 移動元。
+     * T len 移動サイズ。
+     * int32_t align アライメント。
+     * int8_t isvolation 実行順番の制約(VMでは実行順番を入れ替えないので無視する)。
+     */
+    static void memmove(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+			vaddr_t dst, std::vector<uint8_t>& src);
+
+    /**
      * memset関数。
      * srcから取り出すパラメタは以下のとおり。
      * vaddr_t dst 設定先。
