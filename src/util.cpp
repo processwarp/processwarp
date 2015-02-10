@@ -22,7 +22,7 @@ static const char* OPCODE_STR[] = {
   "SHL",
   "SHR",
   "AND",
-  "NAND"
+  "NAND",
   "OR",
   "XOR",
   "MAX", // 20
