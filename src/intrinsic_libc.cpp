@@ -3,13 +3,13 @@
 #include <cinttypes>
 #include <cstring>
 
-#include "llvm_intrinsic.hpp"
+#include "intrinsic_libc.hpp"
 #include "vmachine.hpp"
 
 using namespace usagi;
 
 // memcpy関数。
-void LlvmIntrinsic::memcpy(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+void IntrinsicLibc::memcpy(VMachine& vm, Thread& th, IntrinsicFuncParam p,
 			   vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
   // コピー先アドレスを取得
@@ -42,7 +42,7 @@ void LlvmIntrinsic::memcpy(VMachine& vm, Thread& th, IntrinsicFuncParam p,
 }
 
 // memset関数。
-void LlvmIntrinsic::memset(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+void IntrinsicLibc::memset(VMachine& vm, Thread& th, IntrinsicFuncParam p,
 			   vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
   // 設定先先アドレスを取得
@@ -70,4 +70,17 @@ void LlvmIntrinsic::memset(VMachine& vm, Thread& th, IntrinsicFuncParam p,
   // 読み込んだパラメタ長と渡されたパラメタ長は同じはず
   assert(static_cast<signed>(src.size()) == seek);
   std::memset(vm.get_raw_addr(p_dst), p_val, static_cast<size_t>(p_len));
+}
+
+// VMにライブラリを登録する。
+void IntrinsicLibc::regist(VMachine& vm) {
+  vm.regist_intrinsic_func("llvm.memcpy.p0i8.p0i8.i8",  IntrinsicLibc::memcpy, 8);
+  vm.regist_intrinsic_func("llvm.memcpy.p0i8.p0i8.i16", IntrinsicLibc::memcpy, 16);
+  vm.regist_intrinsic_func("llvm.memcpy.p0i8.p0i8.i32", IntrinsicLibc::memcpy, 32);
+  vm.regist_intrinsic_func("llvm.memcpy.p0i8.p0i8.i64", IntrinsicLibc::memcpy, 64);
+  
+  vm.regist_intrinsic_func("llvm.memset.p0i8.i8",  IntrinsicLibc::memset, 8);
+  vm.regist_intrinsic_func("llvm.memset.p0i8.i16", IntrinsicLibc::memset, 16);
+  vm.regist_intrinsic_func("llvm.memset.p0i8.i32", IntrinsicLibc::memset, 32);
+  vm.regist_intrinsic_func("llvm.memset.p0i8.i64", IntrinsicLibc::memset, 64);
 }

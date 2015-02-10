@@ -10,7 +10,7 @@
 #include "error.hpp"
 #include "func_store.hpp"
 #include "instruction.hpp"
-#include "llvm_intrinsic.hpp"
+#include "intrinsic_libc.hpp"
 #include "stackinfo.hpp"
 #include "type_based.hpp"
 #include "util.hpp"
@@ -954,15 +954,7 @@ void VMachine::setup() {
 #undef M_ALLOC_BASIC_TYPE
 
   // VMの組み込み関数をロード
-  regist_intrinsic_func("llvm.memcpy.p0i8.p0i8.i8",  LlvmIntrinsic::memcpy, 8);
-  regist_intrinsic_func("llvm.memcpy.p0i8.p0i8.i16", LlvmIntrinsic::memcpy, 16);
-  regist_intrinsic_func("llvm.memcpy.p0i8.p0i8.i32", LlvmIntrinsic::memcpy, 32);
-  regist_intrinsic_func("llvm.memcpy.p0i8.p0i8.i64", LlvmIntrinsic::memcpy, 64);
-
-  regist_intrinsic_func("llvm.memset.p0i8.i8",  LlvmIntrinsic::memset, 8);
-  regist_intrinsic_func("llvm.memset.p0i8.i16", LlvmIntrinsic::memset, 16);
-  regist_intrinsic_func("llvm.memset.p0i8.i32", LlvmIntrinsic::memset, 32);
-  regist_intrinsic_func("llvm.memset.p0i8.i64", LlvmIntrinsic::memset, 64);
+  IntrinsicLibc::regist(*this);
 
   // Cの標準ライブラリをロード
   /*

@@ -4,9 +4,9 @@
 
 namespace usagi {
   /**
-   * LLVMの組み込み関数
+   * 標準Cライブラリのうち、LLVM組み込みとして用意するもの。
    */
-  class LlvmIntrinsic {
+  class IntrinsicLibc {
   public:
     /**
      * memcpy関数。
@@ -31,5 +31,11 @@ namespace usagi {
      */
     static void memset(VMachine& vm, Thread& th, IntrinsicFuncParam p,
 		       vaddr_t dst, std::vector<uint8_t>& src);
+
+    /**
+     * VMにライブラリを登録する。
+     * @param vm 登録対象のVM
+     */
+    static void regist(VMachine& vm);
   };
 }
