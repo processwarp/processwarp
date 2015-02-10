@@ -519,23 +519,18 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 	} break;
 
 	case llvm::Instruction::Br: {
-	  const llvm::IndirectBrInst& inst = static_cast<const llvm::IndirectBrInst&>(*i);
-	  if (inst.getNumDestinations() == 0) {
+	  const llvm::BranchInst& inst = static_cast<const llvm::BranchInst&>(*i);
+	  if (inst.isUnconditional()) {
 	    // 無条件分岐の場合、無条件jump先の命令を追加
-	    push_code(fc, Opcode::JUMP,
-		      block_alias.at(inst.getDestination(-1)));
+	    push_code(fc, Opcode::JUMP, block_alias.at(inst.getSuccessor(0)));
 
 	  } else {
 	    // 条件分岐
-	    assert(inst.getNumDestinations() == 2);
-	    push_code(fc, Opcode::TEST,
-		      assign_operand(fc, inst.getAddress()));
+	    push_code(fc, Opcode::TEST, assign_operand(fc, inst.getCondition()));
 	    // cond == true の場合のジャンプ先
-	    push_code(fc, Opcode::EXTRA,
-		      block_alias.at(inst.getSuccessor(1)));
+	    push_code(fc, Opcode::EXTRA, block_alias.at(inst.getSuccessor(0)));
 	    // cond != true の場合のジャンプ先
-	    push_code(fc, Opcode::JUMP,
-		      block_alias.at(inst.getSuccessor(0)));
+	    push_code(fc, Opcode::JUMP, block_alias.at(inst.getSuccessor(1)));
 	  }
 	} break;
 
