@@ -69,7 +69,7 @@ Dir.chdir(LL_PATH) do
         end
         log << fname << "\ttimeout\n"
       end
-
+      log.flush
     end
   end
 end
