@@ -499,6 +499,17 @@ void VMachine::execute(int max_clock) {
 	}
       } break;
 
+      case Opcode::SELECT: {
+	OperandRet operand1 = get_operand(code, op_param);
+	OperandRet operand2 = get_operand(insts.at(stackinfo.pc + 1), op_param);
+	if (*stackinfo.value_cache) {
+	  stackinfo.type_cache1->copy(stackinfo.output_cache, operand1.cache);
+	} else {
+	  stackinfo.type_cache1->copy(stackinfo.output_cache, operand2.cache);
+	}
+	stackinfo.pc += 1; // EXTRA分pcを進める
+      } break;
+
       default: {
 	// EXTRAARGを含む想定外の命令
 	throw_error_message(Error::INST_VIOLATION, Util::num2hex_str(insts.at(stackinfo.pc)));
