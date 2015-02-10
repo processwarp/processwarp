@@ -187,11 +187,11 @@ void LlvmAsmLoader::load_constant(FunctionContext& fc, ValueDest dst, const llvm
     load_zero(fc, dst, static_cast<const llvm::ConstantAggregateZero*>(src));
   } break;
 
-  case llvm::Value::ConstantDataArrayVal: {
-    load_data(fc, dst, static_cast<const llvm::ConstantDataArray*>(src));
+  case llvm::Value::ConstantDataArrayVal:
+  case llvm::Value::ConstantDataVectorVal: {
+    load_data(fc, dst, static_cast<const llvm::ConstantDataSequential*>(src));
   } break;
 
-    //case llvm::Value::ConstantDataVectorVal: {} break;
   case llvm::Value::ConstantIntVal: {
     load_int(fc, dst, static_cast<const llvm::ConstantInt*>(src));
   } break;
@@ -208,7 +208,10 @@ void LlvmAsmLoader::load_constant(FunctionContext& fc, ValueDest dst, const llvm
     load_struct(fc, dst, static_cast<const llvm::ConstantStruct*>(src));
   } break;
 
-    //case llvm::Value::ConstantVectorVal: {} break;
+  case llvm::Value::ConstantVectorVal: {
+    load_vector(fc, dst, static_cast<const llvm::ConstantVector*>(src));
+  } break;
+
   case llvm::Value::ConstantPointerNullVal: {
     *reinterpret_cast<vaddr_t*>(get_ptr_by_dest(fc, dst)) = VADDR_NULL;
   } break;
@@ -220,14 +223,13 @@ void LlvmAsmLoader::load_constant(FunctionContext& fc, ValueDest dst, const llvm
   default: {
     print_debug("unsupport type : %d\n", src->getValueID());
     src->dump();
-
     throw_error(Error::UNSUPPORT);
   } break;
   }
 }
 
 // LLVMの定数(DataArray)を仮想マシンにロードする。
-void LlvmAsmLoader::load_data(FunctionContext& fc, ValueDest dst, const llvm::ConstantDataArray* src) {
+void LlvmAsmLoader::load_data(FunctionContext& fc, ValueDest dst, const llvm::ConstantDataSequential* src) {
   memcpy(get_ptr_by_dest(fc, dst), src->getRawDataValues().data(),
 	 data_layout->getTypeAllocSize(src->getType()));
 }
@@ -1483,6 +1485,19 @@ vaddr_t LlvmAsmLoader::load_type(const llvm::Type* type, bool sign) {
   TypeStore& store = vm.create_type_basic(addr);
   loaded_type.insert(std::make_pair(type, store.addr));
   return store.addr;
+}
+
+// LLVMの定数(vector)を仮想マシンにロードする。
+void LlvmAsmLoader::load_vector(FunctionContext& fc, ValueDest dst, const llvm::ConstantVector* src) {
+  // Typeの要素数とOperandsの要素数は同じはず
+  assert(src->getType()->getNumElements() == src->getNumOperands());
+  
+  // 書き込み
+  int one_size = data_layout->getTypeAllocSize(src->getType()->getElementType());
+
+  for (unsigned int i = 0; i < src->getNumOperands(); i ++) {
+    load_constant(fc, relocate_dest(dst, one_size * i), src->getOperand(i));
+  }
 }
 
 // LLVMの定数(0うめ領域)を仮想マシンにロードする。

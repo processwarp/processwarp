@@ -158,11 +158,13 @@ namespace usagi {
     void load_constant(FunctionContext& fc, ValueDest dst, const llvm::Constant* src);
 
     /**
-     * LLVMの定数(DataArray)を仮想マシンにロードする。
+     * LLVMの定数(DataArray/DataVector)を仮想マシンにロードする。
+     * @param fc 解析中の関数の命令/変数
+     * @param dst ロード先
      * @param data_array LLVMの定数
      * @return 
      */
-    void load_data(FunctionContext& fc, ValueDest dst, const llvm::ConstantDataArray* src);
+    void load_data(FunctionContext& fc, ValueDest dst, const llvm::ConstantDataSequential* src);
 
     /**
      * LLVMの定数(Expr)を仮想マシンにロードする。
@@ -217,6 +219,14 @@ namespace usagi {
      * @return 型に対応するアドレス値
      */
     vaddr_t load_type(const llvm::Type* type, bool sign);
+
+    /**
+     * LLVMの定数(vector)を仮想マシンにロードする。
+     * @param fc 解析中の関数の命令/変数
+     * @param dst ロード先
+     * @param src LLVMのvector
+     */
+    void load_vector(FunctionContext& fc, ValueDest dst, const llvm::ConstantVector* src);
 
     /**
      * LLVMの定数(0うめ領域)を仮想マシンにロードする。
