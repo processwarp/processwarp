@@ -1253,11 +1253,13 @@ void LlvmAsmLoader::load_globals(const llvm::Module::GlobalListType& variables) 
   }
 
   // 定数領域を割り当て
-  vaddr_t global_addr = vm.v_malloc(sum, true);
-  // 割り当てたアドレスを元に仮のアドレスから実際のアドレスに変更する
-  for (auto it = map_global.begin(); it != map_global.end(); it ++) {
-    if (static_cast<const llvm::GlobalVariable*>(it->first)->isConstant()) {
-      it->second += global_addr;
+  if (map_global.size() != 0) {
+    vaddr_t global_addr = vm.v_malloc(sum, true);
+    // 割り当てたアドレスを元に仮のアドレスから実際のアドレスに変更する
+    for (auto it = map_global.begin(); it != map_global.end(); it ++) {
+      if (static_cast<const llvm::GlobalVariable*>(it->first)->isConstant()) {
+	it->second += global_addr;
+      }
     }
   }
 
