@@ -5,27 +5,31 @@
 using namespace usagi;
 
 // llvm.lifetime.start関数。
-void IntrinsicMemory::lifetime_start(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+bool IntrinsicMemory::lifetime_start(VMachine& vm, Thread& th, IntrinsicFuncParam p,
 				     vaddr_t dst, std::vector<uint8_t>& src) {
   // 何もしない
+  return false;
 }
 
 // llvm.lifetime.end関数。
-void IntrinsicMemory::lifetime_end(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+bool IntrinsicMemory::lifetime_end(VMachine& vm, Thread& th, IntrinsicFuncParam p,
 				   vaddr_t dst, std::vector<uint8_t>& src) {
   // 何もしない
+  return false;
 }
 
 // llvm.invariant.start関数。
-void IntrinsicMemory::invariant_start(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+bool IntrinsicMemory::invariant_start(VMachine& vm, Thread& th, IntrinsicFuncParam p,
 				      vaddr_t dst, std::vector<uint8_t>& src) {
   // 何もしない
+  return false;
 }
 
 // llvm.invariant.end関数。
-void IntrinsicMemory::invariant_end(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+bool IntrinsicMemory::invariant_end(VMachine& vm, Thread& th, IntrinsicFuncParam p,
 				    vaddr_t dst, std::vector<uint8_t>& src) {
   // 何もしない
+  return false;
 }
 
 // VMにライブラリを登録する。

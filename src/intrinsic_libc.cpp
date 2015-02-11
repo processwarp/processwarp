@@ -8,8 +8,40 @@
 
 using namespace usagi;
 
+// atexit関数。
+bool IntrinsicLibc::atexit(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+			   vaddr_t dst, std::vector<uint8_t>& src) {
+  int seek = 0;
+  // コピー先アドレスを取得
+  vaddr_t func = VMachine::read_intrinsic_param_ptr(src, &seek);
+  // 終了処理時に呼び出す関数一覧
+  vm.calls_at_exit.push(func);
+  return false;
+}
+
+// exit関数。
+bool IntrinsicLibc::exit(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+			 vaddr_t dst, std::vector<uint8_t>& src) {
+  int seek = 0;
+  // コピー先アドレスを取得
+  uint32_t ret = VMachine::read_intrinsic_param_i32(src, &seek);
+  
+  // 終了コードを設定する
+  *reinterpret_cast<uint32_t*>(vm.get_raw_addr(th.stackinfos.at(0)->stack)) = ret;
+  
+  // スタックを1段残して開放する
+  while (th.stackinfos.size() > 1) {
+    StackInfo& top = *(th.stackinfos.back());
+    vm.vmemory.free(top.stack);
+    for (vaddr_t addr : top.alloca_addrs) vm.vmemory.free(addr);
+    th.stackinfos.pop_back();
+  }
+
+  return true;
+}
+
 // memcpy関数。
-void IntrinsicLibc::memcpy(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+bool IntrinsicLibc::memcpy(VMachine& vm, Thread& th, IntrinsicFuncParam p,
 			   vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
   // コピー先アドレスを取得
@@ -39,10 +71,11 @@ void IntrinsicLibc::memcpy(VMachine& vm, Thread& th, IntrinsicFuncParam p,
   std::memcpy(vm.get_raw_addr(p_dst),
 	      vm.get_raw_addr(p_src),
 	      static_cast<size_t>(p_size));
+  return false;
 }
 
 // memmove関数。
-void IntrinsicLibc::memmove(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+bool IntrinsicLibc::memmove(VMachine& vm, Thread& th, IntrinsicFuncParam p,
 			    vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
   // コピー先アドレスを取得
@@ -72,10 +105,11 @@ void IntrinsicLibc::memmove(VMachine& vm, Thread& th, IntrinsicFuncParam p,
   std::memmove(vm.get_raw_addr(p_dst),
 	       vm.get_raw_addr(p_src),
 	       static_cast<size_t>(p_size));
+  return false;
 }
 
 // memset関数。
-void IntrinsicLibc::memset(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+bool IntrinsicLibc::memset(VMachine& vm, Thread& th, IntrinsicFuncParam p,
 			   vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
   // 設定先先アドレスを取得
@@ -103,10 +137,14 @@ void IntrinsicLibc::memset(VMachine& vm, Thread& th, IntrinsicFuncParam p,
   // 読み込んだパラメタ長と渡されたパラメタ長は同じはず
   assert(static_cast<signed>(src.size()) == seek);
   std::memset(vm.get_raw_addr(p_dst), p_val, static_cast<size_t>(p_len));
+  return false;
 }
 
 // VMにライブラリを登録する。
 void IntrinsicLibc::regist(VMachine& vm) {
+  vm.regist_intrinsic_func("atexit", IntrinsicLibc::atexit, 0);
+  vm.regist_intrinsic_func("exit", IntrinsicLibc::exit, 0);
+
   vm.regist_intrinsic_func("llvm.memcpy.p0i8.p0i8.i8",  IntrinsicLibc::memcpy, 8);
   vm.regist_intrinsic_func("llvm.memcpy.p0i8.p0i8.i16", IntrinsicLibc::memcpy, 16);
   vm.regist_intrinsic_func("llvm.memcpy.p0i8.p0i8.i32", IntrinsicLibc::memcpy, 32);

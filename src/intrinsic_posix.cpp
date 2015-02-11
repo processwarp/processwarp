@@ -9,7 +9,7 @@
 using namespace usagi;
 
 // __assert_fail(assertの内部実装)関数。
-void IntrinsicPosix::__assert_fail(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+bool IntrinsicPosix::__assert_fail(VMachine& vm, Thread& th, IntrinsicFuncParam p,
 				   vaddr_t dst, std::vector<uint8_t>& src) {
   // パタメタを読み取り
   int seek = 0;
@@ -26,6 +26,7 @@ void IntrinsicPosix::__assert_fail(VMachine& vm, Thread& th, IntrinsicFuncParam 
   
   // VMを異常終了させる
   vm.status = VMachine::ERROR;
+  return true;
 }
 
 // VMにライブラリを登録する。

@@ -134,10 +134,48 @@ VMachine::VMachine() :
 void VMachine::execute(int max_clock) {
   Thread& thread = *(threads.front().get());
  re_entry: {
-    // ciが1段の場合、終了
     if (thread.stackinfos.size() == 1) {
-      status = FINISH;
-      return;
+      // calls_at_exitに関数が登録されている場合、順番に実行する
+      if (!calls_at_exit.empty() && status != ERROR && status != FINISH) {
+	// calls_at_exitの先頭の関数を呼び出し状態にセット
+	FuncStore& func = vmemory.get_func(calls_at_exit.top());
+	std::unique_ptr<StackInfo> stackinfo
+	  (new StackInfo(func.addr,
+			 VADDR_NON, // 戻り値なし
+			 0, 0, // 正常、異常終了時のpc設定もなし
+			 (func.normal_prop.stack_size != 0 ?
+			  vmemory.alloc_data(func.normal_prop.stack_size, false).addr :
+			  VADDR_NON)));
+	
+	// 関数中でatexitを呼ばれる可能性があるので、先頭の関数を呼び出し前に除去する
+	calls_at_exit.pop();
+
+	// 関数の型に合わせて呼び出す。
+	if (func.type == FuncType::FC_NORMAL) {
+	  thread.stackinfos.push_back(std::unique_ptr<StackInfo>(stackinfo.release()));
+
+	} else if (func.type == FuncType::FC_INTRINSIC) {
+	  // VM組み込み関数の呼び出し
+	  assert(func.intrinsic != nullptr);
+	  std::vector<uint8_t> work;
+	  func.intrinsic(*this, thread, func.intrinsic_param, VADDR_NON, work);
+
+	} else {
+	  if (func.external == nullptr) {
+	    func.external = get_external_func(func.name);
+	  }
+
+	  // 関数の呼び出し
+	  std::vector<uint8_t> work;
+	  call_external(func.external, func.ret_type, nullptr, work);
+	}
+	goto re_entry;
+
+      } else {
+	// エラーまたは正常終了に設定。
+	if (status != ERROR) status = FINISH;
+	return;
+      }
     }
 
     StackInfo& stackinfo = *(thread.stackinfos.back().get());
@@ -259,7 +297,9 @@ void VMachine::execute(int max_clock) {
 	} else if (new_func.type == FuncType::FC_INTRINSIC) {
 	  // VM組み込み関数の呼び出し
 	  assert(new_func.intrinsic != nullptr);
-	  new_func.intrinsic(*this, thread, new_func.intrinsic_param, stackinfo.output, work);
+	  if (new_func.intrinsic(*this, thread, new_func.intrinsic_param, stackinfo.output, work)) {
+	    goto re_entry;
+	  }
 
 	} else { // func.type == FuncType::EXTERNAL
 	  if (new_func.external == nullptr) {

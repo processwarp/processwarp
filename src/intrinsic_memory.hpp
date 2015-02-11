@@ -15,7 +15,7 @@ namespace usagi {
      * i64 サイズ
      * i8* ポインタ
      */
-    static void lifetime_start(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+    static bool lifetime_start(VMachine& vm, Thread& th, IntrinsicFuncParam p,
 			       vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
@@ -25,7 +25,7 @@ namespace usagi {
      * i64 サイズ
      * i8* ポインタ
      */
-    static void lifetime_end(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+    static bool lifetime_end(VMachine& vm, Thread& th, IntrinsicFuncParam p,
 			     vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
@@ -35,7 +35,7 @@ namespace usagi {
      * i64 サイズ
      * i8* ポインタ
      */
-    static void invariant_start(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+    static bool invariant_start(VMachine& vm, Thread& th, IntrinsicFuncParam p,
 				vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
@@ -45,7 +45,7 @@ namespace usagi {
      * i64 サイズ
      * i8* ポインタ
      */
-    static void invariant_end(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+    static bool invariant_end(VMachine& vm, Thread& th, IntrinsicFuncParam p,
 			      vaddr_t dst, std::vector<uint8_t>& src);
 
     /**

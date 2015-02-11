@@ -32,8 +32,9 @@ namespace usagi {
    * @param p 固定パラメータ。
    * @param dst 戻り値格納先。
    * @param src 呼び出しパラメタ格納先。
+   * @return スタック構造などを書き換え、execの再実行が必要な場合trueを戻す。
    */
-  typedef void (*intrinsic_func_t)(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+  typedef bool (*intrinsic_func_t)(VMachine& vm, Thread& th, IntrinsicFuncParam p,
 				   vaddr_t dst, std::vector<uint8_t>& src);
 
   /** システム中で扱う最長のuint */

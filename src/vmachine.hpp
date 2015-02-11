@@ -1,6 +1,7 @@
 #pragma once
 
 #include <set>
+#include <stack>
 #include <string>
 #include <vector>
 
@@ -25,6 +26,8 @@ namespace usagi {
     typedef std::vector<std::unique_ptr<Thread>> Threads;
     /** VM組み込みアドレス一覧 */
     typedef std::set<vaddr_t> IntrinsicAddrs;
+    /** 終了処理時に呼び出す関数一覧 */
+    typedef std::stack<vaddr_t> CallsAtExit;
     /** VM実行状態一覧 */
     enum Status {
       SETUP,   ///< 起動中
@@ -36,6 +39,7 @@ namespace usagi {
 
     IntrinsicFuncs intrinsic_funcs; //< VM組み込み関数一覧
     IntrinsicAddrs intrinsic_addrs; //< VM組み込みアドレス一覧(他VMにコピーしない)
+    CallsAtExit calls_at_exit; //< 終了処理時に呼び出す関数一覧
     Globals globals;    ///< 大域変数、関数シンボル→アドレス
     Status  status;     ///< VM実行状態
     Symbols symbols;    ///< シンボル

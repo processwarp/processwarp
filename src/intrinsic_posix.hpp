@@ -16,7 +16,7 @@ namespace usagi {
      * i32 line
      * vaddr_t(const) function
      */
-    static void __assert_fail(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+    static bool __assert_fail(VMachine& vm, Thread& th, IntrinsicFuncParam p,
 			      vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
