@@ -12,6 +12,7 @@
 #include "instruction.hpp"
 #include "intrinsic_libc.hpp"
 #include "intrinsic_memory.hpp"
+#include "intrinsic_posix.hpp"
 #include "stackinfo.hpp"
 #include "type_based.hpp"
 #include "util.hpp"
@@ -147,7 +148,7 @@ void VMachine::execute(int max_clock) {
     DataStore& k = vmemory.get_data(func.normal_prop.k);
     OperandParam op_param = {*stackinfo.stack_cache, k, vmemory};
 
-    for (; max_clock > 0; max_clock --) {
+    for (; status == ACTIVE && max_clock > 0; max_clock --) {
       instruction_t code = insts.at(stackinfo.pc);
       print_debug("pc:%d, k:%ld, insts:%ld, code:%08x %s\n",
 		  stackinfo.pc, k.size / sizeof(vaddr_t),
@@ -795,10 +796,10 @@ TypeBased* VMachine::get_type_based(vaddr_t type) {
   }
 
 M_READ_INTRINSIC_PARAM(read_intrinsic_param_ptr, vaddr_t, TY_POINTER);
-M_READ_INTRINSIC_PARAM(read_intrinsic_param_i8,  int8_t,  TY_UI8);
-M_READ_INTRINSIC_PARAM(read_intrinsic_param_i16, int16_t, TY_UI16);
-M_READ_INTRINSIC_PARAM(read_intrinsic_param_i32, int32_t, TY_UI32);
-M_READ_INTRINSIC_PARAM(read_intrinsic_param_i64, int64_t, TY_UI64);
+M_READ_INTRINSIC_PARAM(read_intrinsic_param_i8,  uint8_t,  TY_UI8);
+M_READ_INTRINSIC_PARAM(read_intrinsic_param_i16, uint16_t, TY_UI16);
+M_READ_INTRINSIC_PARAM(read_intrinsic_param_i32, uint32_t, TY_UI32);
+M_READ_INTRINSIC_PARAM(read_intrinsic_param_i64, uint64_t, TY_UI64);
 
 #undef M_READ_INTRINSIC_PARAM
 
@@ -991,6 +992,7 @@ void VMachine::setup() {
   // VMの組み込み関数をロード
   IntrinsicLibc::regist(*this);
   IntrinsicMemory::regist(*this);
+  IntrinsicPosix::regist(*this);
 
   // Cの標準ライブラリをロード
   /*

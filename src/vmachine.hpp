@@ -30,7 +30,8 @@ namespace usagi {
       SETUP,   ///< 起動中
       ACTIVE,  ///< 実行中(実行中スレッドあり)
       PASSIVE, ///< 実行中(実行中スレッドなし)
-      FINISH,  ///< 終了
+      ERROR,   ///< エラー終了
+      FINISH,  ///< 正常終了
     };
 
     IntrinsicFuncs intrinsic_funcs; //< VM組み込み関数一覧
@@ -190,7 +191,7 @@ namespace usagi {
      * @param seek seek位置。
      * @return 読みだした値。
      */
-    static int8_t  read_intrinsic_param_i8 (const std::vector<uint8_t>& src, int* seek);
+    static uint8_t  read_intrinsic_param_i8 (const std::vector<uint8_t>& src, int* seek);
     
     /**
      * 組み込み関数用に引数を取り出す(int16_t)。
@@ -199,7 +200,7 @@ namespace usagi {
      * @param seek seek位置。
      * @return 読みだした値。
      */
-    static int16_t read_intrinsic_param_i16(const std::vector<uint8_t>& src, int* seek);
+    static uint16_t read_intrinsic_param_i16(const std::vector<uint8_t>& src, int* seek);
 
     /**
      * 組み込み関数用に引数を取り出す(int32_t)。
@@ -208,7 +209,7 @@ namespace usagi {
      * @param seek seek位置。
      * @return 読みだした値。
      */
-    static int32_t read_intrinsic_param_i32(const std::vector<uint8_t>& src, int* seek);
+    static uint32_t read_intrinsic_param_i32(const std::vector<uint8_t>& src, int* seek);
 
     /**
      * 組み込み関数用に引数を取り出す(int64_t)。
@@ -217,7 +218,7 @@ namespace usagi {
      * @param seek seek位置。
      * @return 読みだした値。
      */
-    static int64_t read_intrinsic_param_i64(const std::vector<uint8_t>& src, int* seek);
+    static uint64_t read_intrinsic_param_i64(const std::vector<uint8_t>& src, int* seek);
 
     /**
      * 組み込み関数をVMに登録する。

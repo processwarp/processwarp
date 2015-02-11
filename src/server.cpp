@@ -220,7 +220,7 @@ void Server::loop() {
   // 終了したVMを除去する
   for(auto it_vm = vms.begin(); it_vm != vms.end();) {
     VMachine& vm = *(it_vm->second);
-    if (vm.status == VMachine::FINISH) {
+    if (vm.status == VMachine::FINISH || vm.status == VMachine::ERROR) {
       it_vm = vms.erase(it_vm);
     } else {
       it_vm ++;

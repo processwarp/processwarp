@@ -3,7 +3,7 @@ RM          = rm -f
 
 OBJS        = llvm_asm_loader.o symbols.o usagi.o util.o vmachine.o vmemory.o \
               error.o func_store.o data_store.o type_store.o server.o xmpp.o convert.o \
-              stackinfo.o type_based.o intrinsic_libc.o intrinsic_memory.o
+              stackinfo.o type_based.o intrinsic_libc.o intrinsic_memory.o intrinsic_posix.o
 
 TARGETS     = usagi
 
@@ -54,6 +54,8 @@ intrinsic_libc.hpp:definitions.hpp
 intrinsic_libc.o:intrinsic_libc.cpp intrinsic_libc.hpp vmachine.hpp
 intrinsic_memory.hpp:definitions.hpp
 intrinsic_memory.o:intrinsic_memory.cpp intrinsic_memory.hpp vmachine.hpp
+intrinsic_posix.hpp:definitions.hpp
+intrinsic_posix.o:intrinsic_posix.cpp intrinsic_posix.hpp vmachine.hpp
 llvm_asm_loader.hpp:definitions.hpp
 llvm_asm_loader.o:llvm_asm_loader.cpp error.hpp instruction.hpp llvm_asm_loader.hpp util.hpp vmachine.hpp
 data_store.hpp:definitions.hpp
@@ -73,7 +75,7 @@ usagi.o:usagi.cpp error.hpp llvm_asm_loader.hpp server.hpp vmachine.hpp
 util.hpp:definitions.hpp
 util.o:util.cpp util.hpp instruction.hpp
 vmachine.hpp:error.hpp symbols.hpp thread.hpp vmemory.hpp
-vmachine.o:vmachine.cpp error.hpp func_store.hpp instruction.hpp intrinsic_libc.hpp intrinsic_memory.hpp stackinfo.hpp type_based.hpp util.hpp vmachine.hpp
+vmachine.o:vmachine.cpp error.hpp func_store.hpp instruction.hpp intrinsic_libc.hpp intrinsic_memory.hpp intrinsic_posix.hpp stackinfo.hpp type_based.hpp util.hpp vmachine.hpp
 vmemory.hpp:data_store.hpp definitions.hpp func_store.hpp type_store.hpp
 vmemory.o:vmemory.cpp error.hpp util.hpp vmemory.hpp
 xmpp.hpp:
