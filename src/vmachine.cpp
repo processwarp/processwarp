@@ -605,9 +605,14 @@ void VMachine::call_external(external_func_t func,
     case BasicType::TY_POINTER: {
       ffi_arg_types.push_back(&ffi_type_pointer);
       vaddr_t addr = *reinterpret_cast<vaddr_t*>(args.data() + seek + sizeof(vaddr_t));
-      DataStore& pointed = vmemory.get_data(addr);
-      *reinterpret_cast<void**>(args.data() + seek + sizeof(vaddr_t)) =
-	pointed.head.get() + VMemory::get_addr_lower(addr);
+      if (addr == VADDR_NULL) {
+	*reinterpret_cast<void**>(args.data() + seek + sizeof(vaddr_t)) = nullptr;
+	
+      } else {
+	DataStore& pointed = vmemory.get_data(addr);
+	*reinterpret_cast<void**>(args.data() + seek + sizeof(vaddr_t)) =
+	  pointed.head.get() + VMemory::get_addr_lower(addr);
+      }
       ffi_args.push_back(args.data() + seek + sizeof(vaddr_t));
     } break;
 
