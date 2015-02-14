@@ -68,7 +68,7 @@ namespace usagi {
       
       /// ローカル変数とアドレスの対応関係
       std::map<const llvm::Value*, int> loaded_value;
-      std::map<const llvm::Type*, int> loaded_type;
+      std::map<std::pair<const llvm::Type*, bool>, int> loaded_type;
     };
 
     /// 値の格納先(拡張可能な定数領域k or 固定の定数領域
@@ -88,7 +88,7 @@ namespace usagi {
     /// ロード先仮想マシン
     VMachine& vm;
     /// ロード済みの型とアドレスの対応関係
-    std::map<const llvm::Type*, vaddr_t> loaded_type;
+    std::map<std::pair<const llvm::Type*, bool>, vaddr_t> loaded_type;
 
     /// 関数とアドレスの対応関係
     std::map<const llvm::Function*, vaddr_t> map_func;

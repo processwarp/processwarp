@@ -49,18 +49,19 @@ void LlvmAsmLoader::assign_loaded(FunctionContext& fc, const llvm::Value* v) {
 
 // LLVMの型に対応するオペランドを取得する。
 int LlvmAsmLoader::assign_type(FunctionContext& fc, const llvm::Type* t, bool sign) {
+  std::pair<const llvm::Type*, bool> key(t, sign);
   // ローカル定数に割り当てられている場合、そのまま戻す。
-  if (fc.loaded_type.find(t) != fc.loaded_type.end()) {
-    return fc.loaded_type.at(t);
+  if (fc.loaded_type.find(key) != fc.loaded_type.end()) {
+    return fc.loaded_type.at(key);
   }
 
   // 新規割り当て
   vaddr_t type = load_type(t, sign);
   int k = fc.k.size();
-  fc.loaded_type.insert(std::make_pair(t, -k - 1));
+  fc.loaded_type.insert(std::make_pair(key, -k - 1));
   fc.k.resize(k + sizeof(vaddr_t));
   *reinterpret_cast<vaddr_t*>(&fc.k.at(k)) = type;
-  
+
   return -k - 1;
 }
 
@@ -1467,8 +1468,9 @@ void LlvmAsmLoader::load_struct(FunctionContext& fc, ValueDest dst, const llvm::
 
 // LLVMの型を仮想マシンにロードする。
 vaddr_t LlvmAsmLoader::load_type(const llvm::Type* type, bool sign) {
+  std::pair<const llvm::Type*, bool> key(type, sign);
   // 既存の値の場合、それを戻す。
-  auto exist = loaded_type.find(type);
+  auto exist = loaded_type.find(key);
   if (exist != loaded_type.end()) {
     return exist->second;
   }
@@ -1535,7 +1537,7 @@ vaddr_t LlvmAsmLoader::load_type(const llvm::Type* type, bool sign) {
       member.push_back(load_type(type->getStructElementType(i), false));
     }
     TypeStore& store = vm.create_type_struct(member);
-    loaded_type.insert(std::make_pair(type, store.addr));
+    loaded_type.insert(std::make_pair(key, store.addr));
     return store.addr;
   } break;
 
@@ -1543,7 +1545,7 @@ vaddr_t LlvmAsmLoader::load_type(const llvm::Type* type, bool sign) {
     TypeStore& store =
       vm.create_type_array(load_type(type->getArrayElementType(), false),
 			   type->getArrayNumElements());
-    loaded_type.insert(std::make_pair(type, store.addr));
+    loaded_type.insert(std::make_pair(key, store.addr));
     return store.addr;
   } break;
 
@@ -1551,7 +1553,7 @@ vaddr_t LlvmAsmLoader::load_type(const llvm::Type* type, bool sign) {
     TypeStore& store =
       vm.create_type_vector(load_type(type->getVectorElementType(), false),
 			    type->getVectorNumElements());
-    loaded_type.insert(std::make_pair(type, store.addr));
+    loaded_type.insert(std::make_pair(key, store.addr));
     return store.addr;
 
   } break;
@@ -1564,7 +1566,7 @@ vaddr_t LlvmAsmLoader::load_type(const llvm::Type* type, bool sign) {
   
   // 基本型をvmachineから払い出し、キャッシュに登録
   TypeStore& store = vm.create_type_basic(addr);
-  loaded_type.insert(std::make_pair(type, store.addr));
+  loaded_type.insert(std::make_pair(key, store.addr));
   return store.addr;
 }
 
