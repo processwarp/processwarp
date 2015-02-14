@@ -876,7 +876,9 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 	case llvm::Instruction::AtomicCmpXchg: {
 	  const llvm::AtomicCmpXchgInst& inst = static_cast<const llvm::AtomicCmpXchgInst&>(*i);
 	  // set_type <ty>
-	  push_code(fc, Opcode::SET_TYPE, assign_type(fc, inst.getType()));
+	  push_code(fc, Opcode::SET_TYPE, assign_type(fc, inst.getNewValOperand()->getType()));
+	  // set_output <result>
+	  push_code(fc, Opcode::SET_OUTPUT, assign_operand(fc, &inst));
 	  // set_ptr <pointer>
 	  push_code(fc, Opcode::SET_PTR, assign_operand(fc, inst.getPointerOperand()));
 	  // set_value <cmp>

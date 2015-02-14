@@ -451,6 +451,23 @@ void VMachine::execute(int max_clock) {
 	stackinfo.type_cache1->copy(stackinfo.address_cache, operand.cache);
       } break;
 
+      case Opcode::CMPXCHG: {
+	OperandRet operand = get_operand(code, op_param);
+	int is_eq = 0;
+	stackinfo.type_cache1->op_equal(reinterpret_cast<uint8_t*>(&is_eq),
+					stackinfo.address_cache, stackinfo.value_cache);
+	if (is_eq) {
+	  // *a == vを満たす場合、値を書き換え＆書き換え成功フラグを設定
+	  stackinfo.type_cache1->copy(stackinfo.output_cache, stackinfo.address_cache);
+	  *(stackinfo.output_cache + stackinfo.type_cache2->size) = 1;
+	  stackinfo.type_cache1->copy(stackinfo.address_cache, operand.cache);
+	} else {
+	  // *a != v出会った場合、書き換え成功フラグをリセット
+	  stackinfo.type_cache1->copy(stackinfo.output_cache, stackinfo.address_cache);
+	  *(stackinfo.output_cache + stackinfo.type_cache2->size) = 0;
+	}
+      } break;
+
       case Opcode::ALLOCA: {
 	OperandRet operand = get_operand(code, op_param);
 	// サイズを計算
