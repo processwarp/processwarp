@@ -236,35 +236,38 @@ template <typename T> void TypeExtended<T>::op_shr(uint8_t* dst, uint8_t* a, uin
 // type_cast命令に対応したキャスト演算を行う。
 template <typename T> void TypeExtended<T>::type_cast(uint8_t* dst, vaddr_t type, uint8_t* src) {
   switch(type) {
-  case BasicType::TY_UI8:  *reinterpret_cast<uint8_t*>(dst) =
-      static_cast<uint8_t>(*reinterpret_cast<T*>(src)); break;
+  case BasicType::TY_POINTER:
+    *reinterpret_cast<void**>(dst) = reinterpret_cast<void*>(src); break;
     
-  case BasicType::TY_UI16: *reinterpret_cast<uint16_t*>(dst) =
-      static_cast<uint16_t>(*reinterpret_cast<T*>(src)); break;
+  case BasicType::TY_UI8:
+    *reinterpret_cast<uint8_t*>(dst) = static_cast<uint8_t>(*reinterpret_cast<T*>(src)); break;
     
-  case BasicType::TY_UI32: *reinterpret_cast<uint32_t*>(dst) =
-      static_cast<uint32_t>(*reinterpret_cast<T*>(src)); break;
+  case BasicType::TY_UI16:
+    *reinterpret_cast<uint16_t*>(dst) = static_cast<uint16_t>(*reinterpret_cast<T*>(src)); break;
     
-  case BasicType::TY_UI64: *reinterpret_cast<uint64_t*>(dst) =
-      static_cast<uint64_t>(*reinterpret_cast<T*>(src)); break;
+  case BasicType::TY_UI32:
+    *reinterpret_cast<uint32_t*>(dst) = static_cast<uint32_t>(*reinterpret_cast<T*>(src)); break;
     
-  case BasicType::TY_SI8:  *reinterpret_cast<int8_t*>(dst) =
-      static_cast<int8_t>(*reinterpret_cast<T*>(src)); break;
+  case BasicType::TY_UI64:
+    *reinterpret_cast<uint64_t*>(dst) = static_cast<uint64_t>(*reinterpret_cast<T*>(src)); break;
     
-  case BasicType::TY_SI16: *reinterpret_cast<int16_t*>(dst) =
-      static_cast<int16_t>(*reinterpret_cast<T*>(src)); break;
+  case BasicType::TY_SI8:
+    *reinterpret_cast<int8_t*>(dst) = static_cast<int8_t>(*reinterpret_cast<T*>(src)); break;
     
-  case BasicType::TY_SI32: *reinterpret_cast<int32_t*>(dst) =
-      static_cast<int32_t>(*reinterpret_cast<T*>(src)); break;
+  case BasicType::TY_SI16:
+    *reinterpret_cast<int16_t*>(dst) = static_cast<int16_t>(*reinterpret_cast<T*>(src)); break;
     
-  case BasicType::TY_SI64: *reinterpret_cast<int64_t*>(dst) =
-      static_cast<int64_t>(*reinterpret_cast<T*>(src)); break;
+  case BasicType::TY_SI32:
+    *reinterpret_cast<int32_t*>(dst) = static_cast<int32_t>(*reinterpret_cast<T*>(src)); break;
     
-  case BasicType::TY_F32: *reinterpret_cast<float*>(dst) =
-      static_cast<float>(*reinterpret_cast<T*>(src)); break;
+  case BasicType::TY_SI64:
+    *reinterpret_cast<int64_t*>(dst) = static_cast<int64_t>(*reinterpret_cast<T*>(src)); break;
     
-  case BasicType::TY_F64: *reinterpret_cast<double*>(dst) =
-      static_cast<double>(*reinterpret_cast<T*>(src)); break;
+  case BasicType::TY_F32:
+    *reinterpret_cast<float*>(dst) = static_cast<float>(*reinterpret_cast<T*>(src)); break;
+
+  case BasicType::TY_F64:
+    *reinterpret_cast<double*>(dst) = static_cast<double>(*reinterpret_cast<T*>(src)); break;
 
   default: {
     throw_error_message(Error::CAST_VIOLATION, Util::vaddr2str(type));
