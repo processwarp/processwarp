@@ -898,6 +898,8 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 	  case llvm::AtomicRMWInst::INS: {				\
 	    /* set_type <ty> */						\
 	    push_code(fc, Opcode::SET_TYPE, assign_type(fc, inst.getValOperand()->getType(), SI)); \
+	    /* set_output <old> */					\
+	    push_code(fc, Opcode::SET_OUTPUT, assign_operand(fc, &inst)); \
 	    /* set_ov_ptr <pointer> */					\
 	    push_code(fc, Opcode::SET_OV_PTR, assign_operand(fc, inst.getPointerOperand())); \
 	    /* <operation> <value> */					\

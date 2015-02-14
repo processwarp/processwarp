@@ -80,6 +80,8 @@ template <typename T> void TypeExtended<T>::bit_cast(uint8_t* dst, size_t size, 
 // 値をコピーする。
 template <typename T> void TypeExtended<T>::copy(uint8_t* dst, uint8_t* src) {
   *reinterpret_cast<T*>(dst) = *reinterpret_cast<T*>(src);
+  print_debug("copy %016" PRIx64 "(%p <- %p)\n",
+	      static_cast<uint64_t>(*reinterpret_cast<T*>(dst)), dst, src);
 }
 
 // 値を読み込む
@@ -124,6 +126,13 @@ namespace usagi {
 #define M_BINARY_OPERATOR_TYPE_EXTENDED(op, infix)			\
   template <typename T> void TypeExtended<T>::op(uint8_t* dst, uint8_t* a, uint8_t* b) { \
     *reinterpret_cast<T*>(dst) = *reinterpret_cast<T*>(a) infix *reinterpret_cast<T*>(b); \
+    print_debug("%p <- %" PRIi64 "(%p) %s %" PRIi64 "(%p)\n",		\
+		dst,							\
+		static_cast<int64_t>(*reinterpret_cast<T*>(a)),		\
+		a,							\
+		#infix,							\
+		static_cast<int64_t>(*reinterpret_cast<T*>(b)),		\
+		b);							\
   }
 
 M_BINARY_OPERATOR_TYPE_EXTENDED(op_add, +); // 加算

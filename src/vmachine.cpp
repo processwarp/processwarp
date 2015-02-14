@@ -360,12 +360,14 @@ void VMachine::execute(int max_clock) {
 	OperandRet operand = get_operand(code, op_param);
 	stackinfo.output       = operand.addr;
 	stackinfo.output_cache = operand.cache;
+	print_debug("output = %016" PRIx64 "(%p)\n", stackinfo.output, stackinfo.output_cache);
       } break;
 
       case Opcode::SET_VALUE: {
 	OperandRet operand = get_operand(code, op_param);
 	stackinfo.value       = operand.addr;
 	stackinfo.value_cache = operand.cache;
+	print_debug("value = %016" PRIx64 "(%p)\n", stackinfo.value, stackinfo.value_cache);
       } break;
 
 	M_BINARY_OPERATOR(ADD, op_add); // 加算
@@ -379,6 +381,17 @@ void VMachine::execute(int max_clock) {
 	M_BINARY_OPERATOR(OR,  op_or);  // or
 	M_BINARY_OPERATOR(XOR, op_xor); // xor
 
+      case SET_OV_PTR: {
+	OperandRet operand = get_operand(code, op_param);
+	stackinfo.value        = *reinterpret_cast<vaddr_t*>(operand.cache);
+	stackinfo.value_cache  = get_cache(stackinfo.value, vmemory);
+	stackinfo.type_cache1->copy(stackinfo.output_cache, stackinfo.value_cache);
+	stackinfo.output       = stackinfo.value;
+	stackinfo.output_cache = stackinfo.value_cache;
+	print_debug("output = %016" PRIx64 "\n", stackinfo.output);
+	print_debug("value = %016" PRIx64 "\n", stackinfo.value);
+      } break;
+
       case Opcode::SET: {
 	OperandRet operand = get_operand(code, op_param);
 	memcpy(stackinfo.output_cache, operand.cache, stackinfo.type_cache2->size);
@@ -388,14 +401,14 @@ void VMachine::execute(int max_clock) {
 	OperandRet operand = get_operand(code, op_param);
 	stackinfo.address = *reinterpret_cast<vaddr_t*>(operand.cache);
 	stackinfo.address_cache = get_cache(stackinfo.address, vmemory);
-	print_debug("address = %016" PRIx64 "\n", stackinfo.address);
+	print_debug("address = %016" PRIx64 "(%p)\n", stackinfo.address, stackinfo.address_cache);
       } break;
 
       case Opcode::SET_ADR: {
 	OperandRet operand = get_operand(code, op_param);
 	stackinfo.address = operand.addr;
 	stackinfo.address_cache = operand.cache;
-	print_debug("address = %016" PRIx64 "\n", stackinfo.address);
+	print_debug("address = %016" PRIx64 "(%p)\n", stackinfo.address, stackinfo.address_cache);
       } break;
 
       case Opcode::SET_ALIGN: {
@@ -434,7 +447,8 @@ void VMachine::execute(int max_clock) {
 
       case Opcode::STORE: {
 	OperandRet operand = get_operand(code, op_param);
-	memcpy(stackinfo.address_cache, operand.cache, stackinfo.type_cache2->size);
+	print_debug("store %016" PRIx64 "\n", stackinfo.address);
+	stackinfo.type_cache1->copy(stackinfo.address_cache, operand.cache);
       } break;
 
       case Opcode::ALLOCA: {
@@ -447,6 +461,8 @@ void VMachine::execute(int max_clock) {
 	*reinterpret_cast<vaddr_t*>(stackinfo.output_cache) = data.addr;
 	// allocaで確保した領域はスタック終了時に開放できるように記録しておく
 	stackinfo.alloca_addrs.push_back(data.addr);
+	print_debug("alloca *%016" PRIx64 " = %016" PRIx64 "(%ld byte)\n",
+		    stackinfo.output, data.addr, data.size);
       } break;
 
       case Opcode::TEST: {
