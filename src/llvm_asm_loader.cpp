@@ -304,7 +304,6 @@ void LlvmAsmLoader::load_expr(FunctionContext& fc, ValueDest dst, const llvm::Co
       // 2つ目以降のオペランドは数値のはず。
       assert(llvm::ConstantInt::classof(src->getOperand(i)));
       const llvm::ConstantInt* op = static_cast<const llvm::ConstantInt*>(src->getOperand(i));
-      assert(data_layout->getTypeStoreSize(op_type) != 0);
       assert(data_layout->getTypeStoreSize(op_type) ==
 	     data_layout->getTypeAllocSize(op_type));
 
