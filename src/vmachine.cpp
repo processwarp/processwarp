@@ -584,6 +584,23 @@ void VMachine::execute(int max_clock) {
 	stackinfo.pc += 1; // EXTRA分pcを進める
       } break;
 
+      case Opcode::SHUFFLE: {
+	int m = Instruction::get_operand_value(code);
+	OperandRet operand_mask = get_operand(insts.at(stackinfo.pc + 1), op_param);
+	OperandRet operand_v2 = get_operand(insts.at(stackinfo.pc + 2), op_param);
+	TypeStore& element_store = vmemory.get_type(stackinfo.type_cache2->element);
+	TypeBased* element_based = get_type_based(stackinfo.type_cache2->element);
+	uint32_t len = stackinfo.type_cache2->num;
+	for (int i = 0; i < m; i ++) {
+	  uint32_t mask = reinterpret_cast<uint32_t*>(operand_mask.cache)[i];
+	  element_based->copy(stackinfo.output_cache + i * stackinfo.type_cache2->size,
+			      (mask < len ?
+			       stackinfo.value_cache + element_store.size * mask :
+			       operand_v2.cache + element_store.size * (mask - len)));
+	}
+	stackinfo.pc += 2; // EXTRA分pcを進める
+      } break;
+
       default: {
 	// EXTRAARGを含む想定外の命令
 	throw_error_message(Error::INST_VIOLATION, Util::num2hex_str(insts.at(stackinfo.pc)));
