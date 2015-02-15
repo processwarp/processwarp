@@ -17,25 +17,24 @@ define void @_Z3fooiz(i32 %unused, ...) #0 {
   %c = alloca %struct.C, align 8
   %1 = bitcast [1 x %struct.__va_list_tag]* %vl to i8*
   call void @llvm.va_start(i8* %1)
-  %2 = getelementptr inbounds [1 x %struct.__va_list_tag]* %vl, i64 0, i64 0, i32 2
-  %3 = load i8** %2, align 8
-  %4 = getelementptr i8* %3, i64 24
-  store i8* %4, i8** %2, align 8
-  %5 = getelementptr inbounds %struct.C* %c, i64 0, i32 0, i64 0
-  call void @llvm.memcpy.p0i8.p0i8.i64(i8* %5, i8* %3, i64 24, i32 8, i1 false), !tbaa.struct !1
+  %2 = call i8* @__intrinsic_va_arg([1 x %struct.__va_list_tag]* %vl, i64 24) #1
+  %3 = getelementptr inbounds %struct.C* %c, i64 0, i32 0, i64 0
+  call void @llvm.memcpy.p0i8.p0i8.i64(i8* %3, i8* %2, i64 24, i32 8, i1 false), !tbaa.struct !1
   call void @llvm.va_end(i8* %1)
-  %6 = getelementptr inbounds %struct.C* %c, i64 0, i32 1, i32 0
-  %7 = load i32* %6, align 4, !tbaa !9
-  %8 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i64 0, i64 0), i32 %7) #1
-  %9 = getelementptr inbounds %struct.C* %c, i64 0, i32 2, i32 0
-  %10 = load double* %9, align 8, !tbaa !13
-  %11 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str1, i64 0, i64 0), double %10) #1
-  %puts = call i32 @puts(i8* %5)
+  %4 = getelementptr inbounds %struct.C* %c, i64 0, i32 1, i32 0
+  %5 = load i32* %4, align 4, !tbaa !9
+  %6 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i64 0, i64 0), i32 %5) #1
+  %7 = getelementptr inbounds %struct.C* %c, i64 0, i32 2, i32 0
+  %8 = load double* %7, align 8, !tbaa !13
+  %9 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str1, i64 0, i64 0), double %8) #1
+  %puts = call i32 @puts(i8* %3)
   ret void
 }
 
 ; Function Attrs: nounwind
 declare void @llvm.va_start(i8*) #1
+
+declare i8* @__intrinsic_va_arg([1 x %struct.__va_list_tag]*, i64) #2
 
 ; Function Attrs: nounwind
 declare void @llvm.memcpy.p0i8.p0i8.i64(i8* nocapture, i8* nocapture readonly, i64, i32, i1) #1
@@ -44,7 +43,7 @@ declare void @llvm.memcpy.p0i8.p0i8.i64(i8* nocapture, i8* nocapture readonly, i
 declare void @llvm.va_end(i8*) #1
 
 ; Function Attrs: nounwind
-declare i32 @printf(i8* nocapture readonly, ...) #2
+declare i32 @printf(i8* nocapture readonly, ...) #3
 
 ; Function Attrs: nounwind uwtable
 define i32 @main() #0 {
@@ -64,7 +63,8 @@ declare i32 @puts(i8* nocapture readonly) #1
 
 attributes #0 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind }
-attributes #2 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #2 = { "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #3 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 
 !llvm.ident = !{!0}
 
