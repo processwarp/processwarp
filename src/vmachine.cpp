@@ -222,7 +222,8 @@ void VMachine::execute(int max_clock) {
 	int unwind_pc = Instruction::get_operand(insts.at(stackinfo.pc + 2));
 	// CALL命令の次の命令の場所を取得する
 	int next_pc = 1;
-	while(Instruction::get_opcode(insts.at(stackinfo.pc + next_pc)) == Opcode::EXTRA)
+	while(stackinfo.pc + next_pc < insts.size() &&
+	      Instruction::get_opcode(insts.at(stackinfo.pc + next_pc)) == Opcode::EXTRA)
 	  next_pc ++;
 	
 	// スタックのサイズの有無により作りを変える
