@@ -191,7 +191,6 @@ void VMachine::execute(int max_clock) {
       print_debug("pc:%d, k:%ld, insts:%ld, code:%08x %s\n",
 		  stackinfo.pc, k.size / sizeof(vaddr_t),
 		  insts.size(), code, Util::code2str(code).c_str());
-      //usleep(100000);///< TODO
 
       // call命令の判定(call命令の場合falseに変える)
       bool is_tailcall = true;
@@ -219,13 +218,20 @@ void VMachine::execute(int max_clock) {
 
 	assert(!is_tailcall); // TODO 動きを確認する。
 
+	int normal_pc = Instruction::get_operand(insts.at(stackinfo.pc + 1));
+	int unwind_pc = Instruction::get_operand(insts.at(stackinfo.pc + 2));
+	// CALL命令の次の命令の場所を取得する
+	int next_pc = 1;
+	while(Instruction::get_opcode(insts.at(stackinfo.pc + next_pc)) == Opcode::EXTRA)
+	  next_pc ++;
+	
 	// スタックのサイズの有無により作りを変える
 	new_stackinfo.reset
 	  (new StackInfo(new_func.addr,
 			 // tailcallの場合、戻り値の格納先を現行のものから引き継ぐ
 			 is_tailcall ? stackinfo.ret_addr : stackinfo.output,
-			 Instruction::get_operand(insts.at(stackinfo.pc + 1)),
-			 Instruction::get_operand(insts.at(stackinfo.pc + 2)),
+			 (normal_pc != FILL_OPERAND ? normal_pc : stackinfo.pc + next_pc),
+			 (unwind_pc != FILL_OPERAND ? unwind_pc : stackinfo.pc + next_pc),
 			 (new_func.normal_prop.stack_size != 0 ?
 			  vmemory.alloc_data(new_func.normal_prop.stack_size, false).addr :
 			  VADDR_NON)));

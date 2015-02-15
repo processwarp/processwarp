@@ -478,13 +478,15 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 	case llvm::Instruction::Ret: {
 	  const llvm::ReturnInst& inst = static_cast<const llvm::ReturnInst&>(*i);
 	  if (inst.getReturnValue() == nullptr) {
-	    // 戻り値がない場合、0xff..
+	    // 戻り値がない場合
+	    // return (0xff..)
 	    push_code(fc, Opcode::RETURN, FILL_OPERAND);
 
 	  } else {
-	    // 戻り値がある場合、A = 1, B = 値
-	    push_code(fc, Opcode::RETURN,
-		      assign_operand(fc, inst.getReturnValue()));
+	    // set_type <type>
+	    push_code(fc, Opcode::SET_TYPE, assign_type(fc, inst.getReturnValue()->getType()));
+	    // return <value>
+	    push_code(fc, Opcode::RETURN, assign_operand(fc, inst.getReturnValue()));
 	  }
 	} break;
 
