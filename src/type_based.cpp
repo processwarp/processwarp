@@ -285,6 +285,8 @@ void TypePointer::bit_cast(uint8_t* dst, size_t size, uint8_t* src) {
 // 値をコピーする。
 void TypePointer::copy(uint8_t* dst, uint8_t* src) {
   *reinterpret_cast<vaddr_t*>(dst) = *reinterpret_cast<vaddr_t*>(src);
+  print_debug("copy %016" PRIx64 "(%p <- %p)\n",
+	      *reinterpret_cast<vaddr_t*>(dst), dst, src);
 }
 
 // 比較命令(a==b)に対応した演算を行う。

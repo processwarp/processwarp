@@ -13,6 +13,7 @@
 #include "intrinsic_libc.hpp"
 #include "intrinsic_memory.hpp"
 #include "intrinsic_posix.hpp"
+#include "intrinsic_va_arg.hpp"
 #include "stackinfo.hpp"
 #include "type_based.hpp"
 #include "util.hpp"
@@ -447,7 +448,7 @@ void VMachine::execute(int max_clock) {
 
       case Opcode::LOAD: {
 	OperandRet operand = get_operand(code, op_param);
-	memcpy(operand.cache, stackinfo.address_cache, stackinfo.type_cache2->size);
+	stackinfo.type_cache1->copy(operand.cache, stackinfo.address_cache);
 	print_debug("*%016" PRIx64 " = *%016" PRIx64 "(size = %ld)\n",
 		    operand.addr, stackinfo.address, stackinfo.type_cache2->size);
       } break;
@@ -1095,6 +1096,7 @@ void VMachine::setup() {
   IntrinsicLibc::regist(*this);
   IntrinsicMemory::regist(*this);
   IntrinsicPosix::regist(*this);
+  IntrinsicVaArg::regist(*this);
 
   // Cの標準ライブラリをロード
   /*
