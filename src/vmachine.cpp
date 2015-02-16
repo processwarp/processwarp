@@ -97,10 +97,19 @@ inline uint8_t* get_cache(vaddr_t addr, VMemory& vmemory) {
 
 inline FuncStore& get_function(instruction_t code, OperandParam& param) {
   int operand = Instruction::get_operand(code);
-  // 関数は定数領域に置かれているはず
-  assert((operand & HEAD_OPERAND) != 0);
-  vaddr_t addr = *reinterpret_cast<vaddr_t*>(param.k.head.get() + (FILL_OPERAND - operand));
-  return param.vmemory.get_func(addr);
+  if ((operand & HEAD_OPERAND) != 0) {
+    vaddr_t position = (FILL_OPERAND - operand);
+    assert(position < param.k.size);
+    // 定数の場合1の補数表現からの復元
+    vaddr_t addr =
+      *reinterpret_cast<vaddr_t*>(param.k.head.get() + (FILL_OPERAND - operand));
+    return param.vmemory.get_func(addr);
+    
+  } else {
+    assert(operand < static_cast<signed>(param.stack.size));
+    vaddr_t addr = *reinterpret_cast<vaddr_t*>(param.stack.head.get() + operand);
+    return param.vmemory.get_func(addr);
+  }
 }
 
 inline OperandRet get_operand(instruction_t code, OperandParam& param) {
