@@ -75,6 +75,7 @@ template <typename T> void TypeExtended<T>::bit_cast(uint8_t* dst, size_t size, 
   longest_uint_t buffer = 0;
   memcpy(&buffer, src, sizeof(T));
   memcpy(dst, &buffer, size);
+  print_debug("bitcast %16" PRIx64 "(%ld)(%p <- %p)\n", buffer, size, dst, src);
 }
 
 // 値をコピーする。
@@ -280,6 +281,8 @@ void TypePointer::bit_cast(uint8_t* dst, size_t size, uint8_t* src) {
   // コピーサイズはvaddr_tのサイズと同じはず
   assert(size == sizeof(vaddr_t));
   *reinterpret_cast<vaddr_t*>(dst) = *reinterpret_cast<vaddr_t*>(src);
+  print_debug("bitcast %16" PRIx64 "(%ld)(%p <- %p)\n",
+	      *reinterpret_cast<vaddr_t*>(dst), size, dst, src);
 }
 
 // 値をコピーする。
