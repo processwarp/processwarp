@@ -12,6 +12,7 @@
 #include "instruction.hpp"
 #include "intrinsic_libc.hpp"
 #include "intrinsic_memory.hpp"
+#include "intrinsic_overflow.hpp"
 #include "intrinsic_posix.hpp"
 #include "intrinsic_va_arg.hpp"
 #include "stackinfo.hpp"
@@ -1111,6 +1112,7 @@ void VMachine::setup() {
   // VMの組み込み関数をロード
   IntrinsicLibc::regist(*this);
   IntrinsicMemory::regist(*this);
+  IntrinsicOverflow::regist(*this);
   IntrinsicPosix::regist(*this);
   IntrinsicVaArg::regist(*this);
 
