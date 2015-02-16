@@ -1297,8 +1297,6 @@ void LlvmAsmLoader::load_globals(const llvm::Module::GlobalListType& variables) 
       load_constant(fc, dst, gl->getInitializer());
     }
   }
-  // ダミー定数領域には書き込まれていないはず
-  assert(k.size() == 0);
 }
 
 // LLVMの定数(Int)を仮想マシンにロードする。
