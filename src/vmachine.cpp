@@ -750,9 +750,16 @@ void VMachine::call_external(external_func_t func,
   if (status != FFI_OK) {
     throw_error_message(Error::EXT_CALL, Util::num2hex_str(status));
   }
-
+  
+  // 戻り値格納用の領域を作成
+  size_t ret_size = vmemory.get_type(ret_type).size;
+  // sizeof(void*)の倍数領域を確保する。
+  std::vector<void*> ret_buf(ret_size / sizeof(void*) +
+			     (ret_size % sizeof(void*) == 0 ? 0 : 1));
   // メソッド呼び出し
-  ffi_call(&cif, func, ret_addr, ffi_args.data());
+  ffi_call(&cif, func, ret_buf.data(), ffi_args.data());
+  // 戻り値格納用領域から戻り値を取り出し。
+  memcpy(ret_addr, ret_buf.data(), ret_size);
 }
 
 // 型のサイズと最大アライメントを計算する。
