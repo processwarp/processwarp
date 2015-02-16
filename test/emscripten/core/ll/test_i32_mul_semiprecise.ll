@@ -2,12 +2,12 @@
 target datalayout = "e-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-pc-linux-gnu"
 
-@_ZL5state = internal unnamed_addr global [624 x i32] zeroinitializer, align 16
+@state = internal unnamed_addr global [624 x i32] zeroinitializer, align 16
 @.str = private unnamed_addr constant [8 x i8] c"%d: %u\0A\00", align 1
 
 ; Function Attrs: nounwind uwtable
-define void @_Z6seedMTj(i32 %seed) #0 {
-  store i32 %seed, i32* getelementptr inbounds ([624 x i32]* @_ZL5state, i64 0, i64 0), align 16, !tbaa !1
+define void @seedMT(i32 %seed) #0 {
+  store i32 %seed, i32* getelementptr inbounds ([624 x i32]* @state, i64 0, i64 0), align 16, !tbaa !1
   br label %1
 
 ; <label>:1                                       ; preds = %1, %0
@@ -18,7 +18,7 @@ define void @_Z6seedMTj(i32 %seed) #0 {
   %4 = mul i32 %3, 1812433253
   %5 = trunc i64 %indvars.iv to i32
   %6 = add i32 %4, %5
-  %7 = getelementptr inbounds [624 x i32]* @_ZL5state, i64 0, i64 %indvars.iv
+  %7 = getelementptr inbounds [624 x i32]* @state, i64 0, i64 %indvars.iv
   store i32 %6, i32* %7, align 4, !tbaa !1
   %indvars.iv.next = add nuw nsw i64 %indvars.iv, 1
   %exitcond = icmp eq i64 %indvars.iv.next, 624
@@ -30,7 +30,7 @@ define void @_Z6seedMTj(i32 %seed) #0 {
 
 ; Function Attrs: nounwind uwtable
 define i32 @main() #0 {
-  store i32 5497, i32* getelementptr inbounds ([624 x i32]* @_ZL5state, i64 0, i64 0), align 16, !tbaa !1
+  store i32 5497, i32* getelementptr inbounds ([624 x i32]* @state, i64 0, i64 0), align 16, !tbaa !1
   br label %1
 
 ; <label>:1                                       ; preds = %1, %0
@@ -41,32 +41,32 @@ define i32 @main() #0 {
   %4 = mul i32 %3, 1812433253
   %5 = trunc i64 %indvars.iv.i to i32
   %6 = add i32 %4, %5
-  %7 = getelementptr inbounds [624 x i32]* @_ZL5state, i64 0, i64 %indvars.iv.i
+  %7 = getelementptr inbounds [624 x i32]* @state, i64 0, i64 %indvars.iv.i
   store i32 %6, i32* %7, align 4, !tbaa !1
   %indvars.iv.next.i = add nuw nsw i64 %indvars.iv.i, 1
   %exitcond.i = icmp eq i64 %indvars.iv.next.i, 624
-  br i1 %exitcond.i, label %_Z6seedMTj.exit.preheader, label %1
+  br i1 %exitcond.i, label %seedMT.exit.preheader, label %1
 
-_Z6seedMTj.exit.preheader:                        ; preds = %1
-  %8 = load i32* getelementptr inbounds ([624 x i32]* @_ZL5state, i64 0, i64 0), align 16, !tbaa !1
+seedMT.exit.preheader:                            ; preds = %1
+  %8 = load i32* getelementptr inbounds ([624 x i32]* @state, i64 0, i64 0), align 16, !tbaa !1
   %9 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str, i64 0, i64 0), i32 0, i32 %8) #2
-  %10 = load i32* getelementptr inbounds ([624 x i32]* @_ZL5state, i64 0, i64 1), align 4, !tbaa !1
+  %10 = load i32* getelementptr inbounds ([624 x i32]* @state, i64 0, i64 1), align 4, !tbaa !1
   %11 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str, i64 0, i64 0), i32 1, i32 %10) #2
-  %12 = load i32* getelementptr inbounds ([624 x i32]* @_ZL5state, i64 0, i64 2), align 8, !tbaa !1
+  %12 = load i32* getelementptr inbounds ([624 x i32]* @state, i64 0, i64 2), align 8, !tbaa !1
   %13 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str, i64 0, i64 0), i32 2, i32 %12) #2
-  %14 = load i32* getelementptr inbounds ([624 x i32]* @_ZL5state, i64 0, i64 3), align 4, !tbaa !1
+  %14 = load i32* getelementptr inbounds ([624 x i32]* @state, i64 0, i64 3), align 4, !tbaa !1
   %15 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str, i64 0, i64 0), i32 3, i32 %14) #2
-  %16 = load i32* getelementptr inbounds ([624 x i32]* @_ZL5state, i64 0, i64 4), align 16, !tbaa !1
+  %16 = load i32* getelementptr inbounds ([624 x i32]* @state, i64 0, i64 4), align 16, !tbaa !1
   %17 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str, i64 0, i64 0), i32 4, i32 %16) #2
-  %18 = load i32* getelementptr inbounds ([624 x i32]* @_ZL5state, i64 0, i64 5), align 4, !tbaa !1
+  %18 = load i32* getelementptr inbounds ([624 x i32]* @state, i64 0, i64 5), align 4, !tbaa !1
   %19 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str, i64 0, i64 0), i32 5, i32 %18) #2
-  %20 = load i32* getelementptr inbounds ([624 x i32]* @_ZL5state, i64 0, i64 6), align 8, !tbaa !1
+  %20 = load i32* getelementptr inbounds ([624 x i32]* @state, i64 0, i64 6), align 8, !tbaa !1
   %21 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str, i64 0, i64 0), i32 6, i32 %20) #2
-  %22 = load i32* getelementptr inbounds ([624 x i32]* @_ZL5state, i64 0, i64 7), align 4, !tbaa !1
+  %22 = load i32* getelementptr inbounds ([624 x i32]* @state, i64 0, i64 7), align 4, !tbaa !1
   %23 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str, i64 0, i64 0), i32 7, i32 %22) #2
-  %24 = load i32* getelementptr inbounds ([624 x i32]* @_ZL5state, i64 0, i64 8), align 16, !tbaa !1
+  %24 = load i32* getelementptr inbounds ([624 x i32]* @state, i64 0, i64 8), align 16, !tbaa !1
   %25 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str, i64 0, i64 0), i32 8, i32 %24) #2
-  %26 = load i32* getelementptr inbounds ([624 x i32]* @_ZL5state, i64 0, i64 9), align 4, !tbaa !1
+  %26 = load i32* getelementptr inbounds ([624 x i32]* @state, i64 0, i64 9), align 4, !tbaa !1
   %27 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str, i64 0, i64 0), i32 9, i32 %26) #2
   ret i32 0
 }

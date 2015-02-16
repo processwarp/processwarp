@@ -1,6 +1,7 @@
+#include <inttypes.h>
 #include <stdio.h>
 
-typedef unsigned int uint;
+typedef uint32_t uint;
 
 // from cube2, zlib licensed
 
