@@ -83,7 +83,7 @@ int main(int argc, char* argv[]) {
       file.insert(std::make_pair("args", picojson::value(picojson::array())));
     }
     picojson::array& args = file.at("args").get<picojson::array>();
-    args.push_back(picojson::value(argv[i]));
+    args.push_back(picojson::value(std::string(argv[i])));
   }
 
   { // サーバ起動
