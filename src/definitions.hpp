@@ -92,6 +92,11 @@ namespace usagi {
   /** プロセスID */
   typedef std::string pid_t;
 
+  /** trueを表す値 */
+  static const uint8_t I8_TRUE = 0x1;
+  /** falseを表す値 */
+  static const uint8_t I8_FALSE = 0x0;
+
   /** 関数のタイプ */
   enum FuncType : uint8_t {
     FC_NORMAL       = 0x01, ///< 通常の関数(VMで解釈、実行する)

@@ -365,7 +365,7 @@ void LlvmAsmLoader::load_expr(FunctionContext& fc, ValueDest dst, const llvm::Co
       // FCmpInst::FCMP_ULE
       // FCmpInst::FCMP_UNE
     case llvm::FCmpInst::FCMP_TRUE: {
-      *get_ptr_by_dest(fc, dst) = 0xff;
+      *get_ptr_by_dest(fc, dst) = I8_TRUE;
     } break;
 
       M_CCMP_OPERATOR1(ICmpInst::ICMP_EQ, false, op_equal, 0, 1);
@@ -435,9 +435,9 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 
     // 定数
     std::vector<uint8_t> k;
-    // 定数の最初に0x00(false)と0xff(true)をロードできるように確保しておく
-    k.push_back(0x00);
-    k.push_back(0xff);
+    // 定数の最初に0x0(false)と0x1(true)をロードできるように確保しておく
+    k.push_back(I8_FALSE);
+    k.push_back(I8_TRUE);
     // 変数
     std::map<const llvm::Value*, int> stack_values;
     
@@ -1131,7 +1131,7 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 	    // set_output <result>
 	    push_code(fc, Opcode::SET_OUTPUT, assign_operand(fc, &inst));
 	    // set 定数
-	    push_code(fc, Opcode::SET, -1); // 0x00をk(0)に割り当てておく
+	    push_code(fc, Opcode::SET, -1); // 0x0をk(0)に割り当てておく
 	  } break;
 
 	  case llvm::CmpInst::FCMP_TRUE: { // true
@@ -1140,7 +1140,7 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 	    // set_output <result>
 	    push_code(fc, Opcode::SET_OUTPUT, assign_operand(fc, &inst));
 	    // set 定数
-	    push_code(fc, Opcode::SET, -2); // 0xffをk(1)に割り当てておく
+	    push_code(fc, Opcode::SET, -2); // 0x1をk(1)に割り当てておく
 	  } break;
 
 	  default: {
@@ -1354,8 +1354,10 @@ void LlvmAsmLoader::load_module(llvm::Module* module) {
 	print_debug("\targ_num:\t%d\n", prop.arg_num);
 	print_debug("\tstack_size:\t%d\n", prop.stack_size);
 	print_debug("\tcode:(%ld)\n", prop.code.size());
+	int i = 0;
 	for (auto it = prop.code.begin(); it != prop.code.end(); it++) {
-	  print_debug("\t\t%08x  %s\n", *it, Util::code2str(*it).c_str());
+	  print_debug("\t%d\t%08x  %s\n", i, *it, Util::code2str(*it).c_str());
+	  i ++;
 	}
 	print_debug("\tk:\t%016" PRIx64 "\n", prop.k);
 	print_debug("\tret_type\t%016" PRIx64 "\n", func.ret_type);

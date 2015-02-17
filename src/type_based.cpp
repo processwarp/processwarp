@@ -154,7 +154,11 @@ M_BINARY_OPERATOR_TYPE_EXTENDED(op_xor, ^); // xor
  */
 #define M_COMP_OPERATOR_TYPE_EXTENDED(op, infix)			\
   template <typename T> void TypeExtended<T>::op(uint8_t* dst, uint8_t* a, uint8_t* b) { \
-    *reinterpret_cast<uint8_t*>(dst) = (*reinterpret_cast<T*>(a) infix *reinterpret_cast<T*>(b)); \
+  *reinterpret_cast<uint8_t*>(dst) =					\
+    (*reinterpret_cast<T*>(a) infix *reinterpret_cast<T*>(b)) ? 0x01 : 0x00; \
+  print_debug("%02d = %" PRId64 " %s %" PRId64 "\n", *reinterpret_cast<uint8_t*>(dst), \
+	      static_cast<int64_t>(*reinterpret_cast<T*>(a)), #infix,	\
+	      static_cast<int64_t>(*reinterpret_cast<T*>(b)));		\
   }
 
 M_COMP_OPERATOR_TYPE_EXTENDED(op_equal,         ==); // a==b
@@ -204,9 +208,9 @@ namespace usagi {
   template<> void TypeExtended<double>::op_not_nans(uint8_t* dst, uint8_t* a, uint8_t* b) {
     if (!std::isnan(*reinterpret_cast<double*>(a)) &&
 	!std::isnan(*reinterpret_cast<double*>(b))) {
-      *dst = 0xff;
+      *dst = I8_TRUE;
     } else {
-      *dst = 0x00;
+      *dst = I8_FALSE;
     }
   }
 
@@ -214,9 +218,9 @@ namespace usagi {
   template<> void TypeExtended<float>::op_not_nans(uint8_t* dst, uint8_t* a, uint8_t* b) {
     if (!std::isnan(*reinterpret_cast<float*>(a)) &&
 	!std::isnan(*reinterpret_cast<float*>(b))) {
-      *dst = 0xff;
+      *dst = I8_TRUE;
     } else {
-      *dst = 0x00;
+      *dst = I8_FALSE;
     }
   }
 
@@ -295,18 +299,18 @@ void TypePointer::copy(uint8_t* dst, uint8_t* src) {
 // 比較命令(a==b)に対応した演算を行う。
 void TypePointer::op_equal(uint8_t* dst, uint8_t* a, uint8_t* b) {
   if (*reinterpret_cast<vaddr_t*>(a) == *reinterpret_cast<vaddr_t*>(b)) {
-    *reinterpret_cast<uint8_t*>(dst) = 0xff;
+    *reinterpret_cast<uint8_t*>(dst) = I8_TRUE;
   } else {
-    *reinterpret_cast<uint8_t*>(dst) = 0x00;
+    *reinterpret_cast<uint8_t*>(dst) = I8_FALSE;
   }
 }
 
 // 比較命令(a!=b)に対応した演算を行う。
 void TypePointer::op_not_equal(uint8_t* dst, uint8_t* a, uint8_t* b) {
   if (*reinterpret_cast<vaddr_t*>(a) == *reinterpret_cast<vaddr_t*>(b)) {
-    *reinterpret_cast<uint8_t*>(dst) = 0x00;
+    *reinterpret_cast<uint8_t*>(dst) = I8_FALSE;
   } else {
-    *reinterpret_cast<uint8_t*>(dst) = 0xff;
+    *reinterpret_cast<uint8_t*>(dst) = I8_TRUE;
   }
 }
 
