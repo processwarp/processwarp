@@ -773,7 +773,7 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 	    } else if (llvm::StructType::classof(type)) {
 	      // 構造体の場合、N-1番目までの要素のサイズの合計
 	      unsigned int j = 0;
-	      for (j = 0; j + 1 < *idx; j++) {
+	      for (j = 0; j < *idx; j++) {
 		diff += data_layout->getTypeAllocSize
 		  (static_cast<const llvm::StructType*>(type)->getElementType(j));
 	      }
@@ -816,7 +816,7 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 	    } else if (llvm::StructType::classof(type)) {
 	      // 構造体の場合、N-1番目までの要素のサイズの合計
 	      unsigned int j = 0;
-	      for (j = 0; j + 1 < *idx; j++) {
+	      for (j = 0; j < *idx; j++) {
 		diff += data_layout->getTypeAllocSize
 		  (static_cast<const llvm::StructType*>(type)->getElementType(j));
 	      }
