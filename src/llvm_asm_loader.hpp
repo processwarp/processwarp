@@ -72,7 +72,8 @@ namespace usagi {
     };
 
     /// 値の格納先(拡張可能な定数領域k or 固定の定数領域
-    struct ValueDest {
+    class ValueDest {
+    public:
       /// 拡張可能な定数領域kを指す場合true
       bool is_k;
       union {
@@ -81,6 +82,9 @@ namespace usagi {
 	/// 固定の定数領域へのポインタ
 	uint8_t* ptr;
       } addr;
+
+      // mapのキーとして格納するので<演算子の動作を定義する。
+      bool operator<(const ValueDest& other) const;
     };
 
     /// LLVMのコンテキスト(複数ファイルを読み込むときに使い回す)
@@ -89,6 +93,11 @@ namespace usagi {
     VMachine& vm;
     /// ロード済みの型とアドレスの対応関係
     std::map<std::pair<const llvm::Type*, bool>, vaddr_t> loaded_type;
+
+    /// BlockAddressにより値を格納する場所
+    std::map<ValueDest, std::pair<const llvm::Function*, const llvm::BasicBlock*>> block_addrs;
+    /// ブロックと関数内での開始位置
+    std::map<std::pair<const llvm::Function*, const llvm::BasicBlock*>, unsigned int> block_addrs_start;
 
     /// 関数とアドレスの対応関係
     std::map<const llvm::Function*, vaddr_t> map_func;
@@ -150,6 +159,14 @@ namespace usagi {
      * @param src LLVMの定数(配列)
      */
     void load_array(FunctionContext& fc, ValueDest dst, const llvm::ConstantArray* src);
+
+    /**
+     * LLVMの定数(BlockAddress)を仮想マシンにロードする。
+     * @param fc 解析中の関数の命令/変数
+     * @param dst ロード先
+     * @param src LLVMの定数(ブロックアドレス)
+     */
+    void load_block(FunctionContext& fc, ValueDest dst, const llvm::BlockAddress* src);
 
     /**
      * LLVMの定数を仮想マシンにロードする。

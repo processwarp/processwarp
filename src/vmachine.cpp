@@ -540,6 +540,15 @@ void VMachine::execute(int max_clock) {
 	continue;
       } break;
 
+      case Opcode::INDIRECT_JUMP: {
+	OperandRet operand = get_operand(code, op_param);
+	stackinfo.phi0 = stackinfo.phi1;
+	stackinfo.phi1 = stackinfo.pc =
+	  static_cast<unsigned int>(*reinterpret_cast<vaddr_t*>(operand.cache));
+	print_debug("pc = %d\n", stackinfo.pc);
+	continue;
+      } break;
+
       case Opcode::PHI: {
 	instruction_t code2 = insts.at(stackinfo.pc + 1);
 	int count = 0;

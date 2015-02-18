@@ -13,6 +13,23 @@
 
 using namespace usagi;
 
+// mapのキーとして格納するので<演算子の動作を定義する。
+bool LlvmAsmLoader::ValueDest::operator<(const ValueDest& other) const {
+  if (is_k) {
+    if (other.is_k) {
+      return addr.k < other.addr.k;
+    } else {
+      return true;
+    }
+  } else {
+    if (other.is_k) {
+      return false;
+    } else {
+      return addr.ptr < other.addr.ptr;
+    }
+  }
+}
+
 // コンストラクタ。
 LlvmAsmLoader::LlvmAsmLoader(VMachine& vm_) :
   context(llvm::getGlobalContext()),
@@ -23,7 +40,7 @@ LlvmAsmLoader::LlvmAsmLoader(VMachine& vm_) :
 LlvmAsmLoader::~LlvmAsmLoader() {
   llvm::llvm_shutdown();
 }
-
+  
 // LLVMのアセンブリファイルを読み込んで仮想マシンにロードする。
 void LlvmAsmLoader::load_file(const std::string& filename) {
   llvm::SMDiagnostic error;
@@ -151,6 +168,12 @@ void LlvmAsmLoader::load_array(FunctionContext& fc, ValueDest dst, const llvm::C
   }
 }
 
+// LLVMの定数(BlockAddress)を仮想マシンにロードする。
+void LlvmAsmLoader::load_block(FunctionContext& fc, ValueDest dst, const llvm::BlockAddress* src) {
+  // アドレスが未定なので格納場所を記録するだけ。
+  block_addrs.insert(std::make_pair(dst, std::make_pair(src->getFunction(), src->getBasicBlock())));
+}
+
 // LLVMの定数を仮想マシンにロードする。
 void LlvmAsmLoader::load_constant(FunctionContext& fc, ValueDest dst, const llvm::Constant* src) {
   
@@ -179,7 +202,10 @@ void LlvmAsmLoader::load_constant(FunctionContext& fc, ValueDest dst, const llvm
     // 値が不定なので初期化を行わない
   } break;
 
-    //case llvm::Value::BlockAddressVal: {} break;
+  case llvm::Value::BlockAddressVal: {
+    load_block(fc, dst, static_cast<const llvm::BlockAddress*>(src));
+  } break;
+
   case llvm::Value::ConstantExprVal: {
     load_expr(fc, dst, static_cast<const llvm::ConstantExpr*>(src));
   } break;
@@ -469,6 +495,7 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
     for (auto block = function->begin(); block != function->end(); block ++) {
       // ブロックの開始位置を格納しておく
       block_start.insert(std::make_pair(block_alias.at(block), fc.code.size()));
+      block_addrs_start.insert(std::make_pair(std::make_pair(function, block), fc.code.size()));
 
       // 命令を解析する
       for (auto i = block->begin(); i != block->end(); i ++) {
@@ -552,9 +579,14 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 	  push_code(fc, Opcode::JUMP, block_alias.at(inst.getDefaultDest()));
 	} break;
 
+	case llvm::Instruction::IndirectBr: {
+	  const llvm::IndirectBrInst& inst = static_cast<const llvm::IndirectBrInst&>(*i);
+	  // indirect_jump <address>
+	  push_code(fc, Opcode::INDIRECT_JUMP, assign_operand(fc, inst.getAddress()));
+	} break;
+
 	case llvm::Instruction::Invoke: {
 	  const llvm::InvokeInst& inst = static_cast<const llvm::InvokeInst&>(*i);
-	  // インラインアセンブラ未対応
 	  if (!inst.getType()->isVoidTy()) {
 	    // 戻り値の型
 	    push_code(fc, Opcode::SET_TYPE, assign_type(fc, inst.getType()));
@@ -1339,6 +1371,22 @@ void LlvmAsmLoader::load_module(llvm::Module* module) {
   if (module->getAliasList().size() != 0) {
     throw_error(Error::UNSUPPORT);
   }
+
+  // BlockAddressの書き出し
+  for (auto it : block_addrs) {
+    if (it.first.is_k) {
+      vaddr_t func_addr = map_func.at(it.second.first);
+      FuncStore& func = vm.vmemory.get_func(func_addr);
+      uint8_t* k = vm.get_raw_addr(func.normal_prop.k);
+      *reinterpret_cast<vaddr_t*>(k + it.first.addr.k) =
+	static_cast<vaddr_t>(block_addrs_start.at(it.second));
+      
+    } else {
+      *reinterpret_cast<vaddr_t*>(it.first.addr.ptr) =
+	static_cast<vaddr_t>(block_addrs_start.at(it.second));
+    }
+  }
+
   //*
   // デバッグ用にダンプを出力
   std::set<vaddr_t> all = vm.vmemory.get_alladdr();
