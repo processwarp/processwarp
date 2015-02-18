@@ -1,7 +1,7 @@
 
-#include "lib/safeint3.hpp"
 #include "intrinsic_overflow.hpp"
 #include "vmachine.hpp"
+#include "lib/safeint3.hpp"
 
 using namespace usagi;
 
