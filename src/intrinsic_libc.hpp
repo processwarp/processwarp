@@ -20,12 +20,41 @@ namespace usagi {
 		       vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
+     * calloc関数。データ領域の確保とクリアを行う。
+     * srcから取り出すパラメタは以下のとおり。
+     * size_t count 要素数
+     * size_t size 要素サイズ
+     * 戻り値は以下のとおり。
+     * void* 確保した領域のアドレス
+     */
+    static bool calloc(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+		       vaddr_t dst, std::vector<uint8_t>& src);
+
+    /**
      * exit関数。
      * srcから取り出すパラメタは以下のとおり。
      * i32 終了コード。
      */
     static bool exit(VMachine& vm, Thread& th, IntrinsicFuncParam p,
 		     vaddr_t dst, std::vector<uint8_t>& src);
+
+    /**
+     * free関数。指定データ領域を開放する。
+     * srcから取り出すパラメタは以下のとおり。
+     * vaddr_t ptr 開放するデータ領域。
+     */
+    static bool free(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+		     vaddr_t dst, std::vector<uint8_t>& src);
+    
+    /**
+     * malloc関数。データ領域の確保を行う。
+     * srcから取り出すパラメタは以下のとおり。
+     * size_t size 領域サイズ
+     * 戻り値は以下のとおり。
+     * void* 確保した領域のアドレス
+     */
+    static bool malloc(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+		       vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
      * memcpy関数。
@@ -62,6 +91,17 @@ namespace usagi {
      */
     static bool memset(VMachine& vm, Thread& th, IntrinsicFuncParam p,
 		       vaddr_t dst, std::vector<uint8_t>& src);
+
+    /**
+     * realloc関数。データ領域の再確保を行う。
+     * srcから取り出すパラメタは以下のとおり。
+     * vaddr_t ptr
+     * size_t size 領域サイズ
+     * 戻り値は以下のとおり。
+     * void* 確保した領域のアドレス
+     */
+    static bool realloc(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+			vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
      * VMにライブラリを登録する。
