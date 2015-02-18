@@ -10,6 +10,7 @@
 #include "error.hpp"
 #include "func_store.hpp"
 #include "instruction.hpp"
+#include "intrinsic_bit.hpp"
 #include "intrinsic_libc.hpp"
 #include "intrinsic_memory.hpp"
 #include "intrinsic_overflow.hpp"
@@ -1119,6 +1120,7 @@ void VMachine::setup() {
 #undef M_ALLOC_BASIC_TYPE
 
   // VMの組み込み関数をロード
+  IntrinsicBit::regist(*this);
   IntrinsicLibc::regist(*this);
   IntrinsicMemory::regist(*this);
   IntrinsicOverflow::regist(*this);
