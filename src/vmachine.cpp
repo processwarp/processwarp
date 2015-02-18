@@ -40,10 +40,10 @@ static TypeBased* TYPE_BASES[] = {
   nullptr,
   nullptr,
   nullptr, // 10
-  new TypeExtended<int8_t>(), // 11 8bit整数型
-  new TypeExtended<int16_t>(), // 12 16bit整数型
-  new TypeExtended<int32_t>(), // 13 32bit整数型
-  new TypeExtended<int64_t>(), // 14 64bit整数型
+  new TypeExtended<uint8_t>(), // 11 8bit整数型
+  new TypeExtended<uint16_t>(), // 12 16bit整数型
+  new TypeExtended<uint32_t>(), // 13 32bit整数型
+  new TypeExtended<uint64_t>(), // 14 64bit整数型
   nullptr,
   nullptr,
   nullptr,
@@ -56,10 +56,10 @@ static TypeBased* TYPE_BASES[] = {
   nullptr,
   nullptr,
   nullptr, // 20
-  new TypeExtended<uint8_t>(), // 21 8bit整数型
-  new TypeExtended<uint16_t>(), // 22 16bit整数型
-  new TypeExtended<uint32_t>(), // 23 32bit整数型
-  new TypeExtended<uint64_t>(), // 24 64bit整数型
+  new TypeExtended<int8_t>(), // 21 8bit整数型
+  new TypeExtended<int16_t>(), // 22 16bit整数型
+  new TypeExtended<int32_t>(), // 23 32bit整数型
+  new TypeExtended<int64_t>(), // 24 64bit整数型
   nullptr,
   nullptr,
   nullptr,
