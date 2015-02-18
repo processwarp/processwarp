@@ -595,7 +595,7 @@ void VMachine::execute(int max_clock) {
       case Opcode::OR_NANS: {
 	OperandRet operand = get_operand(code, op_param);
 	if (stackinfo.type_cache1->is_or_nans(stackinfo.value_cache, operand.cache)) {
-	  *stackinfo.output_cache = 0xff;
+	  *stackinfo.output_cache = I8_TRUE;
 	  stackinfo.pc += 1; // 次の命令をスキップ
 	}
       } break;
