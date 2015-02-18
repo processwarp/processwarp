@@ -477,7 +477,6 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
     // 引数を変数の先頭に登録
     for (auto arg = function->getArgumentList().begin();
 	 arg != function->getArgumentList().end(); arg ++) {
-      assert(arg->hasName()); // 名前を持つはず
       stack_values.insert(std::make_pair(arg, fc.stack_sum));
 
       assert(data_layout->getTypeAllocSize(arg->getType()) != 0);
@@ -1304,10 +1303,14 @@ void LlvmAsmLoader::load_globals(const llvm::Module::GlobalListType& variables) 
 
   // 定数領域を割り当て
   if (map_global.size() != 0) {
-    vaddr_t global_addr = vm.v_malloc(sum, true);
+    vaddr_t global_addr = VADDR_NON;
+    if (sum != 0) {
+      global_addr = vm.v_malloc(sum, true);
+    }
     // 割り当てたアドレスを元に仮のアドレスから実際のアドレスに変更する
     for (auto it = map_global.begin(); it != map_global.end(); it ++) {
       if (static_cast<const llvm::GlobalVariable*>(it->first)->isConstant()) {
+	assert(global_addr != VADDR_NON);
 	it->second += global_addr;
       }
     }
