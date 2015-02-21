@@ -17,13 +17,7 @@ void printResult(int* needle, int* haystack, unsigned int len) {
 
 int main() {
   int a[] = {-2, -1, 0, 6, 7, 9};
-  int b[] = {0, 1};
-
-  /* Find all keys that exist. */
-  for (int i = 0; i < 6; i++) {
-    int val = a[i];
-
-    printResult(&val, a, 6);
-  }
+  int val = -2;
+  printResult(&val, a, 6);
   return 0;
 }

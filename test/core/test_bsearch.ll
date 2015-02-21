@@ -78,60 +78,49 @@ define i32 @main() #1 {
   %a = alloca [6 x i32], align 16
   %1 = bitcast [6 x i32]* %a to i8*
   call void @llvm.memcpy.p0i8.p0i8.i64(i8* %1, i8* bitcast ([6 x i32]* @main.a to i8*), i64 24, i32 16, i1 false)
-  br label %2
-
-; <label>:2                                       ; preds = %printResult.exit, %0
-  %indvars.iv = phi i64 [ 0, %0 ], [ %indvars.iv.next, %printResult.exit ]
-  %3 = getelementptr inbounds [6 x i32]* %a, i64 0, i64 %indvars.iv
-  %4 = load i32* %3, align 4, !tbaa !1
   br label %.lr.ph.i.i
 
-.outer.loopexit.i.i:                              ; preds = %8
-  %5 = icmp ult i64 %__l.02.i.i, %10
-  br i1 %5, label %.lr.ph.i.i, label %bsearch.exit.thread.i
+.outer.loopexit.i.i:                              ; preds = %5
+  %2 = icmp ult i64 %__l.02.i.i, %7
+  br i1 %2, label %.lr.ph.i.i, label %bsearch.exit.thread.i
 
-.lr.ph.i.i:                                       ; preds = %.outer.loopexit.i.i, %2
-  %__l.0.ph5.i.i = phi i64 [ %__l.02.i.i, %.outer.loopexit.i.i ], [ 0, %2 ]
-  %__u.0.ph4.i.i = phi i64 [ %10, %.outer.loopexit.i.i ], [ 6, %2 ]
-  br label %8
+.lr.ph.i.i:                                       ; preds = %.outer.loopexit.i.i, %0
+  %__l.0.ph5.i.i = phi i64 [ %__l.02.i.i, %.outer.loopexit.i.i ], [ 0, %0 ]
+  %__u.0.ph4.i.i = phi i64 [ %7, %.outer.loopexit.i.i ], [ 6, %0 ]
+  br label %5
 
-; <label>:6                                       ; preds = %15
-  %7 = icmp ult i64 %17, %__u.0.ph4.i.i
-  br i1 %7, label %8, label %bsearch.exit.thread.i
+; <label>:3                                       ; preds = %12
+  %4 = icmp ult i64 %14, %__u.0.ph4.i.i
+  br i1 %4, label %5, label %bsearch.exit.thread.i
 
-; <label>:8                                       ; preds = %6, %.lr.ph.i.i
-  %__l.02.i.i = phi i64 [ %__l.0.ph5.i.i, %.lr.ph.i.i ], [ %17, %6 ]
-  %9 = add i64 %__l.02.i.i, %__u.0.ph4.i.i
-  %10 = lshr i64 %9, 1
-  %11 = getelementptr [6 x i32]* %a, i64 0, i64 %10
-  %12 = load i32* %11, align 4, !tbaa !1
-  %13 = sub nsw i32 %4, %12
-  %14 = icmp slt i32 %13, 0
-  br i1 %14, label %.outer.loopexit.i.i, label %15
+; <label>:5                                       ; preds = %3, %.lr.ph.i.i
+  %__l.02.i.i = phi i64 [ %__l.0.ph5.i.i, %.lr.ph.i.i ], [ %14, %3 ]
+  %6 = add i64 %__l.02.i.i, %__u.0.ph4.i.i
+  %7 = lshr i64 %6, 1
+  %8 = getelementptr [6 x i32]* %a, i64 0, i64 %7
+  %9 = load i32* %8, align 4, !tbaa !1
+  %10 = sub nsw i32 -2, %9
+  %11 = icmp slt i32 %10, 0
+  br i1 %11, label %.outer.loopexit.i.i, label %12
 
-; <label>:15                                      ; preds = %8
-  %16 = icmp sgt i32 %13, 0
-  %17 = add i64 %10, 1
-  br i1 %16, label %6, label %bsearch.exit.i
+; <label>:12                                      ; preds = %5
+  %13 = icmp sgt i32 %10, 0
+  %14 = add i64 %7, 1
+  br i1 %13, label %3, label %bsearch.exit.i
 
-bsearch.exit.i:                                   ; preds = %15
-  %18 = icmp eq i32* %11, null
-  br i1 %18, label %bsearch.exit.thread.i, label %19
+bsearch.exit.i:                                   ; preds = %12
+  %15 = icmp eq i32* %8, null
+  br i1 %15, label %bsearch.exit.thread.i, label %16
 
-bsearch.exit.thread.i:                            ; preds = %bsearch.exit.i, %6, %.outer.loopexit.i.i
+bsearch.exit.thread.i:                            ; preds = %bsearch.exit.i, %3, %.outer.loopexit.i.i
   %puts.i = call i32 @puts(i8* getelementptr inbounds ([5 x i8]* @str, i64 0, i64 0)) #3
   br label %printResult.exit
 
-; <label>:19                                      ; preds = %bsearch.exit.i
-  %20 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str1, i64 0, i64 0), i32 %12) #3
+; <label>:16                                      ; preds = %bsearch.exit.i
+  %17 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str1, i64 0, i64 0), i32 %9) #3
   br label %printResult.exit
 
-printResult.exit:                                 ; preds = %19, %bsearch.exit.thread.i
-  %indvars.iv.next = add nuw nsw i64 %indvars.iv, 1
-  %exitcond = icmp eq i64 %indvars.iv.next, 6
-  br i1 %exitcond, label %21, label %2
-
-; <label>:21                                      ; preds = %printResult.exit
+printResult.exit:                                 ; preds = %16, %bsearch.exit.thread.i
   ret i32 0
 }
 
