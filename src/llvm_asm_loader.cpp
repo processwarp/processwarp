@@ -378,8 +378,8 @@ void LlvmAsmLoader::load_expr(FunctionContext& fc, ValueDest dst, const llvm::Co
       M_CCMP_OPERATOR1(FCmpInst::FCMP_OEQ, false, op_equal, 0, 1);
       M_CCMP_OPERATOR1(FCmpInst::FCMP_OGT, false, op_greater, 0, 1);
       M_CCMP_OPERATOR1(FCmpInst::FCMP_OGE, false, op_greater_equal, 0, 1);
-      M_CCMP_OPERATOR1(FCmpInst::FCMP_OLT, false, op_greater_equal, 1, 0);
-      M_CCMP_OPERATOR1(FCmpInst::FCMP_OLE, false, op_greater, 1, 0);
+      M_CCMP_OPERATOR1(FCmpInst::FCMP_OLT, false, op_greater, 1, 0);
+      M_CCMP_OPERATOR1(FCmpInst::FCMP_OLE, false, op_greater_equal, 1, 0);
       M_CCMP_OPERATOR1(FCmpInst::FCMP_ONE, false, op_not_equal, 0, 1);
       M_CCMP_OPERATOR1(FCmpInst::FCMP_ORD, false, op_not_nans, 0, 1);
 
@@ -398,12 +398,12 @@ void LlvmAsmLoader::load_expr(FunctionContext& fc, ValueDest dst, const llvm::Co
       M_CCMP_OPERATOR1(ICmpInst::ICMP_NE, false, op_not_equal, 0, 1);
       M_CCMP_OPERATOR1(ICmpInst::ICMP_SGT, true, op_greater, 0, 1);
       M_CCMP_OPERATOR1(ICmpInst::ICMP_SGE, true, op_greater_equal, 0, 1);
-      M_CCMP_OPERATOR1(ICmpInst::ICMP_SLT, true, op_greater_equal, 1, 0);
-      M_CCMP_OPERATOR1(ICmpInst::ICMP_SLE, true, op_greater, 1, 0);
+      M_CCMP_OPERATOR1(ICmpInst::ICMP_SLT, true, op_greater, 1, 0);
+      M_CCMP_OPERATOR1(ICmpInst::ICMP_SLE, true, op_greater_equal, 1, 0);
       M_CCMP_OPERATOR1(ICmpInst::ICMP_UGT, false, op_greater, 0, 1);
       M_CCMP_OPERATOR1(ICmpInst::ICMP_UGE, false, op_greater_equal, 0, 1);
-      M_CCMP_OPERATOR1(ICmpInst::ICMP_ULT, false, op_greater_equal, 1, 0);
-      M_CCMP_OPERATOR1(ICmpInst::ICMP_ULE, false, op_greater, 1, 0);
+      M_CCMP_OPERATOR1(ICmpInst::ICMP_ULT, false, op_greater, 1, 0);
+      M_CCMP_OPERATOR1(ICmpInst::ICMP_ULE, false, op_greater_equal, 1, 0);
     default: {
       print_llvm_instruction();
       assert(false);
@@ -1089,12 +1089,12 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 	    M_ICMP_OPERATOR(ICMP_NE, NOT_EQUAL, 0, 1); // !=
 	    M_ICMP_OPERATOR(ICMP_UGT, GREATER, 0, 1);  // > (unsigned)
 	    M_ICMP_OPERATOR(ICMP_UGE, GREATER_EQUAL, 0, 1); // >= (unsigned)
-	    M_ICMP_OPERATOR(ICMP_ULT, GREATER_EQUAL, 1, 0); // < (unsigned)
-	    M_ICMP_OPERATOR(ICMP_ULE, GREATER, 1, 0); // <= (unsigned)
+	    M_ICMP_OPERATOR(ICMP_ULT, GREATER, 1, 0); // < (unsigned)
+	    M_ICMP_OPERATOR(ICMP_ULE, GREATER_EQUAL, 1, 0); // <= (unsigned)
 	    M_ICMP_OPERATOR(ICMP_SGT, GREATER, 0, 1);  // > (signed)
 	    M_ICMP_OPERATOR(ICMP_SGE, GREATER_EQUAL, 0, 1); // >= (signed)
-	    M_ICMP_OPERATOR(ICMP_SLT, GREATER_EQUAL, 1, 0); // < (signed)
-	    M_ICMP_OPERATOR(ICMP_SLE, GREATER, 1, 0); // <= (signed)
+	    M_ICMP_OPERATOR(ICMP_SLT, GREATER, 1, 0); // < (signed)
+	    M_ICMP_OPERATOR(ICMP_SLE, GREATER_EQUAL, 1, 0); // <= (signed)
 #undef M_ICMP_OPERATOR
 
 	  default: {
@@ -1128,8 +1128,8 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 	    M_FCMP_OPERATOR1(FCMP_OEQ, EQUAL, 0, 1); // =
 	    M_FCMP_OPERATOR1(FCMP_OGT, GREATER, 0, 1);  // >
 	    M_FCMP_OPERATOR1(FCMP_OGE, GREATER_EQUAL, 0, 1); // >=
-	    M_FCMP_OPERATOR1(FCMP_OLT, GREATER_EQUAL, 1, 0); // <
-	    M_FCMP_OPERATOR1(FCMP_OLE, GREATER, 1, 0); // <=
+	    M_FCMP_OPERATOR1(FCMP_OLT, GREATER, 1, 0); // <
+	    M_FCMP_OPERATOR1(FCMP_OLE, GREATER_EQUAL, 1, 0); // <=
 	    M_FCMP_OPERATOR1(FCMP_ONE, NOT_EQUAL, 0, 1); // !=
 	    M_FCMP_OPERATOR1(FCMP_ORD, NOT_NANS, 0, 1); // !isnan(v) && !isnan(A)
 #undef M_FCMP_OPERATOR1
@@ -1144,8 +1144,8 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 	    M_FCMP_OPERATOR2(FCMP_UEQ, EQUAL, 0, 1); // =
 	    M_FCMP_OPERATOR2(FCMP_UGT, GREATER, 0, 1);  // >
 	    M_FCMP_OPERATOR2(FCMP_UGE, GREATER_EQUAL, 0, 1); // >=
-	    M_FCMP_OPERATOR2(FCMP_ULT, GREATER_EQUAL, 1, 0); // <
-	    M_FCMP_OPERATOR2(FCMP_ULE, GREATER, 1, 0); // <=
+	    M_FCMP_OPERATOR2(FCMP_ULT, GREATER, 1, 0); // <
+	    M_FCMP_OPERATOR2(FCMP_ULE, GREATER_EQUAL, 1, 0); // <=
 	    M_FCMP_OPERATOR2(FCMP_UNE, NOT_EQUAL, 0, 1); // !=
 #undef M_FCMP_OPERATOR2
 
