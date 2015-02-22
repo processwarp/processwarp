@@ -41,7 +41,7 @@ static const char* OPCODE_STR[] = {
   "TEST",
   "TEST_EQ",
   "JUMP",
-  "INDIRECT_JUMP"
+  "INDIRECT_JUMP",
   "PHI",
   "TYPE_CAST",
   "BIT_CAST",
