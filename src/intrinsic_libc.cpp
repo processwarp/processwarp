@@ -62,6 +62,71 @@ bool IntrinsicLibc::free(VMachine& vm, Thread& th, IntrinsicFuncParam p,
   return false;
 }
 
+// longjmp関数。保存されたスタックコンテキストへの非局所的なジャンプ。
+bool IntrinsicLibc::longjmp(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+			    vaddr_t dst, std::vector<uint8_t>& src) {
+  int seek = 0;
+  // 引数を開く。
+  uint8_t* env = vm.get_raw_addr(VMachine::read_intrinsic_param_ptr(src, &seek));
+  uint32_t val = VMachine::read_intrinsic_param_i32(src, &seek);
+
+  int seek2 = 0;
+  // stack_count
+  vm_int_t stack_count = *reinterpret_cast<vm_int_t*>(env + seek2);
+  seek2 += sizeof(vm_int_t);
+  // setjmpした時よりスタックが少ない場合エラー
+  if (th.stackinfos.size() < stack_count) {
+    throw_error(Error::SEGMENT_FAULT);
+  }
+  
+  // 余分なスタックを開放
+  while (th.stackinfos.size() > stack_count) {
+    const StackInfo& si = *(th.stackinfos.back());
+    // スタック領域を解放
+    vm.vmemory.free(si.stack);
+    // alloca領域を開放
+    for (vaddr_t addr : si.alloca_addrs) {
+      vm.vmemory.free(addr);
+    }
+    th.stackinfos.pop_back();
+  }
+  StackInfo& si = *(th.stackinfos.back());
+  // ret_addrのアドレスにvalで指定された値を設定
+  *reinterpret_cast<uint32_t*>(vm.get_raw_addr(*reinterpret_cast<vaddr_t*>(env + seek2))) = val;
+  seek2 += sizeof(vaddr_t);
+  // レジスタの値を戻す。
+  // pc
+  si.pc = *reinterpret_cast<vm_uint_t*>(env + seek2);
+  seek2 += sizeof(vm_uint_t);
+  // phi
+  si.phi0 = *reinterpret_cast<vm_uint_t*>(env + seek2);
+  seek2 += sizeof(vm_uint_t);
+  si.phi1 = *reinterpret_cast<vm_uint_t*>(env + seek2);
+  seek2 += sizeof(vm_uint_t);
+  // type
+  si.type = *reinterpret_cast<vaddr_t*>(env + seek2);
+  seek2 += sizeof(vaddr_t);
+  si.type_cache1 = nullptr;
+  si.type_cache2 = nullptr;
+  // alignment
+  si.alignment = *reinterpret_cast<vm_int_t*>(env + seek2);
+  seek2 += sizeof(vm_int_t);
+  // output
+  si.output = *reinterpret_cast<vaddr_t*>(env + seek2);
+  seek2 += sizeof(vaddr_t);
+  si.output_cache = nullptr;
+  // value
+  si.value = *reinterpret_cast<vaddr_t*>(env + seek2);
+  seek2 += sizeof(vaddr_t);
+  si.value_cache = nullptr;
+  // address
+  si.address = *reinterpret_cast<vaddr_t*>(env + seek2);
+  seek2 += sizeof(vaddr_t);
+  si.address_cache = nullptr;
+
+  return true;
+}
+
 // malloc関数。データ領域の確保を行う。
 bool IntrinsicLibc::malloc(VMachine& vm, Thread& th, IntrinsicFuncParam p,
 			   vaddr_t dst, std::vector<uint8_t>& src) {
@@ -205,6 +270,9 @@ void IntrinsicLibc::regist(VMachine& vm) {
   vm.regist_intrinsic_func("malloc", IntrinsicLibc::malloc, 0);
   vm.regist_intrinsic_func("realloc", IntrinsicLibc::realloc, 0);
 
+  vm.regist_intrinsic_func("setjmp", IntrinsicLibc::setjmp, 0);
+  vm.regist_intrinsic_func("longjmp", IntrinsicLibc::longjmp, 0);
+
   vm.regist_intrinsic_func("llvm.memcpy.p0i8.p0i8.i8",  IntrinsicLibc::memcpy, 8);
   vm.regist_intrinsic_func("llvm.memcpy.p0i8.p0i8.i16", IntrinsicLibc::memcpy, 16);
   vm.regist_intrinsic_func("llvm.memcpy.p0i8.p0i8.i32", IntrinsicLibc::memcpy, 32);
@@ -219,4 +287,50 @@ void IntrinsicLibc::regist(VMachine& vm) {
   vm.regist_intrinsic_func("llvm.memset.p0i8.i16", IntrinsicLibc::memset, 16);
   vm.regist_intrinsic_func("llvm.memset.p0i8.i32", IntrinsicLibc::memset, 32);
   vm.regist_intrinsic_func("llvm.memset.p0i8.i64", IntrinsicLibc::memset, 64);
+}
+
+// setjmp関数。非局所的なジャンプのために、スタックコンテキストを保存する。
+bool IntrinsicLibc::setjmp(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+			   vaddr_t dst, std::vector<uint8_t>& src) {
+  int seek = 0;
+  // 引数を開く。
+  uint8_t* env = vm.get_raw_addr(VMachine::read_intrinsic_param_ptr(src, &seek));
+  // 読み込んだパラメタ長と渡されたパラメタ長は同じはず
+  assert(static_cast<signed>(src.size()) == seek);
+
+  int seek2 = 0;
+  const StackInfo& si = *(th.stackinfos.back());
+  // stack_count
+  *reinterpret_cast<vm_int_t*>(env + seek2) = th.stackinfos.size();
+  seek2 += sizeof(vm_int_t);
+  // ret_addr
+  *reinterpret_cast<vaddr_t*>(env + seek2) = dst;
+  seek2 += sizeof(vaddr_t);
+  // pc
+  *reinterpret_cast<vm_uint_t*>(env + seek2) = si.pc + 1;
+  seek2 += sizeof(vm_uint_t);
+  // phi
+  *reinterpret_cast<vm_uint_t*>(env + seek2) = si.phi0;
+  seek2 += sizeof(vm_uint_t);
+  *reinterpret_cast<vm_uint_t*>(env + seek2) = si.phi1;
+  seek2 += sizeof(vm_uint_t);
+  // type
+  *reinterpret_cast<vaddr_t*>(env + seek2) = si.type;
+  seek2 += sizeof(vaddr_t);
+  // alignment
+  *reinterpret_cast<vm_int_t*>(env + seek2) = si.alignment;
+  seek2 += sizeof(vm_int_t);
+  // output
+  *reinterpret_cast<vaddr_t*>(env + seek2) = si.output;
+  seek2 += sizeof(vaddr_t);
+  // value
+  *reinterpret_cast<vaddr_t*>(env + seek2) = si.value;
+  seek2 += sizeof(vaddr_t);
+  // address
+  *reinterpret_cast<vaddr_t*>(env + seek2) = si.address;
+  seek2 += sizeof(vaddr_t);
+  
+  // setjmp自体の戻り値は0
+  *reinterpret_cast<int32_t*>(vm.get_raw_addr(dst)) = 0;
+  return false;
 }

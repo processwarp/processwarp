@@ -647,13 +647,11 @@ void VMachine::call_external(external_func_t func,
 			     vaddr_t ret_type,
 			     uint8_t* ret_addr,
 			     std::vector<uint8_t>& args) {
-  print_debug("call_external\n");
-
   // 戻り値の型変換
   ffi_type* ffi_ret_type = nullptr;
   switch(ret_type) {
   case BasicType::TY_VOID: ffi_ret_type = &ffi_type_void;   break;
-  case BasicType::TY_POINTER: ffi_ret_type = &ffi_type_pointer; break;
+    //case BasicType::TY_POINTER: ffi_ret_type = &ffi_type_pointer; break;
   case BasicType::TY_UI8:  ffi_ret_type = &ffi_type_uint8;  break;
   case BasicType::TY_UI16: ffi_ret_type = &ffi_type_uint16; break;
   case BasicType::TY_UI32: ffi_ret_type = &ffi_type_uint32; break;

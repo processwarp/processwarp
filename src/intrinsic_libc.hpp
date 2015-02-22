@@ -45,7 +45,16 @@ namespace usagi {
      */
     static bool free(VMachine& vm, Thread& th, IntrinsicFuncParam p,
 		     vaddr_t dst, std::vector<uint8_t>& src);
-    
+
+    /**
+     * longjmp関数。保存されたスタックコンテキストへの非局所的なジャンプ。
+     * srcから取り出すパラメタは以下のとおり。
+     * jmp_buf env
+     * int val setjmpの返り値として戻す値。
+     */
+    static bool longjmp(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+			vaddr_t dst, std::vector<uint8_t>& src);
+
     /**
      * malloc関数。データ領域の確保を行う。
      * srcから取り出すパラメタは以下のとおり。
@@ -108,5 +117,15 @@ namespace usagi {
      * @param vm 登録対象のVM
      */
     static void regist(VMachine& vm);
+
+    /**
+     * setjmp関数。非局所的なジャンプのために、スタックコンテキストを保存する。
+     * srcから取り出すパラメタは以下のとおり。
+     * jmp_buf env
+     * 戻り値は以下のとおり
+     * int 直接の戻り値は0、longjmpが呼び出された場合はlongjmpの引数に渡した値。
+     */
+    static bool setjmp(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+		       vaddr_t dst, std::vector<uint8_t>& src);
   };
 }

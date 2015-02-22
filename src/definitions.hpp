@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+#include "../include/processwarp.h"
+
 namespace usagi {
   class VMachine;
   class Thread;
@@ -15,7 +17,7 @@ namespace usagi {
   static const int PROTOCOL_MINOR_VERSION = 1;
 
   /** 仮想アドレス */
-  typedef std::uint64_t vaddr_t;
+  typedef __pw_vm_ptr_t vaddr_t;
 
   /**
    * VM組み込み関数に渡すパラメタ。
@@ -43,9 +45,6 @@ namespace usagi {
   /** システム中で扱う最長のint */
   typedef std::uint64_t longest_int_t;
 
-  /** vmで扱うint */
-  typedef std::int64_t vm_int_t;
-
   /** 最長のuintを1うめしたもの */
   //static longest_uint_t LONGEST_UINT_FILL = 0xFFFFFFFFFFFFFFFF;
 
@@ -71,9 +70,9 @@ namespace usagi {
   static const instruction_t HEAD_OPERAND = 0x02000000;
 
   /** VM内のint相当のint型 */
-  typedef int64_t vm_int_t;
+  typedef __pw_vm_int_t vm_int_t;
   /** VM内のint相当のint型 */
-  typedef uint64_t vm_uint_t;
+  typedef __pw_vm_uint_t vm_uint_t;
 
   /** メモリの内容ごとに割り当てるアドレスの判定フラグ */
   enum AddrType : vaddr_t {
