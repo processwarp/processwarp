@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #include <set>
 #include <stack>
 #include <string>
@@ -258,9 +259,11 @@ namespace usagi {
     /**
      * アプリケーションの初期設定をする。
      * エントリポイントに対するクロージャを作成し、実行可能な状態を作る。
-     * @param args エントリポイントへ渡す引数。
+     * @param args エントリポイントへ渡すコマンドライン引数。
+     * @param envs エントリポイントへ渡す環境変数。
      */
-    void run(std::vector<std::string> args);
+    void run(const std::vector<std::string>& args,
+	     const std::map<std::string, std::string>& envs);
 
     /**
      * 大域変数のアドレスを設定する。

@@ -18,7 +18,7 @@ vpid_t Server::assign_vm(const picojson::object& conf) {
     loader.load_file(conf.at("path").get<std::string>());
   }
   
-  // 機動引数を取り出し
+  // 起動引数を取り出し
   picojson::array conf_args = conf.at("args").get<picojson::array>();
   std::vector<std::string> args;
   args.push_back(conf.at("path").get<std::string>());
@@ -27,8 +27,11 @@ vpid_t Server::assign_vm(const picojson::object& conf) {
     args.push_back(it->get<std::string>());
   }
 
+  // TODO:環境変数を合成
+  std::map<std::string, std::string> envs;
+
   // ロードしたプログラムと引数からVMをsetup
-  vm->run(args);
+  vm->run(args, envs);
   
   // VM固有のIDを作成
   //vpid_t pid = Util::num2hex_str(time(nullptr)) + ";" + server_name;

@@ -1005,7 +1005,8 @@ vaddr_t VMachine::reserve_func_addr() {
 }
 
 // VMの初期設定をする。
-void VMachine::run(std::vector<std::string> args) {
+void VMachine::run(const std::vector<std::string>& args,
+		   const std::map<std::string, std::string>& envs) {
   // 最初のスレッドを作成
   Thread* init_thread;
   threads.push_back(std::unique_ptr<Thread>(init_thread = new Thread()));
@@ -1026,15 +1027,29 @@ void VMachine::run(std::vector<std::string> args) {
 
   // maink関数の内容に応じて、init_stackを作成する
   DataStore* init_stack;
-  if (main_func.normal_prop.arg_num == 2) {
+  if (main_func.normal_prop.arg_num == 2 || main_func.normal_prop.arg_num == 3) {
     // main関数の戻り値と引数を格納するのに必要な領域サイズを計算
     const size_t ret_size = calc_type_size(main_func.ret_type).first;
     size_t init_stack_size = ret_size + sizeof(vaddr_t) * args.size();
     for (unsigned int i = 0, arg_size = args.size(); i < arg_size; i ++) {
       init_stack_size += args.at(i).length() + 1;
     }
+    // 第3引数まである場合はenvpに必要な領域サイズも計算
+    if (main_func.normal_prop.arg_num == 3) {
+      init_stack_size += sizeof(vaddr_t) * (envs.size() + 1);
+      for (auto pair : envs) {
+	// +2 は'='と'\0'用
+	init_stack_size += pair.first.length() + pair.second.length() + 2;
+      }
+    }
     // 領域を確保
     init_stack = &vmemory.alloc_data(init_stack_size, false);
+
+    // main関数のスタックの先頭にargc, argvを格納する
+    vm_int_t argc = args.size();
+    vaddr_t  argv = init_stack->addr + ret_size;
+    memcpy(main_stack->head.get(), &argc, sizeof(argc));
+    memcpy(main_stack->head.get() + 4, &argv, sizeof(argv));
 
     // init_stack_dataにmain関数の戻り値、argvとして渡すポインタの配列、引数文字列、、を格納する
     vaddr_t sum = ret_size + sizeof(vaddr_t) * args.size();
@@ -1046,12 +1061,25 @@ void VMachine::run(std::vector<std::string> args) {
 	     args.at(i).c_str(), args.at(i).length() + 1);
       sum += args.at(i).length() + 1;
     }
-    // main関数のスタックの先頭にargc, argvを格納する
-    vm_int_t argc = args.size();
-    vaddr_t  argv = init_stack->addr + ret_size;
-    memcpy(main_stack->head.get(), &argc, sizeof(argc));
-    memcpy(main_stack->head.get() + 4, &argv, sizeof(argv));
-    
+
+    // 第3引数まである場合はenvpとして渡すポインタの配列、環境変数文字列をを格納する
+    if (main_func.normal_prop.arg_num == 3) {
+      // main関数のスタックにenvpを格納する。
+      unsigned int arg_size = sum;
+      vaddr_t envp = init_stack->addr + sum;
+      memcpy(main_stack->head.get() + 4 + sizeof(vaddr_t), &envp, sizeof(envp));
+      sum += sizeof(vaddr_t) * (envs.size() + 1);
+      int i = 0;
+      for (auto pair : envs) {
+	vaddr_t addr = init_stack->addr + sum;
+	memcpy(init_stack->head.get() + arg_size + sizeof(vaddr_t) * i, &addr, sizeof(vaddr_t));
+	sum += sprintf(reinterpret_cast<char*>(init_stack->head.get() + sum),
+		       "%s=%s", pair.first.c_str(), pair.second.c_str()) + 1;
+	i ++;
+      }
+      memcpy(init_stack->head.get() + arg_size + sizeof(vaddr_t) * i, &VADDR_NULL, sizeof(vaddr_t));
+    }
+
   } else if (main_func.normal_prop.arg_num != 0) {
     // int main()でもint main(int, char**)でもないようだ
     throw_error(Error::SPEC_VIOLATION);
