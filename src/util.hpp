@@ -51,6 +51,14 @@ namespace usagi {
     }
 
     /**
+     * ポインタで指定されたアドレスに格納されている数値を文字列に変換。
+     * @param ptr 変換元数値の格納先アドレス
+     * @size 数値のサイズ
+     * @return 変換文字列
+     */
+    static std::string numptr2str(void* ptr, int size);
+
+    /**
      * 文字列をアドレスに変換。
      * @param str 変換元文字列
      * @return 変換後アドレス

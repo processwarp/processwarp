@@ -75,14 +75,13 @@ template <typename T> void TypeExtended<T>::bit_cast(uint8_t* dst, size_t size, 
   longest_uint_t buffer = 0;
   memcpy(&buffer, src, sizeof(T));
   memcpy(dst, &buffer, size);
-  print_debug("bitcast %016" PRIx64 "(%ld)(%p <- %p)\n", buffer, size, dst, src);
+  print_debug("bitcast %s (%p <- %p)\n", Util::numptr2str(&buffer, size).c_str(), dst, src);
 }
 
 // 値をコピーする。
 template <typename T> void TypeExtended<T>::copy(uint8_t* dst, uint8_t* src) {
   *reinterpret_cast<T*>(dst) = *reinterpret_cast<T*>(src);
-  print_debug("copy %016" PRIx64 "(%p <- %p)\n",
-	      static_cast<uint64_t>(*reinterpret_cast<T*>(dst)), dst, src);
+  print_debug("copy %s (%p <- %p)\n", Util::numptr2str(dst, sizeof(T)).c_str(), dst, src);
 }
 
 // 値を読み込む
@@ -127,13 +126,9 @@ namespace usagi {
 #define M_BINARY_OPERATOR_TYPE_EXTENDED(op, infix)			\
   template <typename T> void TypeExtended<T>::op(uint8_t* dst, uint8_t* a, uint8_t* b) { \
     *reinterpret_cast<T*>(dst) = *reinterpret_cast<T*>(a) infix *reinterpret_cast<T*>(b); \
-    print_debug("%p <- %" PRIi64 "(%p) %s %" PRIi64 "(%p)\n",		\
-		dst,							\
-		static_cast<int64_t>(*reinterpret_cast<T*>(a)),		\
-		a,							\
-		#infix,							\
-		static_cast<int64_t>(*reinterpret_cast<T*>(b)),		\
-		b);							\
+    print_debug("%p : %s = %s %s %s\n", dst, Util::numptr2str(dst, sizeof(T)).c_str(), \
+		Util::numptr2str(a, sizeof(T)).c_str(),	#infix,		\
+		Util::numptr2str(b, sizeof(T)).c_str());		\
   }
 
 M_BINARY_OPERATOR_TYPE_EXTENDED(op_add, +); // 加算
@@ -156,9 +151,10 @@ M_BINARY_OPERATOR_TYPE_EXTENDED(op_xor, ^); // xor
   template <typename T> void TypeExtended<T>::op(uint8_t* dst, uint8_t* a, uint8_t* b) { \
   *reinterpret_cast<uint8_t*>(dst) =					\
     (*reinterpret_cast<T*>(a) infix *reinterpret_cast<T*>(b)) ? 0x01 : 0x00; \
-  print_debug("%02d = %" PRId64 " %s %" PRId64 "\n", *reinterpret_cast<uint8_t*>(dst), \
-	      static_cast<int64_t>(*reinterpret_cast<T*>(a)), #infix,	\
-	      static_cast<int64_t>(*reinterpret_cast<T*>(b)));		\
+  print_debug("%p : %s = %s %s %s\n", dst,				\
+	      Util::numptr2str(dst, 1).c_str(),				\
+	      Util::numptr2str(a, sizeof(T)).c_str(), #infix,		\
+	      Util::numptr2str(b, sizeof(T)).c_str());			\
   }
 
 M_COMP_OPERATOR_TYPE_EXTENDED(op_equal,         ==); // a==b
@@ -212,6 +208,10 @@ namespace usagi {
     } else {
       *dst = I8_FALSE;
     }
+    print_debug("not_nans %p : %s = %s not_nans %s\n", dst,
+		Util::numptr2str(dst, 1).c_str(),
+		Util::numptr2str(a, sizeof(double)).c_str(),
+		Util::numptr2str(b, sizeof(double)).c_str());
   }
 
   // 比較命令(!isnan(a) && !isnan(b))に対応した演算を行う。
@@ -222,6 +222,10 @@ namespace usagi {
     } else {
       *dst = I8_FALSE;
     }
+    print_debug("not_nans %p : %s = %s not_nans %s\n", dst,
+		Util::numptr2str(dst, 1).c_str(),
+		Util::numptr2str(a, sizeof(float)).c_str(),
+		Util::numptr2str(b, sizeof(float)).c_str());
   }
 
 } // close "namespace usagi"
@@ -230,12 +234,20 @@ namespace usagi {
 template <typename T> void TypeExtended<T>::op_shl(uint8_t* dst, uint8_t* a, uint8_t* b) {
   *reinterpret_cast<T*>(dst) =
     *reinterpret_cast<T*>(a) << static_cast<unsigned>(*reinterpret_cast<T*>(b));
+  print_debug("shl %p : %s = %s << %s\n", dst,
+	      Util::numptr2str(dst, sizeof(T)).c_str(),
+	      Util::numptr2str(a, sizeof(T)).c_str(),
+	      Util::numptr2str(b, sizeof(T)).c_str());
 }
 
 // shr命令に対応した加算を行う。
 template <typename T> void TypeExtended<T>::op_shr(uint8_t* dst, uint8_t* a, uint8_t* b) {
   *reinterpret_cast<T*>(dst) =
     *reinterpret_cast<T*>(a) >> static_cast<unsigned>(*reinterpret_cast<T*>(b));
+  print_debug("shr %p : %s = %s << %s\n", dst,
+	      Util::numptr2str(dst, sizeof(T)).c_str(),
+	      Util::numptr2str(a, sizeof(T)).c_str(),
+	      Util::numptr2str(b, sizeof(T)).c_str());
 }
 
 // type_cast命令に対応したキャスト演算を行う。
@@ -285,15 +297,15 @@ void TypePointer::bit_cast(uint8_t* dst, size_t size, uint8_t* src) {
   // コピーサイズはvaddr_tのサイズと同じはず
   assert(size == sizeof(vaddr_t));
   *reinterpret_cast<vaddr_t*>(dst) = *reinterpret_cast<vaddr_t*>(src);
-  print_debug("bitcast %016" PRIx64 "(%ld)(%p <- %p)\n",
-	      *reinterpret_cast<vaddr_t*>(dst), size, dst, src);
+  print_debug("bitcast %s (%p <- %p)\n",
+	      Util::numptr2str(dst, size).c_str(), dst, src);
 }
 
 // 値をコピーする。
 void TypePointer::copy(uint8_t* dst, uint8_t* src) {
   *reinterpret_cast<vaddr_t*>(dst) = *reinterpret_cast<vaddr_t*>(src);
-  print_debug("copy %016" PRIx64 "(%p <- %p)\n",
-	      *reinterpret_cast<vaddr_t*>(dst), dst, src);
+  print_debug("copy %s (%p <- %p)\n",
+	      Util::numptr2str(dst, sizeof(vaddr_t)).c_str(), dst, src);
 }
 
 // 比較命令(a==b)に対応した演算を行う。
@@ -303,6 +315,36 @@ void TypePointer::op_equal(uint8_t* dst, uint8_t* a, uint8_t* b) {
   } else {
     *reinterpret_cast<uint8_t*>(dst) = I8_FALSE;
   }
+  print_debug("%p : %s = %s == %s\n", dst,
+	      Util::numptr2str(dst, 1).c_str(),
+	      Util::numptr2str(a, sizeof(vaddr_t)).c_str(),
+	      Util::numptr2str(b, sizeof(vaddr_t)).c_str());
+}
+
+// 比較命令(a>b)に対応した演算を行う。
+void TypePointer::op_greater(uint8_t* dst, uint8_t* a, uint8_t* b) {
+  if (*reinterpret_cast<vaddr_t*>(a) > *reinterpret_cast<vaddr_t*>(b)) {
+    *reinterpret_cast<uint8_t*>(dst) = I8_TRUE;
+  } else {
+    *reinterpret_cast<uint8_t*>(dst) = I8_FALSE;
+  }
+  print_debug("%p : %s = %s > %s\n", dst,
+	      Util::numptr2str(dst, 1).c_str(),
+	      Util::numptr2str(a, sizeof(vaddr_t)).c_str(),
+	      Util::numptr2str(b, sizeof(vaddr_t)).c_str());
+}
+
+// 比較命令(a>=b)に対応した演算を行う。
+void TypePointer::op_greater_equal(uint8_t* dst, uint8_t* a, uint8_t* b) {
+  if (*reinterpret_cast<vaddr_t*>(a) >= *reinterpret_cast<vaddr_t*>(b)) {
+    *reinterpret_cast<uint8_t*>(dst) = I8_TRUE;
+  } else {
+    *reinterpret_cast<uint8_t*>(dst) = I8_FALSE;
+  }
+  print_debug("%p : %s = %s >= %s\n", dst,
+	      Util::numptr2str(dst, 1).c_str(),
+	      Util::numptr2str(a, sizeof(vaddr_t)).c_str(),
+	      Util::numptr2str(b, sizeof(vaddr_t)).c_str());
 }
 
 // 比較命令(a!=b)に対応した演算を行う。
@@ -312,6 +354,10 @@ void TypePointer::op_not_equal(uint8_t* dst, uint8_t* a, uint8_t* b) {
   } else {
     *reinterpret_cast<uint8_t*>(dst) = I8_TRUE;
   }
+  print_debug("%p : %s = %s != %s\n", dst,
+	      Util::numptr2str(dst, 1).c_str(),
+	      Util::numptr2str(a, sizeof(vaddr_t)).c_str(),
+	      Util::numptr2str(b, sizeof(vaddr_t)).c_str());
 }
 
 // type_cast命令に対応したキャスト演算を行う。

@@ -366,6 +366,22 @@ namespace usagi {
     void op_equal(uint8_t* dst, uint8_t* a, uint8_t* b) override;
 
     /**
+     * 比較命令(a>b)に対応した演算を行う。
+     * @param dst 出力先
+     * @param a
+     * @param b
+     */
+    void op_greater(uint8_t* dst, uint8_t* a, uint8_t* b) override;
+
+    /**
+     * 比較命令(a>=b)に対応した演算を行う。
+     * @param dst 出力先
+     * @param a
+     * @param b
+     */
+    void op_greater_equal(uint8_t* dst, uint8_t* a, uint8_t* b) override;
+
+    /**
      * 比較命令(a!=b)に対応した演算を行う。
      * @param dst 出力先
      * @param a

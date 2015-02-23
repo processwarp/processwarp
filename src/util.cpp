@@ -71,6 +71,37 @@ std::string Util::code2str(instruction_t code) {
   return opcode + "\t" + operand;
 }
 
+// ポインタで指定されたアドレスに格納されている数値を文字列に変換。
+std::string Util::numptr2str(void* ptr, int size) {
+  char buf[128];
+  switch(size) {
+  case 1:
+    snprintf(buf, sizeof(buf), "%d(%02x)",
+	     *reinterpret_cast<int8_t*>(ptr),
+	     0xff & *reinterpret_cast<int8_t*>(ptr)); break;
+    
+  case 2:
+    snprintf(buf, sizeof(buf), "%d(%04x)",
+	     *reinterpret_cast<int16_t*>(ptr),
+	     0xffff & *reinterpret_cast<int16_t*>(ptr)); break;
+    
+  case 4:
+    snprintf(buf, sizeof(buf), "%" PRId32 "(%08" PRIx32 ")",
+	     *reinterpret_cast<int32_t*>(ptr),
+	     0xffffffff & *reinterpret_cast<int32_t*>(ptr)); break;
+    
+  case 8:
+    snprintf(buf, sizeof(buf), "%" PRId64 "(%016" PRIx64 ")",
+	     *reinterpret_cast<int64_t*>(ptr),
+	     *reinterpret_cast<int64_t*>(ptr)); break;
+    
+  default:
+    snprintf(buf, sizeof(buf), "%" PRId64 "",
+	     *reinterpret_cast<int64_t*>(ptr)); break;
+  }
+  return std::string(buf);
+}
+
 // 文字列をアドレスに変換。
 vaddr_t Util::str2vaddr(const std::string& str) {
   std::istringstream is(str);
