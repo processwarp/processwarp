@@ -1,6 +1,6 @@
 ; ModuleID = 'test_va_arg.bc'
-target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
-target triple = "x86_64-apple-macosx10.10.0"
+target datalayout = "e-i64:64-f80:128-n8:16:32:64-S128"
+target triple = "x86_64-pc-linux-gnu"
 
 %struct.__va_list_tag = type { i32, i32, i8*, i8* }
 %struct.struct2 = type { i32, i16, i32, double }
@@ -13,7 +13,7 @@ target triple = "x86_64-apple-macosx10.10.0"
 @.str5 = private unnamed_addr constant [8 x i8] c"6 : %d\0A\00", align 1
 @.str6 = private unnamed_addr constant [8 x i8] c"7 : %d\0A\00", align 1
 
-; Function Attrs: nounwind ssp uwtable
+; Function Attrs: nounwind uwtable
 define void @vaarg(i8 signext %unused, ...) #0 {
   %vl = alloca [1 x %struct.__va_list_tag], align 16
   %1 = bitcast [1 x %struct.__va_list_tag]* %vl to i8*
@@ -66,7 +66,7 @@ declare i8* @__intrinsic_va_arg([1 x %struct.__va_list_tag]*, i64) #3
 ; Function Attrs: nounwind
 declare void @llvm.va_end(i8*) #1
 
-; Function Attrs: nounwind ssp uwtable
+; Function Attrs: nounwind uwtable
 define i32 @main(i32 %argc, i8** nocapture readnone %argv) #0 {
   %st2 = alloca %struct.struct2, align 8
   %1 = getelementptr inbounds %struct.struct2* %st2, i64 0, i32 0
@@ -77,14 +77,14 @@ define i32 @main(i32 %argc, i8** nocapture readnone %argv) #0 {
   ret i32 0
 }
 
-attributes #0 = { nounwind ssp uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #0 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind }
-attributes #2 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #3 = { "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #2 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #3 = { "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 
 !llvm.ident = !{!0}
 
-!0 = metadata !{metadata !"Apple LLVM version 6.0 (clang-600.0.56) (based on LLVM 3.5svn)"}
+!0 = metadata !{metadata !"Ubuntu clang version 3.4-1ubuntu3 (tags/RELEASE_34/final) (based on LLVM 3.4)"}
 !1 = metadata !{metadata !2, metadata !2, i64 0}
 !2 = metadata !{metadata !"short", metadata !3, i64 0}
 !3 = metadata !{metadata !"omnipotent char", metadata !4, i64 0}

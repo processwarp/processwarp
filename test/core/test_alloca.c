@@ -11,6 +11,6 @@ int main() {
   } else {
     memset(top, 1, bottom - top);
   }
-  printf("%p %x\n%p %x\n", bottom, *(short*)bottom, top, *(short*)toper);
+  printf("%p %x\n%p %x\n", bottom, *(short*)bottom, top, *(short*)top);
   return 0;
 }
