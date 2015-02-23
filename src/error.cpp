@@ -9,7 +9,7 @@ Error::Error(const std::string& file, int line, Reason reason_, const std::strin
   mesg(mesg_) {
 
 #ifndef NDEBUG
-  fprintf(stderr, "\x1b[31mdebug\x1b[39m [%d@%s] %d %s\n",
+  fprintf(stderr, "\x1b[31mdebug\x1b[39m [%d@%s] Exception %d %s\n",
 	  line, file.c_str(), static_cast<int>(reason_), mesg.c_str());
 #endif
   }
