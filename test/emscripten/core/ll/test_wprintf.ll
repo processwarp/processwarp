@@ -17,7 +17,7 @@ target triple = "x86_64-pc-linux-gnu"
 @.str10 = private unnamed_addr constant [21 x i32] [i32 102, i32 119, i32 112, i32 114, i32 105, i32 110, i32 116, i32 102, i32 32, i32 116, i32 111, i32 108, i32 100, i32 32, i32 117, i32 115, i32 32, i32 37, i32 100, i32 10, i32 0], align 4
 @.str11 = private unnamed_addr constant [3 x i8] c"rb\00", align 1
 @.str12 = private unnamed_addr constant [17 x i32] [i32 102, i32 105, i32 108, i32 101, i32 32, i32 115, i32 105, i32 122, i32 101, i32 32, i32 105, i32 115, i32 32, i32 37, i32 100, i32 10, i32 0], align 4
-@_ZZ4mainE3str = private unnamed_addr constant [37 x i32] [i32 116, i32 101, i32 115, i32 116, i32 32, i32 115, i32 116, i32 114, i32 105, i32 110, i32 103, i32 32, i32 104, i32 97, i32 115, i32 32, i32 37, i32 100, i32 32, i32 119, i32 105, i32 100, i32 101, i32 32, i32 99, i32 104, i32 97, i32 114, i32 97, i32 99, i32 116, i32 101, i32 114, i32 115, i32 46, i32 10, i32 0], align 16
+@main.str = private unnamed_addr constant [37 x i32] [i32 116, i32 101, i32 115, i32 116, i32 32, i32 115, i32 116, i32 114, i32 105, i32 110, i32 103, i32 32, i32 104, i32 97, i32 115, i32 32, i32 37, i32 100, i32 32, i32 119, i32 105, i32 100, i32 101, i32 32, i32 99, i32 104, i32 97, i32 114, i32 97, i32 99, i32 116, i32 101, i32 114, i32 115, i32 46, i32 10, i32 0], align 16
 @.str13 = private unnamed_addr constant [22 x i32] [i32 115, i32 116, i32 114, i32 32, i32 115, i32 116, i32 97, i32 114, i32 116, i32 115, i32 32, i32 119, i32 105, i32 116, i32 104, i32 32, i32 48, i32 120, i32 37, i32 120, i32 10, i32 0], align 4
 @.str15 = private unnamed_addr constant [25 x i32] [i32 115, i32 116, i32 114, i32 32, i32 99, i32 111, i32 110, i32 116, i32 105, i32 110, i32 117, i32 101, i32 115, i32 32, i32 119, i32 105, i32 116, i32 104, i32 32, i32 48, i32 120, i32 37, i32 120, i32 10, i32 0], align 4
 @.str16 = private unnamed_addr constant [22 x i32] [i32 67, i32 104, i32 97, i32 114, i32 97, i32 99, i32 116, i32 101, i32 114, i32 115, i32 58, i32 32, i32 37, i32 108, i32 99, i32 32, i32 37, i32 108, i32 99, i32 32, i32 10, i32 0], align 4
@@ -36,7 +36,7 @@ target triple = "x86_64-pc-linux-gnu"
 @.str29 = private unnamed_addr constant [9 x i32] [i32 112, i32 111, i32 115, i32 116, i32 32, i32 37, i32 100, i32 10, i32 0], align 4
 
 ; Function Attrs: nounwind uwtable
-define void @_Z9PrintWidePKwz(i32* %format, ...) #0 {
+define void @PrintWide(i32* %format, ...) #0 {
   %buffer = alloca [256 x i32], align 16
   %args = alloca [1 x %struct.__va_list_tag], align 16
   %1 = bitcast [256 x i32]* %buffer to i8*
@@ -106,17 +106,17 @@ define i32 @main() #0 {
   %10 = call i32 (i32*, ...)* @wprintf(i32* getelementptr inbounds ([17 x i32]* @.str12, i64 0, i64 0), i32 %8) #1
   %11 = bitcast [37 x i32]* %str to i8*
   call void @llvm.lifetime.start(i64 148, i8* %11) #1
-  call void @llvm.memcpy.p0i8.p0i8.i64(i8* %11, i8* bitcast ([37 x i32]* @_ZZ4mainE3str to i8*), i64 148, i32 16, i1 false)
+  call void @llvm.memcpy.p0i8.p0i8.i64(i8* %11, i8* bitcast ([37 x i32]* @main.str to i8*), i64 148, i32 16, i1 false)
   %12 = getelementptr inbounds [37 x i32]* %str, i64 0, i64 0
   %13 = call i32 (i32*, ...)* @wprintf(i32* getelementptr inbounds ([22 x i32]* @.str13, i64 0, i64 0), i32 116) #1
   %14 = call i32 (i32*, ...)* @wprintf(i32* getelementptr inbounds ([25 x i32]* @.str15, i64 0, i64 0), i32 101) #1
   %15 = call i32 (i32*, ...)* @wprintf(i32* getelementptr inbounds ([25 x i32]* @.str15, i64 0, i64 0), i32 115) #1
   %16 = call i64 @wcslen(i32* %12) #5
-  call void (i32*, ...)* @_Z9PrintWidePKwz(i32* %12, i64 %16)
+  call void (i32*, ...)* @PrintWide(i32* %12, i64 %16)
   %17 = call i64 @wcslen(i32* %12) #5
-  call void (i32*, ...)* @_Z9PrintWidePKwz(i32* %12, i64 %17)
+  call void (i32*, ...)* @PrintWide(i32* %12, i64 %17)
   %18 = call i64 @wcslen(i32* %12) #5
-  call void (i32*, ...)* @_Z9PrintWidePKwz(i32* %12, i64 %18)
+  call void (i32*, ...)* @PrintWide(i32* %12, i64 %18)
   %19 = call i32 (i32*, ...)* @wprintf(i32* getelementptr inbounds ([22 x i32]* @.str16, i64 0, i64 0), i32 97, i32 65) #1
   %20 = call i32 (i32*, ...)* @wprintf(i32* getelementptr inbounds ([18 x i32]* @.str17, i64 0, i64 0), i32 1977, i64 650000) #1
   %21 = call i32 (i32*, ...)* @wprintf(i32* getelementptr inbounds ([30 x i32]* @.str18, i64 0, i64 0), i32 1977) #1

@@ -88,12 +88,12 @@ target triple = "x86_64-pc-linux-gnu"
 
 ; Function Attrs: nounwind uwtable
 define void @_Z4testiPKcS0_(i32 %result, i8* %comment, i8* %parsed) #0 {
-  %1 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str, i64 0, i64 0), i8* %comment, i32 %result) #3
+  %1 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str, i64 0, i64 0), i8* %comment, i32 %result)
   %2 = icmp eq i32 %result, 0
   br i1 %2, label %3, label %5
 
 ; <label>:3                                       ; preds = %0
-  %4 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([19 x i8]* @.str1, i64 0, i64 0), i8* %comment, i8* %parsed) #3
+  %4 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([19 x i8]* @.str1, i64 0, i64 0), i8* %comment, i8* %parsed)
   br label %5
 
 ; <label>:5                                       ; preds = %3, %0

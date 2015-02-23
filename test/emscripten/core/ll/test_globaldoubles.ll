@@ -2,15 +2,15 @@
 target datalayout = "e-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-pc-linux-gnu"
 
-@testVu = global double 0.000000e+00, align 8
-@testVv = global double 0.000000e+00, align 8
-@testWu = global double 0.000000e+00, align 8
-@testWv = global double 0.000000e+00, align 8
+@testVu = common global double 0.000000e+00, align 8
+@testVv = common global double 0.000000e+00, align 8
+@testWu = common global double 0.000000e+00, align 8
+@testWv = common global double 0.000000e+00, align 8
 @.str1 = private unnamed_addr constant [37 x i8] c"Display: Vu=%f  Vv=%f  Wu=%f  Wv=%f\0A\00", align 1
 @str = private unnamed_addr constant [5 x i8] c"BUG?\00"
 
 ; Function Attrs: nounwind uwtable
-define void @_Z4Testdddd(double %_testVu, double %_testVv, double %_testWu, double %_testWv) #0 {
+define void @Test(double %_testVu, double %_testVv, double %_testWu, double %_testWv) #0 {
   store double %_testVu, double* @testVu, align 8, !tbaa !1
   store double %_testVv, double* @testVv, align 8, !tbaa !1
   store double %_testWu, double* @testWu, align 8, !tbaa !1

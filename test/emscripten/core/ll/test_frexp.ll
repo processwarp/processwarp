@@ -4,12 +4,12 @@ target triple = "x86_64-pc-linux-gnu"
 
 @.str = private unnamed_addr constant [12 x i8] c"%f=%f*2^%d\0A\00", align 1
 @.str1 = private unnamed_addr constant [29 x i8] c"fabs(expected - value) < tol\00", align 1
-@.str2 = private unnamed_addr constant [19 x i8] c"cpp/test_frexp.cpp\00", align 1
-@__PRETTY_FUNCTION__._Z10test_valued = private unnamed_addr constant [24 x i8] c"void test_value(double)\00", align 1
+@.str2 = private unnamed_addr constant [13 x i8] c"test_frexp.c\00", align 1
+@__PRETTY_FUNCTION__.test_value = private unnamed_addr constant [24 x i8] c"void test_value(double)\00", align 1
 @.str3 = private unnamed_addr constant [43 x i8] c"x == 0 || (fabs(x) >= 5e-1 && fabs(x) < 1)\00", align 1
 
 ; Function Attrs: nounwind uwtable
-define void @_Z10test_valued(double %value) #0 {
+define void @test_value(double %value) #0 {
   %exponent = alloca i32, align 4
   %1 = call double @frexp(double %value, i32* %exponent) #4
   %2 = load i32* %exponent, align 4, !tbaa !1
@@ -22,7 +22,7 @@ define void @_Z10test_valued(double %value) #0 {
   br i1 %8, label %10, label %9
 
 ; <label>:9                                       ; preds = %0
-  tail call void @__assert_fail(i8* getelementptr inbounds ([29 x i8]* @.str1, i64 0, i64 0), i8* getelementptr inbounds ([19 x i8]* @.str2, i64 0, i64 0), i32 14, i8* getelementptr inbounds ([24 x i8]* @__PRETTY_FUNCTION__._Z10test_valued, i64 0, i64 0)) #6
+  tail call void @__assert_fail(i8* getelementptr inbounds ([29 x i8]* @.str1, i64 0, i64 0), i8* getelementptr inbounds ([13 x i8]* @.str2, i64 0, i64 0), i32 14, i8* getelementptr inbounds ([24 x i8]* @__PRETTY_FUNCTION__.test_value, i64 0, i64 0)) #6
   unreachable
 
 ; <label>:10                                      ; preds = %0
@@ -37,7 +37,7 @@ define void @_Z10test_valued(double %value) #0 {
   br i1 %or.cond, label %17, label %16
 
 ; <label>:16                                      ; preds = %12
-  tail call void @__assert_fail(i8* getelementptr inbounds ([43 x i8]* @.str3, i64 0, i64 0), i8* getelementptr inbounds ([19 x i8]* @.str2, i64 0, i64 0), i32 15, i8* getelementptr inbounds ([24 x i8]* @__PRETTY_FUNCTION__._Z10test_valued, i64 0, i64 0)) #6
+  tail call void @__assert_fail(i8* getelementptr inbounds ([43 x i8]* @.str3, i64 0, i64 0), i8* getelementptr inbounds ([13 x i8]* @.str2, i64 0, i64 0), i32 15, i8* getelementptr inbounds ([24 x i8]* @__PRETTY_FUNCTION__.test_value, i64 0, i64 0)) #6
   unreachable
 
 ; <label>:17                                      ; preds = %12, %10
@@ -58,13 +58,13 @@ declare void @__assert_fail(i8*, i8*, i32, i8*) #3
 
 ; Function Attrs: nounwind uwtable
 define i32 @main() #0 {
-  tail call void @_Z10test_valued(double 0.000000e+00)
-  tail call void @_Z10test_valued(double 1.001000e+02)
-  tail call void @_Z10test_valued(double -1.001000e+02)
-  tail call void @_Z10test_valued(double 5.000000e-01)
-  tail call void @_Z10test_valued(double -5.000000e-01)
-  tail call void @_Z10test_valued(double 0x3FEFFFFFFFFFFFFF)
-  tail call void @_Z10test_valued(double 0xBFEFFFFFFFFFFFFF)
+  tail call void @test_value(double 0.000000e+00)
+  tail call void @test_value(double 1.001000e+02)
+  tail call void @test_value(double -1.001000e+02)
+  tail call void @test_value(double 5.000000e-01)
+  tail call void @test_value(double -5.000000e-01)
+  tail call void @test_value(double 0x3FEFFFFFFFFFFFFF)
+  tail call void @test_value(double 0xBFEFFFFFFFFFFFFF)
   ret i32 0
 }
 

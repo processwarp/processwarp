@@ -6,7 +6,7 @@ target triple = "x86_64-pc-linux-gnu"
 @.str1 = private unnamed_addr constant [17 x i8] c"m_divisor is %i\0A\00", align 1
 
 ; Function Attrs: nounwind uwtable
-define void @_Z23interface_clock_changedv() #0 {
+define void @interface_clock_changed() #0 {
   %1 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([34 x i8]* @.str, i64 0, i64 0), i32 1, i64 279365114840, i64 2147483648) #2
   %2 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([34 x i8]* @.str, i64 0, i64 0), i32 2, i64 139682557420, i64 2147483648) #2
   %3 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([34 x i8]* @.str, i64 0, i64 0), i32 3, i64 69841278710, i64 2147483648) #2
@@ -24,7 +24,7 @@ declare i32 @printf(i8* nocapture readonly, ...) #1
 
 ; Function Attrs: nounwind uwtable
 define i32 @main() #0 {
-  tail call void @_Z23interface_clock_changedv()
+  tail call void @interface_clock_changed()
   ret i32 0
 }
 

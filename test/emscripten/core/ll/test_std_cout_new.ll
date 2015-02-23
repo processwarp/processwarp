@@ -36,13 +36,13 @@ declare i32 @__cxa_atexit(void (i8*)*, i8*, i8*) #1
 ; Function Attrs: nobuiltin
 declare noalias i8* @_Znam(i64) #2
 
-; Function Attrs: nounwind uwtable
+; Function Attrs: uwtable
 define i32 @main() #3 {
   tail call void @_Z9printTextILi21EEvRAT__Kc([21 x i8]* @.str)
   ret i32 0
 }
 
-; Function Attrs: nounwind uwtable
+; Function Attrs: uwtable
 define linkonce_odr void @_Z9printTextILi21EEvRAT__Kc([21 x i8]* %text) #3 {
   %1 = getelementptr inbounds [21 x i8]* %text, i64 0, i64 0
   %2 = icmp eq [21 x i8]* %text, null
@@ -60,12 +60,12 @@ define linkonce_odr void @_Z9printTextILi21EEvRAT__Kc([21 x i8]* %text) #3 {
   %11 = bitcast i8* %10 to i32*
   %12 = load i32* %11, align 4, !tbaa !4
   %13 = or i32 %12, 1
-  tail call void @_ZNSt9basic_iosIcSt11char_traitsIcEE5clearESt12_Ios_Iostate(%"class.std::basic_ios"* %9, i32 %13) #1
+  tail call void @_ZNSt9basic_iosIcSt11char_traitsIcEE5clearESt12_Ios_Iostate(%"class.std::basic_ios"* %9, i32 %13)
   br label %_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc.exit
 
 ; <label>:14                                      ; preds = %0
   %15 = tail call i64 @strlen(i8* %1) #1
-  %16 = tail call %"class.std::basic_ostream"* @_ZSt16__ostream_insertIcSt11char_traitsIcEERSt13basic_ostreamIT_T0_ES6_PKS3_l(%"class.std::basic_ostream"* @_ZSt4cout, i8* %1, i64 %15) #1
+  %16 = tail call %"class.std::basic_ostream"* @_ZSt16__ostream_insertIcSt11char_traitsIcEERSt13basic_ostreamIT_T0_ES6_PKS3_l(%"class.std::basic_ostream"* @_ZSt4cout, i8* %1, i64 %15)
   br label %_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc.exit
 
 _ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc.exit: ; preds = %14, %3
@@ -96,18 +96,18 @@ _ZSt13__check_facetISt5ctypeIcEERKT_PS3_.exit:    ; preds = %_ZStlsISt11char_tra
   br label %_ZNKSt5ctypeIcE5widenEc.exit
 
 ; <label>:32                                      ; preds = %_ZSt13__check_facetISt5ctypeIcEERKT_PS3_.exit
-  tail call void @_ZNKSt5ctypeIcE13_M_widen_initEv(%"class.std::ctype"* %23) #1
+  tail call void @_ZNKSt5ctypeIcE13_M_widen_initEv(%"class.std::ctype"* %23)
   %33 = bitcast %"class.std::ctype"* %23 to i8 (%"class.std::ctype"*, i8)***
   %34 = load i8 (%"class.std::ctype"*, i8)*** %33, align 8, !tbaa !1
   %35 = getelementptr inbounds i8 (%"class.std::ctype"*, i8)** %34, i64 6
   %36 = load i8 (%"class.std::ctype"*, i8)** %35, align 8
-  %37 = tail call signext i8 %36(%"class.std::ctype"* %23, i8 signext 10) #1
+  %37 = tail call signext i8 %36(%"class.std::ctype"* %23, i8 signext 10)
   br label %_ZNKSt5ctypeIcE5widenEc.exit
 
 _ZNKSt5ctypeIcE5widenEc.exit:                     ; preds = %32, %29
   %.0.i = phi i8 [ %31, %29 ], [ %37, %32 ]
-  %38 = tail call %"class.std::basic_ostream"* @_ZNSo3putEc(%"class.std::basic_ostream"* @_ZSt4cout, i8 signext %.0.i) #1
-  %39 = tail call %"class.std::basic_ostream"* @_ZNSo5flushEv(%"class.std::basic_ostream"* %38) #1
+  %38 = tail call %"class.std::basic_ostream"* @_ZNSo3putEc(%"class.std::basic_ostream"* @_ZSt4cout, i8 signext %.0.i)
+  %39 = tail call %"class.std::basic_ostream"* @_ZNSo5flushEv(%"class.std::basic_ostream"* %38)
   ret void
 }
 
@@ -127,9 +127,8 @@ declare i64 @strlen(i8* nocapture) #5
 
 declare void @_ZNSt9basic_iosIcSt11char_traitsIcEE5clearESt12_Ios_Iostate(%"class.std::basic_ios"*, i32) #0
 
-; Function Attrs: nounwind
-define internal void @_GLOBAL__I_a() #1 section ".text.startup" {
-  tail call void @_ZNSt8ios_base4InitC1Ev(%"class.std::ios_base::Init"* @_ZStL8__ioinit) #1
+define internal void @_GLOBAL__I_a() section ".text.startup" {
+  tail call void @_ZNSt8ios_base4InitC1Ev(%"class.std::ios_base::Init"* @_ZStL8__ioinit)
   %1 = tail call i32 @__cxa_atexit(void (i8*)* bitcast (void (%"class.std::ios_base::Init"*)* @_ZNSt8ios_base4InitD1Ev to void (i8*)*), i8* getelementptr inbounds (%"class.std::ios_base::Init"* @_ZStL8__ioinit, i64 0, i32 0), i8* @__dso_handle) #1
   %2 = tail call noalias i8* @_Znam(i64 1600) #7
   %3 = bitcast i8* %2 to %struct.NodeInfo*
@@ -140,11 +139,11 @@ define internal void @_GLOBAL__I_a() #1 section ".text.startup" {
 attributes #0 = { "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind }
 attributes #2 = { nobuiltin "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #3 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #3 = { uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #4 = { noreturn "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #5 = { nounwind readonly "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #6 = { noreturn nounwind }
-attributes #7 = { builtin nounwind }
+attributes #6 = { noreturn }
+attributes #7 = { builtin }
 
 !llvm.ident = !{!0}
 

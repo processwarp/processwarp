@@ -5,13 +5,13 @@ target triple = "x86_64-pc-linux-gnu"
 @.str = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
 
 ; Function Attrs: nounwind uwtable
-define i32 @_Z3mixii(i32 %x, i32 %y) #0 {
+define i32 @mix(i32 %x, i32 %y) #0 {
   %1 = tail call i32 asm "Math.pow(2, $0+$1+1)", "=r,r,r,~{dirflag},~{fpsr},~{flags}"(i32 %x, i32 %y) #2, !srcloc !1
   ret i32 %1
 }
 
 ; Function Attrs: nounwind uwtable
-define void @_Z4multv() #0 {
+define void @mult() #0 {
   tail call void asm sideeffect "var $$_$$1 = Math.abs(-100); $$_$$1 *= 2; Module.print($$_$$1)", "~{dirflag},~{fpsr},~{flags}"() #2, !srcloc !2
   tail call void asm sideeffect "Module.print('done')", "~{dirflag},~{fpsr},~{flags}"() #2, !srcloc !3
   ret void

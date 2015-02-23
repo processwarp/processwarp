@@ -10,7 +10,7 @@ target triple = "x86_64-pc-linux-gnu"
 @str = private unnamed_addr constant [5 x i8] c"nada\00"
 
 ; Function Attrs: nounwind uwtable
-define i64 @_Z28ccv_cache_generate_signaturePcilz(i8* nocapture readonly %msg, i32 %len, i64 %sig_start, ...) #0 {
+define i64 @ccv_cache_generate_signature(i8* nocapture readonly %msg, i32 %len, i64 %sig_start, ...) #0 {
   %v = alloca [1 x %struct.__va_list_tag], align 16
   %1 = icmp slt i64 %sig_start, 10123
   br i1 %1, label %3, label %.thread
@@ -88,11 +88,11 @@ define i32 @main(i32 %argc, i8** nocapture %argv) #0 {
   br i1 %8, label %11, label %13
 
 ; <label>:11                                      ; preds = %4
-  %12 = tail call i64 (i8*, i32, i64, ...)* @_Z28ccv_cache_generate_signaturePcilz(i8* %5, i32 %10, i64 %3, double 5.411100e+01)
+  %12 = tail call i64 (i8*, i32, i64, ...)* @ccv_cache_generate_signature(i8* %5, i32 %10, i64 %3, double 5.411100e+01)
   br label %15
 
 ; <label>:13                                      ; preds = %4
-  %14 = tail call i64 (i8*, i32, i64, ...)* @_Z28ccv_cache_generate_signaturePcilz(i8* %5, i32 %10, i64 %3, i32 13)
+  %14 = tail call i64 (i8*, i32, i64, ...)* @ccv_cache_generate_signature(i8* %5, i32 %10, i64 %3, i32 13)
   br label %15
 
 ; <label>:15                                      ; preds = %13, %11

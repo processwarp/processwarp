@@ -5,7 +5,7 @@ target triple = "x86_64-pc-linux-gnu"
 @.str = private unnamed_addr constant [24 x i8] c"averagex4 result: %.1f\0A\00", align 1
 
 ; Function Attrs: nounwind readonly uwtable
-define float @_Z11simdAveragePfi(float* nocapture readonly %src, i32 %len) #0 {
+define float @simdAverage(float* nocapture readonly %src, i32 %len) #0 {
   %1 = icmp sgt i32 %len, 0
   br i1 %1, label %.lr.ph, label %._crit_edge
 
@@ -36,7 +36,7 @@ define float @_Z11simdAveragePfi(float* nocapture readonly %src, i32 %len) #0 {
 }
 
 ; Function Attrs: nounwind uwtable
-define void @_Z9initArrayPfi(float* nocapture %src, i32 %len) #1 {
+define void @initArray(float* nocapture %src, i32 %len) #1 {
   %1 = icmp sgt i32 %len, 0
   br i1 %1, label %.lr.ph, label %._crit_edge
 
@@ -90,9 +90,9 @@ define i32 @main() #1 {
   %11 = getelementptr inbounds float* %.03.i, i64 4
   %12 = add nsw i32 %i.01.i, 4
   %13 = icmp slt i32 %12, 100000
-  br i1 %13, label %.lr.ph.i1, label %_Z11simdAveragePfi.exit
+  br i1 %13, label %.lr.ph.i1, label %simdAverage.exit
 
-_Z11simdAveragePfi.exit:                          ; preds = %.lr.ph.i1
+simdAverage.exit:                                 ; preds = %.lr.ph.i1
   %14 = extractelement <4 x float> %10, i32 0
   %15 = extractelement <4 x float> %10, i32 1
   %16 = fadd float %14, %15

@@ -13,22 +13,22 @@ target triple = "x86_64-pc-linux-gnu"
 @_ZZN3XYZ11getIdentityEvE2iT = linkonce_odr global %struct.XYZ zeroinitializer, align 4
 @_ZGVZN3XYZ11getIdentityEvE2iT = linkonce_odr global i64 0
 
-; Function Attrs: nounwind uwtable
+; Function Attrs: uwtable
 define void @_Z8conoutfvPKc(i8* %fmt) #0 {
   %1 = load i8* (i8*, i8*)** @func, align 8, !tbaa !1
-  %2 = tail call i8* %1(i8* getelementptr inbounds ([32 x i8]* @_ZZ8conoutfvPKcE3buf, i64 0, i64 0), i8* %fmt) #2
-  %3 = tail call i32 @puts(i8* getelementptr inbounds ([32 x i8]* @_ZZ8conoutfvPKcE3buf, i64 0, i64 0)) #2
+  %2 = tail call i8* %1(i8* getelementptr inbounds ([32 x i8]* @_ZZ8conoutfvPKcE3buf, i64 0, i64 0), i8* %fmt)
+  %3 = tail call i32 @puts(i8* getelementptr inbounds ([32 x i8]* @_ZZ8conoutfvPKcE3buf, i64 0, i64 0))
   ret void
 }
 
 ; Function Attrs: nounwind
 declare i32 @puts(i8* nocapture readonly) #1
 
-; Function Attrs: nounwind uwtable
+; Function Attrs: uwtable
 define i32 @main() #0 {
   store i8* (i8*, i8*)* @strcpy, i8* (i8*, i8*)** @func, align 8, !tbaa !1
   tail call void @llvm.memcpy.p0i8.p0i8.i64(i8* getelementptr inbounds ([32 x i8]* @_ZZ8conoutfvPKcE3buf, i64 0, i64 0), i8* getelementptr inbounds ([12 x i8]* @.str, i64 0, i64 0), i64 12, i32 1, i1 false)
-  %1 = tail call i32 @puts(i8* getelementptr inbounds ([32 x i8]* @_ZZ8conoutfvPKcE3buf, i64 0, i64 0)) #2
+  %1 = tail call i32 @puts(i8* getelementptr inbounds ([32 x i8]* @_ZZ8conoutfvPKcE3buf, i64 0, i64 0))
   %2 = load atomic i8* bitcast (i64* @_ZGVZN1S11getIdentityEvE2iT to i8*) acquire, align 8
   %3 = icmp eq i8 %2, 0
   br i1 %3, label %4, label %_ZN1S11getIdentityEv.exit
@@ -134,7 +134,7 @@ _ZN3XYZ11getIdentityEv.exit.i3:                   ; preds = %43, %40, %37
 _ZN1S11getIdentityEv.exit4:                       ; preds = %_ZN3XYZ11getIdentityEv.exit.i3, %34, %_ZN1S11getIdentityEv.exit2
   %45 = load float* getelementptr inbounds (%struct.XYZ* @_ZZN1S11getIdentityEvE2iT, i64 0, i32 2), align 4, !tbaa !9
   %46 = fpext float %45 to double
-  %47 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([18 x i8]* @.str1, i64 0, i64 0), double %16, double %31, double %46) #2
+  %47 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([18 x i8]* @.str1, i64 0, i64 0), double %16, double %31, double %46)
   ret i32 0
 }
 
@@ -156,7 +156,7 @@ declare {}* @llvm.invariant.start(i64, i8* nocapture) #2
 ; Function Attrs: nounwind
 declare void @__cxa_guard_release(i64*) #2
 
-attributes #0 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #0 = { uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #2 = { nounwind }
 

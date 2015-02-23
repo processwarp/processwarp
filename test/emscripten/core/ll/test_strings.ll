@@ -6,7 +6,6 @@ target triple = "x86_64-pc-linux-gnu"
 @.str1 = private unnamed_addr constant [24 x i8] c"abc_%d.%2x_xyz9_%3d_%3s\00", align 1
 @.str2 = private unnamed_addr constant [16 x i8] c"%d:%d,%d,%d,%s\0A\00", align 1
 @.str3 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
-@.str5 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
 @.str8 = private unnamed_addr constant [5 x i8] c"test\00", align 1
 @.str9 = private unnamed_addr constant [12 x i8] c"one 1 ONE !\00", align 1
 @.str10 = private unnamed_addr constant [12 x i8] c"two 2 TWO ?\00", align 1
@@ -27,7 +26,7 @@ define i32 @main(i32 %argc, i8** nocapture readonly %argv) #0 {
   %three = alloca [1024 x i8], align 16
   %three3 = alloca [1000 x i8], align 16
   %1 = getelementptr inbounds [32 x i8]* %s, i64 0, i64 0
-  %2 = call i32 (i8*, i8*, ...)* @sscanf(i8* getelementptr inbounds ([24 x i8]* @.str, i64 0, i64 0), i8* getelementptr inbounds ([24 x i8]* @.str1, i64 0, i64 0), i32* %xx, i32* %yy, i32* %zz, i8* %1) #2
+  %2 = call i32 (i8*, i8*, ...)* @__isoc99_sscanf(i8* getelementptr inbounds ([24 x i8]* @.str, i64 0, i64 0), i8* getelementptr inbounds ([24 x i8]* @.str1, i64 0, i64 0), i32* %xx, i32* %yy, i32* %zz, i8* %1) #2
   %3 = load i32* %xx, align 4, !tbaa !1
   %4 = load i32* %yy, align 4, !tbaa !1
   %5 = load i32* %zz, align 4, !tbaa !1
@@ -46,52 +45,60 @@ define i32 @main(i32 %argc, i8** nocapture readonly %argv) #0 {
   %18 = add nsw i32 %17, 2
   %19 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str3, i64 0, i64 0), i32 %18) #2
   %20 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str3, i64 0, i64 0), i64 5) #2
-  %21 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str5, i64 0, i64 0), i64 0) #2
-  %puts = call i32 @puts(i8* getelementptr inbounds ([16 x i8]* @str, i64 0, i64 0)) #2
-  %puts4 = call i32 @puts(i8* getelementptr inbounds ([11 x i8]* @str16, i64 0, i64 0)) #2
-  %22 = call noalias i8* @strdup(i8* getelementptr inbounds ([5 x i8]* @.str8, i64 0, i64 0)) #2
-  %puts5 = call i32 @puts(i8* %22) #2
-  call void @free(i8* %22) #2
-  %23 = getelementptr inbounds [1024 x i8]* %three, i64 0, i64 0
-  call void @llvm.lifetime.start(i64 1024, i8* %23) #2
-  call void @llvm.memset.p0i8.i64(i8* %23, i8 46, i64 1024, i32 16, i1 false)
-  %24 = getelementptr inbounds [1024 x i8]* %three, i64 0, i64 50
-  store i8 0, i8* %24, align 2, !tbaa !7
-  %25 = sext i32 %argc to i64
-  %26 = getelementptr inbounds [1024 x i8]* %three, i64 0, i64 %25
-  %27 = sdiv i32 %argc, 2
-  %28 = sext i32 %27 to i64
-  %29 = getelementptr inbounds [12 x i8]* @.str9, i64 0, i64 %28
-  %30 = add nsw i32 %argc, 1
-  %31 = sext i32 %30 to i64
-  %32 = call i8* @strncpy(i8* %26, i8* %29, i64 %31) #2
-  %33 = mul nsw i32 %argc, 3
-  %34 = sext i32 %33 to i64
-  %35 = getelementptr inbounds [1024 x i8]* %three, i64 0, i64 %34
-  %36 = sdiv i32 %argc, 3
-  %37 = sext i32 %36 to i64
-  %38 = getelementptr inbounds [12 x i8]* @.str10, i64 0, i64 %37
-  %39 = add nsw i32 %argc, 2
-  %40 = sext i32 %39 to i64
-  %41 = call i8* @strncpy(i8* %35, i8* %38, i64 %40) #2
-  %42 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str11, i64 0, i64 0), i8* %23) #2
-  call void @llvm.lifetime.end(i64 1024, i8* %23) #2
-  %43 = getelementptr inbounds [1000 x i8]* %three3, i64 0, i64 0
-  call void @llvm.lifetime.start(i64 1000, i8* %43) #2
-  %44 = shl nsw i32 %argc, 1
-  %45 = sext i32 %44 to i64
-  %46 = getelementptr inbounds [28 x i8]* @.str12, i64 0, i64 %45
-  %47 = call i8* @strcpy(i8* %43, i8* %46) #2
-  %48 = getelementptr inbounds [48 x i8]* @.str13, i64 0, i64 %34
-  %49 = call i8* @strcat(i8* %43, i8* %48) #2
-  %50 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([10 x i8]* @.str14, i64 0, i64 0), i8* %43) #2
-  %51 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([15 x i8]* @.str15, i64 0, i64 0), i8* %49) #2
-  call void @llvm.lifetime.end(i64 1000, i8* %43) #2
+  %puts = call i32 @puts(i8* null) #2
+  %puts4 = call i32 @puts(i8* getelementptr inbounds ([16 x i8]* @str, i64 0, i64 0)) #2
+  %puts5 = call i32 @puts(i8* getelementptr inbounds ([11 x i8]* @str16, i64 0, i64 0)) #2
+  %21 = call noalias i8* @malloc(i64 5) #2
+  %22 = icmp eq i8* %21, null
+  br i1 %22, label %24, label %23
+
+; <label>:23                                      ; preds = %0
+  call void @llvm.memcpy.p0i8.p0i8.i64(i8* %21, i8* getelementptr inbounds ([5 x i8]* @.str8, i64 0, i64 0), i64 5, i32 1, i1 false)
+  br label %24
+
+; <label>:24                                      ; preds = %23, %0
+  %puts6 = call i32 @puts(i8* %21) #2
+  call void @free(i8* %21) #2
+  %25 = getelementptr inbounds [1024 x i8]* %three, i64 0, i64 0
+  call void @llvm.lifetime.start(i64 1024, i8* %25) #2
+  call void @llvm.memset.p0i8.i64(i8* %25, i8 46, i64 1024, i32 16, i1 false)
+  %26 = getelementptr inbounds [1024 x i8]* %three, i64 0, i64 50
+  store i8 0, i8* %26, align 2, !tbaa !7
+  %27 = sext i32 %argc to i64
+  %28 = getelementptr inbounds [1024 x i8]* %three, i64 0, i64 %27
+  %29 = sdiv i32 %argc, 2
+  %30 = sext i32 %29 to i64
+  %31 = getelementptr inbounds [12 x i8]* @.str9, i64 0, i64 %30
+  %32 = add nsw i32 %argc, 1
+  %33 = sext i32 %32 to i64
+  %34 = call i8* @strncpy(i8* %28, i8* %31, i64 %33) #2
+  %35 = mul nsw i32 %argc, 3
+  %36 = sext i32 %35 to i64
+  %37 = getelementptr inbounds [1024 x i8]* %three, i64 0, i64 %36
+  %38 = sdiv i32 %argc, 3
+  %39 = sext i32 %38 to i64
+  %40 = getelementptr inbounds [12 x i8]* @.str10, i64 0, i64 %39
+  %41 = add nsw i32 %argc, 2
+  %42 = sext i32 %41 to i64
+  %43 = call i8* @strncpy(i8* %37, i8* %40, i64 %42) #2
+  %44 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str11, i64 0, i64 0), i8* %25) #2
+  call void @llvm.lifetime.end(i64 1024, i8* %25) #2
+  %45 = getelementptr inbounds [1000 x i8]* %three3, i64 0, i64 0
+  call void @llvm.lifetime.start(i64 1000, i8* %45) #2
+  %46 = shl nsw i32 %argc, 1
+  %47 = sext i32 %46 to i64
+  %48 = getelementptr inbounds [28 x i8]* @.str12, i64 0, i64 %47
+  %49 = call i8* @strcpy(i8* %45, i8* %48) #2
+  %50 = getelementptr inbounds [48 x i8]* @.str13, i64 0, i64 %36
+  %51 = call i8* @strcat(i8* %45, i8* %50) #2
+  %52 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([10 x i8]* @.str14, i64 0, i64 0), i8* %45) #2
+  %53 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([15 x i8]* @.str15, i64 0, i64 0), i8* %51) #2
+  call void @llvm.lifetime.end(i64 1000, i8* %45) #2
   ret i32 0
 }
 
 ; Function Attrs: nounwind
-declare i32 @sscanf(i8* nocapture readonly, i8* nocapture readonly, ...) #1
+declare i32 @__isoc99_sscanf(i8* nocapture readonly, i8* nocapture readonly, ...) #1
 
 ; Function Attrs: nounwind
 declare i32 @printf(i8* nocapture readonly, ...) #1
@@ -100,7 +107,10 @@ declare i32 @printf(i8* nocapture readonly, ...) #1
 declare i32 @puts(i8* nocapture readonly) #1
 
 ; Function Attrs: nounwind
-declare noalias i8* @strdup(i8* nocapture readonly) #1
+declare noalias i8* @malloc(i64) #1
+
+; Function Attrs: nounwind
+declare void @llvm.memcpy.p0i8.p0i8.i64(i8* nocapture, i8* nocapture readonly, i64, i32, i1) #2
 
 ; Function Attrs: nounwind
 declare void @free(i8* nocapture) #1

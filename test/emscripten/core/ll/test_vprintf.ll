@@ -12,7 +12,7 @@ target triple = "x86_64-pc-linux-gnu"
 @stdout = external global %struct._IO_FILE*
 
 ; Function Attrs: nounwind uwtable
-define void @_Z5printPcz(i8* nocapture readonly %format, ...) #0 {
+define void @print(i8* nocapture readonly %format, ...) #0 {
   %args = alloca [1 x %struct.__va_list_tag], align 16
   %1 = getelementptr inbounds [1 x %struct.__va_list_tag]* %args, i64 0, i64 0
   %2 = bitcast [1 x %struct.__va_list_tag]* %args to i8*
@@ -31,8 +31,8 @@ declare void @llvm.va_end(i8*) #1
 
 ; Function Attrs: nounwind uwtable
 define i32 @main() #0 {
-  tail call void (i8*, ...)* @_Z5printPcz(i8* getelementptr inbounds ([33 x i8]* @.str, i64 0, i64 0), i32 1)
-  tail call void (i8*, ...)* @_Z5printPcz(i8* getelementptr inbounds ([27 x i8]* @.str1, i64 0, i64 0), i32 2, i8* getelementptr inbounds ([10 x i8]* @.str2, i64 0, i64 0))
+  tail call void (i8*, ...)* @print(i8* getelementptr inbounds ([33 x i8]* @.str, i64 0, i64 0), i32 1)
+  tail call void (i8*, ...)* @print(i8* getelementptr inbounds ([27 x i8]* @.str1, i64 0, i64 0), i32 2, i8* getelementptr inbounds ([10 x i8]* @.str2, i64 0, i64 0))
   ret i32 0
 }
 

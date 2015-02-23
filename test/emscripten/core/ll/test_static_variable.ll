@@ -68,7 +68,7 @@ _Z7GetDatav.exit:                                 ; preds = %6, %3, %0
 
 _Z7GetDatav.exit1:                                ; preds = %12, %9, %_Z7GetDatav.exit
   %13 = load i32* getelementptr inbounds (%struct.DATA* @_ZZ7GetDatavE4data, i64 0, i32 0), align 4, !tbaa !1
-  %14 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str, i64 0, i64 0), i32 %13) #1
+  %14 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str, i64 0, i64 0), i32 %13)
   ret i32 0
 }
 

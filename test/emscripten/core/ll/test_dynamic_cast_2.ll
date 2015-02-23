@@ -11,7 +11,7 @@ target triple = "x86_64-pc-linux-gnu"
 ; Function Attrs: nounwind uwtable
 define i32 @main() #0 {
   %1 = tail call i8* @__dynamic_cast(i8* bitcast ({ i8*, i8* }* @_ZTI5Class to i8*), i8* bitcast (i8** @_ZTISt9type_info to i8*), i8* bitcast ({ i8*, i8* }* @_ZTI5Class to i8*), i64 -2) #3
-  %2 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str, i64 0, i64 0), i8* %1) #3
+  %2 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str, i64 0, i64 0), i8* %1)
   ret i32 0
 }
 

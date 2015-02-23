@@ -6,7 +6,7 @@ target triple = "x86_64-pc-linux-gnu"
 @.str1 = private unnamed_addr constant [5 x i8] c",%d,\00", align 1
 
 ; Function Attrs: nounwind uwtable
-define i32 @_Z4testtt(i16 zeroext %a, i16 zeroext %b) #0 {
+define i32 @test(i16 zeroext %a, i16 zeroext %b) #0 {
   %uadd = tail call { i16, i1 } @llvm.uadd.with.overflow.i16(i16 %a, i16 %b)
   %1 = extractvalue { i16, i1 } %uadd, 0
   %2 = zext i16 %1 to i32

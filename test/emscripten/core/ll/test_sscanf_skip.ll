@@ -14,11 +14,11 @@ define i32 @main() #0 {
   %val1 = alloca i32, align 4
   %large = alloca i64, align 8
   %val2 = alloca i64, align 8
-  %1 = call i32 (i8*, i8*, ...)* @sscanf(i8* getelementptr inbounds ([12 x i8]* @.str1, i64 0, i64 0), i8* getelementptr inbounds ([13 x i8]* @.str2, i64 0, i64 0), i32* %val1) #2
+  %1 = call i32 (i8*, i8*, ...)* @__isoc99_sscanf(i8* getelementptr inbounds ([12 x i8]* @.str1, i64 0, i64 0), i8* getelementptr inbounds ([13 x i8]* @.str2, i64 0, i64 0), i32* %val1) #2
   %2 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i64 0, i64 0), i32 %1) #2
   %3 = load i32* %val1, align 4, !tbaa !1
   %4 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i64 0, i64 0), i32 %3) #2
-  %5 = call i32 (i8*, i8*, ...)* @sscanf(i8* getelementptr inbounds ([43 x i8]* @.str3, i64 0, i64 0), i8* getelementptr inbounds ([19 x i8]* @.str4, i64 0, i64 0), i64* %large, i64* %val2) #2
+  %5 = call i32 (i8*, i8*, ...)* @__isoc99_sscanf(i8* getelementptr inbounds ([43 x i8]* @.str3, i64 0, i64 0), i8* getelementptr inbounds ([19 x i8]* @.str4, i64 0, i64 0), i64* %large, i64* %val2) #2
   %6 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i64 0, i64 0), i32 %5) #2
   %7 = load i64* %large, align 8, !tbaa !5
   %8 = load i64* %val2, align 8, !tbaa !5
@@ -30,7 +30,7 @@ define i32 @main() #0 {
 declare i32 @printf(i8* nocapture readonly, ...) #1
 
 ; Function Attrs: nounwind
-declare i32 @sscanf(i8* nocapture readonly, i8* nocapture readonly, ...) #1
+declare i32 @__isoc99_sscanf(i8* nocapture readonly, i8* nocapture readonly, ...) #1
 
 attributes #0 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }

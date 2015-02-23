@@ -12,84 +12,104 @@ target triple = "x86_64-pc-linux-gnu"
 ; Function Attrs: nounwind uwtable
 define void @_Z3fooif(i32 %a, float %b) #0 {
   %1 = fpext float %b to double
-  %2 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str, i64 0, i64 0), i32 %a, double %1) #3
+  %2 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str, i64 0, i64 0), i32 %a, double %1)
   ret void
 }
 
 ; Function Attrs: nounwind
 declare i32 @printf(i8* nocapture readonly, ...) #1
 
-; Function Attrs: nounwind uwtable
-define i32 @main(i32 %argc, i8** nocapture readnone %argv) #0 {
-_ZNSt6vectorI1SSaIS0_EE9push_backERKS0_.exit:
+; Function Attrs: uwtable
+define i32 @main(i32 %argc, i8** nocapture readnone %argv) #2 {
   %ar = alloca %"class.std::vector", align 8
   %s = alloca i64, align 8
   %tmpcast = bitcast i64* %s to %struct.S*
-  %0 = bitcast %"class.std::vector"* %ar to i8*
-  call void @llvm.memset.p0i8.i64(i8* %0, i8 0, i64 24, i32 8, i1 false) #3
-  %1 = bitcast i64* %s to i32*
-  store i32 789, i32* %1, align 8, !tbaa !1
-  %2 = getelementptr inbounds %struct.S* %tmpcast, i64 0, i32 1
-  store float 0x405EDD2F20000000, float* %2, align 4, !tbaa !7
-  %3 = getelementptr inbounds %"class.std::vector"* %ar, i64 0, i32 0, i32 0, i32 1
-  %4 = getelementptr inbounds %"class.std::vector"* %ar, i64 0, i32 0, i32 0, i32 2
-  call void @_ZNSt6vectorI1SSaIS0_EE13_M_insert_auxEN9__gnu_cxx17__normal_iteratorIPS0_S2_EERKS0_(%"class.std::vector"* %ar, %struct.S* null, %struct.S* %tmpcast) #3
-  %.pre = load %struct.S** %3, align 8, !tbaa !8
-  %.pre4 = load %struct.S** %4, align 8, !tbaa !12
-  store i32 0, i32* %1, align 8, !tbaa !1
-  store float 0x4059066660000000, float* %2, align 4, !tbaa !7
-  %5 = icmp eq %struct.S* %.pre, %.pre4
-  br i1 %5, label %13, label %6
+  %1 = bitcast %"class.std::vector"* %ar to i8*
+  call void @llvm.memset.p0i8.i64(i8* %1, i8 0, i64 24, i32 8, i1 false) #4
+  %2 = bitcast i64* %s to i32*
+  store i32 789, i32* %2, align 8, !tbaa !1
+  %3 = getelementptr inbounds %struct.S* %tmpcast, i64 0, i32 1
+  store float 0x405EDD2F20000000, float* %3, align 4, !tbaa !7
+  %4 = getelementptr inbounds %"class.std::vector"* %ar, i64 0, i32 0, i32 0, i32 1
+  invoke void @_ZNSt6vectorI1SSaIS0_EE13_M_insert_auxEN9__gnu_cxx17__normal_iteratorIPS0_S2_EERKS0_(%"class.std::vector"* %ar, %struct.S* null, %struct.S* %tmpcast)
+          to label %_ZNSt6vectorI1SSaIS0_EE9push_backERKS0_.exit unwind label %33
 
-; <label>:6                                       ; preds = %_ZNSt6vectorI1SSaIS0_EE9push_backERKS0_.exit
-  %7 = icmp eq %struct.S* %.pre, null
-  br i1 %7, label %_ZN9__gnu_cxx14__alloc_traitsISaI1SEE9constructIS1_EEvRS2_PS1_RKT_.exit.i2, label %8
+_ZNSt6vectorI1SSaIS0_EE9push_backERKS0_.exit:     ; preds = %0
+  %5 = getelementptr inbounds %"class.std::vector"* %ar, i64 0, i32 0, i32 0, i32 2
+  %.pre = load %struct.S** %4, align 8, !tbaa !8
+  %.pre6 = load %struct.S** %5, align 8, !tbaa !12
+  store i32 0, i32* %2, align 8, !tbaa !1
+  store float 0x4059066660000000, float* %3, align 4, !tbaa !7
+  %6 = icmp eq %struct.S* %.pre, %.pre6
+  br i1 %6, label %14, label %7
 
-; <label>:8                                       ; preds = %6
-  %9 = bitcast %struct.S* %.pre to i64*
-  %10 = load i64* %s, align 8
-  store i64 %10, i64* %9, align 4
+; <label>:7                                       ; preds = %_ZNSt6vectorI1SSaIS0_EE9push_backERKS0_.exit
+  %8 = icmp eq %struct.S* %.pre, null
+  br i1 %8, label %_ZN9__gnu_cxx14__alloc_traitsISaI1SEE9constructIS1_EEvRS2_PS1_RKT_.exit.i2, label %9
+
+; <label>:9                                       ; preds = %7
+  %10 = bitcast %struct.S* %.pre to i64*
+  %11 = load i64* %s, align 8
+  store i64 %11, i64* %10, align 4
   br label %_ZN9__gnu_cxx14__alloc_traitsISaI1SEE9constructIS1_EEvRS2_PS1_RKT_.exit.i2
 
-_ZN9__gnu_cxx14__alloc_traitsISaI1SEE9constructIS1_EEvRS2_PS1_RKT_.exit.i2: ; preds = %8, %6
-  %11 = phi %struct.S* [ null, %6 ], [ %.pre, %8 ]
-  %12 = getelementptr inbounds %struct.S* %11, i64 1
-  store %struct.S* %12, %struct.S** %3, align 8, !tbaa !8
-  br label %_ZNSt6vectorI1SSaIS0_EE9push_backERKS0_.exit3
+_ZN9__gnu_cxx14__alloc_traitsISaI1SEE9constructIS1_EEvRS2_PS1_RKT_.exit.i2: ; preds = %9, %7
+  %12 = phi %struct.S* [ null, %7 ], [ %.pre, %9 ]
+  %13 = getelementptr inbounds %struct.S* %12, i64 1
+  store %struct.S* %13, %struct.S** %4, align 8, !tbaa !8
+  br label %15
 
-; <label>:13                                      ; preds = %_ZNSt6vectorI1SSaIS0_EE9push_backERKS0_.exit
-  call void @_ZNSt6vectorI1SSaIS0_EE13_M_insert_auxEN9__gnu_cxx17__normal_iteratorIPS0_S2_EERKS0_(%"class.std::vector"* %ar, %struct.S* %.pre4, %struct.S* %tmpcast) #3
-  br label %_ZNSt6vectorI1SSaIS0_EE9push_backERKS0_.exit3
+; <label>:14                                      ; preds = %_ZNSt6vectorI1SSaIS0_EE9push_backERKS0_.exit
+  invoke void @_ZNSt6vectorI1SSaIS0_EE13_M_insert_auxEN9__gnu_cxx17__normal_iteratorIPS0_S2_EERKS0_(%"class.std::vector"* %ar, %struct.S* %.pre6, %struct.S* %tmpcast)
+          to label %15 unwind label %33
 
-_ZNSt6vectorI1SSaIS0_EE9push_backERKS0_.exit3:    ; preds = %13, %_ZN9__gnu_cxx14__alloc_traitsISaI1SEE9constructIS1_EEvRS2_PS1_RKT_.exit.i2
-  %14 = getelementptr inbounds %"class.std::vector"* %ar, i64 0, i32 0, i32 0, i32 0
-  %15 = load %struct.S** %14, align 8, !tbaa !13
-  %16 = getelementptr inbounds %struct.S* %15, i64 0, i32 0
-  %17 = load i32* %16, align 4, !tbaa !1
-  %18 = getelementptr inbounds %struct.S* %15, i64 0, i32 1
-  %19 = load float* %18, align 4, !tbaa !7
-  %20 = fpext float %19 to double
-  %21 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str, i64 0, i64 0), i32 %17, double %20) #3
-  %22 = getelementptr inbounds %struct.S* %15, i64 1, i32 0
-  %23 = load i32* %22, align 4, !tbaa !1
-  %24 = getelementptr inbounds %struct.S* %15, i64 1, i32 1
-  %25 = load float* %24, align 4, !tbaa !7
-  %26 = fpext float %25 to double
-  %27 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str, i64 0, i64 0), i32 %23, double %26) #3
-  %28 = icmp eq %struct.S* %15, null
-  br i1 %28, label %_ZNSt6vectorI1SSaIS0_EED2Ev.exit, label %29
+; <label>:15                                      ; preds = %14, %_ZN9__gnu_cxx14__alloc_traitsISaI1SEE9constructIS1_EEvRS2_PS1_RKT_.exit.i2
+  %16 = getelementptr inbounds %"class.std::vector"* %ar, i64 0, i32 0, i32 0, i32 0
+  %17 = load %struct.S** %16, align 8, !tbaa !13
+  %18 = getelementptr inbounds %struct.S* %17, i64 0, i32 0
+  %19 = load i32* %18, align 4, !tbaa !1
+  %20 = getelementptr inbounds %struct.S* %17, i64 0, i32 1
+  %21 = load float* %20, align 4, !tbaa !7
+  %22 = fpext float %21 to double
+  %23 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str, i64 0, i64 0), i32 %19, double %22) #4
+  %24 = getelementptr inbounds %struct.S* %17, i64 1, i32 0
+  %25 = load i32* %24, align 4, !tbaa !1
+  %26 = getelementptr inbounds %struct.S* %17, i64 1, i32 1
+  %27 = load float* %26, align 4, !tbaa !7
+  %28 = fpext float %27 to double
+  %29 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str, i64 0, i64 0), i32 %25, double %28) #4
+  %30 = icmp eq %struct.S* %17, null
+  br i1 %30, label %_ZNSt6vectorI1SSaIS0_EED2Ev.exit5, label %31
 
-; <label>:29                                      ; preds = %_ZNSt6vectorI1SSaIS0_EE9push_backERKS0_.exit3
-  %30 = bitcast %struct.S* %15 to i8*
-  tail call void @_ZdlPv(i8* %30) #3
+; <label>:31                                      ; preds = %15
+  %32 = bitcast %struct.S* %17 to i8*
+  tail call void @_ZdlPv(i8* %32) #4
+  br label %_ZNSt6vectorI1SSaIS0_EED2Ev.exit5
+
+_ZNSt6vectorI1SSaIS0_EED2Ev.exit5:                ; preds = %31, %15
+  ret i32 0
+
+; <label>:33                                      ; preds = %14, %0
+  %34 = landingpad { i8*, i32 } personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*)
+          cleanup
+  %35 = getelementptr inbounds %"class.std::vector"* %ar, i64 0, i32 0, i32 0, i32 0
+  %36 = load %struct.S** %35, align 8, !tbaa !13
+  %37 = icmp eq %struct.S* %36, null
+  br i1 %37, label %_ZNSt6vectorI1SSaIS0_EED2Ev.exit, label %38
+
+; <label>:38                                      ; preds = %33
+  %39 = bitcast %struct.S* %36 to i8*
+  tail call void @_ZdlPv(i8* %39) #4
   br label %_ZNSt6vectorI1SSaIS0_EED2Ev.exit
 
-_ZNSt6vectorI1SSaIS0_EED2Ev.exit:                 ; preds = %29, %_ZNSt6vectorI1SSaIS0_EE9push_backERKS0_.exit3
-  ret i32 0
+_ZNSt6vectorI1SSaIS0_EED2Ev.exit:                 ; preds = %38, %33
+  resume { i8*, i32 } %34
 }
 
-; Function Attrs: nounwind uwtable
-define linkonce_odr void @_ZNSt6vectorI1SSaIS0_EE13_M_insert_auxEN9__gnu_cxx17__normal_iteratorIPS0_S2_EERKS0_(%"class.std::vector"* nocapture %this, %struct.S* %__position.coerce, %struct.S* nocapture readonly %__x) #0 align 2 {
+declare i32 @__gxx_personality_v0(...)
+
+; Function Attrs: uwtable
+define linkonce_odr void @_ZNSt6vectorI1SSaIS0_EE13_M_insert_auxEN9__gnu_cxx17__normal_iteratorIPS0_S2_EERKS0_(%"class.std::vector"* nocapture %this, %struct.S* %__position.coerce, %struct.S* nocapture readonly %__x) #2 align 2 {
   %1 = getelementptr inbounds %"class.std::vector"* %this, i64 0, i32 0, i32 0, i32 1
   %2 = load %struct.S** %1, align 8, !tbaa !8
   %3 = getelementptr inbounds %"class.std::vector"* %this, i64 0, i32 0, i32 0, i32 2
@@ -129,13 +149,13 @@ _ZN9__gnu_cxx14__alloc_traitsISaI1SEE9constructIS1_EEvRS2_PS1_RKT_.exit: ; preds
   %.pre1.i.i.i.i = getelementptr inbounds %struct.S* %13, i64 %.pre.i.i.i.i
   %24 = bitcast %struct.S* %.pre1.i.i.i.i to i8*
   %25 = bitcast %struct.S* %__position.coerce to i8*
-  tail call void @llvm.memmove.p0i8.p0i8.i64(i8* %24, i8* %25, i64 %20, i32 4, i1 false) #3
+  tail call void @llvm.memmove.p0i8.p0i8.i64(i8* %24, i8* %25, i64 %20, i32 4, i1 false) #4
   br label %_ZSt13copy_backwardIP1SS1_ET0_T_S3_S2_.exit
 
 _ZSt13copy_backwardIP1SS1_ET0_T_S3_S2_.exit:      ; preds = %23, %_ZN9__gnu_cxx14__alloc_traitsISaI1SEE9constructIS1_EEvRS2_PS1_RKT_.exit
   %26 = bitcast %struct.S* %__position.coerce to i64*
   store i64 %16, i64* %26, align 4
-  br label %78
+  br label %80
 
 _ZNKSt6vectorI1SSaIS0_EE12_M_check_lenEmPKc.exit: ; preds = %0
   %27 = getelementptr inbounds %"class.std::vector"* %this, i64 0, i32 0, i32 0, i32 0
@@ -146,7 +166,7 @@ _ZNKSt6vectorI1SSaIS0_EE12_M_check_lenEmPKc.exit: ; preds = %0
   %32 = ashr exact i64 %31, 3
   %33 = icmp eq i64 %32, 0
   %34 = select i1 %33, i64 1, i64 %32
-  %uadd.i = tail call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %32, i64 %34) #3
+  %uadd.i = tail call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %32, i64 %34)
   %35 = extractvalue { i64, i1 } %uadd.i, 0
   %36 = extractvalue { i64, i1 } %uadd.i, 1
   %37 = icmp ugt i64 %35, 2305843009213693951
@@ -163,12 +183,12 @@ _ZNKSt6vectorI1SSaIS0_EE12_M_check_lenEmPKc.exit: ; preds = %0
   br i1 %44, label %45, label %_ZN9__gnu_cxx13new_allocatorI1SE8allocateEmPKv.exit.i
 
 ; <label>:45                                      ; preds = %43
-  tail call void @_ZSt17__throw_bad_allocv() #7
+  tail call void @_ZSt17__throw_bad_allocv() #8
   unreachable
 
 _ZN9__gnu_cxx13new_allocatorI1SE8allocateEmPKv.exit.i: ; preds = %43
   %46 = shl i64 %38, 3
-  %47 = tail call noalias i8* @_Znwm(i64 %46) #3
+  %47 = tail call noalias i8* @_Znwm(i64 %46)
   %48 = bitcast i8* %47 to %struct.S*
   br label %_ZNSt12_Vector_baseI1SSaIS0_EE11_M_allocateEm.exit
 
@@ -176,93 +196,94 @@ _ZNSt12_Vector_baseI1SSaIS0_EE11_M_allocateEm.exit: ; preds = %_ZN9__gnu_cxx13ne
   %49 = phi %struct.S* [ %48, %_ZN9__gnu_cxx13new_allocatorI1SE8allocateEmPKv.exit.i ], [ null, %_ZNKSt6vectorI1SSaIS0_EE12_M_check_lenEmPKc.exit ]
   %50 = getelementptr inbounds %struct.S* %49, i64 %41
   %51 = icmp eq %struct.S* %50, null
-  br i1 %51, label %_ZN9__gnu_cxx14__alloc_traitsISaI1SEE9constructIS1_EEvRS2_PS1_RKT_.exit2, label %52
+  br i1 %51, label %_ZN9__gnu_cxx14__alloc_traitsISaI1SEE9constructIS1_EEvRS2_PS1_RKT_.exit3, label %52
 
 ; <label>:52                                      ; preds = %_ZNSt12_Vector_baseI1SSaIS0_EE11_M_allocateEm.exit
   %53 = bitcast %struct.S* %__x to i64*
   %54 = bitcast %struct.S* %50 to i64*
   %55 = load i64* %53, align 4
   store i64 %55, i64* %54, align 4
-  br label %_ZN9__gnu_cxx14__alloc_traitsISaI1SEE9constructIS1_EEvRS2_PS1_RKT_.exit2
+  br label %_ZN9__gnu_cxx14__alloc_traitsISaI1SEE9constructIS1_EEvRS2_PS1_RKT_.exit3
 
-_ZN9__gnu_cxx14__alloc_traitsISaI1SEE9constructIS1_EEvRS2_PS1_RKT_.exit2: ; preds = %52, %_ZNSt12_Vector_baseI1SSaIS0_EE11_M_allocateEm.exit
+_ZN9__gnu_cxx14__alloc_traitsISaI1SEE9constructIS1_EEvRS2_PS1_RKT_.exit3: ; preds = %52, %_ZNSt12_Vector_baseI1SSaIS0_EE11_M_allocateEm.exit
   %56 = load %struct.S** %27, align 8, !tbaa !13
   %57 = ptrtoint %struct.S* %56 to i64
   %58 = sub i64 %39, %57
   %59 = ashr exact i64 %58, 3
   %60 = icmp eq i64 %59, 0
-  br i1 %60, label %_ZSt34__uninitialized_move_if_noexcept_aIP1SS1_SaIS0_EET0_T_S4_S3_RT1_.exit1, label %61
+  br i1 %60, label %64, label %61
 
-; <label>:61                                      ; preds = %_ZN9__gnu_cxx14__alloc_traitsISaI1SEE9constructIS1_EEvRS2_PS1_RKT_.exit2
+; <label>:61                                      ; preds = %_ZN9__gnu_cxx14__alloc_traitsISaI1SEE9constructIS1_EEvRS2_PS1_RKT_.exit3
   %62 = bitcast %struct.S* %49 to i8*
   %63 = bitcast %struct.S* %56 to i8*
-  tail call void @llvm.memmove.p0i8.p0i8.i64(i8* %62, i8* %63, i64 %58, i32 4, i1 false) #3
-  br label %_ZSt34__uninitialized_move_if_noexcept_aIP1SS1_SaIS0_EET0_T_S4_S3_RT1_.exit1
+  tail call void @llvm.memmove.p0i8.p0i8.i64(i8* %62, i8* %63, i64 %58, i32 4, i1 false) #4
+  br label %64
 
-_ZSt34__uninitialized_move_if_noexcept_aIP1SS1_SaIS0_EET0_T_S4_S3_RT1_.exit1: ; preds = %61, %_ZN9__gnu_cxx14__alloc_traitsISaI1SEE9constructIS1_EEvRS2_PS1_RKT_.exit2
+; <label>:64                                      ; preds = %61, %_ZN9__gnu_cxx14__alloc_traitsISaI1SEE9constructIS1_EEvRS2_PS1_RKT_.exit3
   %.sum = add i64 %59, 1
-  %64 = load %struct.S** %1, align 8, !tbaa !8
-  %65 = ptrtoint %struct.S* %64 to i64
-  %66 = sub i64 %65, %39
-  %67 = ashr exact i64 %66, 3
-  %68 = icmp eq i64 %67, 0
-  br i1 %68, label %_ZSt34__uninitialized_move_if_noexcept_aIP1SS1_SaIS0_EET0_T_S4_S3_RT1_.exit, label %69
+  %65 = load %struct.S** %1, align 8, !tbaa !8
+  %66 = ptrtoint %struct.S* %65 to i64
+  %67 = sub i64 %66, %39
+  %68 = ashr exact i64 %67, 3
+  %69 = icmp eq i64 %68, 0
+  br i1 %69, label %74, label %70
 
-; <label>:69                                      ; preds = %_ZSt34__uninitialized_move_if_noexcept_aIP1SS1_SaIS0_EET0_T_S4_S3_RT1_.exit1
-  %70 = getelementptr inbounds %struct.S* %49, i64 %.sum
-  %71 = bitcast %struct.S* %70 to i8*
-  %72 = bitcast %struct.S* %__position.coerce to i8*
-  tail call void @llvm.memmove.p0i8.p0i8.i64(i8* %71, i8* %72, i64 %66, i32 4, i1 false) #3
-  br label %_ZSt34__uninitialized_move_if_noexcept_aIP1SS1_SaIS0_EET0_T_S4_S3_RT1_.exit
+; <label>:70                                      ; preds = %64
+  %71 = getelementptr inbounds %struct.S* %49, i64 %.sum
+  %72 = bitcast %struct.S* %71 to i8*
+  %73 = bitcast %struct.S* %__position.coerce to i8*
+  tail call void @llvm.memmove.p0i8.p0i8.i64(i8* %72, i8* %73, i64 %67, i32 4, i1 false) #4
+  br label %74
 
-_ZSt34__uninitialized_move_if_noexcept_aIP1SS1_SaIS0_EET0_T_S4_S3_RT1_.exit: ; preds = %69, %_ZSt34__uninitialized_move_if_noexcept_aIP1SS1_SaIS0_EET0_T_S4_S3_RT1_.exit1
-  %.sum3 = add i64 %67, %.sum
-  %73 = getelementptr inbounds %struct.S* %49, i64 %.sum3
-  %74 = icmp eq %struct.S* %56, null
-  br i1 %74, label %_ZNSt12_Vector_baseI1SSaIS0_EE13_M_deallocateEPS0_m.exit, label %75
+; <label>:74                                      ; preds = %70, %64
+  %.sum4 = add i64 %68, %.sum
+  %75 = getelementptr inbounds %struct.S* %49, i64 %.sum4
+  %76 = icmp eq %struct.S* %56, null
+  br i1 %76, label %_ZNSt12_Vector_baseI1SSaIS0_EE13_M_deallocateEPS0_m.exit1, label %77
 
-; <label>:75                                      ; preds = %_ZSt34__uninitialized_move_if_noexcept_aIP1SS1_SaIS0_EET0_T_S4_S3_RT1_.exit
-  %76 = bitcast %struct.S* %56 to i8*
-  tail call void @_ZdlPv(i8* %76) #3
-  br label %_ZNSt12_Vector_baseI1SSaIS0_EE13_M_deallocateEPS0_m.exit
+; <label>:77                                      ; preds = %74
+  %78 = bitcast %struct.S* %56 to i8*
+  tail call void @_ZdlPv(i8* %78) #4
+  br label %_ZNSt12_Vector_baseI1SSaIS0_EE13_M_deallocateEPS0_m.exit1
 
-_ZNSt12_Vector_baseI1SSaIS0_EE13_M_deallocateEPS0_m.exit: ; preds = %75, %_ZSt34__uninitialized_move_if_noexcept_aIP1SS1_SaIS0_EET0_T_S4_S3_RT1_.exit
+_ZNSt12_Vector_baseI1SSaIS0_EE13_M_deallocateEPS0_m.exit1: ; preds = %77, %74
   store %struct.S* %49, %struct.S** %27, align 8, !tbaa !13
-  store %struct.S* %73, %struct.S** %1, align 8, !tbaa !8
-  %77 = getelementptr inbounds %struct.S* %49, i64 %38
-  store %struct.S* %77, %struct.S** %3, align 8, !tbaa !12
-  br label %78
+  store %struct.S* %75, %struct.S** %1, align 8, !tbaa !8
+  %79 = getelementptr inbounds %struct.S* %49, i64 %38
+  store %struct.S* %79, %struct.S** %3, align 8, !tbaa !12
+  br label %80
 
-; <label>:78                                      ; preds = %_ZNSt12_Vector_baseI1SSaIS0_EE13_M_deallocateEPS0_m.exit, %_ZSt13copy_backwardIP1SS1_ET0_T_S3_S2_.exit
+; <label>:80                                      ; preds = %_ZNSt12_Vector_baseI1SSaIS0_EE13_M_deallocateEPS0_m.exit1, %_ZSt13copy_backwardIP1SS1_ET0_T_S3_S2_.exit
   ret void
 }
 
 ; Function Attrs: nobuiltin nounwind
-declare void @_ZdlPv(i8*) #2
+declare void @_ZdlPv(i8*) #3
 
 ; Function Attrs: nounwind
-declare void @llvm.memmove.p0i8.p0i8.i64(i8* nocapture, i8* nocapture readonly, i64, i32, i1) #3
+declare void @llvm.memmove.p0i8.p0i8.i64(i8* nocapture, i8* nocapture readonly, i64, i32, i1) #4
 
 ; Function Attrs: noreturn
-declare void @_ZSt17__throw_bad_allocv() #4
+declare void @_ZSt17__throw_bad_allocv() #5
 
 ; Function Attrs: nobuiltin
-declare noalias i8* @_Znwm(i64) #5
+declare noalias i8* @_Znwm(i64) #6
 
 ; Function Attrs: nounwind
-declare void @llvm.memset.p0i8.i64(i8* nocapture, i8, i64, i32, i1) #3
+declare void @llvm.memset.p0i8.i64(i8* nocapture, i8, i64, i32, i1) #4
 
 ; Function Attrs: nounwind readnone
-declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #6
+declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #7
 
 attributes #0 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #2 = { nobuiltin nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #3 = { nounwind }
-attributes #4 = { noreturn "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #5 = { nobuiltin "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #6 = { nounwind readnone }
-attributes #7 = { noreturn nounwind }
+attributes #2 = { uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #3 = { nobuiltin nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #4 = { nounwind }
+attributes #5 = { noreturn "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #6 = { nobuiltin "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #7 = { nounwind readnone }
+attributes #8 = { noreturn }
 
 !llvm.ident = !{!0}
 

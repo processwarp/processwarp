@@ -15,7 +15,7 @@ define i32 @main() #0 {
   %1 = getelementptr inbounds [16 x i8]* %pMonth, i64 0, i64 0
   %2 = getelementptr inbounds [16 x i8]* %pDay, i64 0, i64 0
   %3 = getelementptr inbounds [16 x i8]* %pYear, i64 0, i64 0
-  %4 = call i32 (i8*, i8*, ...)* @sscanf(i8* getelementptr inbounds ([12 x i8]* @.str1, i64 0, i64 0), i8* getelementptr inbounds ([7 x i8]* @.str2, i64 0, i64 0), i8* %1, i8* %2, i8* %3) #2
+  %4 = call i32 (i8*, i8*, ...)* @__isoc99_sscanf(i8* getelementptr inbounds ([12 x i8]* @.str1, i64 0, i64 0), i8* getelementptr inbounds ([7 x i8]* @.str2, i64 0, i64 0), i8* %1, i8* %2, i8* %3) #2
   %5 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i64 0, i64 0), i32 %4) #2
   %6 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([28 x i8]* @.str3, i64 0, i64 0), i8* %2, i8* %1, i8* %3) #2
   ret i32 0
@@ -25,7 +25,7 @@ define i32 @main() #0 {
 declare i32 @printf(i8* nocapture readonly, ...) #1
 
 ; Function Attrs: nounwind
-declare i32 @sscanf(i8* nocapture readonly, i8* nocapture readonly, ...) #1
+declare i32 @__isoc99_sscanf(i8* nocapture readonly, i8* nocapture readonly, ...) #1
 
 attributes #0 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }

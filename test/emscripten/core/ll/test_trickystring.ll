@@ -5,7 +5,7 @@ target triple = "x86_64-pc-linux-gnu"
 @str = private unnamed_addr constant [3 x i8] c"ok\00"
 
 ; Function Attrs: nounwind readnone uwtable
-define i32 @_Z1fPv(i8* nocapture readnone %user) #0 {
+define i32 @f(i8* nocapture readnone %user) #0 {
   ret i32 0
 }
 

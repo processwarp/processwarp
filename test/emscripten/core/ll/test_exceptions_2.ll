@@ -49,7 +49,7 @@ define void @_Z14ThrowExceptionv() #0 {
   %14 = extractvalue { i8*, i32 } %13, 0
   %15 = extractvalue { i8*, i32 } %13, 1
   %16 = getelementptr inbounds %"class.std::allocator"* %2, i64 0, i32 0
-  call void @llvm.lifetime.start(i64 1, i8* %16) #4
+  call void @llvm.lifetime.start(i64 1, i8* %16)
   %17 = getelementptr inbounds %"class.std::basic_string"* %3, i64 0, i32 0, i32 0
   %18 = load i8** %17, align 8, !tbaa !1
   %19 = getelementptr inbounds i8* %18, i64 -24
@@ -87,7 +87,7 @@ _ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i: ; preds = %29, %25
   br label %34
 
 ; <label>:34                                      ; preds = %33, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i, %12
-  call void @llvm.lifetime.end(i64 1, i8* %16) #4
+  call void @llvm.lifetime.end(i64 1, i8* %16)
   br i1 %.0, label %35, label %36
 
 ; <label>:35                                      ; preds = %34, %.thread
@@ -120,6 +120,8 @@ declare void @_ZNSt13runtime_errorD1Ev(%"class.std::runtime_error"*) #2
 
 declare void @__cxa_throw(i8*, i8*, i8*)
 
+declare i8* @__cxa_begin_catch(i8*)
+
 declare void @__cxa_free_exception(i8*)
 
 ; Function Attrs: uwtable
@@ -140,8 +142,6 @@ define i32 @main() #3 {
 ; <label>:6                                       ; preds = %2, %0
   ret i32 0
 }
-
-declare i8* @__cxa_begin_catch(i8*)
 
 declare void @__cxa_end_catch()
 

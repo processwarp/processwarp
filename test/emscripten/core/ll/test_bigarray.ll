@@ -6,7 +6,7 @@ target triple = "x86_64-pc-linux-gnu"
 
 @buffy = global [102400 x %struct.Struct] zeroinitializer, align 16
 @.str = private unnamed_addr constant [35 x i8] c"buffy[i].x == 0 && buffy[i].y == 0\00", align 1
-@.str1 = private unnamed_addr constant [22 x i8] c"cpp/test_bigarray.cpp\00", align 1
+@.str1 = private unnamed_addr constant [16 x i8] c"test_bigarray.c\00", align 1
 @__PRETTY_FUNCTION__.main = private unnamed_addr constant [11 x i8] c"int main()\00", align 1
 @.str2 = private unnamed_addr constant [6 x i8] c"*%d*\0A\00", align 1
 
@@ -34,7 +34,7 @@ define i32 @main() #0 {
   br i1 %11, label %1, label %12
 
 ; <label>:12                                      ; preds = %8, %4
-  tail call void @__assert_fail(i8* getelementptr inbounds ([35 x i8]* @.str, i64 0, i64 0), i8* getelementptr inbounds ([22 x i8]* @.str1, i64 0, i64 0), i32 14, i8* getelementptr inbounds ([11 x i8]* @__PRETTY_FUNCTION__.main, i64 0, i64 0)) #3
+  tail call void @__assert_fail(i8* getelementptr inbounds ([35 x i8]* @.str, i64 0, i64 0), i8* getelementptr inbounds ([16 x i8]* @.str1, i64 0, i64 0), i32 14, i8* getelementptr inbounds ([11 x i8]* @__PRETTY_FUNCTION__.main, i64 0, i64 0)) #3
   unreachable
 
 .preheader:                                       ; preds = %.preheader, %1

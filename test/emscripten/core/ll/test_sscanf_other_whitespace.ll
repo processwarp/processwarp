@@ -12,7 +12,7 @@ target triple = "x86_64-pc-linux-gnu"
 @.str7 = private unnamed_addr constant [11 x i8] c"\0C\0C47\0C\0C53\0C\0C\00", align 1
 @.str8 = private unnamed_addr constant [8 x i8] c"\0D59\0D61\0D\00", align 1
 @.str9 = private unnamed_addr constant [11 x i8] c"\0D\0D67\0D\0D71\0D\0D\00", align 1
-@_ZZ4mainE6buffer = private unnamed_addr constant [10 x i8*] [i8* getelementptr inbounds ([6 x i8]* @.str, i32 0, i32 0), i8* getelementptr inbounds ([9 x i8]* @.str1, i32 0, i32 0), i8* getelementptr inbounds ([8 x i8]* @.str2, i32 0, i32 0), i8* getelementptr inbounds ([11 x i8]* @.str3, i32 0, i32 0), i8* getelementptr inbounds ([8 x i8]* @.str4, i32 0, i32 0), i8* getelementptr inbounds ([11 x i8]* @.str5, i32 0, i32 0), i8* getelementptr inbounds ([8 x i8]* @.str6, i32 0, i32 0), i8* getelementptr inbounds ([11 x i8]* @.str7, i32 0, i32 0), i8* getelementptr inbounds ([8 x i8]* @.str8, i32 0, i32 0), i8* getelementptr inbounds ([11 x i8]* @.str9, i32 0, i32 0)], align 16
+@main.buffer = private unnamed_addr constant [10 x i8*] [i8* getelementptr inbounds ([6 x i8]* @.str, i32 0, i32 0), i8* getelementptr inbounds ([9 x i8]* @.str1, i32 0, i32 0), i8* getelementptr inbounds ([8 x i8]* @.str2, i32 0, i32 0), i8* getelementptr inbounds ([11 x i8]* @.str3, i32 0, i32 0), i8* getelementptr inbounds ([8 x i8]* @.str4, i32 0, i32 0), i8* getelementptr inbounds ([11 x i8]* @.str5, i32 0, i32 0), i8* getelementptr inbounds ([8 x i8]* @.str6, i32 0, i32 0), i8* getelementptr inbounds ([11 x i8]* @.str7, i32 0, i32 0), i8* getelementptr inbounds ([8 x i8]* @.str8, i32 0, i32 0), i8* getelementptr inbounds ([11 x i8]* @.str9, i32 0, i32 0)], align 16
 @.str10 = private unnamed_addr constant [8 x i8] c" %d %d \00", align 1
 @.str11 = private unnamed_addr constant [9 x i8] c"%d, %d, \00", align 1
 
@@ -26,9 +26,9 @@ define i32 @main() #0 {
   %indvars.iv = phi i64 [ 0, %0 ], [ %indvars.iv.next, %1 ]
   store i32 0, i32* %x, align 4, !tbaa !1
   store i32 0, i32* %y, align 4, !tbaa !1
-  %2 = getelementptr inbounds [10 x i8*]* @_ZZ4mainE6buffer, i64 0, i64 %indvars.iv
+  %2 = getelementptr inbounds [10 x i8*]* @main.buffer, i64 0, i64 %indvars.iv
   %3 = load i8** %2, align 8, !tbaa !5
-  %4 = call i32 (i8*, i8*, ...)* @sscanf(i8* %3, i8* getelementptr inbounds ([8 x i8]* @.str10, i64 0, i64 0), i32* %x, i32* %y) #2
+  %4 = call i32 (i8*, i8*, ...)* @__isoc99_sscanf(i8* %3, i8* getelementptr inbounds ([8 x i8]* @.str10, i64 0, i64 0), i32* %x, i32* %y) #2
   %5 = load i32* %x, align 4, !tbaa !1
   %6 = load i32* %y, align 4, !tbaa !1
   %7 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str11, i64 0, i64 0), i32 %5, i32 %6) #2
@@ -41,7 +41,7 @@ define i32 @main() #0 {
 }
 
 ; Function Attrs: nounwind
-declare i32 @sscanf(i8* nocapture readonly, i8* nocapture readonly, ...) #1
+declare i32 @__isoc99_sscanf(i8* nocapture readonly, i8* nocapture readonly, ...) #1
 
 ; Function Attrs: nounwind
 declare i32 @printf(i8* nocapture readonly, ...) #1

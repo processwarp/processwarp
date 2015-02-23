@@ -2,8 +2,8 @@
 target datalayout = "e-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-pc-linux-gnu"
 
-@a = global i64 0, align 8
-@b = global i64 0, align 8
+@a = common global i64 0, align 8
+@b = common global i64 0, align 8
 @.str = private unnamed_addr constant [7 x i8] c"%d,%d\0A\00", align 1
 @.str1 = private unnamed_addr constant [15 x i8] c"one %lld, %lld\00", align 1
 @.str2 = private unnamed_addr constant [16 x i8] c"zero %lld, %lld\00", align 1

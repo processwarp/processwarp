@@ -91,8 +91,8 @@ define linkonce_odr void @_ZN6ExQuuxD2Ev(%class.ExQuux* nocapture readonly %this
   ret void
 }
 
-; Function Attrs: nounwind uwtable
-define linkonce_odr void @_ZN7ExChildD2Ev(%class.ExChild* nocapture readonly %this) unnamed_addr #0 align 2 {
+; Function Attrs: uwtable
+define linkonce_odr void @_ZN7ExChildD2Ev(%class.ExChild* nocapture readonly %this) unnamed_addr #2 align 2 {
   %1 = getelementptr inbounds %class.ExChild* %this, i64 0, i32 0, i32 0
   %2 = load i32* %1, align 4, !tbaa !8
   %3 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([26 x i8]* @.str30, i64 0, i64 0), i32 %2)
@@ -116,7 +116,7 @@ define void @_Z5magici(i32 %which) #2 {
   ]
 
 ; <label>:1                                       ; preds = %0
-  %puts15 = tail call i32 @puts(i8* getelementptr inbounds ([25 x i8]* @str54, i64 0, i64 0))
+  %puts16 = tail call i32 @puts(i8* getelementptr inbounds ([25 x i8]* @str54, i64 0, i64 0))
   %2 = tail call i8* @__cxa_allocate_exception(i64 4) #1
   %3 = load i32* getelementptr inbounds (%class.ExFoo* @ExFooInstance, i64 0, i32 0), align 4, !tbaa !1
   %4 = bitcast i8* %2 to i32*
@@ -126,27 +126,27 @@ define void @_Z5magici(i32 %which) #2 {
           to label %64 unwind label %20
 
 ; <label>:5                                       ; preds = %0
-  %puts14 = tail call i32 @puts(i8* getelementptr inbounds ([25 x i8]* @str53, i64 0, i64 0))
+  %puts15 = tail call i32 @puts(i8* getelementptr inbounds ([25 x i8]* @str53, i64 0, i64 0))
   %6 = tail call i8* @__cxa_allocate_exception(i64 4) #1
   %7 = load i32* getelementptr inbounds (%class.ExBar* @ExBarInstance, i64 0, i32 0), align 4, !tbaa !6
   %8 = bitcast i8* %6 to i32*
   store i32 %7, i32* %8, align 4, !tbaa !6
-  %puts.i3 = tail call i32 @puts(i8* getelementptr inbounds ([15 x i8]* @str39, i64 0, i64 0)) #1
+  %puts.i4 = tail call i32 @puts(i8* getelementptr inbounds ([15 x i8]* @str39, i64 0, i64 0)) #1
   invoke void @__cxa_throw(i8* %6, i8* bitcast ({ i8*, i8* }* @_ZTI5ExBar to i8*), i8* bitcast (void (%class.ExBar*)* @_ZN5ExBarD2Ev to i8*)) #6
           to label %64 unwind label %20
 
 ; <label>:9                                       ; preds = %0
-  %puts13 = tail call i32 @puts(i8* getelementptr inbounds ([26 x i8]* @str52, i64 0, i64 0))
+  %puts14 = tail call i32 @puts(i8* getelementptr inbounds ([26 x i8]* @str52, i64 0, i64 0))
   %10 = tail call i8* @__cxa_allocate_exception(i64 4) #1
   %11 = load i32* getelementptr inbounds (%class.ExQuux* @ExQuuxInstance, i64 0, i32 0), align 4, !tbaa !8
   %12 = bitcast i8* %10 to i32*
   store i32 %11, i32* %12, align 4, !tbaa !8
-  %puts.i4 = tail call i32 @puts(i8* getelementptr inbounds ([16 x i8]* @str40, i64 0, i64 0)) #1
+  %puts.i5 = tail call i32 @puts(i8* getelementptr inbounds ([16 x i8]* @str40, i64 0, i64 0)) #1
   invoke void @__cxa_throw(i8* %10, i8* bitcast ({ i8*, i8* }* @_ZTI6ExQuux to i8*), i8* bitcast (void (%class.ExQuux*)* @_ZN6ExQuuxD2Ev to i8*)) #6
           to label %64 unwind label %20
 
 ; <label>:13                                      ; preds = %0
-  %puts12 = tail call i32 @puts(i8* getelementptr inbounds ([22 x i8]* @str51, i64 0, i64 0))
+  %puts13 = tail call i32 @puts(i8* getelementptr inbounds ([22 x i8]* @str51, i64 0, i64 0))
   %14 = tail call i8* @__cxa_allocate_exception(i64 8) #1
   %15 = bitcast i8* %14 to %class.ExQuux**
   store %class.ExQuux* @ExQuuxInstance, %class.ExQuux** %15, align 8, !tbaa !10
@@ -154,13 +154,13 @@ define void @_Z5magici(i32 %which) #2 {
           to label %64 unwind label %20
 
 ; <label>:16                                      ; preds = %0
-  %puts11 = tail call i32 @puts(i8* getelementptr inbounds ([27 x i8]* @str50, i64 0, i64 0))
+  %puts12 = tail call i32 @puts(i8* getelementptr inbounds ([27 x i8]* @str50, i64 0, i64 0))
   %17 = tail call i8* @__cxa_allocate_exception(i64 4) #1
   %18 = bitcast i8* %17 to i32*
   %puts.i.i = tail call i32 @puts(i8* getelementptr inbounds ([17 x i8]* @str37, i64 0, i64 0)) #1
   %19 = load i32* getelementptr inbounds (%class.ExChild* @ExChildInstance, i64 0, i32 0, i32 0), align 4, !tbaa !8
   store i32 %19, i32* %18, align 4, !tbaa !8
-  %puts.i5 = tail call i32 @puts(i8* getelementptr inbounds ([15 x i8]* @str45, i64 0, i64 0)) #1
+  %puts.i6 = tail call i32 @puts(i8* getelementptr inbounds ([15 x i8]* @str45, i64 0, i64 0))
   invoke void @__cxa_throw(i8* %17, i8* bitcast ({ i8*, i8*, i8* }* @_ZTI7ExChild to i8*), i8* bitcast (void (%class.ExChild*)* @_ZN7ExChildD2Ev to i8*)) #6
           to label %64 unwind label %20
 
@@ -178,7 +178,7 @@ define void @_Z5magici(i32 %which) #2 {
   %27 = tail call i8* @__cxa_get_exception_ptr(i8* %22) #1
   %28 = bitcast i8* %27 to i32*
   %29 = load i32* %28, align 4, !tbaa !8
-  %puts.i6 = tail call i32 @puts(i8* getelementptr inbounds ([16 x i8]* @str40, i64 0, i64 0)) #1
+  %puts.i7 = tail call i32 @puts(i8* getelementptr inbounds ([16 x i8]* @str40, i64 0, i64 0)) #1
   %30 = tail call i8* @__cxa_begin_catch(i8* %22) #1
   %31 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([22 x i8]* @.str13, i64 0, i64 0), i32 %29)
   %32 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([25 x i8]* @.str25, i64 0, i64 0), i32 %29) #1
@@ -197,14 +197,14 @@ define void @_Z5magici(i32 %which) #2 {
   %38 = tail call i8* @__cxa_get_exception_ptr(i8* %22) #1
   %39 = bitcast i8* %38 to i32*
   %40 = load i32* %39, align 4, !tbaa !6
-  %puts.i7 = tail call i32 @puts(i8* getelementptr inbounds ([15 x i8]* @str39, i64 0, i64 0)) #1
+  %puts.i8 = tail call i32 @puts(i8* getelementptr inbounds ([15 x i8]* @str39, i64 0, i64 0)) #1
   %41 = tail call i8* @__cxa_begin_catch(i8* %22) #1
   %42 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([20 x i8]* @.str12, i64 0, i64 0), i32 %40)
   invoke void @__cxa_rethrow() #6
           to label %64 unwind label %53
 
 ; <label>:43                                      ; preds = %0
-  %puts10 = tail call i32 @puts(i8* getelementptr inbounds ([31 x i8]* @str49, i64 0, i64 0))
+  %puts11 = tail call i32 @puts(i8* getelementptr inbounds ([31 x i8]* @str49, i64 0, i64 0))
   %44 = tail call i8* @__cxa_allocate_exception(i64 8) #1
   %45 = bitcast i8* %44 to %class.ExChild**
   store %class.ExChild* @ExChildInstance, %class.ExChild** %45, align 8, !tbaa !10
@@ -212,7 +212,7 @@ define void @_Z5magici(i32 %which) #2 {
           to label %64 unwind label %20
 
 ; <label>:46                                      ; preds = %0
-  %puts9 = tail call i32 @puts(i8* getelementptr inbounds ([14 x i8]* @str48, i64 0, i64 0))
+  %puts10 = tail call i32 @puts(i8* getelementptr inbounds ([14 x i8]* @str48, i64 0, i64 0))
   %47 = tail call i8* @__cxa_allocate_exception(i64 4) #1
   %48 = bitcast i8* %47 to i32*
   store i32 42, i32* %48, align 4, !tbaa !12
@@ -220,7 +220,7 @@ define void @_Z5magici(i32 %which) #2 {
           to label %64 unwind label %20
 
 ; <label>:49                                      ; preds = %0
-  %puts8 = tail call i32 @puts(i8* getelementptr inbounds ([16 x i8]* @str47, i64 0, i64 0))
+  %puts9 = tail call i32 @puts(i8* getelementptr inbounds ([16 x i8]* @str47, i64 0, i64 0))
   %50 = tail call i8* @__cxa_allocate_exception(i64 8) #1
   %51 = bitcast i8* %50 to i8**
   store i8* null, i8** %51, align 8, !tbaa !10
@@ -234,17 +234,17 @@ define void @_Z5magici(i32 %which) #2 {
 ; <label>:53                                      ; preds = %37
   %54 = landingpad { i8*, i32 } personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*)
           cleanup
-  %55 = extractvalue { i8*, i32 } %54, 0
+  %55 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([24 x i8]* @.str32, i64 0, i64 0), i32 %40) #1
   %56 = extractvalue { i8*, i32 } %54, 1
-  %57 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([24 x i8]* @.str32, i64 0, i64 0), i32 %40) #1
+  %57 = extractvalue { i8*, i32 } %54, 0
   invoke void @__cxa_end_catch()
           to label %58 unwind label %61
 
 ; <label>:58                                      ; preds = %53, %34
-  %.12 = phi i8* [ %55, %53 ], [ %22, %34 ]
-  %.1 = phi i32 [ %56, %53 ], [ %23, %34 ]
-  %59 = insertvalue { i8*, i32 } undef, i8* %.12, 0
-  %60 = insertvalue { i8*, i32 } %59, i32 %.1, 1
+  %.23 = phi i8* [ %57, %53 ], [ %22, %34 ]
+  %.2 = phi i32 [ %56, %53 ], [ %23, %34 ]
+  %59 = insertvalue { i8*, i32 } undef, i8* %.23, 0
+  %60 = insertvalue { i8*, i32 } %59, i32 %.2, 1
   resume { i8*, i32 } %60
 
 ; <label>:61                                      ; preds = %53
@@ -293,9 +293,9 @@ define i32 @main() #2 {
   br label %1
 
 ; <label>:1                                       ; preds = %16, %0
-  %i.05 = phi i32 [ 0, %0 ], [ %17, %16 ]
-  %2 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str15, i64 0, i64 0), i32 %i.05)
-  invoke void @_Z5magici(i32 %i.05)
+  %i.06 = phi i32 [ 0, %0 ], [ %17, %16 ]
+  %2 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str15, i64 0, i64 0), i32 %i.06)
+  invoke void @_Z5magici(i32 %i.06)
           to label %16 unwind label %3
 
 ; <label>:3                                       ; preds = %1
@@ -324,8 +324,8 @@ define i32 @main() #2 {
   br label %16
 
 ; <label>:16                                      ; preds = %50, %46, %37, %29, %21, %9, %1
-  %puts3 = tail call i32 @puts(i8* getelementptr inbounds ([2 x i8]* @str43, i64 0, i64 0))
-  %17 = add nsw i32 %i.05, 1
+  %puts4 = tail call i32 @puts(i8* getelementptr inbounds ([2 x i8]* @str43, i64 0, i64 0))
+  %17 = add nsw i32 %i.06, 1
   %exitcond = icmp eq i32 %17, 9
   br i1 %exitcond, label %51, label %1
 
@@ -382,17 +382,16 @@ define i32 @main() #2 {
   br label %16
 
 ; <label>:50                                      ; preds = %42
-  %puts4 = tail call i32 @puts(i8* getelementptr inbounds ([16 x i8]* @str55, i64 0, i64 0))
+  %puts5 = tail call i32 @puts(i8* getelementptr inbounds ([16 x i8]* @str55, i64 0, i64 0))
   tail call void @__cxa_end_catch()
   br label %16
 
 ; <label>:51                                      ; preds = %16
-  %puts2 = tail call i32 @puts(i8* getelementptr inbounds ([4 x i8]* @str42, i64 0, i64 0))
+  %puts3 = tail call i32 @puts(i8* getelementptr inbounds ([4 x i8]* @str42, i64 0, i64 0))
   ret i32 0
 }
 
-; Function Attrs: nounwind
-define internal void @_GLOBAL__I_a() #1 section ".text.startup" {
+define internal void @_GLOBAL__I_a() section ".text.startup" {
   store i32 11, i32* getelementptr inbounds (%class.ExFoo* @ExFooInstance, i64 0, i32 0), align 4, !tbaa !1
   %puts.i.i = tail call i32 @puts(i8* getelementptr inbounds ([16 x i8]* @str, i64 0, i64 0)) #1
   %1 = tail call i32 @__cxa_atexit(void (i8*)* bitcast (void (%class.ExFoo*)* @_ZN5ExFooD2Ev to void (i8*)*), i8* bitcast (%class.ExFoo* @ExFooInstance to i8*), i8* @__dso_handle) #1
@@ -404,7 +403,7 @@ define internal void @_GLOBAL__I_a() #1 section ".text.startup" {
   %3 = tail call i32 @__cxa_atexit(void (i8*)* bitcast (void (%class.ExQuux*)* @_ZN6ExQuuxD2Ev to void (i8*)*), i8* bitcast (%class.ExQuux* @ExQuuxInstance to i8*), i8* @__dso_handle) #1
   store i32 44, i32* getelementptr inbounds (%class.ExChild* @ExChildInstance, i64 0, i32 0, i32 0), align 4, !tbaa !8
   %puts.i.i.i = tail call i32 @puts(i8* getelementptr inbounds ([17 x i8]* @str37, i64 0, i64 0)) #1
-  %puts.i.i3 = tail call i32 @puts(i8* getelementptr inbounds ([18 x i8]* @str44, i64 0, i64 0)) #1
+  %puts.i.i3 = tail call i32 @puts(i8* getelementptr inbounds ([18 x i8]* @str44, i64 0, i64 0))
   %4 = tail call i32 @__cxa_atexit(void (i8*)* bitcast (void (%class.ExChild*)* @_ZN7ExChildD2Ev to void (i8*)*), i8* bitcast (%class.ExChild* @ExChildInstance to i8*), i8* @__dso_handle) #1
   ret void
 }

@@ -29,38 +29,38 @@ define i32 @main() #0 {
   %1 = bitcast %struct.tm* %tm to i8*
   call void @llvm.lifetime.start(i64 56, i8* %1) #1
   call void @llvm.memset.p0i8.i64(i8* %1, i8 -86, i64 56, i32 8, i1 false)
-  %2 = call i8* @strptime(i8* getelementptr inbounds ([5 x i8]* @.str, i64 0, i64 0), i8* getelementptr inbounds ([3 x i8]* @.str1, i64 0, i64 0), %struct.tm* %tm) #1
-  %3 = icmp eq i8* %2, null
+  %2 = call i32 (i8*, i8*, %struct.tm*, ...)* bitcast (i32 (...)* @strptime to i32 (i8*, i8*, %struct.tm*, ...)*)(i8* getelementptr inbounds ([5 x i8]* @.str, i64 0, i64 0), i8* getelementptr inbounds ([3 x i8]* @.str1, i64 0, i64 0), %struct.tm* %tm) #1
+  %3 = icmp eq i32 %2, 0
   br i1 %3, label %19, label %4
 
 ; <label>:4                                       ; preds = %0
-  %5 = call i8* @strptime(i8* getelementptr inbounds ([3 x i8]* @.str2, i64 0, i64 0), i8* getelementptr inbounds ([3 x i8]* @.str3, i64 0, i64 0), %struct.tm* %tm) #1
-  %6 = icmp eq i8* %5, null
+  %5 = call i32 (i8*, i8*, %struct.tm*, ...)* bitcast (i32 (...)* @strptime to i32 (i8*, i8*, %struct.tm*, ...)*)(i8* getelementptr inbounds ([3 x i8]* @.str2, i64 0, i64 0), i8* getelementptr inbounds ([3 x i8]* @.str3, i64 0, i64 0), %struct.tm* %tm) #1
+  %6 = icmp eq i32 %5, 0
   br i1 %6, label %19, label %7
 
 ; <label>:7                                       ; preds = %4
-  %8 = call i8* @strptime(i8* getelementptr inbounds ([4 x i8]* @.str4, i64 0, i64 0), i8* getelementptr inbounds ([3 x i8]* @.str5, i64 0, i64 0), %struct.tm* %tm) #1
-  %9 = icmp eq i8* %8, null
+  %8 = call i32 (i8*, i8*, %struct.tm*, ...)* bitcast (i32 (...)* @strptime to i32 (i8*, i8*, %struct.tm*, ...)*)(i8* getelementptr inbounds ([4 x i8]* @.str4, i64 0, i64 0), i8* getelementptr inbounds ([3 x i8]* @.str5, i64 0, i64 0), %struct.tm* %tm) #1
+  %9 = icmp eq i32 %8, 0
   br i1 %9, label %19, label %10
 
 ; <label>:10                                      ; preds = %7
-  %11 = call i8* @strptime(i8* getelementptr inbounds ([3 x i8]* @.str6, i64 0, i64 0), i8* getelementptr inbounds ([3 x i8]* @.str7, i64 0, i64 0), %struct.tm* %tm) #1
-  %12 = icmp eq i8* %11, null
+  %11 = call i32 (i8*, i8*, %struct.tm*, ...)* bitcast (i32 (...)* @strptime to i32 (i8*, i8*, %struct.tm*, ...)*)(i8* getelementptr inbounds ([3 x i8]* @.str6, i64 0, i64 0), i8* getelementptr inbounds ([3 x i8]* @.str7, i64 0, i64 0), %struct.tm* %tm) #1
+  %12 = icmp eq i32 %11, 0
   br i1 %12, label %19, label %13
 
 ; <label>:13                                      ; preds = %10
-  %14 = call i8* @strptime(i8* getelementptr inbounds ([3 x i8]* @.str8, i64 0, i64 0), i8* getelementptr inbounds ([3 x i8]* @.str9, i64 0, i64 0), %struct.tm* %tm) #1
-  %15 = icmp eq i8* %14, null
+  %14 = call i32 (i8*, i8*, %struct.tm*, ...)* bitcast (i32 (...)* @strptime to i32 (i8*, i8*, %struct.tm*, ...)*)(i8* getelementptr inbounds ([3 x i8]* @.str8, i64 0, i64 0), i8* getelementptr inbounds ([3 x i8]* @.str9, i64 0, i64 0), %struct.tm* %tm) #1
+  %15 = icmp eq i32 %14, 0
   br i1 %15, label %19, label %16
 
 ; <label>:16                                      ; preds = %13
-  %17 = call i8* @strptime(i8* getelementptr inbounds ([3 x i8]* @.str10, i64 0, i64 0), i8* getelementptr inbounds ([3 x i8]* @.str11, i64 0, i64 0), %struct.tm* %tm) #1
-  %18 = icmp eq i8* %17, null
+  %17 = call i32 (i8*, i8*, %struct.tm*, ...)* bitcast (i32 (...)* @strptime to i32 (i8*, i8*, %struct.tm*, ...)*)(i8* getelementptr inbounds ([3 x i8]* @.str10, i64 0, i64 0), i8* getelementptr inbounds ([3 x i8]* @.str11, i64 0, i64 0), %struct.tm* %tm) #1
+  %18 = icmp eq i32 %17, 0
   br i1 %18, label %19, label %21
 
 ; <label>:19                                      ; preds = %16, %13, %10, %7, %4, %0
   %20 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([19 x i8]* @.str12, i64 0, i64 0)) #1
-  call void @exit(i32 1) #4
+  call void @exit(i32 1) #5
   unreachable
 
 ; <label>:21                                      ; preds = %16
@@ -109,17 +109,17 @@ define i32 @main() #0 {
   %54 = getelementptr inbounds %struct.tm* %tm, i64 0, i32 2
   %55 = load i32* %54, align 8, !tbaa !8
   %56 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([51 x i8]* @.str13, i64 0, i64 0), i32 %48, i32 %50, i32 %53, i32 %55, i32 %27, i32 %24) #1
-  call void @exit(i32 1) #4
+  call void @exit(i32 1) #5
   unreachable
 
 ; <label>:57                                      ; preds = %39
-  %58 = call i8* @strptime(i8* getelementptr inbounds ([2 x i8]* @.str14, i64 0, i64 0), i8* getelementptr inbounds ([3 x i8]* @.str3, i64 0, i64 0), %struct.tm* %tm) #1
-  %59 = icmp eq i8* %58, null
+  %58 = call i32 (i8*, i8*, %struct.tm*, ...)* bitcast (i32 (...)* @strptime to i32 (i8*, i8*, %struct.tm*, ...)*)(i8* getelementptr inbounds ([2 x i8]* @.str14, i64 0, i64 0), i8* getelementptr inbounds ([3 x i8]* @.str3, i64 0, i64 0), %struct.tm* %tm) #1
+  %59 = icmp eq i32 %58, 0
   br i1 %59, label %60, label %62
 
 ; <label>:60                                      ; preds = %57
   %61 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([21 x i8]* @.str15, i64 0, i64 0)) #1
-  call void @exit(i32 1) #4
+  call void @exit(i32 1) #5
   unreachable
 
 ; <label>:62                                      ; preds = %57
@@ -159,7 +159,7 @@ define i32 @main() #0 {
   %86 = add nsw i32 %76, 1
   %87 = add nsw i32 %79, 1900
   %88 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([51 x i8]* @.str16, i64 0, i64 0), i32 %86, i32 %73, i32 %87, i32 %70, i32 %67, i32 %64) #1
-  call void @exit(i32 1) #4
+  call void @exit(i32 1) #5
   unreachable
 
 ; <label>:89                                      ; preds = %62
@@ -174,29 +174,29 @@ declare void @llvm.lifetime.start(i64, i8* nocapture) #1
 ; Function Attrs: nounwind
 declare void @llvm.memset.p0i8.i64(i8* nocapture, i8, i64, i32, i1) #1
 
-; Function Attrs: nounwind
-declare i8* @strptime(i8*, i8*, %struct.tm*) #2
+declare i32 @strptime(...) #2
 
 ; Function Attrs: nounwind
-declare i32 @printf(i8* nocapture readonly, ...) #2
+declare i32 @printf(i8* nocapture readonly, ...) #3
 
 ; Function Attrs: noreturn nounwind
-declare void @exit(i32) #3
+declare void @exit(i32) #4
 
 ; Function Attrs: nounwind
 declare void @llvm.lifetime.end(i64, i8* nocapture) #1
 
 attributes #0 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind }
-attributes #2 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #3 = { noreturn nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #4 = { noreturn nounwind }
+attributes #2 = { "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #3 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #4 = { noreturn nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #5 = { noreturn nounwind }
 
 !llvm.ident = !{!0}
 
 !0 = metadata !{metadata !"Ubuntu clang version 3.4-1ubuntu3 (tags/RELEASE_34/final) (based on LLVM 3.4)"}
 !1 = metadata !{metadata !2, metadata !3, i64 12}
-!2 = metadata !{metadata !"_ZTS2tm", metadata !3, i64 0, metadata !3, i64 4, metadata !3, i64 8, metadata !3, i64 12, metadata !3, i64 16, metadata !3, i64 20, metadata !3, i64 24, metadata !3, i64 28, metadata !3, i64 32, metadata !6, i64 40, metadata !7, i64 48}
+!2 = metadata !{metadata !"tm", metadata !3, i64 0, metadata !3, i64 4, metadata !3, i64 8, metadata !3, i64 12, metadata !3, i64 16, metadata !3, i64 20, metadata !3, i64 24, metadata !3, i64 28, metadata !3, i64 32, metadata !6, i64 40, metadata !7, i64 48}
 !3 = metadata !{metadata !"int", metadata !4, i64 0}
 !4 = metadata !{metadata !"omnipotent char", metadata !5, i64 0}
 !5 = metadata !{metadata !"Simple C/C++ TBAA"}

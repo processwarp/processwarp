@@ -8,7 +8,7 @@ target triple = "x86_64-pc-linux-gnu"
 @.str = private unnamed_addr constant [6 x i8] c"a.txt\00", align 1
 @.str1 = private unnamed_addr constant [3 x i8] c"wb\00", align 1
 @.str2 = private unnamed_addr constant [3 x i8] c"rb\00", align 1
-@_ZZ4mainE4data = private unnamed_addr constant [7 x i8] c"foobar\00", align 1
+@main.data = private unnamed_addr constant [7 x i8] c"foobar\00", align 1
 @.str3 = private unnamed_addr constant [13 x i8] c"written=%zu\0A\00", align 1
 
 ; Function Attrs: nounwind uwtable
@@ -34,7 +34,7 @@ define i32 @main() #0 {
 
 ; <label>:9                                       ; preds = %4
   %10 = getelementptr inbounds [7 x i8]* %data, i64 0, i64 0
-  call void @llvm.memcpy.p0i8.p0i8.i64(i8* %10, i8* getelementptr inbounds ([7 x i8]* @_ZZ4mainE4data, i64 0, i64 0), i64 7, i32 1, i1 false)
+  call void @llvm.memcpy.p0i8.p0i8.i64(i8* %10, i8* getelementptr inbounds ([7 x i8]* @main.data, i64 0, i64 0), i64 7, i32 1, i1 false)
   %11 = call i64 @fwrite(i8* %10, i64 1, i64 7, %struct._IO_FILE* %6) #3
   %12 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str3, i64 0, i64 0), i64 %11) #3
   ret i32 0

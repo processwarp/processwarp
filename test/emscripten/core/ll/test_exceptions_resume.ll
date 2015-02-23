@@ -192,16 +192,27 @@ declare void @_ZNSt13runtime_errorD2Ev(%"class.std::runtime_error"*) #4
 
 declare void @__cxa_throw(i8*, i8*, i8*)
 
+; Function Attrs: noinline noreturn nounwind
+define linkonce_odr hidden void @__clang_call_terminate(i8*) #5 {
+  %2 = tail call i8* @__cxa_begin_catch(i8* %0) #1
+  tail call void @_ZSt9terminatev() #12
+  unreachable
+}
+
+declare i8* @__cxa_begin_catch(i8*)
+
+declare void @_ZSt9terminatev()
+
 declare void @__cxa_free_exception(i8*)
 
 ; Function Attrs: nounwind readonly uwtable
-define i8* @latest_err_msg() #5 {
+define i8* @latest_err_msg() #6 {
   %1 = load i8** getelementptr inbounds (%"class.std::basic_string"* @_latest_err_msg, i64 0, i32 0, i32 0), align 8, !tbaa !1
   ret i8* %1
 }
 
 ; Function Attrs: nounwind readonly uwtable
-define i32 @result() #5 {
+define i32 @result() #6 {
   %1 = load i32* @_result, align 4, !tbaa !8
   ret i32 %1
 }
@@ -232,837 +243,1066 @@ define i32 @c_adder(i32 %a, i32 %b) #2 {
   %22 = alloca %"class.std::allocator", align 1
   %23 = alloca i32, align 4
   %24 = alloca %"class.std::allocator", align 1
-  %25 = alloca %"class.std::basic_string", align 8
+  %25 = alloca i32, align 4
   %26 = alloca %"class.std::allocator", align 1
-  %27 = alloca %"class.std::basic_string", align 8
-  %28 = alloca %"class.std::basic_string", align 8
-  %29 = alloca %"class.std::basic_string", align 8
-  %30 = alloca %"class.std::basic_string", align 8
-  %31 = alloca %"class.std::allocator", align 1
-  %32 = alloca %"class.std::basic_string", align 8
-  %33 = alloca %"class.std::basic_string", align 8
-  %34 = alloca %"class.std::basic_string", align 8
-  %35 = alloca %"class.std::allocator", align 1
-  %36 = invoke i32 @_Z9cpp_adderii(i32 %a, i32 %b)
-          to label %37 unwind label %38
+  %27 = alloca i32, align 4
+  %28 = alloca %"class.std::allocator", align 1
+  %29 = alloca i32, align 4
+  %30 = alloca %"class.std::allocator", align 1
+  %31 = alloca i32, align 4
+  %32 = alloca %"class.std::allocator", align 1
+  %33 = alloca i32, align 4
+  %34 = alloca %"class.std::allocator", align 1
+  %35 = alloca %"class.std::basic_string", align 8
+  %36 = alloca %"class.std::allocator", align 1
+  %37 = alloca %"class.std::basic_string", align 8
+  %38 = alloca %"class.std::basic_string", align 8
+  %39 = alloca %"class.std::basic_string", align 8
+  %40 = alloca %"class.std::basic_string", align 8
+  %41 = alloca %"class.std::allocator", align 1
+  %42 = alloca %"class.std::basic_string", align 8
+  %43 = alloca %"class.std::basic_string", align 8
+  %44 = alloca %"class.std::basic_string", align 8
+  %45 = alloca %"class.std::allocator", align 1
+  %46 = invoke i32 @_Z9cpp_adderii(i32 %a, i32 %b)
+          to label %47 unwind label %48
 
-; <label>:37                                      ; preds = %0
-  store i32 %36, i32* @_result, align 4, !tbaa !8
-  br label %400
+; <label>:47                                      ; preds = %0
+  store i32 %46, i32* @_result, align 4, !tbaa !8
+  br label %502
 
-; <label>:38                                      ; preds = %0
-  %39 = landingpad { i8*, i32 } personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*)
+; <label>:48                                      ; preds = %0
+  %49 = landingpad { i8*, i32 } personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*)
           catch i8* bitcast ({ i8*, i8*, i8* }* @_ZTI9MathError to i8*)
           catch i8* bitcast (i8** @_ZTISt9exception to i8*)
-  %40 = extractvalue { i8*, i32 } %39, 0
-  %41 = extractvalue { i8*, i32 } %39, 1
-  %42 = call i32 @llvm.eh.typeid.for(i8* bitcast ({ i8*, i8*, i8* }* @_ZTI9MathError to i8*)) #1
-  %43 = icmp eq i32 %41, %42
-  br i1 %43, label %44, label %110
+  %50 = extractvalue { i8*, i32 } %49, 0
+  %51 = extractvalue { i8*, i32 } %49, 1
+  %52 = call i32 @llvm.eh.typeid.for(i8* bitcast ({ i8*, i8*, i8* }* @_ZTI9MathError to i8*)) #1
+  %53 = icmp eq i32 %51, %52
+  br i1 %53, label %54, label %169
 
-; <label>:44                                      ; preds = %38
-  %45 = call i8* @__cxa_begin_catch(i8* %40) #1
-  %46 = bitcast i8* %45 to %"class.std::runtime_error"*
-  %47 = bitcast i8* %45 to i8* (%"class.std::runtime_error"*)***
-  %48 = load i8* (%"class.std::runtime_error"*)*** %47, align 8, !tbaa !10
-  %49 = getelementptr inbounds i8* (%"class.std::runtime_error"*)** %48, i64 2
-  %50 = load i8* (%"class.std::runtime_error"*)** %49, align 8
-  %51 = call i8* %50(%"class.std::runtime_error"* %46) #1
-  invoke void @_ZNSsC1EPKcRKSaIcE(%"class.std::basic_string"* %25, i8* %51, %"class.std::allocator"* %26)
-          to label %52 unwind label %119
+; <label>:54                                      ; preds = %48
+  %55 = call i8* @__cxa_begin_catch(i8* %50) #1
+  %56 = bitcast i8* %55 to %"class.std::runtime_error"*
+  %57 = bitcast i8* %55 to i8* (%"class.std::runtime_error"*)***
+  %58 = load i8* (%"class.std::runtime_error"*)*** %57, align 8, !tbaa !10
+  %59 = getelementptr inbounds i8* (%"class.std::runtime_error"*)** %58, i64 2
+  %60 = load i8* (%"class.std::runtime_error"*)** %59, align 8
+  %61 = call i8* %60(%"class.std::runtime_error"* %56) #1
+  invoke void @_ZNSsC1EPKcRKSaIcE(%"class.std::basic_string"* %35, i8* %61, %"class.std::allocator"* %36)
+          to label %62 unwind label %178
 
-; <label>:52                                      ; preds = %44
-  %53 = invoke i64 @_ZNKSs4findEPKcmm(%"class.std::basic_string"* %25, i8* getelementptr inbounds ([15 x i8]* @.str1, i64 0, i64 0), i64 0, i64 14)
-          to label %_ZNKSs4findEPKcm.exit unwind label %123
+; <label>:62                                      ; preds = %54
+  %63 = invoke i64 @_ZNKSs4findEPKcmm(%"class.std::basic_string"* %35, i8* getelementptr inbounds ([15 x i8]* @.str1, i64 0, i64 0), i64 0, i64 14)
+          to label %_ZNKSs4findEPKcm.exit unwind label %182
 
-_ZNKSs4findEPKcm.exit:                            ; preds = %52
-  %54 = icmp eq i64 %53, -1
-  %55 = getelementptr inbounds %"class.std::allocator"* %24, i64 0, i32 0
-  call void @llvm.lifetime.start(i64 1, i8* %55) #1
-  %56 = getelementptr inbounds %"class.std::basic_string"* %25, i64 0, i32 0, i32 0
-  %57 = load i8** %56, align 8, !tbaa !1
-  %58 = getelementptr inbounds i8* %57, i64 -24
-  %59 = bitcast i8* %58 to %"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"*
-  %60 = icmp eq i8* %58, bitcast ([0 x i64]* @_ZNSs4_Rep20_S_empty_rep_storageE to i8*)
-  br i1 %60, label %_ZNSsD1Ev.exit, label %61, !prof !7
+_ZNKSs4findEPKcm.exit:                            ; preds = %62
+  %64 = getelementptr inbounds %"class.std::allocator"* %34, i64 0, i32 0
+  call void @llvm.lifetime.start(i64 1, i8* %64) #1
+  %65 = getelementptr inbounds %"class.std::basic_string"* %35, i64 0, i32 0, i32 0
+  %66 = load i8** %65, align 8, !tbaa !1
+  %67 = getelementptr inbounds i8* %66, i64 -24
+  %68 = bitcast i8* %67 to %"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"*
+  %69 = icmp eq i8* %67, bitcast ([0 x i64]* @_ZNSs4_Rep20_S_empty_rep_storageE to i8*)
+  br i1 %69, label %82, label %70, !prof !7
 
-; <label>:61                                      ; preds = %_ZNKSs4findEPKcm.exit
-  %62 = getelementptr inbounds i8* %57, i64 -8
-  %63 = bitcast i8* %62 to i32*
-  br i1 icmp ne (i8* bitcast (i32 (i32*, void (i8*)*)* @__pthread_key_create to i8*), i8* null), label %64, label %68
+; <label>:70                                      ; preds = %_ZNKSs4findEPKcm.exit
+  %71 = getelementptr inbounds i8* %66, i64 -8
+  %72 = bitcast i8* %71 to i32*
+  br i1 icmp ne (i8* bitcast (i32 (i32*, void (i8*)*)* @__pthread_key_create to i8*), i8* null), label %73, label %77
 
-; <label>:64                                      ; preds = %61
-  %65 = bitcast i32* %23 to i8*
-  call void @llvm.lifetime.start(i64 4, i8* %65)
-  %66 = atomicrmw volatile add i32* %63, i32 -1 acq_rel
-  store i32 %66, i32* %23, align 4
-  %67 = load volatile i32* %23, align 4
-  call void @llvm.lifetime.end(i64 4, i8* %65)
+; <label>:73                                      ; preds = %70
+  %74 = bitcast i32* %33 to i8*
+  call void @llvm.lifetime.start(i64 4, i8* %74)
+  %75 = atomicrmw volatile add i32* %72, i32 -1 acq_rel
+  store i32 %75, i32* %33, align 4
+  %76 = load volatile i32* %33, align 4
+  call void @llvm.lifetime.end(i64 4, i8* %74)
   br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i
 
-; <label>:68                                      ; preds = %61
-  %69 = load i32* %63, align 4, !tbaa !8
-  %70 = add nsw i32 %69, -1
-  store i32 %70, i32* %63, align 4, !tbaa !8
+; <label>:77                                      ; preds = %70
+  %78 = load i32* %72, align 4, !tbaa !8
+  %79 = add nsw i32 %78, -1
+  store i32 %79, i32* %72, align 4, !tbaa !8
   br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i
 
-_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i: ; preds = %68, %64
-  %.0.i.i.i.i = phi i32 [ %67, %64 ], [ %69, %68 ]
-  %71 = icmp slt i32 %.0.i.i.i.i, 1
-  br i1 %71, label %72, label %_ZNSsD1Ev.exit
+_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i: ; preds = %77, %73
+  %.0.i.i.i.i = phi i32 [ %76, %73 ], [ %78, %77 ]
+  %80 = icmp slt i32 %.0.i.i.i.i, 1
+  br i1 %80, label %81, label %82
 
-; <label>:72                                      ; preds = %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i
-  call void @_ZNSs4_Rep10_M_destroyERKSaIcE(%"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"* %59, %"class.std::allocator"* %24) #1
-  br label %_ZNSsD1Ev.exit
+; <label>:81                                      ; preds = %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i
+  call void @_ZNSs4_Rep10_M_destroyERKSaIcE(%"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"* %68, %"class.std::allocator"* %34) #1
+  br label %82
 
-_ZNSsD1Ev.exit:                                   ; preds = %72, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i, %_ZNKSs4findEPKcm.exit
-  call void @llvm.lifetime.end(i64 1, i8* %55) #1
-  br i1 %54, label %73, label %235
+; <label>:82                                      ; preds = %81, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i, %_ZNKSs4findEPKcm.exit
+  call void @llvm.lifetime.end(i64 1, i8* %64) #1
+  %83 = icmp eq i64 %63, -1
+  br i1 %83, label %84, label %297
 
-; <label>:73                                      ; preds = %_ZNSsD1Ev.exit
-  %74 = call i8* @__cxa_allocate_exception(i64 16) #1
-  invoke void @_ZNSsC1EPKcRKSaIcE(%"class.std::basic_string"* %30, i8* getelementptr inbounds ([27 x i8]* @.str2, i64 0, i64 0), %"class.std::allocator"* %31)
-          to label %75 unwind label %.thread
+; <label>:84                                      ; preds = %82
+  %85 = call i8* @__cxa_allocate_exception(i64 16) #1
+  invoke void @_ZNSsC1EPKcRKSaIcE(%"class.std::basic_string"* %40, i8* getelementptr inbounds ([27 x i8]* @.str2, i64 0, i64 0), %"class.std::allocator"* %41)
+          to label %86 unwind label %.thread
 
-; <label>:75                                      ; preds = %73
-  %76 = bitcast i8* %45 to %"class.std::type_info"***
-  %77 = load %"class.std::type_info"*** %76, align 8, !tbaa !10
-  %78 = getelementptr inbounds %"class.std::type_info"** %77, i64 -1
-  %79 = load %"class.std::type_info"** %78, align 8
-  %80 = getelementptr inbounds %"class.std::type_info"* %79, i64 0, i32 1
-  %81 = load i8** %80, align 8, !tbaa !12
-  %82 = load i8* %81, align 1, !tbaa !14
-  %83 = icmp eq i8 %82, 42
-  %84 = getelementptr inbounds i8* %81, i64 1
-  %85 = select i1 %83, i8* %84, i8* %81
-  %86 = call i64 @strlen(i8* %85) #1
-  %87 = invoke %"class.std::basic_string"* @_ZNSs6appendEPKcm(%"class.std::basic_string"* %30, i8* %85, i64 %86)
-          to label %88 unwind label %148
+; <label>:86                                      ; preds = %84
+  %87 = bitcast i8* %55 to %"class.std::type_info"***
+  %88 = load %"class.std::type_info"*** %87, align 8, !tbaa !10
+  %89 = getelementptr inbounds %"class.std::type_info"** %88, i64 -1
+  %90 = load %"class.std::type_info"** %89, align 8
+  %91 = getelementptr inbounds %"class.std::type_info"* %90, i64 0, i32 1
+  %92 = load i8** %91, align 8, !tbaa !12
+  %93 = load i8* %92, align 1, !tbaa !14
+  %94 = icmp eq i8 %93, 42
+  %95 = getelementptr inbounds i8* %92, i64 1
+  %96 = select i1 %94, i8* %95, i8* %92
+  invoke void @_ZNSsC1ERKSs(%"class.std::basic_string"* %39, %"class.std::basic_string"* %40)
+          to label %.noexc unwind label %207
 
-; <label>:88                                      ; preds = %75
-  %89 = getelementptr inbounds %"class.std::basic_string"* %29, i64 0, i32 0, i32 0
-  %90 = getelementptr inbounds %"class.std::basic_string"* %87, i64 0, i32 0, i32 0
-  %91 = load i8** %90, align 8, !tbaa !15
-  store i8* %91, i8** %89, align 8, !tbaa !15
-  store i8* bitcast (i64* getelementptr inbounds ([0 x i64]* @_ZNSs4_Rep20_S_empty_rep_storageE, i64 0, i64 3) to i8*), i8** %90, align 8, !tbaa !1
-  %92 = invoke %"class.std::basic_string"* @_ZNSs6appendEPKcm(%"class.std::basic_string"* %29, i8* getelementptr inbounds ([3 x i8]* @.str3, i64 0, i64 0), i64 2)
-          to label %93 unwind label %152
+.noexc:                                           ; preds = %86
+  %97 = call i64 @strlen(i8* %96) #1
+  %98 = invoke %"class.std::basic_string"* @_ZNSs6appendEPKcm(%"class.std::basic_string"* %39, i8* %96, i64 %97)
+          to label %_ZStplIcSt11char_traitsIcESaIcEESbIT_T0_T1_ERKS6_PKS3_.exit unwind label %99
 
-; <label>:93                                      ; preds = %88
-  %94 = getelementptr inbounds %"class.std::basic_string"* %28, i64 0, i32 0, i32 0
-  %95 = getelementptr inbounds %"class.std::basic_string"* %92, i64 0, i32 0, i32 0
-  %96 = load i8** %95, align 8, !tbaa !15
-  store i8* %96, i8** %94, align 8, !tbaa !15
-  store i8* bitcast (i64* getelementptr inbounds ([0 x i64]* @_ZNSs4_Rep20_S_empty_rep_storageE, i64 0, i64 3) to i8*), i8** %95, align 8, !tbaa !1
-  %97 = load i8* (%"class.std::runtime_error"*)*** %47, align 8, !tbaa !10
-  %98 = getelementptr inbounds i8* (%"class.std::runtime_error"*)** %97, i64 2
-  %99 = load i8* (%"class.std::runtime_error"*)** %98, align 8
-  %100 = call i8* %99(%"class.std::runtime_error"* %46) #1
-  %101 = call i64 @strlen(i8* %100) #1
-  %102 = invoke %"class.std::basic_string"* @_ZNSs6appendEPKcm(%"class.std::basic_string"* %28, i8* %100, i64 %101)
-          to label %103 unwind label %156
-
-; <label>:103                                     ; preds = %93
-  %104 = getelementptr inbounds %"class.std::basic_string"* %27, i64 0, i32 0, i32 0
-  %105 = getelementptr inbounds %"class.std::basic_string"* %102, i64 0, i32 0, i32 0
-  %106 = load i8** %105, align 8, !tbaa !15
-  store i8* %106, i8** %104, align 8, !tbaa !15
-  store i8* bitcast (i64* getelementptr inbounds ([0 x i64]* @_ZNSs4_Rep20_S_empty_rep_storageE, i64 0, i64 3) to i8*), i8** %105, align 8, !tbaa !1
-  %107 = bitcast i8* %74 to %"class.std::runtime_error"*
-  invoke void @_ZNSt13runtime_errorC2ERKSs(%"class.std::runtime_error"* %107, %"class.std::basic_string"* %27)
-          to label %108 unwind label %160
-
-; <label>:108                                     ; preds = %103
-  %109 = bitcast i8* %74 to i32 (...)***
-  store i32 (...)** bitcast (i8** getelementptr inbounds ([5 x i8*]* @_ZTV9MathError, i64 0, i64 2) to i32 (...)**), i32 (...)*** %109, align 8, !tbaa !10
-  invoke void @__cxa_throw(i8* %74, i8* bitcast ({ i8*, i8*, i8* }* @_ZTI9MathError to i8*), i8* bitcast (void (%"class.std::runtime_error"*)* @_ZNSt13runtime_errorD2Ev to i8*)) #11
-          to label %407 unwind label %160
-
-; <label>:110                                     ; preds = %38
-  %111 = call i32 @llvm.eh.typeid.for(i8* bitcast (i8** @_ZTISt9exception to i8*)) #1
-  %112 = icmp eq i32 %41, %111
-  br i1 %112, label %113, label %240
-
-; <label>:113                                     ; preds = %110
-  %114 = call i8* @__cxa_begin_catch(i8* %40) #1
-  invoke void @__cxa_rethrow() #11
-          to label %407 unwind label %115
-
-; <label>:115                                     ; preds = %113
-  %116 = landingpad { i8*, i32 } personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*)
+; <label>:99                                      ; preds = %.noexc
+  %100 = landingpad { i8*, i32 } personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*)
           cleanup
           catch i8* bitcast (i8** @_ZTISt9exception to i8*)
-  %117 = extractvalue { i8*, i32 } %116, 0
-  %118 = extractvalue { i8*, i32 } %116, 1
-  invoke void @__cxa_end_catch()
-          to label %240 unwind label %404
+  %101 = getelementptr inbounds %"class.std::allocator"* %28, i64 0, i32 0
+  call void @llvm.lifetime.start(i64 1, i8* %101) #1
+  %102 = getelementptr inbounds %"class.std::basic_string"* %39, i64 0, i32 0, i32 0
+  %103 = load i8** %102, align 8, !tbaa !1
+  %104 = getelementptr inbounds i8* %103, i64 -24
+  %105 = bitcast i8* %104 to %"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"*
+  %106 = icmp eq i8* %104, bitcast ([0 x i64]* @_ZNSs4_Rep20_S_empty_rep_storageE to i8*)
+  br i1 %106, label %.body, label %107, !prof !7
 
-; <label>:119                                     ; preds = %44
-  %120 = landingpad { i8*, i32 } personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*)
+; <label>:107                                     ; preds = %99
+  %108 = getelementptr inbounds i8* %103, i64 -8
+  %109 = bitcast i8* %108 to i32*
+  br i1 icmp ne (i8* bitcast (i32 (i32*, void (i8*)*)* @__pthread_key_create to i8*), i8* null), label %110, label %114
+
+; <label>:110                                     ; preds = %107
+  %111 = bitcast i32* %27 to i8*
+  call void @llvm.lifetime.start(i64 4, i8* %111)
+  %112 = atomicrmw volatile add i32* %109, i32 -1 acq_rel
+  store i32 %112, i32* %27, align 4
+  %113 = load volatile i32* %27, align 4
+  call void @llvm.lifetime.end(i64 4, i8* %111)
+  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i.i
+
+; <label>:114                                     ; preds = %107
+  %115 = load i32* %109, align 4, !tbaa !8
+  %116 = add nsw i32 %115, -1
+  store i32 %116, i32* %109, align 4, !tbaa !8
+  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i.i
+
+_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i.i: ; preds = %114, %110
+  %.0.i.i.i.i.i = phi i32 [ %113, %110 ], [ %115, %114 ]
+  %117 = icmp slt i32 %.0.i.i.i.i.i, 1
+  br i1 %117, label %118, label %.body
+
+; <label>:118                                     ; preds = %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i.i
+  call void @_ZNSs4_Rep10_M_destroyERKSaIcE(%"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"* %105, %"class.std::allocator"* %28) #1
+  br label %.body
+
+_ZStplIcSt11char_traitsIcESaIcEESbIT_T0_T1_ERKS6_PKS3_.exit: ; preds = %.noexc
+  invoke void @_ZNSsC1ERKSs(%"class.std::basic_string"* %38, %"class.std::basic_string"* %39)
+          to label %.noexc30 unwind label %211
+
+.noexc30:                                         ; preds = %_ZStplIcSt11char_traitsIcESaIcEESbIT_T0_T1_ERKS6_PKS3_.exit
+  %119 = invoke %"class.std::basic_string"* @_ZNSs6appendEPKcm(%"class.std::basic_string"* %38, i8* getelementptr inbounds ([3 x i8]* @.str3, i64 0, i64 0), i64 2)
+          to label %_ZStplIcSt11char_traitsIcESaIcEESbIT_T0_T1_ERKS6_PKS3_.exit33 unwind label %120
+
+; <label>:120                                     ; preds = %.noexc30
+  %121 = landingpad { i8*, i32 } personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*)
           cleanup
           catch i8* bitcast (i8** @_ZTISt9exception to i8*)
-  %121 = extractvalue { i8*, i32 } %120, 0
-  %122 = extractvalue { i8*, i32 } %120, 1
-  br label %_ZNSsD1Ev.exit32
+  %122 = getelementptr inbounds %"class.std::allocator"* %26, i64 0, i32 0
+  call void @llvm.lifetime.start(i64 1, i8* %122) #1
+  %123 = getelementptr inbounds %"class.std::basic_string"* %38, i64 0, i32 0, i32 0
+  %124 = load i8** %123, align 8, !tbaa !1
+  %125 = getelementptr inbounds i8* %124, i64 -24
+  %126 = bitcast i8* %125 to %"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"*
+  %127 = icmp eq i8* %125, bitcast ([0 x i64]* @_ZNSs4_Rep20_S_empty_rep_storageE to i8*)
+  br i1 %127, label %.body31, label %128, !prof !7
 
-; <label>:123                                     ; preds = %52
-  %124 = landingpad { i8*, i32 } personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*)
+; <label>:128                                     ; preds = %120
+  %129 = getelementptr inbounds i8* %124, i64 -8
+  %130 = bitcast i8* %129 to i32*
+  br i1 icmp ne (i8* bitcast (i32 (i32*, void (i8*)*)* @__pthread_key_create to i8*), i8* null), label %131, label %135
+
+; <label>:131                                     ; preds = %128
+  %132 = bitcast i32* %25 to i8*
+  call void @llvm.lifetime.start(i64 4, i8* %132)
+  %133 = atomicrmw volatile add i32* %130, i32 -1 acq_rel
+  store i32 %133, i32* %25, align 4
+  %134 = load volatile i32* %25, align 4
+  call void @llvm.lifetime.end(i64 4, i8* %132)
+  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i.i29
+
+; <label>:135                                     ; preds = %128
+  %136 = load i32* %130, align 4, !tbaa !8
+  %137 = add nsw i32 %136, -1
+  store i32 %137, i32* %130, align 4, !tbaa !8
+  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i.i29
+
+_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i.i29: ; preds = %135, %131
+  %.0.i.i.i.i.i28 = phi i32 [ %134, %131 ], [ %136, %135 ]
+  %138 = icmp slt i32 %.0.i.i.i.i.i28, 1
+  br i1 %138, label %139, label %.body31
+
+; <label>:139                                     ; preds = %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i.i29
+  call void @_ZNSs4_Rep10_M_destroyERKSaIcE(%"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"* %126, %"class.std::allocator"* %26) #1
+  br label %.body31
+
+_ZStplIcSt11char_traitsIcESaIcEESbIT_T0_T1_ERKS6_PKS3_.exit33: ; preds = %.noexc30
+  %140 = load i8* (%"class.std::runtime_error"*)*** %57, align 8, !tbaa !10
+  %141 = getelementptr inbounds i8* (%"class.std::runtime_error"*)** %140, i64 2
+  %142 = load i8* (%"class.std::runtime_error"*)** %141, align 8
+  %143 = call i8* %142(%"class.std::runtime_error"* %56) #1
+  invoke void @_ZNSsC1ERKSs(%"class.std::basic_string"* %37, %"class.std::basic_string"* %38)
+          to label %.noexc36 unwind label %215
+
+.noexc36:                                         ; preds = %_ZStplIcSt11char_traitsIcESaIcEESbIT_T0_T1_ERKS6_PKS3_.exit33
+  %144 = call i64 @strlen(i8* %143) #1
+  %145 = invoke %"class.std::basic_string"* @_ZNSs6appendEPKcm(%"class.std::basic_string"* %37, i8* %143, i64 %144)
+          to label %_ZStplIcSt11char_traitsIcESaIcEESbIT_T0_T1_ERKS6_PKS3_.exit39 unwind label %146
+
+; <label>:146                                     ; preds = %.noexc36
+  %147 = landingpad { i8*, i32 } personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*)
           cleanup
           catch i8* bitcast (i8** @_ZTISt9exception to i8*)
-  %125 = extractvalue { i8*, i32 } %124, 0
-  %126 = extractvalue { i8*, i32 } %124, 1
-  %127 = getelementptr inbounds %"class.std::allocator"* %18, i64 0, i32 0
-  call void @llvm.lifetime.start(i64 1, i8* %127) #1
-  %128 = getelementptr inbounds %"class.std::basic_string"* %25, i64 0, i32 0, i32 0
-  %129 = load i8** %128, align 8, !tbaa !1
-  %130 = getelementptr inbounds i8* %129, i64 -24
-  %131 = bitcast i8* %130 to %"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"*
-  %132 = icmp eq i8* %130, bitcast ([0 x i64]* @_ZNSs4_Rep20_S_empty_rep_storageE to i8*)
-  br i1 %132, label %_ZNSsD1Ev.exit32, label %133, !prof !7
+  %148 = getelementptr inbounds %"class.std::allocator"* %24, i64 0, i32 0
+  call void @llvm.lifetime.start(i64 1, i8* %148) #1
+  %149 = getelementptr inbounds %"class.std::basic_string"* %37, i64 0, i32 0, i32 0
+  %150 = load i8** %149, align 8, !tbaa !1
+  %151 = getelementptr inbounds i8* %150, i64 -24
+  %152 = bitcast i8* %151 to %"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"*
+  %153 = icmp eq i8* %151, bitcast ([0 x i64]* @_ZNSs4_Rep20_S_empty_rep_storageE to i8*)
+  br i1 %153, label %.body37, label %154, !prof !7
 
-; <label>:133                                     ; preds = %123
-  %134 = getelementptr inbounds i8* %129, i64 -8
-  %135 = bitcast i8* %134 to i32*
-  br i1 icmp ne (i8* bitcast (i32 (i32*, void (i8*)*)* @__pthread_key_create to i8*), i8* null), label %136, label %140
+; <label>:154                                     ; preds = %146
+  %155 = getelementptr inbounds i8* %150, i64 -8
+  %156 = bitcast i8* %155 to i32*
+  br i1 icmp ne (i8* bitcast (i32 (i32*, void (i8*)*)* @__pthread_key_create to i8*), i8* null), label %157, label %161
 
-; <label>:136                                     ; preds = %133
-  %137 = bitcast i32* %17 to i8*
-  call void @llvm.lifetime.start(i64 4, i8* %137)
-  %138 = atomicrmw volatile add i32* %135, i32 -1 acq_rel
-  store i32 %138, i32* %17, align 4
-  %139 = load volatile i32* %17, align 4
-  call void @llvm.lifetime.end(i64 4, i8* %137)
-  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i31
+; <label>:157                                     ; preds = %154
+  %158 = bitcast i32* %23 to i8*
+  call void @llvm.lifetime.start(i64 4, i8* %158)
+  %159 = atomicrmw volatile add i32* %156, i32 -1 acq_rel
+  store i32 %159, i32* %23, align 4
+  %160 = load volatile i32* %23, align 4
+  call void @llvm.lifetime.end(i64 4, i8* %158)
+  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i.i35
 
-; <label>:140                                     ; preds = %133
-  %141 = load i32* %135, align 4, !tbaa !8
-  %142 = add nsw i32 %141, -1
-  store i32 %142, i32* %135, align 4, !tbaa !8
-  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i31
+; <label>:161                                     ; preds = %154
+  %162 = load i32* %156, align 4, !tbaa !8
+  %163 = add nsw i32 %162, -1
+  store i32 %163, i32* %156, align 4, !tbaa !8
+  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i.i35
 
-_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i31: ; preds = %140, %136
-  %.0.i.i.i.i30 = phi i32 [ %139, %136 ], [ %141, %140 ]
-  %143 = icmp slt i32 %.0.i.i.i.i30, 1
-  br i1 %143, label %144, label %_ZNSsD1Ev.exit32
+_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i.i35: ; preds = %161, %157
+  %.0.i.i.i.i.i34 = phi i32 [ %160, %157 ], [ %162, %161 ]
+  %164 = icmp slt i32 %.0.i.i.i.i.i34, 1
+  br i1 %164, label %165, label %.body37
 
-; <label>:144                                     ; preds = %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i31
-  call void @_ZNSs4_Rep10_M_destroyERKSaIcE(%"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"* %131, %"class.std::allocator"* %18) #1
-  br label %_ZNSsD1Ev.exit32
+; <label>:165                                     ; preds = %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i.i35
+  call void @_ZNSs4_Rep10_M_destroyERKSaIcE(%"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"* %152, %"class.std::allocator"* %24) #1
+  br label %.body37
 
-.thread:                                          ; preds = %73
-  %145 = landingpad { i8*, i32 } personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*)
-          cleanup
-          catch i8* bitcast (i8** @_ZTISt9exception to i8*)
-  %146 = extractvalue { i8*, i32 } %145, 0
-  %147 = extractvalue { i8*, i32 } %145, 1
-  br label %234
+_ZStplIcSt11char_traitsIcESaIcEESbIT_T0_T1_ERKS6_PKS3_.exit39: ; preds = %.noexc36
+  %166 = bitcast i8* %85 to %"class.std::runtime_error"*
+  invoke void @_ZNSt13runtime_errorC2ERKSs(%"class.std::runtime_error"* %166, %"class.std::basic_string"* %37)
+          to label %167 unwind label %219
 
-; <label>:148                                     ; preds = %75
-  %149 = landingpad { i8*, i32 } personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*)
-          cleanup
-          catch i8* bitcast (i8** @_ZTISt9exception to i8*)
-  %150 = extractvalue { i8*, i32 } %149, 0
-  %151 = extractvalue { i8*, i32 } %149, 1
-  br label %_ZNSsD1Ev.exit41
+; <label>:167                                     ; preds = %_ZStplIcSt11char_traitsIcESaIcEESbIT_T0_T1_ERKS6_PKS3_.exit39
+  %168 = bitcast i8* %85 to i32 (...)***
+  store i32 (...)** bitcast (i8** getelementptr inbounds ([5 x i8*]* @_ZTV9MathError, i64 0, i64 2) to i32 (...)**), i32 (...)*** %168, align 8, !tbaa !10
+  invoke void @__cxa_throw(i8* %85, i8* bitcast ({ i8*, i8*, i8* }* @_ZTI9MathError to i8*), i8* bitcast (void (%"class.std::runtime_error"*)* @_ZNSt13runtime_errorD2Ev to i8*)) #11
+          to label %509 unwind label %219
 
-; <label>:152                                     ; preds = %88
-  %153 = landingpad { i8*, i32 } personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*)
-          cleanup
-          catch i8* bitcast (i8** @_ZTISt9exception to i8*)
-  %154 = extractvalue { i8*, i32 } %153, 0
-  %155 = extractvalue { i8*, i32 } %153, 1
-  br label %_ZNSsD1Ev.exit38
-
-; <label>:156                                     ; preds = %93
-  %157 = landingpad { i8*, i32 } personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*)
-          cleanup
-          catch i8* bitcast (i8** @_ZTISt9exception to i8*)
-  %158 = extractvalue { i8*, i32 } %157, 0
-  %159 = extractvalue { i8*, i32 } %157, 1
-  br label %_ZNSsD1Ev.exit35
-
-; <label>:160                                     ; preds = %108, %103
-  %.017 = phi i1 [ false, %108 ], [ true, %103 ]
-  %161 = landingpad { i8*, i32 } personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*)
-          cleanup
-          catch i8* bitcast (i8** @_ZTISt9exception to i8*)
-  %162 = extractvalue { i8*, i32 } %161, 0
-  %163 = extractvalue { i8*, i32 } %161, 1
-  %164 = getelementptr inbounds %"class.std::allocator"* %16, i64 0, i32 0
-  call void @llvm.lifetime.start(i64 1, i8* %164) #1
-  %165 = load i8** %104, align 8, !tbaa !1
-  %166 = getelementptr inbounds i8* %165, i64 -24
-  %167 = bitcast i8* %166 to %"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"*
-  %168 = icmp eq i8* %166, bitcast ([0 x i64]* @_ZNSs4_Rep20_S_empty_rep_storageE to i8*)
-  br i1 %168, label %_ZNSsD1Ev.exit35, label %169, !prof !7
-
-; <label>:169                                     ; preds = %160
-  %170 = getelementptr inbounds i8* %165, i64 -8
-  %171 = bitcast i8* %170 to i32*
-  br i1 icmp ne (i8* bitcast (i32 (i32*, void (i8*)*)* @__pthread_key_create to i8*), i8* null), label %172, label %176
+; <label>:169                                     ; preds = %48
+  %170 = call i32 @llvm.eh.typeid.for(i8* bitcast (i8** @_ZTISt9exception to i8*)) #1
+  %171 = icmp eq i32 %51, %170
+  br i1 %171, label %172, label %302
 
 ; <label>:172                                     ; preds = %169
-  %173 = bitcast i32* %15 to i8*
-  call void @llvm.lifetime.start(i64 4, i8* %173)
-  %174 = atomicrmw volatile add i32* %171, i32 -1 acq_rel
-  store i32 %174, i32* %15, align 4
-  %175 = load volatile i32* %15, align 4
-  call void @llvm.lifetime.end(i64 4, i8* %173)
-  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i34
-
-; <label>:176                                     ; preds = %169
-  %177 = load i32* %171, align 4, !tbaa !8
-  %178 = add nsw i32 %177, -1
-  store i32 %178, i32* %171, align 4, !tbaa !8
-  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i34
-
-_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i34: ; preds = %176, %172
-  %.0.i.i.i.i33 = phi i32 [ %175, %172 ], [ %177, %176 ]
-  %179 = icmp slt i32 %.0.i.i.i.i33, 1
-  br i1 %179, label %180, label %_ZNSsD1Ev.exit35
-
-; <label>:180                                     ; preds = %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i34
-  call void @_ZNSs4_Rep10_M_destroyERKSaIcE(%"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"* %167, %"class.std::allocator"* %16) #1
-  br label %_ZNSsD1Ev.exit35
-
-_ZNSsD1Ev.exit35:                                 ; preds = %180, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i34, %160, %156
-  %.118 = phi i1 [ true, %156 ], [ %.017, %160 ], [ %.017, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i34 ], [ %.017, %180 ]
-  %.16 = phi i32 [ %159, %156 ], [ %163, %160 ], [ %163, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i34 ], [ %163, %180 ]
-  %.1 = phi i8* [ %158, %156 ], [ %162, %160 ], [ %162, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i34 ], [ %162, %180 ]
-  %181 = getelementptr inbounds %"class.std::allocator"* %14, i64 0, i32 0
-  call void @llvm.lifetime.start(i64 1, i8* %181) #1
-  %182 = load i8** %94, align 8, !tbaa !1
-  %183 = getelementptr inbounds i8* %182, i64 -24
-  %184 = bitcast i8* %183 to %"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"*
-  %185 = icmp eq i8* %183, bitcast ([0 x i64]* @_ZNSs4_Rep20_S_empty_rep_storageE to i8*)
-  br i1 %185, label %_ZNSsD1Ev.exit38, label %186, !prof !7
-
-; <label>:186                                     ; preds = %_ZNSsD1Ev.exit35
-  %187 = getelementptr inbounds i8* %182, i64 -8
-  %188 = bitcast i8* %187 to i32*
-  br i1 icmp ne (i8* bitcast (i32 (i32*, void (i8*)*)* @__pthread_key_create to i8*), i8* null), label %189, label %193
-
-; <label>:189                                     ; preds = %186
-  %190 = bitcast i32* %13 to i8*
-  call void @llvm.lifetime.start(i64 4, i8* %190)
-  %191 = atomicrmw volatile add i32* %188, i32 -1 acq_rel
-  store i32 %191, i32* %13, align 4
-  %192 = load volatile i32* %13, align 4
-  call void @llvm.lifetime.end(i64 4, i8* %190)
-  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i37
-
-; <label>:193                                     ; preds = %186
-  %194 = load i32* %188, align 4, !tbaa !8
-  %195 = add nsw i32 %194, -1
-  store i32 %195, i32* %188, align 4, !tbaa !8
-  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i37
-
-_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i37: ; preds = %193, %189
-  %.0.i.i.i.i36 = phi i32 [ %192, %189 ], [ %194, %193 ]
-  %196 = icmp slt i32 %.0.i.i.i.i36, 1
-  br i1 %196, label %197, label %_ZNSsD1Ev.exit38
-
-; <label>:197                                     ; preds = %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i37
-  call void @_ZNSs4_Rep10_M_destroyERKSaIcE(%"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"* %184, %"class.std::allocator"* %14) #1
-  br label %_ZNSsD1Ev.exit38
-
-_ZNSsD1Ev.exit38:                                 ; preds = %197, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i37, %_ZNSsD1Ev.exit35, %152
-  %.219 = phi i1 [ true, %152 ], [ %.118, %_ZNSsD1Ev.exit35 ], [ %.118, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i37 ], [ %.118, %197 ]
-  %.27 = phi i32 [ %155, %152 ], [ %.16, %_ZNSsD1Ev.exit35 ], [ %.16, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i37 ], [ %.16, %197 ]
-  %.2 = phi i8* [ %154, %152 ], [ %.1, %_ZNSsD1Ev.exit35 ], [ %.1, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i37 ], [ %.1, %197 ]
-  %198 = getelementptr inbounds %"class.std::allocator"* %12, i64 0, i32 0
-  call void @llvm.lifetime.start(i64 1, i8* %198) #1
-  %199 = load i8** %89, align 8, !tbaa !1
-  %200 = getelementptr inbounds i8* %199, i64 -24
-  %201 = bitcast i8* %200 to %"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"*
-  %202 = icmp eq i8* %200, bitcast ([0 x i64]* @_ZNSs4_Rep20_S_empty_rep_storageE to i8*)
-  br i1 %202, label %_ZNSsD1Ev.exit41, label %203, !prof !7
-
-; <label>:203                                     ; preds = %_ZNSsD1Ev.exit38
-  %204 = getelementptr inbounds i8* %199, i64 -8
-  %205 = bitcast i8* %204 to i32*
-  br i1 icmp ne (i8* bitcast (i32 (i32*, void (i8*)*)* @__pthread_key_create to i8*), i8* null), label %206, label %210
-
-; <label>:206                                     ; preds = %203
-  %207 = bitcast i32* %11 to i8*
-  call void @llvm.lifetime.start(i64 4, i8* %207)
-  %208 = atomicrmw volatile add i32* %205, i32 -1 acq_rel
-  store i32 %208, i32* %11, align 4
-  %209 = load volatile i32* %11, align 4
-  call void @llvm.lifetime.end(i64 4, i8* %207)
-  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i40
-
-; <label>:210                                     ; preds = %203
-  %211 = load i32* %205, align 4, !tbaa !8
-  %212 = add nsw i32 %211, -1
-  store i32 %212, i32* %205, align 4, !tbaa !8
-  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i40
-
-_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i40: ; preds = %210, %206
-  %.0.i.i.i.i39 = phi i32 [ %209, %206 ], [ %211, %210 ]
-  %213 = icmp slt i32 %.0.i.i.i.i39, 1
-  br i1 %213, label %214, label %_ZNSsD1Ev.exit41
-
-; <label>:214                                     ; preds = %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i40
-  call void @_ZNSs4_Rep10_M_destroyERKSaIcE(%"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"* %201, %"class.std::allocator"* %12) #1
-  br label %_ZNSsD1Ev.exit41
-
-_ZNSsD1Ev.exit41:                                 ; preds = %214, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i40, %_ZNSsD1Ev.exit38, %148
-  %.320 = phi i1 [ true, %148 ], [ %.219, %_ZNSsD1Ev.exit38 ], [ %.219, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i40 ], [ %.219, %214 ]
-  %.38 = phi i32 [ %151, %148 ], [ %.27, %_ZNSsD1Ev.exit38 ], [ %.27, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i40 ], [ %.27, %214 ]
-  %.3 = phi i8* [ %150, %148 ], [ %.2, %_ZNSsD1Ev.exit38 ], [ %.2, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i40 ], [ %.2, %214 ]
-  %215 = getelementptr inbounds %"class.std::allocator"* %10, i64 0, i32 0
-  call void @llvm.lifetime.start(i64 1, i8* %215) #1
-  %216 = getelementptr inbounds %"class.std::basic_string"* %30, i64 0, i32 0, i32 0
-  %217 = load i8** %216, align 8, !tbaa !1
-  %218 = getelementptr inbounds i8* %217, i64 -24
-  %219 = bitcast i8* %218 to %"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"*
-  %220 = icmp eq i8* %218, bitcast ([0 x i64]* @_ZNSs4_Rep20_S_empty_rep_storageE to i8*)
-  br i1 %220, label %233, label %221, !prof !7
-
-; <label>:221                                     ; preds = %_ZNSsD1Ev.exit41
-  %222 = getelementptr inbounds i8* %217, i64 -8
-  %223 = bitcast i8* %222 to i32*
-  br i1 icmp ne (i8* bitcast (i32 (i32*, void (i8*)*)* @__pthread_key_create to i8*), i8* null), label %224, label %228
-
-; <label>:224                                     ; preds = %221
-  %225 = bitcast i32* %9 to i8*
-  call void @llvm.lifetime.start(i64 4, i8* %225)
-  %226 = atomicrmw volatile add i32* %223, i32 -1 acq_rel
-  store i32 %226, i32* %9, align 4
-  %227 = load volatile i32* %9, align 4
-  call void @llvm.lifetime.end(i64 4, i8* %225)
-  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i43
-
-; <label>:228                                     ; preds = %221
-  %229 = load i32* %223, align 4, !tbaa !8
-  %230 = add nsw i32 %229, -1
-  store i32 %230, i32* %223, align 4, !tbaa !8
-  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i43
-
-_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i43: ; preds = %228, %224
-  %.0.i.i.i.i42 = phi i32 [ %227, %224 ], [ %229, %228 ]
-  %231 = icmp slt i32 %.0.i.i.i.i42, 1
-  br i1 %231, label %232, label %233
-
-; <label>:232                                     ; preds = %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i43
-  call void @_ZNSs4_Rep10_M_destroyERKSaIcE(%"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"* %219, %"class.std::allocator"* %10) #1
-  br label %233
-
-; <label>:233                                     ; preds = %232, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i43, %_ZNSsD1Ev.exit41
-  call void @llvm.lifetime.end(i64 1, i8* %215) #1
-  br i1 %.320, label %234, label %_ZNSsD1Ev.exit32
-
-; <label>:234                                     ; preds = %233, %.thread
-  %.460 = phi i8* [ %146, %.thread ], [ %.3, %233 ]
-  %.4959 = phi i32 [ %147, %.thread ], [ %.38, %233 ]
-  call void @__cxa_free_exception(i8* %74) #1
-  br label %_ZNSsD1Ev.exit32
-
-; <label>:235                                     ; preds = %_ZNSsD1Ev.exit
+  %173 = call i8* @__cxa_begin_catch(i8* %50) #1
   invoke void @__cxa_rethrow() #11
-          to label %407 unwind label %236
+          to label %509 unwind label %174
 
-; <label>:236                                     ; preds = %235
-  %237 = landingpad { i8*, i32 } personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*)
+; <label>:174                                     ; preds = %172
+  %175 = landingpad { i8*, i32 } personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*)
           cleanup
           catch i8* bitcast (i8** @_ZTISt9exception to i8*)
-  %238 = extractvalue { i8*, i32 } %237, 0
-  %239 = extractvalue { i8*, i32 } %237, 1
-  br label %_ZNSsD1Ev.exit32
-
-_ZNSsD1Ev.exit32:                                 ; preds = %236, %234, %233, %144, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i31, %123, %119
-  %.510 = phi i32 [ %.4959, %234 ], [ %.38, %233 ], [ %239, %236 ], [ %122, %119 ], [ %126, %123 ], [ %126, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i31 ], [ %126, %144 ]
-  %.5 = phi i8* [ %.460, %234 ], [ %.3, %233 ], [ %238, %236 ], [ %121, %119 ], [ %125, %123 ], [ %125, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i31 ], [ %125, %144 ]
+  %176 = extractvalue { i8*, i32 } %175, 0
+  %177 = extractvalue { i8*, i32 } %175, 1
   invoke void @__cxa_end_catch()
-          to label %_ZNSsD1Ev.exit32._crit_edge unwind label %404
+          to label %302 unwind label %506
 
-_ZNSsD1Ev.exit32._crit_edge:                      ; preds = %_ZNSsD1Ev.exit32
-  %.pre = call i32 @llvm.eh.typeid.for(i8* bitcast (i8** @_ZTISt9exception to i8*)) #1
-  br label %240
-
-; <label>:240                                     ; preds = %_ZNSsD1Ev.exit32._crit_edge, %115, %110
-  %.pre-phi = phi i32 [ %.pre, %_ZNSsD1Ev.exit32._crit_edge ], [ %111, %115 ], [ %111, %110 ]
-  %.611 = phi i32 [ %.510, %_ZNSsD1Ev.exit32._crit_edge ], [ %118, %115 ], [ %41, %110 ]
-  %.6 = phi i8* [ %.5, %_ZNSsD1Ev.exit32._crit_edge ], [ %117, %115 ], [ %40, %110 ]
-  %241 = icmp eq i32 %.611, %.pre-phi
-  br i1 %241, label %242, label %248
-
-; <label>:242                                     ; preds = %240
-  %243 = call i8* @__cxa_begin_catch(i8* %.6) #1
-  invoke void @__cxa_rethrow() #11
-          to label %407 unwind label %244
-
-; <label>:244                                     ; preds = %242
-  %245 = landingpad { i8*, i32 } personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*)
+; <label>:178                                     ; preds = %54
+  %179 = landingpad { i8*, i32 } personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*)
           cleanup
           catch i8* bitcast (i8** @_ZTISt9exception to i8*)
-  %246 = extractvalue { i8*, i32 } %245, 0
-  %247 = extractvalue { i8*, i32 } %245, 1
-  invoke void @__cxa_end_catch()
-          to label %248 unwind label %404
+  %180 = extractvalue { i8*, i32 } %179, 0
+  %181 = extractvalue { i8*, i32 } %179, 1
+  br label %_ZNSsD1Ev.exit43
 
-; <label>:248                                     ; preds = %244, %240
-  %.712 = phi i32 [ %247, %244 ], [ %.611, %240 ]
-  %.7 = phi i8* [ %246, %244 ], [ %.6, %240 ]
-  %249 = icmp eq i32 %.712, %.pre-phi
-  br i1 %249, label %250, label %401
+; <label>:182                                     ; preds = %62
+  %183 = landingpad { i8*, i32 } personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*)
+          cleanup
+          catch i8* bitcast (i8** @_ZTISt9exception to i8*)
+  %184 = extractvalue { i8*, i32 } %183, 0
+  %185 = extractvalue { i8*, i32 } %183, 1
+  %186 = getelementptr inbounds %"class.std::allocator"* %22, i64 0, i32 0
+  call void @llvm.lifetime.start(i64 1, i8* %186) #1
+  %187 = getelementptr inbounds %"class.std::basic_string"* %35, i64 0, i32 0, i32 0
+  %188 = load i8** %187, align 8, !tbaa !1
+  %189 = getelementptr inbounds i8* %188, i64 -24
+  %190 = bitcast i8* %189 to %"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"*
+  %191 = icmp eq i8* %189, bitcast ([0 x i64]* @_ZNSs4_Rep20_S_empty_rep_storageE to i8*)
+  br i1 %191, label %_ZNSsD1Ev.exit43, label %192, !prof !7
 
-; <label>:250                                     ; preds = %248
-  %251 = call i8* @__cxa_begin_catch(i8* %.7) #1
-  %252 = bitcast i8* %251 to %"class.std::exception"*
-  %253 = bitcast i8* %251 to %"class.std::type_info"***
-  %254 = load %"class.std::type_info"*** %253, align 8, !tbaa !10
-  %255 = getelementptr inbounds %"class.std::type_info"** %254, i64 -1
-  %256 = load %"class.std::type_info"** %255, align 8
-  %257 = getelementptr inbounds %"class.std::type_info"* %256, i64 0, i32 1
-  %258 = load i8** %257, align 8, !tbaa !12
-  %259 = load i8* %258, align 1, !tbaa !14
-  %260 = icmp eq i8 %259, 42
-  %261 = getelementptr inbounds i8* %258, i64 1
-  %262 = select i1 %260, i8* %261, i8* %258
-  invoke void @_ZNSsC1EPKcRKSaIcE(%"class.std::basic_string"* %34, i8* %262, %"class.std::allocator"* %35)
-          to label %263 unwind label %332
+; <label>:192                                     ; preds = %182
+  %193 = getelementptr inbounds i8* %188, i64 -8
+  %194 = bitcast i8* %193 to i32*
+  br i1 icmp ne (i8* bitcast (i32 (i32*, void (i8*)*)* @__pthread_key_create to i8*), i8* null), label %195, label %199
 
-; <label>:263                                     ; preds = %250
-  %264 = invoke %"class.std::basic_string"* @_ZNSs6appendEPKcm(%"class.std::basic_string"* %34, i8* getelementptr inbounds ([3 x i8]* @.str3, i64 0, i64 0), i64 2)
-          to label %265 unwind label %336
+; <label>:195                                     ; preds = %192
+  %196 = bitcast i32* %21 to i8*
+  call void @llvm.lifetime.start(i64 4, i8* %196)
+  %197 = atomicrmw volatile add i32* %194, i32 -1 acq_rel
+  store i32 %197, i32* %21, align 4
+  %198 = load volatile i32* %21, align 4
+  call void @llvm.lifetime.end(i64 4, i8* %196)
+  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i42
 
-; <label>:265                                     ; preds = %263
-  %266 = getelementptr inbounds %"class.std::basic_string"* %33, i64 0, i32 0, i32 0
-  %267 = getelementptr inbounds %"class.std::basic_string"* %264, i64 0, i32 0, i32 0
-  %268 = load i8** %267, align 8, !tbaa !15
-  store i8* %268, i8** %266, align 8, !tbaa !15
-  store i8* bitcast (i64* getelementptr inbounds ([0 x i64]* @_ZNSs4_Rep20_S_empty_rep_storageE, i64 0, i64 3) to i8*), i8** %267, align 8, !tbaa !1
-  %269 = bitcast i8* %251 to i8* (%"class.std::exception"*)***
-  %270 = load i8* (%"class.std::exception"*)*** %269, align 8, !tbaa !10
-  %271 = getelementptr inbounds i8* (%"class.std::exception"*)** %270, i64 2
-  %272 = load i8* (%"class.std::exception"*)** %271, align 8
-  %273 = call i8* %272(%"class.std::exception"* %252) #1
-  %274 = call i64 @strlen(i8* %273) #1
-  %275 = invoke %"class.std::basic_string"* @_ZNSs6appendEPKcm(%"class.std::basic_string"* %33, i8* %273, i64 %274)
-          to label %276 unwind label %340
+; <label>:199                                     ; preds = %192
+  %200 = load i32* %194, align 4, !tbaa !8
+  %201 = add nsw i32 %200, -1
+  store i32 %201, i32* %194, align 4, !tbaa !8
+  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i42
 
-; <label>:276                                     ; preds = %265
-  %277 = getelementptr inbounds %"class.std::basic_string"* %32, i64 0, i32 0, i32 0
-  %278 = getelementptr inbounds %"class.std::basic_string"* %275, i64 0, i32 0, i32 0
-  %279 = load i8** %278, align 8, !tbaa !15
-  store i8* %279, i8** %277, align 8, !tbaa !15
-  store i8* bitcast (i64* getelementptr inbounds ([0 x i64]* @_ZNSs4_Rep20_S_empty_rep_storageE, i64 0, i64 3) to i8*), i8** %278, align 8, !tbaa !1
-  invoke void @_ZNSs4swapERSs(%"class.std::basic_string"* @_latest_err_msg, %"class.std::basic_string"* %32)
-          to label %_ZNSsaSEOSs.exit unwind label %344
+_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i42: ; preds = %199, %195
+  %.0.i.i.i.i41 = phi i32 [ %198, %195 ], [ %200, %199 ]
+  %202 = icmp slt i32 %.0.i.i.i.i41, 1
+  br i1 %202, label %203, label %_ZNSsD1Ev.exit43
 
-_ZNSsaSEOSs.exit:                                 ; preds = %276
-  %280 = getelementptr inbounds %"class.std::allocator"* %6, i64 0, i32 0
-  call void @llvm.lifetime.start(i64 1, i8* %280) #1
-  %281 = load i8** %277, align 8, !tbaa !1
-  %282 = getelementptr inbounds i8* %281, i64 -24
-  %283 = bitcast i8* %282 to %"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"*
-  %284 = icmp eq i8* %282, bitcast ([0 x i64]* @_ZNSs4_Rep20_S_empty_rep_storageE to i8*)
-  br i1 %284, label %_ZNSsD1Ev.exit52, label %285, !prof !7
+; <label>:203                                     ; preds = %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i42
+  call void @_ZNSs4_Rep10_M_destroyERKSaIcE(%"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"* %190, %"class.std::allocator"* %22) #1
+  br label %_ZNSsD1Ev.exit43
 
-; <label>:285                                     ; preds = %_ZNSsaSEOSs.exit
-  %286 = getelementptr inbounds i8* %281, i64 -8
-  %287 = bitcast i8* %286 to i32*
-  br i1 icmp ne (i8* bitcast (i32 (i32*, void (i8*)*)* @__pthread_key_create to i8*), i8* null), label %288, label %292
+.thread:                                          ; preds = %84
+  %204 = landingpad { i8*, i32 } personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*)
+          cleanup
+          catch i8* bitcast (i8** @_ZTISt9exception to i8*)
+  %205 = extractvalue { i8*, i32 } %204, 0
+  %206 = extractvalue { i8*, i32 } %204, 1
+  br label %296
 
-; <label>:288                                     ; preds = %285
-  %289 = bitcast i32* %5 to i8*
-  call void @llvm.lifetime.start(i64 4, i8* %289)
-  %290 = atomicrmw volatile add i32* %287, i32 -1 acq_rel
-  store i32 %290, i32* %5, align 4
-  %291 = load volatile i32* %5, align 4
-  call void @llvm.lifetime.end(i64 4, i8* %289)
-  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i51
+; <label>:207                                     ; preds = %86
+  %208 = landingpad { i8*, i32 } personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*)
+          cleanup
+          catch i8* bitcast (i8** @_ZTISt9exception to i8*)
+  br label %.body
 
-; <label>:292                                     ; preds = %285
-  %293 = load i32* %287, align 4, !tbaa !8
-  %294 = add nsw i32 %293, -1
-  store i32 %294, i32* %287, align 4, !tbaa !8
-  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i51
-
-_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i51: ; preds = %292, %288
-  %.0.i.i.i.i50 = phi i32 [ %291, %288 ], [ %293, %292 ]
-  %295 = icmp slt i32 %.0.i.i.i.i50, 1
-  br i1 %295, label %296, label %_ZNSsD1Ev.exit52
-
-; <label>:296                                     ; preds = %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i51
-  call void @_ZNSs4_Rep10_M_destroyERKSaIcE(%"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"* %283, %"class.std::allocator"* %6) #1
+.body:                                            ; preds = %207, %118, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i.i, %99
+  %eh.lpad-body = phi { i8*, i32 } [ %208, %207 ], [ %100, %118 ], [ %100, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i.i ], [ %100, %99 ]
+  %209 = extractvalue { i8*, i32 } %eh.lpad-body, 0
+  %210 = extractvalue { i8*, i32 } %eh.lpad-body, 1
   br label %_ZNSsD1Ev.exit52
 
-_ZNSsD1Ev.exit52:                                 ; preds = %296, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i51, %_ZNSsaSEOSs.exit
-  call void @llvm.lifetime.end(i64 1, i8* %280) #1
-  %297 = getelementptr inbounds %"class.std::allocator"* %4, i64 0, i32 0
-  call void @llvm.lifetime.start(i64 1, i8* %297) #1
-  %298 = load i8** %266, align 8, !tbaa !1
-  %299 = getelementptr inbounds i8* %298, i64 -24
-  %300 = bitcast i8* %299 to %"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"*
-  %301 = icmp eq i8* %299, bitcast ([0 x i64]* @_ZNSs4_Rep20_S_empty_rep_storageE to i8*)
-  br i1 %301, label %_ZNSsD1Ev.exit55, label %302, !prof !7
+; <label>:211                                     ; preds = %_ZStplIcSt11char_traitsIcESaIcEESbIT_T0_T1_ERKS6_PKS3_.exit
+  %212 = landingpad { i8*, i32 } personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*)
+          cleanup
+          catch i8* bitcast (i8** @_ZTISt9exception to i8*)
+  br label %.body31
 
-; <label>:302                                     ; preds = %_ZNSsD1Ev.exit52
-  %303 = getelementptr inbounds i8* %298, i64 -8
-  %304 = bitcast i8* %303 to i32*
-  br i1 icmp ne (i8* bitcast (i32 (i32*, void (i8*)*)* @__pthread_key_create to i8*), i8* null), label %305, label %309
+.body31:                                          ; preds = %211, %139, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i.i29, %120
+  %eh.lpad-body32 = phi { i8*, i32 } [ %212, %211 ], [ %121, %139 ], [ %121, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i.i29 ], [ %121, %120 ]
+  %213 = extractvalue { i8*, i32 } %eh.lpad-body32, 0
+  %214 = extractvalue { i8*, i32 } %eh.lpad-body32, 1
+  br label %_ZNSsD1Ev.exit49
 
-; <label>:305                                     ; preds = %302
-  %306 = bitcast i32* %3 to i8*
-  call void @llvm.lifetime.start(i64 4, i8* %306)
-  %307 = atomicrmw volatile add i32* %304, i32 -1 acq_rel
-  store i32 %307, i32* %3, align 4
-  %308 = load volatile i32* %3, align 4
-  call void @llvm.lifetime.end(i64 4, i8* %306)
+; <label>:215                                     ; preds = %_ZStplIcSt11char_traitsIcESaIcEESbIT_T0_T1_ERKS6_PKS3_.exit33
+  %216 = landingpad { i8*, i32 } personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*)
+          cleanup
+          catch i8* bitcast (i8** @_ZTISt9exception to i8*)
+  br label %.body37
+
+.body37:                                          ; preds = %215, %165, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i.i35, %146
+  %eh.lpad-body38 = phi { i8*, i32 } [ %216, %215 ], [ %147, %165 ], [ %147, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i.i35 ], [ %147, %146 ]
+  %217 = extractvalue { i8*, i32 } %eh.lpad-body38, 0
+  %218 = extractvalue { i8*, i32 } %eh.lpad-body38, 1
+  br label %_ZNSsD1Ev.exit46
+
+; <label>:219                                     ; preds = %167, %_ZStplIcSt11char_traitsIcESaIcEESbIT_T0_T1_ERKS6_PKS3_.exit39
+  %.017 = phi i1 [ false, %167 ], [ true, %_ZStplIcSt11char_traitsIcESaIcEESbIT_T0_T1_ERKS6_PKS3_.exit39 ]
+  %220 = landingpad { i8*, i32 } personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*)
+          cleanup
+          catch i8* bitcast (i8** @_ZTISt9exception to i8*)
+  %221 = extractvalue { i8*, i32 } %220, 0
+  %222 = extractvalue { i8*, i32 } %220, 1
+  %223 = getelementptr inbounds %"class.std::allocator"* %20, i64 0, i32 0
+  call void @llvm.lifetime.start(i64 1, i8* %223) #1
+  %224 = getelementptr inbounds %"class.std::basic_string"* %37, i64 0, i32 0, i32 0
+  %225 = load i8** %224, align 8, !tbaa !1
+  %226 = getelementptr inbounds i8* %225, i64 -24
+  %227 = bitcast i8* %226 to %"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"*
+  %228 = icmp eq i8* %226, bitcast ([0 x i64]* @_ZNSs4_Rep20_S_empty_rep_storageE to i8*)
+  br i1 %228, label %_ZNSsD1Ev.exit46, label %229, !prof !7
+
+; <label>:229                                     ; preds = %219
+  %230 = getelementptr inbounds i8* %225, i64 -8
+  %231 = bitcast i8* %230 to i32*
+  br i1 icmp ne (i8* bitcast (i32 (i32*, void (i8*)*)* @__pthread_key_create to i8*), i8* null), label %232, label %236
+
+; <label>:232                                     ; preds = %229
+  %233 = bitcast i32* %19 to i8*
+  call void @llvm.lifetime.start(i64 4, i8* %233)
+  %234 = atomicrmw volatile add i32* %231, i32 -1 acq_rel
+  store i32 %234, i32* %19, align 4
+  %235 = load volatile i32* %19, align 4
+  call void @llvm.lifetime.end(i64 4, i8* %233)
+  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i45
+
+; <label>:236                                     ; preds = %229
+  %237 = load i32* %231, align 4, !tbaa !8
+  %238 = add nsw i32 %237, -1
+  store i32 %238, i32* %231, align 4, !tbaa !8
+  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i45
+
+_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i45: ; preds = %236, %232
+  %.0.i.i.i.i44 = phi i32 [ %235, %232 ], [ %237, %236 ]
+  %239 = icmp slt i32 %.0.i.i.i.i44, 1
+  br i1 %239, label %240, label %_ZNSsD1Ev.exit46
+
+; <label>:240                                     ; preds = %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i45
+  call void @_ZNSs4_Rep10_M_destroyERKSaIcE(%"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"* %227, %"class.std::allocator"* %20) #1
+  br label %_ZNSsD1Ev.exit46
+
+_ZNSsD1Ev.exit46:                                 ; preds = %240, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i45, %219, %.body37
+  %.118 = phi i1 [ true, %.body37 ], [ %.017, %219 ], [ %.017, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i45 ], [ %.017, %240 ]
+  %.16 = phi i32 [ %218, %.body37 ], [ %222, %219 ], [ %222, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i45 ], [ %222, %240 ]
+  %.1 = phi i8* [ %217, %.body37 ], [ %221, %219 ], [ %221, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i45 ], [ %221, %240 ]
+  %241 = getelementptr inbounds %"class.std::allocator"* %18, i64 0, i32 0
+  call void @llvm.lifetime.start(i64 1, i8* %241) #1
+  %242 = getelementptr inbounds %"class.std::basic_string"* %38, i64 0, i32 0, i32 0
+  %243 = load i8** %242, align 8, !tbaa !1
+  %244 = getelementptr inbounds i8* %243, i64 -24
+  %245 = bitcast i8* %244 to %"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"*
+  %246 = icmp eq i8* %244, bitcast ([0 x i64]* @_ZNSs4_Rep20_S_empty_rep_storageE to i8*)
+  br i1 %246, label %_ZNSsD1Ev.exit49, label %247, !prof !7
+
+; <label>:247                                     ; preds = %_ZNSsD1Ev.exit46
+  %248 = getelementptr inbounds i8* %243, i64 -8
+  %249 = bitcast i8* %248 to i32*
+  br i1 icmp ne (i8* bitcast (i32 (i32*, void (i8*)*)* @__pthread_key_create to i8*), i8* null), label %250, label %254
+
+; <label>:250                                     ; preds = %247
+  %251 = bitcast i32* %17 to i8*
+  call void @llvm.lifetime.start(i64 4, i8* %251)
+  %252 = atomicrmw volatile add i32* %249, i32 -1 acq_rel
+  store i32 %252, i32* %17, align 4
+  %253 = load volatile i32* %17, align 4
+  call void @llvm.lifetime.end(i64 4, i8* %251)
+  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i48
+
+; <label>:254                                     ; preds = %247
+  %255 = load i32* %249, align 4, !tbaa !8
+  %256 = add nsw i32 %255, -1
+  store i32 %256, i32* %249, align 4, !tbaa !8
+  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i48
+
+_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i48: ; preds = %254, %250
+  %.0.i.i.i.i47 = phi i32 [ %253, %250 ], [ %255, %254 ]
+  %257 = icmp slt i32 %.0.i.i.i.i47, 1
+  br i1 %257, label %258, label %_ZNSsD1Ev.exit49
+
+; <label>:258                                     ; preds = %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i48
+  call void @_ZNSs4_Rep10_M_destroyERKSaIcE(%"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"* %245, %"class.std::allocator"* %18) #1
+  br label %_ZNSsD1Ev.exit49
+
+_ZNSsD1Ev.exit49:                                 ; preds = %258, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i48, %_ZNSsD1Ev.exit46, %.body31
+  %.219 = phi i1 [ true, %.body31 ], [ %.118, %_ZNSsD1Ev.exit46 ], [ %.118, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i48 ], [ %.118, %258 ]
+  %.27 = phi i32 [ %214, %.body31 ], [ %.16, %_ZNSsD1Ev.exit46 ], [ %.16, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i48 ], [ %.16, %258 ]
+  %.2 = phi i8* [ %213, %.body31 ], [ %.1, %_ZNSsD1Ev.exit46 ], [ %.1, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i48 ], [ %.1, %258 ]
+  %259 = getelementptr inbounds %"class.std::allocator"* %16, i64 0, i32 0
+  call void @llvm.lifetime.start(i64 1, i8* %259) #1
+  %260 = getelementptr inbounds %"class.std::basic_string"* %39, i64 0, i32 0, i32 0
+  %261 = load i8** %260, align 8, !tbaa !1
+  %262 = getelementptr inbounds i8* %261, i64 -24
+  %263 = bitcast i8* %262 to %"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"*
+  %264 = icmp eq i8* %262, bitcast ([0 x i64]* @_ZNSs4_Rep20_S_empty_rep_storageE to i8*)
+  br i1 %264, label %_ZNSsD1Ev.exit52, label %265, !prof !7
+
+; <label>:265                                     ; preds = %_ZNSsD1Ev.exit49
+  %266 = getelementptr inbounds i8* %261, i64 -8
+  %267 = bitcast i8* %266 to i32*
+  br i1 icmp ne (i8* bitcast (i32 (i32*, void (i8*)*)* @__pthread_key_create to i8*), i8* null), label %268, label %272
+
+; <label>:268                                     ; preds = %265
+  %269 = bitcast i32* %15 to i8*
+  call void @llvm.lifetime.start(i64 4, i8* %269)
+  %270 = atomicrmw volatile add i32* %267, i32 -1 acq_rel
+  store i32 %270, i32* %15, align 4
+  %271 = load volatile i32* %15, align 4
+  call void @llvm.lifetime.end(i64 4, i8* %269)
+  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i51
+
+; <label>:272                                     ; preds = %265
+  %273 = load i32* %267, align 4, !tbaa !8
+  %274 = add nsw i32 %273, -1
+  store i32 %274, i32* %267, align 4, !tbaa !8
+  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i51
+
+_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i51: ; preds = %272, %268
+  %.0.i.i.i.i50 = phi i32 [ %271, %268 ], [ %273, %272 ]
+  %275 = icmp slt i32 %.0.i.i.i.i50, 1
+  br i1 %275, label %276, label %_ZNSsD1Ev.exit52
+
+; <label>:276                                     ; preds = %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i51
+  call void @_ZNSs4_Rep10_M_destroyERKSaIcE(%"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"* %263, %"class.std::allocator"* %16) #1
+  br label %_ZNSsD1Ev.exit52
+
+_ZNSsD1Ev.exit52:                                 ; preds = %276, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i51, %_ZNSsD1Ev.exit49, %.body
+  %.320 = phi i1 [ true, %.body ], [ %.219, %_ZNSsD1Ev.exit49 ], [ %.219, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i51 ], [ %.219, %276 ]
+  %.38 = phi i32 [ %210, %.body ], [ %.27, %_ZNSsD1Ev.exit49 ], [ %.27, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i51 ], [ %.27, %276 ]
+  %.3 = phi i8* [ %209, %.body ], [ %.2, %_ZNSsD1Ev.exit49 ], [ %.2, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i51 ], [ %.2, %276 ]
+  %277 = getelementptr inbounds %"class.std::allocator"* %14, i64 0, i32 0
+  call void @llvm.lifetime.start(i64 1, i8* %277) #1
+  %278 = getelementptr inbounds %"class.std::basic_string"* %40, i64 0, i32 0, i32 0
+  %279 = load i8** %278, align 8, !tbaa !1
+  %280 = getelementptr inbounds i8* %279, i64 -24
+  %281 = bitcast i8* %280 to %"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"*
+  %282 = icmp eq i8* %280, bitcast ([0 x i64]* @_ZNSs4_Rep20_S_empty_rep_storageE to i8*)
+  br i1 %282, label %295, label %283, !prof !7
+
+; <label>:283                                     ; preds = %_ZNSsD1Ev.exit52
+  %284 = getelementptr inbounds i8* %279, i64 -8
+  %285 = bitcast i8* %284 to i32*
+  br i1 icmp ne (i8* bitcast (i32 (i32*, void (i8*)*)* @__pthread_key_create to i8*), i8* null), label %286, label %290
+
+; <label>:286                                     ; preds = %283
+  %287 = bitcast i32* %13 to i8*
+  call void @llvm.lifetime.start(i64 4, i8* %287)
+  %288 = atomicrmw volatile add i32* %285, i32 -1 acq_rel
+  store i32 %288, i32* %13, align 4
+  %289 = load volatile i32* %13, align 4
+  call void @llvm.lifetime.end(i64 4, i8* %287)
   br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i54
 
-; <label>:309                                     ; preds = %302
-  %310 = load i32* %304, align 4, !tbaa !8
-  %311 = add nsw i32 %310, -1
-  store i32 %311, i32* %304, align 4, !tbaa !8
+; <label>:290                                     ; preds = %283
+  %291 = load i32* %285, align 4, !tbaa !8
+  %292 = add nsw i32 %291, -1
+  store i32 %292, i32* %285, align 4, !tbaa !8
   br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i54
 
-_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i54: ; preds = %309, %305
-  %.0.i.i.i.i53 = phi i32 [ %308, %305 ], [ %310, %309 ]
-  %312 = icmp slt i32 %.0.i.i.i.i53, 1
-  br i1 %312, label %313, label %_ZNSsD1Ev.exit55
+_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i54: ; preds = %290, %286
+  %.0.i.i.i.i53 = phi i32 [ %289, %286 ], [ %291, %290 ]
+  %293 = icmp slt i32 %.0.i.i.i.i53, 1
+  br i1 %293, label %294, label %295
 
-; <label>:313                                     ; preds = %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i54
-  call void @_ZNSs4_Rep10_M_destroyERKSaIcE(%"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"* %300, %"class.std::allocator"* %4) #1
-  br label %_ZNSsD1Ev.exit55
+; <label>:294                                     ; preds = %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i54
+  call void @_ZNSs4_Rep10_M_destroyERKSaIcE(%"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"* %281, %"class.std::allocator"* %14) #1
+  br label %295
 
-_ZNSsD1Ev.exit55:                                 ; preds = %313, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i54, %_ZNSsD1Ev.exit52
-  call void @llvm.lifetime.end(i64 1, i8* %297) #1
-  %314 = getelementptr inbounds %"class.std::allocator"* %2, i64 0, i32 0
-  call void @llvm.lifetime.start(i64 1, i8* %314) #1
-  %315 = getelementptr inbounds %"class.std::basic_string"* %34, i64 0, i32 0, i32 0
-  %316 = load i8** %315, align 8, !tbaa !1
-  %317 = getelementptr inbounds i8* %316, i64 -24
-  %318 = bitcast i8* %317 to %"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"*
-  %319 = icmp eq i8* %317, bitcast ([0 x i64]* @_ZNSs4_Rep20_S_empty_rep_storageE to i8*)
-  br i1 %319, label %_ZNSsD1Ev.exit58, label %320, !prof !7
+; <label>:295                                     ; preds = %294, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i54, %_ZNSsD1Ev.exit52
+  call void @llvm.lifetime.end(i64 1, i8* %277) #1
+  br i1 %.320, label %296, label %_ZNSsD1Ev.exit43
 
-; <label>:320                                     ; preds = %_ZNSsD1Ev.exit55
-  %321 = getelementptr inbounds i8* %316, i64 -8
-  %322 = bitcast i8* %321 to i32*
-  br i1 icmp ne (i8* bitcast (i32 (i32*, void (i8*)*)* @__pthread_key_create to i8*), i8* null), label %323, label %327
+; <label>:296                                     ; preds = %295, %.thread
+  %.482 = phi i8* [ %205, %.thread ], [ %.3, %295 ]
+  %.4981 = phi i32 [ %206, %.thread ], [ %.38, %295 ]
+  call void @__cxa_free_exception(i8* %85) #1
+  br label %_ZNSsD1Ev.exit43
 
-; <label>:323                                     ; preds = %320
-  %324 = bitcast i32* %1 to i8*
-  call void @llvm.lifetime.start(i64 4, i8* %324)
-  %325 = atomicrmw volatile add i32* %322, i32 -1 acq_rel
-  store i32 %325, i32* %1, align 4
-  %326 = load volatile i32* %1, align 4
-  call void @llvm.lifetime.end(i64 4, i8* %324)
-  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i57
+; <label>:297                                     ; preds = %82
+  invoke void @__cxa_rethrow() #11
+          to label %509 unwind label %298
 
-; <label>:327                                     ; preds = %320
-  %328 = load i32* %322, align 4, !tbaa !8
-  %329 = add nsw i32 %328, -1
-  store i32 %329, i32* %322, align 4, !tbaa !8
-  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i57
-
-_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i57: ; preds = %327, %323
-  %.0.i.i.i.i56 = phi i32 [ %326, %323 ], [ %328, %327 ]
-  %330 = icmp slt i32 %.0.i.i.i.i56, 1
-  br i1 %330, label %331, label %_ZNSsD1Ev.exit58
-
-; <label>:331                                     ; preds = %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i57
-  call void @_ZNSs4_Rep10_M_destroyERKSaIcE(%"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"* %318, %"class.std::allocator"* %2) #1
-  br label %_ZNSsD1Ev.exit58
-
-_ZNSsD1Ev.exit58:                                 ; preds = %331, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i57, %_ZNSsD1Ev.exit55
-  call void @llvm.lifetime.end(i64 1, i8* %314) #1
-  call void @__cxa_end_catch()
-  br label %400
-
-; <label>:332                                     ; preds = %250
-  %333 = landingpad { i8*, i32 } personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*)
+; <label>:298                                     ; preds = %297
+  %299 = landingpad { i8*, i32 } personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*)
           cleanup
-  %334 = extractvalue { i8*, i32 } %333, 0
-  %335 = extractvalue { i8*, i32 } %333, 1
-  br label %_ZNSsD1Ev.exit24
+          catch i8* bitcast (i8** @_ZTISt9exception to i8*)
+  %300 = extractvalue { i8*, i32 } %299, 0
+  %301 = extractvalue { i8*, i32 } %299, 1
+  br label %_ZNSsD1Ev.exit43
 
-; <label>:336                                     ; preds = %263
-  %337 = landingpad { i8*, i32 } personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*)
-          cleanup
-  %338 = extractvalue { i8*, i32 } %337, 0
-  %339 = extractvalue { i8*, i32 } %337, 1
-  br label %_ZNSsD1Ev.exit27
-
-; <label>:340                                     ; preds = %265
-  %341 = landingpad { i8*, i32 } personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*)
-          cleanup
-  %342 = extractvalue { i8*, i32 } %341, 0
-  %343 = extractvalue { i8*, i32 } %341, 1
-  br label %_ZNSsD1Ev.exit47
-
-; <label>:344                                     ; preds = %276
-  %345 = landingpad { i8*, i32 } personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*)
-          cleanup
-  %346 = extractvalue { i8*, i32 } %345, 0
-  %347 = extractvalue { i8*, i32 } %345, 1
-  %348 = getelementptr inbounds %"class.std::allocator"* %8, i64 0, i32 0
-  call void @llvm.lifetime.start(i64 1, i8* %348) #1
-  %349 = load i8** %277, align 8, !tbaa !1
-  %350 = getelementptr inbounds i8* %349, i64 -24
-  %351 = bitcast i8* %350 to %"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"*
-  %352 = icmp eq i8* %350, bitcast ([0 x i64]* @_ZNSs4_Rep20_S_empty_rep_storageE to i8*)
-  br i1 %352, label %_ZNSsD1Ev.exit47, label %353, !prof !7
-
-; <label>:353                                     ; preds = %344
-  %354 = getelementptr inbounds i8* %349, i64 -8
-  %355 = bitcast i8* %354 to i32*
-  br i1 icmp ne (i8* bitcast (i32 (i32*, void (i8*)*)* @__pthread_key_create to i8*), i8* null), label %356, label %360
-
-; <label>:356                                     ; preds = %353
-  %357 = bitcast i32* %7 to i8*
-  call void @llvm.lifetime.start(i64 4, i8* %357)
-  %358 = atomicrmw volatile add i32* %355, i32 -1 acq_rel
-  store i32 %358, i32* %7, align 4
-  %359 = load volatile i32* %7, align 4
-  call void @llvm.lifetime.end(i64 4, i8* %357)
-  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i46
-
-; <label>:360                                     ; preds = %353
-  %361 = load i32* %355, align 4, !tbaa !8
-  %362 = add nsw i32 %361, -1
-  store i32 %362, i32* %355, align 4, !tbaa !8
-  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i46
-
-_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i46: ; preds = %360, %356
-  %.0.i.i.i.i45 = phi i32 [ %359, %356 ], [ %361, %360 ]
-  %363 = icmp slt i32 %.0.i.i.i.i45, 1
-  br i1 %363, label %364, label %_ZNSsD1Ev.exit47
-
-; <label>:364                                     ; preds = %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i46
-  call void @_ZNSs4_Rep10_M_destroyERKSaIcE(%"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"* %351, %"class.std::allocator"* %8) #1
-  br label %_ZNSsD1Ev.exit47
-
-_ZNSsD1Ev.exit47:                                 ; preds = %364, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i46, %344, %340
-  %.813 = phi i32 [ %343, %340 ], [ %347, %344 ], [ %347, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i46 ], [ %347, %364 ]
-  %.8 = phi i8* [ %342, %340 ], [ %346, %344 ], [ %346, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i46 ], [ %346, %364 ]
-  %365 = getelementptr inbounds %"class.std::allocator"* %20, i64 0, i32 0
-  call void @llvm.lifetime.start(i64 1, i8* %365) #1
-  %366 = load i8** %266, align 8, !tbaa !1
-  %367 = getelementptr inbounds i8* %366, i64 -24
-  %368 = bitcast i8* %367 to %"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"*
-  %369 = icmp eq i8* %367, bitcast ([0 x i64]* @_ZNSs4_Rep20_S_empty_rep_storageE to i8*)
-  br i1 %369, label %_ZNSsD1Ev.exit27, label %370, !prof !7
-
-; <label>:370                                     ; preds = %_ZNSsD1Ev.exit47
-  %371 = getelementptr inbounds i8* %366, i64 -8
-  %372 = bitcast i8* %371 to i32*
-  br i1 icmp ne (i8* bitcast (i32 (i32*, void (i8*)*)* @__pthread_key_create to i8*), i8* null), label %373, label %377
-
-; <label>:373                                     ; preds = %370
-  %374 = bitcast i32* %19 to i8*
-  call void @llvm.lifetime.start(i64 4, i8* %374)
-  %375 = atomicrmw volatile add i32* %372, i32 -1 acq_rel
-  store i32 %375, i32* %19, align 4
-  %376 = load volatile i32* %19, align 4
-  call void @llvm.lifetime.end(i64 4, i8* %374)
-  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i26
-
-; <label>:377                                     ; preds = %370
-  %378 = load i32* %372, align 4, !tbaa !8
-  %379 = add nsw i32 %378, -1
-  store i32 %379, i32* %372, align 4, !tbaa !8
-  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i26
-
-_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i26: ; preds = %377, %373
-  %.0.i.i.i.i25 = phi i32 [ %376, %373 ], [ %378, %377 ]
-  %380 = icmp slt i32 %.0.i.i.i.i25, 1
-  br i1 %380, label %381, label %_ZNSsD1Ev.exit27
-
-; <label>:381                                     ; preds = %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i26
-  call void @_ZNSs4_Rep10_M_destroyERKSaIcE(%"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"* %368, %"class.std::allocator"* %20) #1
-  br label %_ZNSsD1Ev.exit27
-
-_ZNSsD1Ev.exit27:                                 ; preds = %381, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i26, %_ZNSsD1Ev.exit47, %336
-  %.914 = phi i32 [ %339, %336 ], [ %.813, %_ZNSsD1Ev.exit47 ], [ %.813, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i26 ], [ %.813, %381 ]
-  %.9 = phi i8* [ %338, %336 ], [ %.8, %_ZNSsD1Ev.exit47 ], [ %.8, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i26 ], [ %.8, %381 ]
-  %382 = getelementptr inbounds %"class.std::allocator"* %22, i64 0, i32 0
-  call void @llvm.lifetime.start(i64 1, i8* %382) #1
-  %383 = getelementptr inbounds %"class.std::basic_string"* %34, i64 0, i32 0, i32 0
-  %384 = load i8** %383, align 8, !tbaa !1
-  %385 = getelementptr inbounds i8* %384, i64 -24
-  %386 = bitcast i8* %385 to %"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"*
-  %387 = icmp eq i8* %385, bitcast ([0 x i64]* @_ZNSs4_Rep20_S_empty_rep_storageE to i8*)
-  br i1 %387, label %_ZNSsD1Ev.exit24, label %388, !prof !7
-
-; <label>:388                                     ; preds = %_ZNSsD1Ev.exit27
-  %389 = getelementptr inbounds i8* %384, i64 -8
-  %390 = bitcast i8* %389 to i32*
-  br i1 icmp ne (i8* bitcast (i32 (i32*, void (i8*)*)* @__pthread_key_create to i8*), i8* null), label %391, label %395
-
-; <label>:391                                     ; preds = %388
-  %392 = bitcast i32* %21 to i8*
-  call void @llvm.lifetime.start(i64 4, i8* %392)
-  %393 = atomicrmw volatile add i32* %390, i32 -1 acq_rel
-  store i32 %393, i32* %21, align 4
-  %394 = load volatile i32* %21, align 4
-  call void @llvm.lifetime.end(i64 4, i8* %392)
-  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i23
-
-; <label>:395                                     ; preds = %388
-  %396 = load i32* %390, align 4, !tbaa !8
-  %397 = add nsw i32 %396, -1
-  store i32 %397, i32* %390, align 4, !tbaa !8
-  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i23
-
-_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i23: ; preds = %395, %391
-  %.0.i.i.i.i22 = phi i32 [ %394, %391 ], [ %396, %395 ]
-  %398 = icmp slt i32 %.0.i.i.i.i22, 1
-  br i1 %398, label %399, label %_ZNSsD1Ev.exit24
-
-; <label>:399                                     ; preds = %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i23
-  call void @_ZNSs4_Rep10_M_destroyERKSaIcE(%"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"* %386, %"class.std::allocator"* %22) #1
-  br label %_ZNSsD1Ev.exit24
-
-_ZNSsD1Ev.exit24:                                 ; preds = %399, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i23, %_ZNSsD1Ev.exit27, %332
-  %.1015 = phi i32 [ %335, %332 ], [ %.914, %_ZNSsD1Ev.exit27 ], [ %.914, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i23 ], [ %.914, %399 ]
-  %.10 = phi i8* [ %334, %332 ], [ %.9, %_ZNSsD1Ev.exit27 ], [ %.9, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i23 ], [ %.9, %399 ]
+_ZNSsD1Ev.exit43:                                 ; preds = %298, %296, %295, %203, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i42, %182, %178
+  %.510 = phi i32 [ %.4981, %296 ], [ %.38, %295 ], [ %301, %298 ], [ %181, %178 ], [ %185, %182 ], [ %185, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i42 ], [ %185, %203 ]
+  %.5 = phi i8* [ %.482, %296 ], [ %.3, %295 ], [ %300, %298 ], [ %180, %178 ], [ %184, %182 ], [ %184, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i42 ], [ %184, %203 ]
   invoke void @__cxa_end_catch()
-          to label %401 unwind label %404
+          to label %_ZNSsD1Ev.exit43._crit_edge unwind label %506
 
-; <label>:400                                     ; preds = %_ZNSsD1Ev.exit58, %37
-  %.0 = phi i32 [ 0, %37 ], [ 1, %_ZNSsD1Ev.exit58 ]
+_ZNSsD1Ev.exit43._crit_edge:                      ; preds = %_ZNSsD1Ev.exit43
+  %.pre = call i32 @llvm.eh.typeid.for(i8* bitcast (i8** @_ZTISt9exception to i8*)) #1
+  br label %302
+
+; <label>:302                                     ; preds = %_ZNSsD1Ev.exit43._crit_edge, %174, %169
+  %.pre-phi = phi i32 [ %.pre, %_ZNSsD1Ev.exit43._crit_edge ], [ %170, %174 ], [ %170, %169 ]
+  %.611 = phi i32 [ %.510, %_ZNSsD1Ev.exit43._crit_edge ], [ %177, %174 ], [ %51, %169 ]
+  %.6 = phi i8* [ %.5, %_ZNSsD1Ev.exit43._crit_edge ], [ %176, %174 ], [ %50, %169 ]
+  %303 = icmp eq i32 %.611, %.pre-phi
+  br i1 %303, label %304, label %310
+
+; <label>:304                                     ; preds = %302
+  %305 = call i8* @__cxa_begin_catch(i8* %.6) #1
+  invoke void @__cxa_rethrow() #11
+          to label %509 unwind label %306
+
+; <label>:306                                     ; preds = %304
+  %307 = landingpad { i8*, i32 } personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*)
+          cleanup
+          catch i8* bitcast (i8** @_ZTISt9exception to i8*)
+  %308 = extractvalue { i8*, i32 } %307, 0
+  %309 = extractvalue { i8*, i32 } %307, 1
+  invoke void @__cxa_end_catch()
+          to label %310 unwind label %506
+
+; <label>:310                                     ; preds = %306, %302
+  %.712 = phi i32 [ %309, %306 ], [ %.611, %302 ]
+  %.7 = phi i8* [ %308, %306 ], [ %.6, %302 ]
+  %311 = icmp eq i32 %.712, %.pre-phi
+  br i1 %311, label %312, label %503
+
+; <label>:312                                     ; preds = %310
+  %313 = call i8* @__cxa_begin_catch(i8* %.7) #1
+  %314 = bitcast i8* %313 to %"class.std::exception"*
+  %315 = bitcast i8* %313 to %"class.std::type_info"***
+  %316 = load %"class.std::type_info"*** %315, align 8, !tbaa !10
+  %317 = getelementptr inbounds %"class.std::type_info"** %316, i64 -1
+  %318 = load %"class.std::type_info"** %317, align 8
+  %319 = getelementptr inbounds %"class.std::type_info"* %318, i64 0, i32 1
+  %320 = load i8** %319, align 8, !tbaa !12
+  %321 = load i8* %320, align 1, !tbaa !14
+  %322 = icmp eq i8 %321, 42
+  %323 = getelementptr inbounds i8* %320, i64 1
+  %324 = select i1 %322, i8* %323, i8* %320
+  invoke void @_ZNSsC1EPKcRKSaIcE(%"class.std::basic_string"* %44, i8* %324, %"class.std::allocator"* %45)
+          to label %325 unwind label %432
+
+; <label>:325                                     ; preds = %312
+  invoke void @_ZNSsC1ERKSs(%"class.std::basic_string"* %43, %"class.std::basic_string"* %44)
+          to label %.noexc58 unwind label %436
+
+.noexc58:                                         ; preds = %325
+  %326 = invoke %"class.std::basic_string"* @_ZNSs6appendEPKcm(%"class.std::basic_string"* %43, i8* getelementptr inbounds ([3 x i8]* @.str3, i64 0, i64 0), i64 2)
+          to label %_ZStplIcSt11char_traitsIcESaIcEESbIT_T0_T1_ERKS6_PKS3_.exit61 unwind label %327
+
+; <label>:327                                     ; preds = %.noexc58
+  %328 = landingpad { i8*, i32 } personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*)
+          cleanup
+  %329 = getelementptr inbounds %"class.std::allocator"* %12, i64 0, i32 0
+  call void @llvm.lifetime.start(i64 1, i8* %329) #1
+  %330 = getelementptr inbounds %"class.std::basic_string"* %43, i64 0, i32 0, i32 0
+  %331 = load i8** %330, align 8, !tbaa !1
+  %332 = getelementptr inbounds i8* %331, i64 -24
+  %333 = bitcast i8* %332 to %"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"*
+  %334 = icmp eq i8* %332, bitcast ([0 x i64]* @_ZNSs4_Rep20_S_empty_rep_storageE to i8*)
+  br i1 %334, label %.body59, label %335, !prof !7
+
+; <label>:335                                     ; preds = %327
+  %336 = getelementptr inbounds i8* %331, i64 -8
+  %337 = bitcast i8* %336 to i32*
+  br i1 icmp ne (i8* bitcast (i32 (i32*, void (i8*)*)* @__pthread_key_create to i8*), i8* null), label %338, label %342
+
+; <label>:338                                     ; preds = %335
+  %339 = bitcast i32* %11 to i8*
+  call void @llvm.lifetime.start(i64 4, i8* %339)
+  %340 = atomicrmw volatile add i32* %337, i32 -1 acq_rel
+  store i32 %340, i32* %11, align 4
+  %341 = load volatile i32* %11, align 4
+  call void @llvm.lifetime.end(i64 4, i8* %339)
+  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i.i57
+
+; <label>:342                                     ; preds = %335
+  %343 = load i32* %337, align 4, !tbaa !8
+  %344 = add nsw i32 %343, -1
+  store i32 %344, i32* %337, align 4, !tbaa !8
+  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i.i57
+
+_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i.i57: ; preds = %342, %338
+  %.0.i.i.i.i.i56 = phi i32 [ %341, %338 ], [ %343, %342 ]
+  %345 = icmp slt i32 %.0.i.i.i.i.i56, 1
+  br i1 %345, label %346, label %.body59
+
+; <label>:346                                     ; preds = %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i.i57
+  call void @_ZNSs4_Rep10_M_destroyERKSaIcE(%"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"* %333, %"class.std::allocator"* %12) #1
+  br label %.body59
+
+_ZStplIcSt11char_traitsIcESaIcEESbIT_T0_T1_ERKS6_PKS3_.exit61: ; preds = %.noexc58
+  %347 = bitcast i8* %313 to i8* (%"class.std::exception"*)***
+  %348 = load i8* (%"class.std::exception"*)*** %347, align 8, !tbaa !10
+  %349 = getelementptr inbounds i8* (%"class.std::exception"*)** %348, i64 2
+  %350 = load i8* (%"class.std::exception"*)** %349, align 8
+  %351 = call i8* %350(%"class.std::exception"* %314) #1
+  invoke void @_ZNSsC1ERKSs(%"class.std::basic_string"* %42, %"class.std::basic_string"* %43)
+          to label %.noexc64 unwind label %440
+
+.noexc64:                                         ; preds = %_ZStplIcSt11char_traitsIcESaIcEESbIT_T0_T1_ERKS6_PKS3_.exit61
+  %352 = call i64 @strlen(i8* %351) #1
+  %353 = invoke %"class.std::basic_string"* @_ZNSs6appendEPKcm(%"class.std::basic_string"* %42, i8* %351, i64 %352)
+          to label %_ZStplIcSt11char_traitsIcESaIcEESbIT_T0_T1_ERKS6_PKS3_.exit67 unwind label %354
+
+; <label>:354                                     ; preds = %.noexc64
+  %355 = landingpad { i8*, i32 } personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*)
+          cleanup
+  %356 = getelementptr inbounds %"class.std::allocator"* %10, i64 0, i32 0
+  call void @llvm.lifetime.start(i64 1, i8* %356) #1
+  %357 = getelementptr inbounds %"class.std::basic_string"* %42, i64 0, i32 0, i32 0
+  %358 = load i8** %357, align 8, !tbaa !1
+  %359 = getelementptr inbounds i8* %358, i64 -24
+  %360 = bitcast i8* %359 to %"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"*
+  %361 = icmp eq i8* %359, bitcast ([0 x i64]* @_ZNSs4_Rep20_S_empty_rep_storageE to i8*)
+  br i1 %361, label %.body65, label %362, !prof !7
+
+; <label>:362                                     ; preds = %354
+  %363 = getelementptr inbounds i8* %358, i64 -8
+  %364 = bitcast i8* %363 to i32*
+  br i1 icmp ne (i8* bitcast (i32 (i32*, void (i8*)*)* @__pthread_key_create to i8*), i8* null), label %365, label %369
+
+; <label>:365                                     ; preds = %362
+  %366 = bitcast i32* %9 to i8*
+  call void @llvm.lifetime.start(i64 4, i8* %366)
+  %367 = atomicrmw volatile add i32* %364, i32 -1 acq_rel
+  store i32 %367, i32* %9, align 4
+  %368 = load volatile i32* %9, align 4
+  call void @llvm.lifetime.end(i64 4, i8* %366)
+  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i.i63
+
+; <label>:369                                     ; preds = %362
+  %370 = load i32* %364, align 4, !tbaa !8
+  %371 = add nsw i32 %370, -1
+  store i32 %371, i32* %364, align 4, !tbaa !8
+  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i.i63
+
+_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i.i63: ; preds = %369, %365
+  %.0.i.i.i.i.i62 = phi i32 [ %368, %365 ], [ %370, %369 ]
+  %372 = icmp slt i32 %.0.i.i.i.i.i62, 1
+  br i1 %372, label %373, label %.body65
+
+; <label>:373                                     ; preds = %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i.i63
+  call void @_ZNSs4_Rep10_M_destroyERKSaIcE(%"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"* %360, %"class.std::allocator"* %10) #1
+  br label %.body65
+
+_ZStplIcSt11char_traitsIcESaIcEESbIT_T0_T1_ERKS6_PKS3_.exit67: ; preds = %.noexc64
+  %374 = invoke %"class.std::basic_string"* @_ZNSs6assignERKSs(%"class.std::basic_string"* @_latest_err_msg, %"class.std::basic_string"* %42)
+          to label %_ZNSsaSERKSs.exit unwind label %444
+
+_ZNSsaSERKSs.exit:                                ; preds = %_ZStplIcSt11char_traitsIcESaIcEESbIT_T0_T1_ERKS6_PKS3_.exit67
+  %375 = getelementptr inbounds %"class.std::allocator"* %8, i64 0, i32 0
+  call void @llvm.lifetime.start(i64 1, i8* %375) #1
+  %376 = getelementptr inbounds %"class.std::basic_string"* %42, i64 0, i32 0, i32 0
+  %377 = load i8** %376, align 8, !tbaa !1
+  %378 = getelementptr inbounds i8* %377, i64 -24
+  %379 = bitcast i8* %378 to %"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"*
+  %380 = icmp eq i8* %378, bitcast ([0 x i64]* @_ZNSs4_Rep20_S_empty_rep_storageE to i8*)
+  br i1 %380, label %393, label %381, !prof !7
+
+; <label>:381                                     ; preds = %_ZNSsaSERKSs.exit
+  %382 = getelementptr inbounds i8* %377, i64 -8
+  %383 = bitcast i8* %382 to i32*
+  br i1 icmp ne (i8* bitcast (i32 (i32*, void (i8*)*)* @__pthread_key_create to i8*), i8* null), label %384, label %388
+
+; <label>:384                                     ; preds = %381
+  %385 = bitcast i32* %7 to i8*
+  call void @llvm.lifetime.start(i64 4, i8* %385)
+  %386 = atomicrmw volatile add i32* %383, i32 -1 acq_rel
+  store i32 %386, i32* %7, align 4
+  %387 = load volatile i32* %7, align 4
+  call void @llvm.lifetime.end(i64 4, i8* %385)
+  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i70
+
+; <label>:388                                     ; preds = %381
+  %389 = load i32* %383, align 4, !tbaa !8
+  %390 = add nsw i32 %389, -1
+  store i32 %390, i32* %383, align 4, !tbaa !8
+  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i70
+
+_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i70: ; preds = %388, %384
+  %.0.i.i.i.i69 = phi i32 [ %387, %384 ], [ %389, %388 ]
+  %391 = icmp slt i32 %.0.i.i.i.i69, 1
+  br i1 %391, label %392, label %393
+
+; <label>:392                                     ; preds = %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i70
+  call void @_ZNSs4_Rep10_M_destroyERKSaIcE(%"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"* %379, %"class.std::allocator"* %8) #1
+  br label %393
+
+; <label>:393                                     ; preds = %392, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i70, %_ZNSsaSERKSs.exit
+  call void @llvm.lifetime.end(i64 1, i8* %375) #1
+  %394 = getelementptr inbounds %"class.std::allocator"* %6, i64 0, i32 0
+  call void @llvm.lifetime.start(i64 1, i8* %394) #1
+  %395 = getelementptr inbounds %"class.std::basic_string"* %43, i64 0, i32 0, i32 0
+  %396 = load i8** %395, align 8, !tbaa !1
+  %397 = getelementptr inbounds i8* %396, i64 -24
+  %398 = bitcast i8* %397 to %"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"*
+  %399 = icmp eq i8* %397, bitcast ([0 x i64]* @_ZNSs4_Rep20_S_empty_rep_storageE to i8*)
+  br i1 %399, label %412, label %400, !prof !7
+
+; <label>:400                                     ; preds = %393
+  %401 = getelementptr inbounds i8* %396, i64 -8
+  %402 = bitcast i8* %401 to i32*
+  br i1 icmp ne (i8* bitcast (i32 (i32*, void (i8*)*)* @__pthread_key_create to i8*), i8* null), label %403, label %407
+
+; <label>:403                                     ; preds = %400
+  %404 = bitcast i32* %5 to i8*
+  call void @llvm.lifetime.start(i64 4, i8* %404)
+  %405 = atomicrmw volatile add i32* %402, i32 -1 acq_rel
+  store i32 %405, i32* %5, align 4
+  %406 = load volatile i32* %5, align 4
+  call void @llvm.lifetime.end(i64 4, i8* %404)
+  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i73
+
+; <label>:407                                     ; preds = %400
+  %408 = load i32* %402, align 4, !tbaa !8
+  %409 = add nsw i32 %408, -1
+  store i32 %409, i32* %402, align 4, !tbaa !8
+  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i73
+
+_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i73: ; preds = %407, %403
+  %.0.i.i.i.i72 = phi i32 [ %406, %403 ], [ %408, %407 ]
+  %410 = icmp slt i32 %.0.i.i.i.i72, 1
+  br i1 %410, label %411, label %412
+
+; <label>:411                                     ; preds = %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i73
+  call void @_ZNSs4_Rep10_M_destroyERKSaIcE(%"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"* %398, %"class.std::allocator"* %6) #1
+  br label %412
+
+; <label>:412                                     ; preds = %411, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i73, %393
+  call void @llvm.lifetime.end(i64 1, i8* %394) #1
+  %413 = getelementptr inbounds %"class.std::allocator"* %4, i64 0, i32 0
+  call void @llvm.lifetime.start(i64 1, i8* %413) #1
+  %414 = getelementptr inbounds %"class.std::basic_string"* %44, i64 0, i32 0, i32 0
+  %415 = load i8** %414, align 8, !tbaa !1
+  %416 = getelementptr inbounds i8* %415, i64 -24
+  %417 = bitcast i8* %416 to %"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"*
+  %418 = icmp eq i8* %416, bitcast ([0 x i64]* @_ZNSs4_Rep20_S_empty_rep_storageE to i8*)
+  br i1 %418, label %431, label %419, !prof !7
+
+; <label>:419                                     ; preds = %412
+  %420 = getelementptr inbounds i8* %415, i64 -8
+  %421 = bitcast i8* %420 to i32*
+  br i1 icmp ne (i8* bitcast (i32 (i32*, void (i8*)*)* @__pthread_key_create to i8*), i8* null), label %422, label %426
+
+; <label>:422                                     ; preds = %419
+  %423 = bitcast i32* %3 to i8*
+  call void @llvm.lifetime.start(i64 4, i8* %423)
+  %424 = atomicrmw volatile add i32* %421, i32 -1 acq_rel
+  store i32 %424, i32* %3, align 4
+  %425 = load volatile i32* %3, align 4
+  call void @llvm.lifetime.end(i64 4, i8* %423)
+  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i76
+
+; <label>:426                                     ; preds = %419
+  %427 = load i32* %421, align 4, !tbaa !8
+  %428 = add nsw i32 %427, -1
+  store i32 %428, i32* %421, align 4, !tbaa !8
+  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i76
+
+_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i76: ; preds = %426, %422
+  %.0.i.i.i.i75 = phi i32 [ %425, %422 ], [ %427, %426 ]
+  %429 = icmp slt i32 %.0.i.i.i.i75, 1
+  br i1 %429, label %430, label %431
+
+; <label>:430                                     ; preds = %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i76
+  call void @_ZNSs4_Rep10_M_destroyERKSaIcE(%"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"* %417, %"class.std::allocator"* %4) #1
+  br label %431
+
+; <label>:431                                     ; preds = %430, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i76, %412
+  call void @llvm.lifetime.end(i64 1, i8* %413) #1
+  call void @__cxa_end_catch()
+  br label %502
+
+; <label>:432                                     ; preds = %312
+  %433 = landingpad { i8*, i32 } personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*)
+          cleanup
+  %434 = extractvalue { i8*, i32 } %433, 0
+  %435 = extractvalue { i8*, i32 } %433, 1
+  br label %_ZNSsD1Ev.exit24
+
+; <label>:436                                     ; preds = %325
+  %437 = landingpad { i8*, i32 } personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*)
+          cleanup
+  br label %.body59
+
+.body59:                                          ; preds = %436, %346, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i.i57, %327
+  %eh.lpad-body60 = phi { i8*, i32 } [ %437, %436 ], [ %328, %346 ], [ %328, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i.i57 ], [ %328, %327 ]
+  %438 = extractvalue { i8*, i32 } %eh.lpad-body60, 0
+  %439 = extractvalue { i8*, i32 } %eh.lpad-body60, 1
+  br label %_ZNSsD1Ev.exit27
+
+; <label>:440                                     ; preds = %_ZStplIcSt11char_traitsIcESaIcEESbIT_T0_T1_ERKS6_PKS3_.exit61
+  %441 = landingpad { i8*, i32 } personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*)
+          cleanup
+  br label %.body65
+
+.body65:                                          ; preds = %440, %373, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i.i63, %354
+  %eh.lpad-body66 = phi { i8*, i32 } [ %441, %440 ], [ %355, %373 ], [ %355, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i.i63 ], [ %355, %354 ]
+  %442 = extractvalue { i8*, i32 } %eh.lpad-body66, 0
+  %443 = extractvalue { i8*, i32 } %eh.lpad-body66, 1
+  br label %_ZNSsD1Ev.exit80
+
+; <label>:444                                     ; preds = %_ZStplIcSt11char_traitsIcESaIcEESbIT_T0_T1_ERKS6_PKS3_.exit67
+  %445 = landingpad { i8*, i32 } personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*)
+          cleanup
+  %446 = extractvalue { i8*, i32 } %445, 0
+  %447 = extractvalue { i8*, i32 } %445, 1
+  %448 = getelementptr inbounds %"class.std::allocator"* %2, i64 0, i32 0
+  call void @llvm.lifetime.start(i64 1, i8* %448) #1
+  %449 = getelementptr inbounds %"class.std::basic_string"* %42, i64 0, i32 0, i32 0
+  %450 = load i8** %449, align 8, !tbaa !1
+  %451 = getelementptr inbounds i8* %450, i64 -24
+  %452 = bitcast i8* %451 to %"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"*
+  %453 = icmp eq i8* %451, bitcast ([0 x i64]* @_ZNSs4_Rep20_S_empty_rep_storageE to i8*)
+  br i1 %453, label %_ZNSsD1Ev.exit80, label %454, !prof !7
+
+; <label>:454                                     ; preds = %444
+  %455 = getelementptr inbounds i8* %450, i64 -8
+  %456 = bitcast i8* %455 to i32*
+  br i1 icmp ne (i8* bitcast (i32 (i32*, void (i8*)*)* @__pthread_key_create to i8*), i8* null), label %457, label %461
+
+; <label>:457                                     ; preds = %454
+  %458 = bitcast i32* %1 to i8*
+  call void @llvm.lifetime.start(i64 4, i8* %458)
+  %459 = atomicrmw volatile add i32* %456, i32 -1 acq_rel
+  store i32 %459, i32* %1, align 4
+  %460 = load volatile i32* %1, align 4
+  call void @llvm.lifetime.end(i64 4, i8* %458)
+  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i79
+
+; <label>:461                                     ; preds = %454
+  %462 = load i32* %456, align 4, !tbaa !8
+  %463 = add nsw i32 %462, -1
+  store i32 %463, i32* %456, align 4, !tbaa !8
+  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i79
+
+_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i79: ; preds = %461, %457
+  %.0.i.i.i.i78 = phi i32 [ %460, %457 ], [ %462, %461 ]
+  %464 = icmp slt i32 %.0.i.i.i.i78, 1
+  br i1 %464, label %465, label %_ZNSsD1Ev.exit80
+
+; <label>:465                                     ; preds = %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i79
+  call void @_ZNSs4_Rep10_M_destroyERKSaIcE(%"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"* %452, %"class.std::allocator"* %2) #1
+  br label %_ZNSsD1Ev.exit80
+
+_ZNSsD1Ev.exit80:                                 ; preds = %465, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i79, %444, %.body65
+  %.813 = phi i32 [ %443, %.body65 ], [ %447, %444 ], [ %447, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i79 ], [ %447, %465 ]
+  %.8 = phi i8* [ %442, %.body65 ], [ %446, %444 ], [ %446, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i79 ], [ %446, %465 ]
+  %466 = getelementptr inbounds %"class.std::allocator"* %30, i64 0, i32 0
+  call void @llvm.lifetime.start(i64 1, i8* %466) #1
+  %467 = getelementptr inbounds %"class.std::basic_string"* %43, i64 0, i32 0, i32 0
+  %468 = load i8** %467, align 8, !tbaa !1
+  %469 = getelementptr inbounds i8* %468, i64 -24
+  %470 = bitcast i8* %469 to %"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"*
+  %471 = icmp eq i8* %469, bitcast ([0 x i64]* @_ZNSs4_Rep20_S_empty_rep_storageE to i8*)
+  br i1 %471, label %_ZNSsD1Ev.exit27, label %472, !prof !7
+
+; <label>:472                                     ; preds = %_ZNSsD1Ev.exit80
+  %473 = getelementptr inbounds i8* %468, i64 -8
+  %474 = bitcast i8* %473 to i32*
+  br i1 icmp ne (i8* bitcast (i32 (i32*, void (i8*)*)* @__pthread_key_create to i8*), i8* null), label %475, label %479
+
+; <label>:475                                     ; preds = %472
+  %476 = bitcast i32* %29 to i8*
+  call void @llvm.lifetime.start(i64 4, i8* %476)
+  %477 = atomicrmw volatile add i32* %474, i32 -1 acq_rel
+  store i32 %477, i32* %29, align 4
+  %478 = load volatile i32* %29, align 4
+  call void @llvm.lifetime.end(i64 4, i8* %476)
+  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i26
+
+; <label>:479                                     ; preds = %472
+  %480 = load i32* %474, align 4, !tbaa !8
+  %481 = add nsw i32 %480, -1
+  store i32 %481, i32* %474, align 4, !tbaa !8
+  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i26
+
+_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i26: ; preds = %479, %475
+  %.0.i.i.i.i25 = phi i32 [ %478, %475 ], [ %480, %479 ]
+  %482 = icmp slt i32 %.0.i.i.i.i25, 1
+  br i1 %482, label %483, label %_ZNSsD1Ev.exit27
+
+; <label>:483                                     ; preds = %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i26
+  call void @_ZNSs4_Rep10_M_destroyERKSaIcE(%"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"* %470, %"class.std::allocator"* %30) #1
+  br label %_ZNSsD1Ev.exit27
+
+_ZNSsD1Ev.exit27:                                 ; preds = %483, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i26, %_ZNSsD1Ev.exit80, %.body59
+  %.914 = phi i32 [ %439, %.body59 ], [ %.813, %_ZNSsD1Ev.exit80 ], [ %.813, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i26 ], [ %.813, %483 ]
+  %.9 = phi i8* [ %438, %.body59 ], [ %.8, %_ZNSsD1Ev.exit80 ], [ %.8, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i26 ], [ %.8, %483 ]
+  %484 = getelementptr inbounds %"class.std::allocator"* %32, i64 0, i32 0
+  call void @llvm.lifetime.start(i64 1, i8* %484) #1
+  %485 = getelementptr inbounds %"class.std::basic_string"* %44, i64 0, i32 0, i32 0
+  %486 = load i8** %485, align 8, !tbaa !1
+  %487 = getelementptr inbounds i8* %486, i64 -24
+  %488 = bitcast i8* %487 to %"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"*
+  %489 = icmp eq i8* %487, bitcast ([0 x i64]* @_ZNSs4_Rep20_S_empty_rep_storageE to i8*)
+  br i1 %489, label %_ZNSsD1Ev.exit24, label %490, !prof !7
+
+; <label>:490                                     ; preds = %_ZNSsD1Ev.exit27
+  %491 = getelementptr inbounds i8* %486, i64 -8
+  %492 = bitcast i8* %491 to i32*
+  br i1 icmp ne (i8* bitcast (i32 (i32*, void (i8*)*)* @__pthread_key_create to i8*), i8* null), label %493, label %497
+
+; <label>:493                                     ; preds = %490
+  %494 = bitcast i32* %31 to i8*
+  call void @llvm.lifetime.start(i64 4, i8* %494)
+  %495 = atomicrmw volatile add i32* %492, i32 -1 acq_rel
+  store i32 %495, i32* %31, align 4
+  %496 = load volatile i32* %31, align 4
+  call void @llvm.lifetime.end(i64 4, i8* %494)
+  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i23
+
+; <label>:497                                     ; preds = %490
+  %498 = load i32* %492, align 4, !tbaa !8
+  %499 = add nsw i32 %498, -1
+  store i32 %499, i32* %492, align 4, !tbaa !8
+  br label %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i23
+
+_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i23: ; preds = %497, %493
+  %.0.i.i.i.i22 = phi i32 [ %496, %493 ], [ %498, %497 ]
+  %500 = icmp slt i32 %.0.i.i.i.i22, 1
+  br i1 %500, label %501, label %_ZNSsD1Ev.exit24
+
+; <label>:501                                     ; preds = %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i23
+  call void @_ZNSs4_Rep10_M_destroyERKSaIcE(%"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"* %488, %"class.std::allocator"* %32) #1
+  br label %_ZNSsD1Ev.exit24
+
+_ZNSsD1Ev.exit24:                                 ; preds = %501, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i23, %_ZNSsD1Ev.exit27, %432
+  %.1015 = phi i32 [ %435, %432 ], [ %.914, %_ZNSsD1Ev.exit27 ], [ %.914, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i23 ], [ %.914, %501 ]
+  %.10 = phi i8* [ %434, %432 ], [ %.9, %_ZNSsD1Ev.exit27 ], [ %.9, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i23 ], [ %.9, %501 ]
+  invoke void @__cxa_end_catch()
+          to label %503 unwind label %506
+
+; <label>:502                                     ; preds = %431, %47
+  %.0 = phi i32 [ 0, %47 ], [ 1, %431 ]
   ret i32 %.0
 
-; <label>:401                                     ; preds = %_ZNSsD1Ev.exit24, %248
-  %.1116 = phi i32 [ %.1015, %_ZNSsD1Ev.exit24 ], [ %.712, %248 ]
-  %.11 = phi i8* [ %.10, %_ZNSsD1Ev.exit24 ], [ %.7, %248 ]
-  %402 = insertvalue { i8*, i32 } undef, i8* %.11, 0
-  %403 = insertvalue { i8*, i32 } %402, i32 %.1116, 1
-  resume { i8*, i32 } %403
+; <label>:503                                     ; preds = %_ZNSsD1Ev.exit24, %310
+  %.1116 = phi i32 [ %.1015, %_ZNSsD1Ev.exit24 ], [ %.712, %310 ]
+  %.11 = phi i8* [ %.10, %_ZNSsD1Ev.exit24 ], [ %.7, %310 ]
+  %504 = insertvalue { i8*, i32 } undef, i8* %.11, 0
+  %505 = insertvalue { i8*, i32 } %504, i32 %.1116, 1
+  resume { i8*, i32 } %505
 
-; <label>:404                                     ; preds = %_ZNSsD1Ev.exit24, %244, %_ZNSsD1Ev.exit32, %115
-  %405 = landingpad { i8*, i32 } personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*)
+; <label>:506                                     ; preds = %_ZNSsD1Ev.exit24, %306, %_ZNSsD1Ev.exit43, %174
+  %507 = landingpad { i8*, i32 } personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*)
           catch i8* null
-  %406 = extractvalue { i8*, i32 } %405, 0
-  call void @__clang_call_terminate(i8* %406) #12
+  %508 = extractvalue { i8*, i32 } %507, 0
+  call void @__clang_call_terminate(i8* %508) #12
   unreachable
 
-; <label>:407                                     ; preds = %242, %235, %113, %108
+; <label>:509                                     ; preds = %304, %297, %172, %167
   unreachable
 }
 
 ; Function Attrs: nounwind readnone
-declare i32 @llvm.eh.typeid.for(i8*) #6
-
-declare i8* @__cxa_begin_catch(i8*)
+declare i32 @llvm.eh.typeid.for(i8*) #7
 
 declare void @__cxa_rethrow()
 
 declare void @__cxa_end_catch()
-
-; Function Attrs: noinline noreturn nounwind
-define linkonce_odr hidden void @__clang_call_terminate(i8*) #7 {
-  %2 = tail call i8* @__cxa_begin_catch(i8* %0) #1
-  tail call void @_ZSt9terminatev() #12
-  unreachable
-}
-
-declare void @_ZSt9terminatev()
 
 ; Function Attrs: uwtable
 define i32 @main() #2 {
@@ -1087,7 +1327,9 @@ define i32 @main() #2 {
 ; Function Attrs: nounwind
 declare i32 @printf(i8* nocapture readonly, ...) #4
 
-declare void @_ZNSs4swapERSs(%"class.std::basic_string"*, %"class.std::basic_string"*) #3
+declare %"class.std::basic_string"* @_ZNSs6assignERKSs(%"class.std::basic_string"*, %"class.std::basic_string"*) #3
+
+declare void @_ZNSsC1ERKSs(%"class.std::basic_string"*, %"class.std::basic_string"*) #3
 
 declare %"class.std::basic_string"* @_ZNSs6appendEPKcm(%"class.std::basic_string"*, i8*, i64) #3
 
@@ -1137,9 +1379,9 @@ attributes #1 = { nounwind }
 attributes #2 = { uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #3 = { "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #4 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #5 = { nounwind readonly uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #6 = { nounwind readnone }
-attributes #7 = { noinline noreturn nounwind }
+attributes #5 = { noinline noreturn nounwind }
+attributes #6 = { nounwind readonly uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #7 = { nounwind readnone }
 attributes #8 = { nounwind readonly "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #9 = { inlinehint nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #10 = { nobuiltin nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }

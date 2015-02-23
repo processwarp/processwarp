@@ -11,11 +11,11 @@ define i32 @main() #0 {
   %1 = getelementptr inbounds [200 x i8]* %buffer, i64 0, i64 0
   call void @llvm.lifetime.start(i64 200, i8* %1) #1
   %2 = call i8* @strerror(i32 33) #1
-  %3 = call i8* @strerror_r(i32 11, i8* %1, i64 200) #1
+  %3 = call i32 @__xpg_strerror_r(i32 11, i8* %1, i64 200) #1
   %4 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([6 x i8]* @.str, i64 0, i64 0), i8* %2) #1
   %5 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([6 x i8]* @.str, i64 0, i64 0), i8* %1) #1
-  %6 = call i8* @strerror_r(i32 11, i8* %1, i64 0) #1
-  %7 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([6 x i8]* @.str1, i64 0, i64 0), i8* %6) #1
+  %6 = call i32 @__xpg_strerror_r(i32 11, i8* %1, i64 0) #1
+  %7 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([6 x i8]* @.str1, i64 0, i64 0), i32 %6) #1
   %8 = call i32* @__errno_location() #4
   store i32 123, i32* %8, align 4, !tbaa !1
   %9 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([6 x i8]* @.str1, i64 0, i64 0), i32 123) #1
@@ -30,7 +30,7 @@ declare void @llvm.lifetime.start(i64, i8* nocapture) #1
 declare i8* @strerror(i32) #2
 
 ; Function Attrs: nounwind
-declare i8* @strerror_r(i32, i8*, i64) #2
+declare i32 @__xpg_strerror_r(i32, i8*, i64) #2
 
 ; Function Attrs: nounwind
 declare i32 @printf(i8* nocapture readonly, ...) #2

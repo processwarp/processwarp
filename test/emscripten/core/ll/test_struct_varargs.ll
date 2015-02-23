@@ -8,7 +8,7 @@ target triple = "x86_64-pc-linux-gnu"
 @.str1 = private unnamed_addr constant [4 x i8] c"%f\0A\00", align 1
 
 ; Function Attrs: nounwind uwtable
-define void @_Z3fooiz(i32 %unused, ...) #0 {
+define void @foo(i32 %unused, ...) #0 {
   %vl = alloca [1 x %struct.__va_list_tag], align 16
   %1 = bitcast [1 x %struct.__va_list_tag]* %vl to i8*
   call void @llvm.va_start(i8* %1)
@@ -37,7 +37,7 @@ declare i32 @printf(i8* nocapture readonly, ...) #3
 
 ; Function Attrs: nounwind uwtable
 define i32 @main() #0 {
-  tail call void (i32, ...)* @_Z3fooiz(i32 undef, i32 42, double 4.231400e+01)
+  tail call void (i32, ...)* @foo(i32 undef, i32 42, double 4.231400e+01)
   ret i32 0
 }
 

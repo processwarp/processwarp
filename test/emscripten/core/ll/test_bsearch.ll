@@ -3,11 +3,11 @@ target datalayout = "e-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-pc-linux-gnu"
 
 @.str1 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
-@_ZZ4mainE1a = private unnamed_addr constant [6 x i32] [i32 -2, i32 -1, i32 0, i32 6, i32 7, i32 9], align 16
+@main.a = private unnamed_addr constant [6 x i32] [i32 -2, i32 -1, i32 0, i32 6, i32 7, i32 9], align 16
 @str = private unnamed_addr constant [5 x i8] c"null\00"
 
 ; Function Attrs: nounwind readonly uwtable
-define i32 @_Z3cmpPKvS0_(i8* nocapture readonly %key, i8* nocapture readonly %member) #0 {
+define i32 @cmp(i8* nocapture readonly %key, i8* nocapture readonly %member) #0 {
   %1 = bitcast i8* %key to i32*
   %2 = load i32* %1, align 4, !tbaa !1
   %3 = bitcast i8* %member to i32*
@@ -17,7 +17,7 @@ define i32 @_Z3cmpPKvS0_(i8* nocapture readonly %key, i8* nocapture readonly %me
 }
 
 ; Function Attrs: nounwind uwtable
-define void @_Z11printResultPiS_j(i32* nocapture readonly %needle, i32* readonly %haystack, i32 %len) #1 {
+define void @printResult(i32* nocapture readonly %needle, i32* readonly %haystack, i32 %len) #1 {
   %1 = icmp eq i32 %len, 0
   br i1 %1, label %bsearch.exit.thread, label %.lr.ph.i.preheader
 
@@ -78,12 +78,12 @@ define i32 @main() #1 {
   %a = alloca [6 x i32], align 16
   %b = alloca i64, align 8
   %1 = bitcast [6 x i32]* %a to i8*
-  call void @llvm.memcpy.p0i8.p0i8.i64(i8* %1, i8* bitcast ([6 x i32]* @_ZZ4mainE1a to i8*), i64 24, i32 16, i1 false)
+  call void @llvm.memcpy.p0i8.p0i8.i64(i8* %1, i8* bitcast ([6 x i32]* @main.a to i8*), i64 24, i32 16, i1 false)
   store i64 4294967296, i64* %b, align 8
   br label %2
 
-; <label>:2                                       ; preds = %_Z11printResultPiS_j.exit, %0
-  %indvars.iv = phi i64 [ 0, %0 ], [ %indvars.iv.next, %_Z11printResultPiS_j.exit ]
+; <label>:2                                       ; preds = %printResult.exit, %0
+  %indvars.iv = phi i64 [ 0, %0 ], [ %indvars.iv.next, %printResult.exit ]
   %3 = getelementptr inbounds [6 x i32]* %a, i64 0, i64 %indvars.iv
   %4 = load i32* %3, align 4, !tbaa !1
   br label %.lr.ph.i.i
@@ -122,13 +122,13 @@ bsearch.exit.i:                                   ; preds = %15
 
 bsearch.exit.thread.i:                            ; preds = %bsearch.exit.i, %6, %.outer.loopexit.i.i
   %puts.i = call i32 @puts(i8* getelementptr inbounds ([5 x i8]* @str, i64 0, i64 0)) #3
-  br label %_Z11printResultPiS_j.exit
+  br label %printResult.exit
 
 ; <label>:19                                      ; preds = %bsearch.exit.i
   %20 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str1, i64 0, i64 0), i32 %12) #3
-  br label %_Z11printResultPiS_j.exit
+  br label %printResult.exit
 
-_Z11printResultPiS_j.exit:                        ; preds = %19, %bsearch.exit.thread.i
+printResult.exit:                                 ; preds = %19, %bsearch.exit.thread.i
   %indvars.iv.next = add nuw nsw i64 %indvars.iv, 1
   %exitcond = icmp eq i64 %indvars.iv.next, 6
   br i1 %exitcond, label %.lr.ph.i.i4, label %2
@@ -137,9 +137,9 @@ _Z11printResultPiS_j.exit:                        ; preds = %19, %bsearch.exit.t
   %21 = icmp ult i64 %__l.02.i.i5, %26
   br i1 %21, label %.lr.ph.i.i4, label %bsearch.exit.thread.i8
 
-.lr.ph.i.i4:                                      ; preds = %.outer.loopexit.i.i1, %_Z11printResultPiS_j.exit
-  %__l.0.ph5.i.i2 = phi i64 [ %__l.02.i.i5, %.outer.loopexit.i.i1 ], [ 0, %_Z11printResultPiS_j.exit ]
-  %__u.0.ph4.i.i3 = phi i64 [ %26, %.outer.loopexit.i.i1 ], [ 6, %_Z11printResultPiS_j.exit ]
+.lr.ph.i.i4:                                      ; preds = %.outer.loopexit.i.i1, %printResult.exit
+  %__l.0.ph5.i.i2 = phi i64 [ %__l.02.i.i5, %.outer.loopexit.i.i1 ], [ 0, %printResult.exit ]
+  %__u.0.ph4.i.i3 = phi i64 [ %26, %.outer.loopexit.i.i1 ], [ 6, %printResult.exit ]
   br label %24
 
 ; <label>:22                                      ; preds = %31
@@ -207,13 +207,13 @@ bsearch.exit.i15:                                 ; preds = %47
 
 bsearch.exit.thread.i17:                          ; preds = %bsearch.exit.i15, %38, %.outer.loopexit.i.i10
   %puts.i16 = call i32 @puts(i8* getelementptr inbounds ([5 x i8]* @str, i64 0, i64 0)) #3
-  br label %_Z11printResultPiS_j.exit18
+  br label %printResult.exit18
 
 ; <label>:51                                      ; preds = %bsearch.exit.i15
   %52 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str1, i64 0, i64 0), i32 %44) #3
-  br label %_Z11printResultPiS_j.exit18
+  br label %printResult.exit18
 
-_Z11printResultPiS_j.exit18:                      ; preds = %51, %bsearch.exit.thread.i17
+printResult.exit18:                               ; preds = %51, %bsearch.exit.thread.i17
   %53 = bitcast i64* %b to i32*
   br label %.lr.ph.i.i22
 
@@ -221,9 +221,9 @@ _Z11printResultPiS_j.exit18:                      ; preds = %51, %bsearch.exit.t
   %54 = icmp ult i64 %__l.02.i.i23, %59
   br i1 %54, label %.lr.ph.i.i22, label %bsearch.exit.thread.i26
 
-.lr.ph.i.i22:                                     ; preds = %.outer.loopexit.i.i19, %_Z11printResultPiS_j.exit18
-  %__l.0.ph5.i.i20 = phi i64 [ %__l.02.i.i23, %.outer.loopexit.i.i19 ], [ 0, %_Z11printResultPiS_j.exit18 ]
-  %__u.0.ph4.i.i21 = phi i64 [ %59, %.outer.loopexit.i.i19 ], [ 2, %_Z11printResultPiS_j.exit18 ]
+.lr.ph.i.i22:                                     ; preds = %.outer.loopexit.i.i19, %printResult.exit18
+  %__l.0.ph5.i.i20 = phi i64 [ %__l.02.i.i23, %.outer.loopexit.i.i19 ], [ 0, %printResult.exit18 ]
+  %__u.0.ph4.i.i21 = phi i64 [ %59, %.outer.loopexit.i.i19 ], [ 2, %printResult.exit18 ]
   br label %57
 
 ; <label>:55                                      ; preds = %63
@@ -290,13 +290,13 @@ bsearch.exit.i33:                                 ; preds = %79
 
 bsearch.exit.thread.i35:                          ; preds = %bsearch.exit.i33, %70, %.outer.loopexit.i.i28
   %puts.i34 = call i32 @puts(i8* getelementptr inbounds ([5 x i8]* @str, i64 0, i64 0)) #3
-  br label %_Z11printResultPiS_j.exit36
+  br label %printResult.exit36
 
 ; <label>:83                                      ; preds = %bsearch.exit.i33
   %84 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str1, i64 0, i64 0), i32 %76) #3
-  br label %_Z11printResultPiS_j.exit36
+  br label %printResult.exit36
 
-_Z11printResultPiS_j.exit36:                      ; preds = %83, %bsearch.exit.thread.i35
+printResult.exit36:                               ; preds = %83, %bsearch.exit.thread.i35
   ret i32 0
 }
 

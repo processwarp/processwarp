@@ -7,7 +7,7 @@ target triple = "x86_64-pc-linux-gnu"
 @.str = private unnamed_addr constant [4 x i8] c"%f\0A\00", align 1
 
 ; Function Attrs: nounwind uwtable
-define double @_Z17func_int_double_1iz(i32 %unused1, ...) #0 {
+define double @func_int_double_1(i32 %unused1, ...) #0 {
   %vl = alloca [1 x %struct.__va_list_tag], align 16
   %1 = bitcast [1 x %struct.__va_list_tag]* %vl to i8*
   call void @llvm.va_start(i8* %1)
@@ -32,7 +32,7 @@ declare i8* @__intrinsic_va_arg([1 x %struct.__va_list_tag]*, i64) #2
 declare void @llvm.va_end(i8*) #1
 
 ; Function Attrs: nounwind uwtable
-define double @_Z17func_int_double_2iiz(i32 %unused1, i32 %unused2, ...) #0 {
+define double @func_int_double_2(i32 %unused1, i32 %unused2, ...) #0 {
   %vl = alloca [1 x %struct.__va_list_tag], align 16
   %1 = bitcast [1 x %struct.__va_list_tag]* %vl to i8*
   call void @llvm.va_start(i8* %1)
@@ -50,9 +50,9 @@ define double @_Z17func_int_double_2iiz(i32 %unused1, i32 %unused2, ...) #0 {
 
 ; Function Attrs: nounwind uwtable
 define i32 @main() #0 {
-  %1 = tail call double (i32, ...)* @_Z17func_int_double_1iz(i32 undef, i32 5, double 1.000000e+01)
+  %1 = tail call double (i32, ...)* @func_int_double_1(i32 undef, i32 5, double 1.000000e+01)
   %2 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i64 0, i64 0), double %1) #1
-  %3 = tail call double (i32, i32, ...)* @_Z17func_int_double_2iiz(i32 undef, i32 undef, i32 5, double 1.000000e+01)
+  %3 = tail call double (i32, i32, ...)* @func_int_double_2(i32 undef, i32 undef, i32 5, double 1.000000e+01)
   %4 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i64 0, i64 0), double %3) #1
   ret i32 0
 }

@@ -2,32 +2,33 @@
 target datalayout = "e-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-pc-linux-gnu"
 
-@commonblock.0 = internal unnamed_addr global [10 x i32] zeroinitializer
-@commonblock.1 = internal unnamed_addr global [10 x i32] zeroinitializer
+%struct.anon = type { [10 x i32], [10 x i32] }
+
+@commonblock = common global %struct.anon zeroinitializer, align 4
 @.str = private unnamed_addr constant [9 x i8] c"*%d %d*\0A\00", align 1
 
 ; Function Attrs: nounwind uwtable
 define i32 @main() #0 {
-  store i32 1, i32* getelementptr inbounds ([10 x i32]* @commonblock.0, i64 0, i64 0), align 16, !tbaa !1
-  store i32 2, i32* getelementptr inbounds ([10 x i32]* @commonblock.1, i64 0, i64 0), align 16, !tbaa !1
-  store i32 1, i32* getelementptr inbounds ([10 x i32]* @commonblock.0, i64 0, i64 1), align 4, !tbaa !1
-  store i32 2, i32* getelementptr inbounds ([10 x i32]* @commonblock.1, i64 0, i64 1), align 4, !tbaa !1
-  store i32 1, i32* getelementptr inbounds ([10 x i32]* @commonblock.0, i64 0, i64 2), align 8, !tbaa !1
-  store i32 2, i32* getelementptr inbounds ([10 x i32]* @commonblock.1, i64 0, i64 2), align 8, !tbaa !1
-  store i32 1, i32* getelementptr inbounds ([10 x i32]* @commonblock.0, i64 0, i64 3), align 4, !tbaa !1
-  store i32 2, i32* getelementptr inbounds ([10 x i32]* @commonblock.1, i64 0, i64 3), align 4, !tbaa !1
-  store i32 1, i32* getelementptr inbounds ([10 x i32]* @commonblock.0, i64 0, i64 4), align 16, !tbaa !1
-  store i32 2, i32* getelementptr inbounds ([10 x i32]* @commonblock.1, i64 0, i64 4), align 16, !tbaa !1
-  store i32 1, i32* getelementptr inbounds ([10 x i32]* @commonblock.0, i64 0, i64 5), align 4, !tbaa !1
-  store i32 2, i32* getelementptr inbounds ([10 x i32]* @commonblock.1, i64 0, i64 5), align 4, !tbaa !1
-  store i32 1, i32* getelementptr inbounds ([10 x i32]* @commonblock.0, i64 0, i64 6), align 8, !tbaa !1
-  store i32 2, i32* getelementptr inbounds ([10 x i32]* @commonblock.1, i64 0, i64 6), align 8, !tbaa !1
-  store i32 1, i32* getelementptr inbounds ([10 x i32]* @commonblock.0, i64 0, i64 7), align 4, !tbaa !1
-  store i32 2, i32* getelementptr inbounds ([10 x i32]* @commonblock.1, i64 0, i64 7), align 4, !tbaa !1
-  store i32 1, i32* getelementptr inbounds ([10 x i32]* @commonblock.0, i64 0, i64 8), align 16, !tbaa !1
-  store i32 2, i32* getelementptr inbounds ([10 x i32]* @commonblock.1, i64 0, i64 8), align 16, !tbaa !1
-  store i32 1, i32* getelementptr inbounds ([10 x i32]* @commonblock.0, i64 0, i64 9), align 4, !tbaa !1
-  store i32 2, i32* getelementptr inbounds ([10 x i32]* @commonblock.1, i64 0, i64 9), align 4, !tbaa !1
+  store i32 1, i32* getelementptr inbounds (%struct.anon* @commonblock, i64 0, i32 0, i64 0), align 4, !tbaa !1
+  store i32 2, i32* getelementptr inbounds (%struct.anon* @commonblock, i64 0, i32 1, i64 0), align 4, !tbaa !1
+  store i32 1, i32* getelementptr inbounds (%struct.anon* @commonblock, i64 0, i32 0, i64 1), align 4, !tbaa !1
+  store i32 2, i32* getelementptr inbounds (%struct.anon* @commonblock, i64 0, i32 1, i64 1), align 4, !tbaa !1
+  store i32 1, i32* getelementptr inbounds (%struct.anon* @commonblock, i64 0, i32 0, i64 2), align 4, !tbaa !1
+  store i32 2, i32* getelementptr inbounds (%struct.anon* @commonblock, i64 0, i32 1, i64 2), align 4, !tbaa !1
+  store i32 1, i32* getelementptr inbounds (%struct.anon* @commonblock, i64 0, i32 0, i64 3), align 4, !tbaa !1
+  store i32 2, i32* getelementptr inbounds (%struct.anon* @commonblock, i64 0, i32 1, i64 3), align 4, !tbaa !1
+  store i32 1, i32* getelementptr inbounds (%struct.anon* @commonblock, i64 0, i32 0, i64 4), align 4, !tbaa !1
+  store i32 2, i32* getelementptr inbounds (%struct.anon* @commonblock, i64 0, i32 1, i64 4), align 4, !tbaa !1
+  store i32 1, i32* getelementptr inbounds (%struct.anon* @commonblock, i64 0, i32 0, i64 5), align 4, !tbaa !1
+  store i32 2, i32* getelementptr inbounds (%struct.anon* @commonblock, i64 0, i32 1, i64 5), align 4, !tbaa !1
+  store i32 1, i32* getelementptr inbounds (%struct.anon* @commonblock, i64 0, i32 0, i64 6), align 4, !tbaa !1
+  store i32 2, i32* getelementptr inbounds (%struct.anon* @commonblock, i64 0, i32 1, i64 6), align 4, !tbaa !1
+  store i32 1, i32* getelementptr inbounds (%struct.anon* @commonblock, i64 0, i32 0, i64 7), align 4, !tbaa !1
+  store i32 2, i32* getelementptr inbounds (%struct.anon* @commonblock, i64 0, i32 1, i64 7), align 4, !tbaa !1
+  store i32 1, i32* getelementptr inbounds (%struct.anon* @commonblock, i64 0, i32 0, i64 8), align 4, !tbaa !1
+  store i32 2, i32* getelementptr inbounds (%struct.anon* @commonblock, i64 0, i32 1, i64 8), align 4, !tbaa !1
+  store i32 1, i32* getelementptr inbounds (%struct.anon* @commonblock, i64 0, i32 0, i64 9), align 4, !tbaa !1
+  store i32 2, i32* getelementptr inbounds (%struct.anon* @commonblock, i64 0, i32 1, i64 9), align 4, !tbaa !1
   %1 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @.str, i64 0, i64 0), i32 1, i32 2) #2
   ret i32 0
 }

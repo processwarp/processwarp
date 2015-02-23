@@ -42,14 +42,13 @@ target triple = "x86_64-pc-linux-gnu"
 
 declare void @_ZNSt8ios_base4InitC1Ev(%"class.std::ios_base::Init"*) #0
 
-; Function Attrs: nounwind
-declare void @_ZNSt8ios_base4InitD1Ev(%"class.std::ios_base::Init"*) #1
+declare void @_ZNSt8ios_base4InitD1Ev(%"class.std::ios_base::Init"*) #0
 
 ; Function Attrs: nounwind
-declare i32 @__cxa_atexit(void (i8*)*, i8*, i8*) #2
+declare i32 @__cxa_atexit(void (i8*)*, i8*, i8*) #1
 
 ; Function Attrs: uwtable
-define i32 @main(i32 %argc, i8** nocapture readnone %argv) #3 {
+define i32 @main(i32 %argc, i8** nocapture readnone %argv) #2 {
   %1 = alloca i32, align 4
   %2 = alloca %"class.std::allocator", align 1
   %3 = alloca %"class.std::basic_string", align 8
@@ -109,7 +108,7 @@ _ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc.exit: ; preds = %0
           to label %_ZNSolsEPFRSoS_E.exit unwind label %36
 
 _ZNSolsEPFRSoS_E.exit:                            ; preds = %.noexc6
-  %29 = call i8* @__cxa_allocate_exception(i64 24) #2
+  %29 = call i8* @__cxa_allocate_exception(i64 24) #1
   invoke void @_ZNSsC1EPKcRKSaIcE(%"class.std::basic_string"* %3, i8* getelementptr inbounds ([8 x i8]* @.str1, i64 0, i64 0), %"class.std::allocator"* %4)
           to label %30 unwind label %.thread
 
@@ -150,7 +149,7 @@ _ZNSolsEPFRSoS_E.exit:                            ; preds = %.noexc6
   %45 = extractvalue { i8*, i32 } %44, 0
   %46 = extractvalue { i8*, i32 } %44, 1
   %47 = getelementptr inbounds %"class.std::allocator"* %2, i64 0, i32 0
-  call void @llvm.lifetime.start(i64 1, i8* %47) #2
+  call void @llvm.lifetime.start(i64 1, i8* %47)
   %48 = getelementptr inbounds %"class.std::basic_string"* %3, i64 0, i32 0, i32 0
   %49 = load i8** %48, align 8, !tbaa !12
   %50 = getelementptr inbounds i8* %49, i64 -24
@@ -184,28 +183,28 @@ _ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i: ; preds = %60, %56
   br i1 %63, label %64, label %65
 
 ; <label>:64                                      ; preds = %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i
-  call void @_ZNSs4_Rep10_M_destroyERKSaIcE(%"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"* %51, %"class.std::allocator"* %2) #2
+  call void @_ZNSs4_Rep10_M_destroyERKSaIcE(%"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"* %51, %"class.std::allocator"* %2) #1
   br label %65
 
 ; <label>:65                                      ; preds = %64, %_ZN9__gnu_cxxL27__exchange_and_add_dispatchEPii.exit.i.i.i, %43
-  call void @llvm.lifetime.end(i64 1, i8* %47) #2
+  call void @llvm.lifetime.end(i64 1, i8* %47)
   br i1 %.01, label %66, label %67
 
 ; <label>:66                                      ; preds = %65, %.thread
   %.038 = phi i8* [ %41, %.thread ], [ %45, %65 ]
   %.0337 = phi i32 [ %42, %.thread ], [ %46, %65 ]
-  call void @__cxa_free_exception(i8* %29) #2
+  call void @__cxa_free_exception(i8* %29) #1
   br label %67
 
 ; <label>:67                                      ; preds = %66, %65, %36
   %.14 = phi i32 [ %.0337, %66 ], [ %46, %65 ], [ %39, %36 ]
   %.1 = phi i8* [ %.038, %66 ], [ %45, %65 ], [ %38, %36 ]
-  %68 = call i32 @llvm.eh.typeid.for(i8* bitcast (i8** @_ZTISt13runtime_error to i8*)) #2
+  %68 = call i32 @llvm.eh.typeid.for(i8* bitcast (i8** @_ZTISt13runtime_error to i8*)) #1
   %69 = icmp eq i32 %.14, %68
   br i1 %69, label %70, label %121
 
 ; <label>:70                                      ; preds = %67
-  %71 = call i8* @__cxa_begin_catch(i8* %.1) #2
+  %71 = call i8* @__cxa_begin_catch(i8* %.1) #1
   %72 = invoke %"class.std::basic_ostream"* @_ZSt16__ostream_insertIcSt11char_traitsIcEERSt13basic_ostreamIT_T0_ES6_PKS3_l(%"class.std::basic_ostream"* @_ZSt4cout, i8* getelementptr inbounds ([28 x i8]* @.str2, i64 0, i64 0), i64 27)
           to label %_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc.exit15 unwind label %117
 
@@ -215,7 +214,7 @@ _ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc.exit15: ; preds = %70
   %75 = load i8* (%"class.std::runtime_error"*)*** %74, align 8, !tbaa !1
   %76 = getelementptr inbounds i8* (%"class.std::runtime_error"*)** %75, i64 2
   %77 = load i8* (%"class.std::runtime_error"*)** %76, align 8
-  %78 = call i8* %77(%"class.std::runtime_error"* %73) #2
+  %78 = call i8* %77(%"class.std::runtime_error"* %73) #1
   %79 = icmp eq i8* %78, null
   br i1 %79, label %80, label %91
 
@@ -235,7 +234,7 @@ _ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc.exit15: ; preds = %70
           to label %_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc.exit18 unwind label %117
 
 ; <label>:91                                      ; preds = %_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc.exit15
-  %92 = call i64 @strlen(i8* %78) #2
+  %92 = call i64 @strlen(i8* %78) #1
   %93 = invoke %"class.std::basic_ostream"* @_ZSt16__ostream_insertIcSt11char_traitsIcEERSt13basic_ostreamIT_T0_ES6_PKS3_l(%"class.std::basic_ostream"* @_ZSt4cout, i8* %78, i64 %92)
           to label %_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc.exit18 unwind label %117
 
@@ -327,56 +326,56 @@ declare i8* @__cxa_allocate_exception(i64)
 declare void @_ZNSsC1EPKcRKSaIcE(%"class.std::basic_string"*, i8*, %"class.std::allocator"*) #0
 
 ; Function Attrs: inlinehint nounwind uwtable
-define linkonce_odr void @_ZN12my_exceptionD1Ev(%struct.my_exception* %this) unnamed_addr #4 align 2 {
+define linkonce_odr void @_ZN12my_exceptionD1Ev(%struct.my_exception* %this) unnamed_addr #3 align 2 {
   %1 = getelementptr inbounds %struct.my_exception* %this, i64 0, i32 1
-  tail call void @_ZNSt13runtime_errorD2Ev(%"class.std::runtime_error"* %1) #2
+  tail call void @_ZNSt13runtime_errorD2Ev(%"class.std::runtime_error"* %1) #1
   ret void
 }
 
 declare void @__cxa_throw(i8*, i8*, i8*)
+
+; Function Attrs: noinline noreturn nounwind
+define linkonce_odr hidden void @__clang_call_terminate(i8*) #4 {
+  %2 = tail call i8* @__cxa_begin_catch(i8* %0) #1
+  tail call void @_ZSt9terminatev() #12
+  unreachable
+}
+
+declare i8* @__cxa_begin_catch(i8*)
+
+declare void @_ZSt9terminatev()
 
 declare void @__cxa_free_exception(i8*)
 
 ; Function Attrs: nounwind readnone
 declare i32 @llvm.eh.typeid.for(i8*) #5
 
-declare i8* @__cxa_begin_catch(i8*)
-
 declare void @__cxa_end_catch()
-
-; Function Attrs: noinline noreturn nounwind
-define linkonce_odr hidden void @__clang_call_terminate(i8*) #6 {
-  %2 = tail call i8* @__cxa_begin_catch(i8* %0) #2
-  tail call void @_ZSt9terminatev() #12
-  unreachable
-}
-
-declare void @_ZSt9terminatev()
 
 declare %"class.std::basic_ostream"* @_ZNSo3putEc(%"class.std::basic_ostream"*, i8 signext) #0
 
 declare void @_ZNKSt5ctypeIcE13_M_widen_initEv(%"class.std::ctype"*) #0
 
 ; Function Attrs: noreturn
-declare void @_ZSt16__throw_bad_castv() #7
+declare void @_ZSt16__throw_bad_castv() #6
 
 declare %"class.std::basic_ostream"* @_ZNSo5flushEv(%"class.std::basic_ostream"*) #0
 
 declare %"class.std::basic_ostream"* @_ZSt16__ostream_insertIcSt11char_traitsIcEERSt13basic_ostreamIT_T0_ES6_PKS3_l(%"class.std::basic_ostream"*, i8*, i64) #0
 
 ; Function Attrs: nounwind readonly
-declare i64 @strlen(i8* nocapture) #8
+declare i64 @strlen(i8* nocapture) #7
 
 declare void @_ZNSt9basic_iosIcSt11char_traitsIcEE5clearESt12_Ios_Iostate(%"class.std::basic_ios"*, i32) #0
 
 ; Function Attrs: nounwind
-declare void @_ZNSs4_Rep10_M_destroyERKSaIcE(%"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"*, %"class.std::allocator"*) #1
+declare void @_ZNSs4_Rep10_M_destroyERKSaIcE(%"struct.std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_Rep"*, %"class.std::allocator"*) #8
 
 ; Function Attrs: nounwind
-declare extern_weak i32 @__pthread_key_create(i32*, void (i8*)*) #1
+declare extern_weak i32 @__pthread_key_create(i32*, void (i8*)*) #8
 
 ; Function Attrs: nounwind
-declare void @_ZNSt13runtime_errorD2Ev(%"class.std::runtime_error"*) #1
+declare void @_ZNSt13runtime_errorD2Ev(%"class.std::runtime_error"*) #8
 
 ; Function Attrs: nounwind uwtable
 define linkonce_odr void @_ZTv0_n24_N12my_exceptionD1Ev(%struct.my_exception* %this) unnamed_addr #9 align 2 {
@@ -389,14 +388,14 @@ define linkonce_odr void @_ZTv0_n24_N12my_exceptionD1Ev(%struct.my_exception* %t
   %.sum = add i64 %6, 8
   %7 = getelementptr inbounds i8* %1, i64 %.sum
   %8 = bitcast i8* %7 to %"class.std::runtime_error"*
-  tail call void @_ZNSt13runtime_errorD2Ev(%"class.std::runtime_error"* %8) #2
+  tail call void @_ZNSt13runtime_errorD2Ev(%"class.std::runtime_error"* %8) #1
   ret void
 }
 
 ; Function Attrs: inlinehint nounwind uwtable
-define linkonce_odr void @_ZN12my_exceptionD0Ev(%struct.my_exception* %this) unnamed_addr #4 align 2 {
+define linkonce_odr void @_ZN12my_exceptionD0Ev(%struct.my_exception* %this) unnamed_addr #3 align 2 {
   %1 = getelementptr inbounds %struct.my_exception* %this, i64 0, i32 1
-  tail call void @_ZNSt13runtime_errorD2Ev(%"class.std::runtime_error"* %1) #2
+  tail call void @_ZNSt13runtime_errorD2Ev(%"class.std::runtime_error"* %1) #1
   %2 = bitcast %struct.my_exception* %this to i8*
   tail call void @_ZdlPv(i8* %2) #13
   ret void
@@ -414,13 +413,13 @@ define linkonce_odr void @_ZTv0_n24_N12my_exceptionD0Ev(%struct.my_exception* %t
   %.sum = add i64 %6, 8
   %8 = getelementptr inbounds i8* %1, i64 %.sum
   %9 = bitcast i8* %8 to %"class.std::runtime_error"*
-  tail call void @_ZNSt13runtime_errorD2Ev(%"class.std::runtime_error"* %9) #2
+  tail call void @_ZNSt13runtime_errorD2Ev(%"class.std::runtime_error"* %9) #1
   tail call void @_ZdlPv(i8* %7) #13
   ret void
 }
 
 ; Function Attrs: nounwind
-declare i8* @_ZNKSt13runtime_error4whatEv(%"class.std::runtime_error"*) #1
+declare i8* @_ZNKSt13runtime_error4whatEv(%"class.std::runtime_error"*) #8
 
 ; Function Attrs: nobuiltin nounwind
 declare void @_ZdlPv(i8*) #10
@@ -429,25 +428,25 @@ declare void @_ZNSt13runtime_errorC2ERKSs(%"class.std::runtime_error"*, %"class.
 
 define internal void @_GLOBAL__I_a() section ".text.startup" {
   tail call void @_ZNSt8ios_base4InitC1Ev(%"class.std::ios_base::Init"* @_ZStL8__ioinit)
-  %1 = tail call i32 @__cxa_atexit(void (i8*)* bitcast (void (%"class.std::ios_base::Init"*)* @_ZNSt8ios_base4InitD1Ev to void (i8*)*), i8* getelementptr inbounds (%"class.std::ios_base::Init"* @_ZStL8__ioinit, i64 0, i32 0), i8* @__dso_handle) #2
+  %1 = tail call i32 @__cxa_atexit(void (i8*)* bitcast (void (%"class.std::ios_base::Init"*)* @_ZNSt8ios_base4InitD1Ev to void (i8*)*), i8* getelementptr inbounds (%"class.std::ios_base::Init"* @_ZStL8__ioinit, i64 0, i32 0), i8* @__dso_handle) #1
   ret void
 }
 
 ; Function Attrs: nounwind
-declare void @llvm.lifetime.start(i64, i8* nocapture) #2
+declare void @llvm.lifetime.start(i64, i8* nocapture) #1
 
 ; Function Attrs: nounwind
-declare void @llvm.lifetime.end(i64, i8* nocapture) #2
+declare void @llvm.lifetime.end(i64, i8* nocapture) #1
 
 attributes #0 = { "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #1 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #2 = { nounwind }
-attributes #3 = { uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #4 = { inlinehint nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #1 = { nounwind }
+attributes #2 = { uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #3 = { inlinehint nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #4 = { noinline noreturn nounwind }
 attributes #5 = { nounwind readnone }
-attributes #6 = { noinline noreturn nounwind }
-attributes #7 = { noreturn "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #8 = { nounwind readonly "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #6 = { noreturn "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #7 = { nounwind readonly "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #8 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #9 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #10 = { nobuiltin nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #11 = { noreturn }

@@ -6,7 +6,7 @@ target triple = "x86_64-pc-linux-gnu"
 @.str1 = private unnamed_addr constant [12 x i8] c"recurse %d\0A\00", align 1
 
 ; Function Attrs: nounwind uwtable
-define void @_Z3actPVi(i32* nocapture readonly %a) #0 {
+define void @act(i32* nocapture readonly %a) #0 {
   %1 = load volatile i32* %a, align 4, !tbaa !1
   %2 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([12 x i8]* @.str, i64 0, i64 0), i32 %1) #2
   %3 = load volatile i32* %a, align 4, !tbaa !1
@@ -16,10 +16,17 @@ define void @_Z3actPVi(i32* nocapture readonly %a) #0 {
   %7 = trunc i64 %6 to i32
   %8 = load volatile i32* %a, align 4, !tbaa !1
   %9 = icmp slt i32 %7, %8
-  %10 = getelementptr inbounds i32* %a, i64 -1
-  %.a = select i1 %9, i32* %10, i32* %a
-  %11 = load volatile i32* %.a, align 4, !tbaa !1
-  call void @_Z7recursei(i32 %11)
+  br i1 %9, label %10, label %13
+
+; <label>:10                                      ; preds = %0
+  %11 = getelementptr inbounds i32* %a, i64 -1
+  %12 = load volatile i32* %a, align 4, !tbaa !1
+  br label %13
+
+; <label>:13                                      ; preds = %10, %0
+  %.0 = phi i32* [ %11, %10 ], [ %a, %0 ]
+  %14 = load volatile i32* %.0, align 4, !tbaa !1
+  call void @recurse(i32 %14)
   ret void
 }
 
@@ -27,7 +34,7 @@ define void @_Z3actPVi(i32* nocapture readonly %a) #0 {
 declare i32 @printf(i8* nocapture readonly, ...) #1
 
 ; Function Attrs: nounwind uwtable
-define void @_Z7recursei(i32 %x) #0 {
+define void @recurse(i32 %x) #0 {
   %a = alloca i32, align 4
   %1 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([12 x i8]* @.str1, i64 0, i64 0), i32 %x) #2
   store volatile i32 %x, i32* %a, align 4, !tbaa !1
@@ -36,7 +43,7 @@ define void @_Z7recursei(i32 %x) #0 {
   br i1 %3, label %4, label %9
 
 ; <label>:4                                       ; preds = %0
-  call void @_Z3actPVi(i32* %a)
+  call void @act(i32* %a)
   %5 = load volatile i32* %a, align 4, !tbaa !1
   %6 = icmp slt i32 %5, %x
   br i1 %6, label %7, label %13
@@ -51,7 +58,7 @@ define void @_Z7recursei(i32 %x) #0 {
 
 ; <label>:11                                      ; preds = %9
   %12 = add nsw i32 %x, -1
-  tail call void @_Z7recursei(i32 %12)
+  tail call void @recurse(i32 %12)
   br label %13
 
 ; <label>:13                                      ; preds = %11, %9, %7, %4
@@ -65,16 +72,16 @@ define i32 @main() #0 {
   call void @llvm.lifetime.start(i64 4, i8* %1) #2
   %2 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([12 x i8]* @.str1, i64 0, i64 0), i32 1000000) #2
   store volatile i32 1000000, i32* %a.i, align 4, !tbaa !1
-  call void @_Z3actPVi(i32* %a.i) #2
+  call void @act(i32* %a.i) #2
   %3 = load volatile i32* %a.i, align 4, !tbaa !1
   %4 = icmp slt i32 %3, 1000000
-  br i1 %4, label %5, label %_Z7recursei.exit
+  br i1 %4, label %5, label %recurse.exit
 
 ; <label>:5                                       ; preds = %0
   %6 = load volatile i32* %a.i, align 4, !tbaa !1
-  br label %_Z7recursei.exit
+  br label %recurse.exit
 
-_Z7recursei.exit:                                 ; preds = %5, %0
+recurse.exit:                                     ; preds = %5, %0
   call void @llvm.lifetime.end(i64 4, i8* %1) #2
   ret i32 0
 }

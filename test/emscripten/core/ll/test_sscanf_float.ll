@@ -17,7 +17,7 @@ define i32 @main() #0 {
   %f7 = alloca float, align 4
   %f8 = alloca float, align 4
   %f9 = alloca float, align 4
-  %1 = call i32 (i8*, i8*, ...)* @sscanf(i8* getelementptr inbounds ([64 x i8]* @.str, i64 0, i64 0), i8* getelementptr inbounds ([28 x i8]* @.str1, i64 0, i64 0), float* %f1, float* %f2, float* %f3, float* %f4, float* %f5, float* %f6, float* %f7, float* %f8, float* %f9) #2
+  %1 = call i32 (i8*, i8*, ...)* @__isoc99_sscanf(i8* getelementptr inbounds ([64 x i8]* @.str, i64 0, i64 0), i8* getelementptr inbounds ([28 x i8]* @.str1, i64 0, i64 0), float* %f1, float* %f2, float* %f3, float* %f4, float* %f5, float* %f6, float* %f7, float* %f8, float* %f9) #2
   %2 = load float* %f1, align 4, !tbaa !1
   %3 = fpext float %2 to double
   %4 = load float* %f2, align 4, !tbaa !1
@@ -41,7 +41,7 @@ define i32 @main() #0 {
 }
 
 ; Function Attrs: nounwind
-declare i32 @sscanf(i8* nocapture readonly, i8* nocapture readonly, ...) #1
+declare i32 @__isoc99_sscanf(i8* nocapture readonly, i8* nocapture readonly, ...) #1
 
 ; Function Attrs: nounwind
 declare i32 @printf(i8* nocapture readonly, ...) #1

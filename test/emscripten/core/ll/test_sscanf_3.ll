@@ -16,13 +16,13 @@ define i32 @main() #0 {
   %negS = alloca i64, align 8
   %negM = alloca i64, align 8
   %negL = alloca i64, align 8
-  %1 = call i32 (i8*, i8*, ...)* @sscanf(i8* getelementptr inbounds ([32 x i8]* @.str1, i64 0, i64 0), i8* getelementptr inbounds ([15 x i8]* @.str2, i64 0, i64 0), i64* %s, i64* %m, i64* %l) #2
+  %1 = call i32 (i8*, i8*, ...)* @__isoc99_sscanf(i8* getelementptr inbounds ([32 x i8]* @.str1, i64 0, i64 0), i8* getelementptr inbounds ([15 x i8]* @.str2, i64 0, i64 0), i64* %s, i64* %m, i64* %l) #2
   %2 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i64 0, i64 0), i32 %1) #2
   %3 = load i64* %s, align 8, !tbaa !1
   %4 = load i64* %m, align 8, !tbaa !1
   %5 = load i64* %l, align 8, !tbaa !1
   %6 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([16 x i8]* @.str3, i64 0, i64 0), i64 %3, i64 %4, i64 %5) #2
-  %7 = call i32 (i8*, i8*, ...)* @sscanf(i8* getelementptr inbounds ([35 x i8]* @.str4, i64 0, i64 0), i8* getelementptr inbounds ([15 x i8]* @.str2, i64 0, i64 0), i64* %negS, i64* %negM, i64* %negL) #2
+  %7 = call i32 (i8*, i8*, ...)* @__isoc99_sscanf(i8* getelementptr inbounds ([35 x i8]* @.str4, i64 0, i64 0), i8* getelementptr inbounds ([15 x i8]* @.str2, i64 0, i64 0), i64* %negS, i64* %negM, i64* %negL) #2
   %8 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i64 0, i64 0), i32 %7) #2
   %9 = load i64* %negS, align 8, !tbaa !1
   %10 = load i64* %negM, align 8, !tbaa !1
@@ -35,7 +35,7 @@ define i32 @main() #0 {
 declare i32 @printf(i8* nocapture readonly, ...) #1
 
 ; Function Attrs: nounwind
-declare i32 @sscanf(i8* nocapture readonly, i8* nocapture readonly, ...) #1
+declare i32 @__isoc99_sscanf(i8* nocapture readonly, i8* nocapture readonly, ...) #1
 
 attributes #0 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }

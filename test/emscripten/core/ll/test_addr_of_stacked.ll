@@ -5,7 +5,7 @@ target triple = "x86_64-pc-linux-gnu"
 @.str = private unnamed_addr constant [6 x i8] c"*%d*\0A\00", align 1
 
 ; Function Attrs: nounwind uwtable
-define void @_Z5alterPi(i32* nocapture %y) #0 {
+define void @alter(i32* nocapture %y) #0 {
   %1 = load i32* %y, align 4, !tbaa !1
   %2 = add nsw i32 %1, 5
   store i32 %2, i32* %y, align 4, !tbaa !1

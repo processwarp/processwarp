@@ -18,26 +18,26 @@ define i32 @main() #0 {
   %2 = getelementptr inbounds [80 x i8]* %blah, i64 0, i64 0
   call void @llvm.lifetime.start(i64 80, i8* %2) #1
   call void @llvm.memcpy.p0i8.p0i8.i64(i8* %1, i8* getelementptr inbounds ([49 x i8]* @.str1, i64 0, i64 0), i64 49, i32 1, i1 false)
-  %3 = call i8* @strtok_r(i8* %1, i8* getelementptr inbounds ([7 x i8]* @.str, i64 0, i64 0), i8** %brkt) #1
+  %3 = call i8* @__strtok_r(i8* %1, i8* getelementptr inbounds ([7 x i8]* @.str, i64 0, i64 0), i8** %brkt) #1
   %4 = icmp eq i8* %3, null
   br i1 %4, label %._crit_edge5, label %.lr.ph4
 
 .lr.ph4:                                          ; preds = %._crit_edge, %0
   %word.02 = phi i8* [ %10, %._crit_edge ], [ %3, %0 ]
   call void @llvm.memcpy.p0i8.p0i8.i64(i8* %2, i8* getelementptr inbounds ([20 x i8]* @.str2, i64 0, i64 0), i64 20, i32 1, i1 false)
-  %5 = call i8* @strtok_r(i8* %2, i8* getelementptr inbounds ([7 x i8]* @.str, i64 0, i64 0), i8** %brkb) #1
+  %5 = call i8* @__strtok_r(i8* %2, i8* getelementptr inbounds ([7 x i8]* @.str, i64 0, i64 0), i8** %brkb) #1
   %6 = icmp eq i8* %5, null
   br i1 %6, label %._crit_edge, label %.lr.ph
 
 .lr.ph:                                           ; preds = %.lr.ph, %.lr.ph4
   %phrase.01 = phi i8* [ %8, %.lr.ph ], [ %5, %.lr.ph4 ]
   %7 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([10 x i8]* @.str3, i64 0, i64 0), i8* %word.02, i8* %phrase.01) #1
-  %8 = call i8* @strtok_r(i8* null, i8* getelementptr inbounds ([7 x i8]* @.str, i64 0, i64 0), i8** %brkb) #1
+  %8 = call i8* @__strtok_r(i8* null, i8* getelementptr inbounds ([7 x i8]* @.str, i64 0, i64 0), i8** %brkb) #1
   %9 = icmp eq i8* %8, null
   br i1 %9, label %._crit_edge, label %.lr.ph
 
 ._crit_edge:                                      ; preds = %.lr.ph, %.lr.ph4
-  %10 = call i8* @strtok_r(i8* null, i8* getelementptr inbounds ([7 x i8]* @.str, i64 0, i64 0), i8** %brkt) #1
+  %10 = call i8* @__strtok_r(i8* null, i8* getelementptr inbounds ([7 x i8]* @.str, i64 0, i64 0), i8** %brkt) #1
   %11 = icmp eq i8* %10, null
   br i1 %11, label %._crit_edge5, label %.lr.ph4
 
@@ -51,7 +51,7 @@ define i32 @main() #0 {
 declare void @llvm.lifetime.start(i64, i8* nocapture) #1
 
 ; Function Attrs: nounwind
-declare i8* @strtok_r(i8*, i8* nocapture readonly, i8**) #2
+declare i8* @__strtok_r(i8*, i8* nocapture readonly, i8**) #2
 
 ; Function Attrs: nounwind
 declare i32 @printf(i8* nocapture readonly, ...) #2

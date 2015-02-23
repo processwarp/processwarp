@@ -7,7 +7,7 @@ target triple = "x86_64-pc-linux-gnu"
 @.str = private unnamed_addr constant [14 x i8] c"0x%llx_0x%llx\00", align 1
 
 ; Function Attrs: nounwind uwtable
-define void @_Z6printyPKcz(i8* nocapture readonly %f, ...) #0 {
+define void @printy(i8* nocapture readonly %f, ...) #0 {
   %buffer = alloca [256 x i8], align 16
   %args = alloca [1 x %struct.__va_list_tag], align 16
   %1 = getelementptr inbounds [256 x i8]* %buffer, i64 0, i64 0
@@ -50,13 +50,13 @@ define i32 @main(i32 %argc, i8** nocapture readnone %argv) #0 {
   %6 = icmp eq i64 %5, 2
   %7 = zext i1 %6 to i64
   %. = shl nsw i64 %4, %7
-  tail call void (i8*, ...)* @_Z6printyPKcz(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i64 %2, i64 %.)
-  tail call void (i8*, ...)* @_Z6printyPKcz(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i64 %2, i64 %2)
-  tail call void (i8*, ...)* @_Z6printyPKcz(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i64 %., i64 %2)
-  tail call void (i8*, ...)* @_Z6printyPKcz(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i64 %., i64 %.)
-  tail call void (i8*, ...)* @_Z6printyPKcz(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i64 8388608, i64 140737488355328)
-  tail call void (i8*, ...)* @_Z6printyPKcz(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i64 2048, i64 5123724185436160)
-  tail call void (i8*, ...)* @_Z6printyPKcz(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i64 624958924630, i64 1812759625249959101)
+  tail call void (i8*, ...)* @printy(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i64 %2, i64 %.)
+  tail call void (i8*, ...)* @printy(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i64 %2, i64 %2)
+  tail call void (i8*, ...)* @printy(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i64 %., i64 %2)
+  tail call void (i8*, ...)* @printy(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i64 %., i64 %.)
+  tail call void (i8*, ...)* @printy(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i64 8388608, i64 140737488355328)
+  tail call void (i8*, ...)* @printy(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i64 2048, i64 5123724185436160)
+  tail call void (i8*, ...)* @printy(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i64 624958924630, i64 1812759625249959101)
   ret i32 0
 }
 

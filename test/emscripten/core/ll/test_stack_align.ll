@@ -10,7 +10,7 @@ define void @_Z4TestPKvi(i8* %p, i32 %size) #0 {
   %1 = ptrtoint i8* %p to i64
   %2 = sext i32 %size to i64
   %3 = urem i64 %1, %2
-  %4 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i32 %size, i64 %3) #2
+  %4 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i32 %size, i64 %3)
   ret void
 }
 
@@ -23,7 +23,7 @@ define i32 @main() #0 {
   %2 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i32 8, i64 0) #2
   %3 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i32 16, i64 0) #2
   %4 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([14 x i8]* @.str, i64 0, i64 0), i32 32, i64 0) #2
-  %5 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([28 x i8]* @.str1, i64 0, i64 0), i32 0, i32 0, i32 0, i32 0) #2
+  %5 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([28 x i8]* @.str1, i64 0, i64 0), i32 0, i32 0, i32 0, i32 0)
   ret i32 0
 }
 

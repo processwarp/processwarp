@@ -14,12 +14,12 @@ define i32 @main(i32 %argc, i8** nocapture readnone %argv) #0 {
   %5 = trunc i64 %4 to i32
   %6 = lshr i64 %4, 32
   %7 = trunc i64 %6 to i32
-  %8 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([19 x i8]* @.str, i64 0, i64 0), i64 %3, i64 %4, i32 %5, i32 %7) #2
+  %8 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([19 x i8]* @.str, i64 0, i64 0), i64 %3, i64 %4, i32 %5, i32 %7)
   %9 = add nsw i64 %2, 78165373983129600
   %10 = mul nsw i32 %argc, 3
   %11 = zext i32 %10 to i64
   %12 = ashr i64 %9, %11
-  %13 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str1, i64 0, i64 0), i64 %12) #2
+  %13 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([8 x i8]* @.str1, i64 0, i64 0), i64 %12)
   ret i32 0
 }
 
@@ -28,7 +28,6 @@ declare i32 @printf(i8* nocapture readonly, ...) #1
 
 attributes #0 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #2 = { nounwind }
 
 !llvm.ident = !{!0}
 

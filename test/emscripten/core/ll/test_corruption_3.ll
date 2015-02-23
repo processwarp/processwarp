@@ -3,68 +3,63 @@ target datalayout = "e-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-pc-linux-gnu"
 
 @.str1 = private unnamed_addr constant [35 x i8] c"buffer[i] == (char)((i * i) % 256)\00", align 1
-@.str2 = private unnamed_addr constant [26 x i8] c"cpp/test_corruption_3.cpp\00", align 1
+@.str2 = private unnamed_addr constant [20 x i8] c"test_corruption_3.c\00", align 1
 @__PRETTY_FUNCTION__.main = private unnamed_addr constant [23 x i8] c"int main(int, char **)\00", align 1
 @str = private unnamed_addr constant [7 x i8] c"all ok\00"
 
 ; Function Attrs: nounwind uwtable
-define void @_Z3byev() #0 {
+define void @bye() #0 {
   %puts = tail call i32 @puts(i8* getelementptr inbounds ([7 x i8]* @str, i64 0, i64 0))
   ret void
 }
 
 ; Function Attrs: nounwind uwtable
 define i32 @main(i32 %argc, i8** nocapture readnone %argv) #0 {
-vector.ph:
-  %0 = tail call i32 @atexit(void ()* @_Z3byev) #3
-  %1 = tail call noalias i8* @malloc(i64 100) #3
-  br label %vector.body
+  %1 = tail call i32 @atexit(void ()* @bye) #3
+  %2 = tail call noalias i8* @malloc(i64 100) #3
+  br label %3
 
-vector.body:                                      ; preds = %vector.body, %vector.ph
-  %index = phi i64 [ 0, %vector.ph ], [ %index.next, %vector.body ]
-  %2 = trunc i64 %index to i32
-  %broadcast.splatinsert6 = insertelement <4 x i32> undef, i32 %2, i32 0
-  %broadcast.splat7 = shufflevector <4 x i32> %broadcast.splatinsert6, <4 x i32> undef, <4 x i32> zeroinitializer
-  %induction8 = add <4 x i32> %broadcast.splat7, <i32 0, i32 1, i32 2, i32 3>
-  %3 = mul nsw <4 x i32> %induction8, %induction8
-  %4 = trunc <4 x i32> %3 to <4 x i8>
-  %5 = getelementptr inbounds i8* %1, i64 %index
-  %6 = bitcast i8* %5 to <4 x i8>*
-  store <4 x i8> %4, <4 x i8>* %6, align 1
-  %index.next = add i64 %index, 4
-  %7 = icmp eq i64 %index.next, 100
-  br i1 %7, label %middle.block, label %vector.body, !llvm.loop !1
+; <label>:3                                       ; preds = %3, %0
+  %indvars.iv4 = phi i64 [ 0, %0 ], [ %indvars.iv.next5, %3 ]
+  %4 = trunc i64 %indvars.iv4 to i32
+  %5 = mul nsw i32 %4, %4
+  %6 = trunc i32 %5 to i8
+  %7 = getelementptr inbounds i8* %2, i64 %indvars.iv4
+  store i8 %6, i8* %7, align 1, !tbaa !1
+  %indvars.iv.next5 = add nuw nsw i64 %indvars.iv4, 1
+  %exitcond = icmp eq i64 %indvars.iv.next5, 100
+  br i1 %exitcond, label %8, label %3
 
-middle.block:                                     ; preds = %vector.body
-  %8 = add nsw i32 %argc, 50
-  %9 = sext i32 %8 to i64
-  %10 = tail call i8* @realloc(i8* %1, i64 %9) #3
-  %11 = icmp sgt i32 %8, 0
-  br i1 %11, label %.lr.ph, label %._crit_edge
+; <label>:8                                       ; preds = %3
+  %9 = add nsw i32 %argc, 50
+  %10 = sext i32 %9 to i64
+  %11 = tail call i8* @realloc(i8* %2, i64 %10) #3
+  %12 = icmp sgt i32 %9, 0
+  br i1 %12, label %.lr.ph, label %._crit_edge
 
-; <label>:12                                      ; preds = %.lr.ph
-  %13 = trunc i64 %indvars.iv.next to i32
-  %14 = icmp slt i32 %13, %8
-  br i1 %14, label %.lr.ph, label %._crit_edge
+; <label>:13                                      ; preds = %.lr.ph
+  %14 = trunc i64 %indvars.iv.next to i32
+  %15 = icmp slt i32 %14, %9
+  br i1 %15, label %.lr.ph, label %._crit_edge
 
-.lr.ph:                                           ; preds = %12, %middle.block
-  %indvars.iv = phi i64 [ %indvars.iv.next, %12 ], [ 0, %middle.block ]
-  %15 = getelementptr inbounds i8* %10, i64 %indvars.iv
-  %16 = load i8* %15, align 1, !tbaa !4
-  %17 = sext i8 %16 to i32
-  %18 = trunc i64 %indvars.iv to i32
-  %19 = shl i32 %18, 24
-  %sext = mul i32 %19, %18
-  %20 = ashr exact i32 %sext, 24
-  %21 = icmp eq i32 %17, %20
+.lr.ph:                                           ; preds = %13, %8
+  %indvars.iv = phi i64 [ %indvars.iv.next, %13 ], [ 0, %8 ]
+  %16 = getelementptr inbounds i8* %11, i64 %indvars.iv
+  %17 = load i8* %16, align 1, !tbaa !1
+  %18 = sext i8 %17 to i32
+  %19 = trunc i64 %indvars.iv to i32
+  %20 = shl i32 %19, 24
+  %sext = mul i32 %20, %19
+  %21 = ashr exact i32 %sext, 24
+  %22 = icmp eq i32 %18, %21
   %indvars.iv.next = add nuw nsw i64 %indvars.iv, 1
-  br i1 %21, label %12, label %22
+  br i1 %22, label %13, label %23
 
-; <label>:22                                      ; preds = %.lr.ph
-  tail call void @__assert_fail(i8* getelementptr inbounds ([35 x i8]* @.str1, i64 0, i64 0), i8* getelementptr inbounds ([26 x i8]* @.str2, i64 0, i64 0), i32 16, i8* getelementptr inbounds ([23 x i8]* @__PRETTY_FUNCTION__.main, i64 0, i64 0)) #4
+; <label>:23                                      ; preds = %.lr.ph
+  tail call void @__assert_fail(i8* getelementptr inbounds ([35 x i8]* @.str1, i64 0, i64 0), i8* getelementptr inbounds ([20 x i8]* @.str2, i64 0, i64 0), i32 16, i8* getelementptr inbounds ([23 x i8]* @__PRETTY_FUNCTION__.main, i64 0, i64 0)) #4
   unreachable
 
-._crit_edge:                                      ; preds = %12, %middle.block
+._crit_edge:                                      ; preds = %13, %8
   ret i32 1
 }
 
@@ -92,9 +87,6 @@ attributes #4 = { noreturn nounwind }
 !llvm.ident = !{!0}
 
 !0 = metadata !{metadata !"Ubuntu clang version 3.4-1ubuntu3 (tags/RELEASE_34/final) (based on LLVM 3.4)"}
-!1 = metadata !{metadata !1, metadata !2, metadata !3}
-!2 = metadata !{metadata !"llvm.loop.vectorize.width", i32 1}
-!3 = metadata !{metadata !"llvm.loop.interleave.count", i32 1}
-!4 = metadata !{metadata !5, metadata !5, i64 0}
-!5 = metadata !{metadata !"omnipotent char", metadata !6, i64 0}
-!6 = metadata !{metadata !"Simple C/C++ TBAA"}
+!1 = metadata !{metadata !2, metadata !2, i64 0}
+!2 = metadata !{metadata !"omnipotent char", metadata !3, i64 0}
+!3 = metadata !{metadata !"Simple C/C++ TBAA"}

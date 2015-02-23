@@ -9,10 +9,10 @@ target triple = "x86_64-pc-linux-gnu"
 
 @.str = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
 @.str1 = private unnamed_addr constant [4 x i8] c"%f\0A\00", align 1
-@.str3 = private unnamed_addr constant [9 x i8] c"nicetest\00", align 8
+@.str3 = private unnamed_addr constant [9 x i8] c"nicetest\00", align 1
 
 ; Function Attrs: nounwind uwtable
-define void @_Z3fooiz(i32 %unused, ...) #0 {
+define void @foo(i32 %unused, ...) #0 {
   %vl = alloca [1 x %struct.__va_list_tag], align 16
   %c = alloca %struct.C, align 8
   %1 = bitcast [1 x %struct.__va_list_tag]* %vl to i8*
@@ -47,14 +47,14 @@ declare i32 @printf(i8* nocapture readonly, ...) #3
 
 ; Function Attrs: nounwind uwtable
 define i32 @main() #0 {
-  %1 = alloca %struct.C, align 8
-  %2 = getelementptr inbounds %struct.C* %1, i64 0, i32 0, i64 0
-  call void @llvm.memcpy.p0i8.p0i8.i64(i8* %2, i8* getelementptr inbounds ([9 x i8]* @.str3, i64 0, i64 0), i64 12, i32 8, i1 false)
-  %3 = getelementptr inbounds %struct.C* %1, i64 0, i32 1, i32 0
-  store i32 42, i32* %3, align 4
-  %4 = getelementptr inbounds %struct.C* %1, i64 0, i32 2, i32 0
-  store double 4.231400e+01, double* %4, align 8
-  call void (i32, ...)* @_Z3fooiz(i32 undef, %struct.C* byval align 8 %1)
+  %c = alloca %struct.C, align 8
+  %1 = getelementptr inbounds %struct.C* %c, i64 0, i32 0, i64 0
+  call void @llvm.memcpy.p0i8.p0i8.i64(i8* %1, i8* getelementptr inbounds ([9 x i8]* @.str3, i64 0, i64 0), i64 9, i32 1, i1 false), !tbaa.struct !14
+  %2 = getelementptr inbounds %struct.C* %c, i64 0, i32 1, i32 0
+  store i32 42, i32* %2, align 4
+  %3 = getelementptr inbounds %struct.C* %c, i64 0, i32 2, i32 0
+  store double 4.231400e+01, double* %3, align 8
+  call void (i32, ...)* @foo(i32 undef, %struct.C* byval align 8 %c)
   ret i32 0
 }
 
@@ -78,7 +78,8 @@ attributes #3 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"=
 !7 = metadata !{metadata !8, metadata !8, i64 0}
 !8 = metadata !{metadata !"double", metadata !3, i64 0}
 !9 = metadata !{metadata !10, metadata !6, i64 12}
-!10 = metadata !{metadata !"_ZTS1C", metadata !3, i64 0, metadata !11, i64 12, metadata !12, i64 16}
-!11 = metadata !{metadata !"_ZTS1A", metadata !6, i64 0}
-!12 = metadata !{metadata !"_ZTS1B", metadata !8, i64 0}
+!10 = metadata !{metadata !"C", metadata !3, i64 0, metadata !11, i64 12, metadata !12, i64 16}
+!11 = metadata !{metadata !"A", metadata !6, i64 0}
+!12 = metadata !{metadata !"B", metadata !8, i64 0}
 !13 = metadata !{metadata !10, metadata !8, i64 16}
+!14 = metadata !{i64 0, i64 9, metadata !2}

@@ -221,7 +221,7 @@ attributes #4 = { nounwind readnone }
 
 !0 = metadata !{metadata !"Ubuntu clang version 3.4-1ubuntu3 (tags/RELEASE_34/final) (based on LLVM 3.4)"}
 !1 = metadata !{metadata !2, metadata !3, i64 0}
-!2 = metadata !{metadata !"_ZTS8timespec", metadata !3, i64 0, metadata !3, i64 8}
+!2 = metadata !{metadata !"timespec", metadata !3, i64 0, metadata !3, i64 8}
 !3 = metadata !{metadata !"long", metadata !4, i64 0}
 !4 = metadata !{metadata !"omnipotent char", metadata !5, i64 0}
 !5 = metadata !{metadata !"Simple C/C++ TBAA"}

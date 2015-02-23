@@ -2,7 +2,7 @@
 target datalayout = "e-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-pc-linux-gnu"
 
-@cache = global [256 x i8] zeroinitializer, align 16
+@cache = common global [256 x i8] zeroinitializer, align 16
 @next = global i8* getelementptr inbounds ([256 x i8]* @cache, i64 0, i64 0), align 8
 @.str = private unnamed_addr constant [9 x i8] c"*%d,%d*\0A\00", align 1
 

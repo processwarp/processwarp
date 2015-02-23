@@ -5,7 +5,7 @@ target triple = "x86_64-pc-linux-gnu"
 @.str = private unnamed_addr constant [21 x i8] c"*%d,%d,%d,%d,%d,%d*\0A\00", align 1
 
 ; Function Attrs: nounwind readnone uwtable
-define i32 @_Z8switcheri(i32 %p) #0 {
+define i32 @switcher(i32 %p) #0 {
   switch i32 %p, label %4 [
     i32 97, label %1
     i32 98, label %1
@@ -29,7 +29,7 @@ define i32 @_Z8switcheri(i32 %p) #0 {
 define i32 @main(i32 %argc, i8** nocapture readnone %argv) #1 {
   %1 = add nsw i32 %argc, -1
   %2 = lshr i32 -15, %1
-  switch i32 %2, label %_Z8switcheri.exit [
+  switch i32 %2, label %switcher.exit [
     i32 97, label %3
     i32 98, label %3
     i32 99, label %3
@@ -38,12 +38,12 @@ define i32 @main(i32 %argc, i8** nocapture readnone %argv) #1 {
 
 ; <label>:3                                       ; preds = %0, %0, %0
   %4 = add nsw i32 %2, -1
-  br label %_Z8switcheri.exit
+  br label %switcher.exit
 
 ; <label>:5                                       ; preds = %0
-  br label %_Z8switcheri.exit
+  br label %switcher.exit
 
-_Z8switcheri.exit:                                ; preds = %5, %3, %0
+switcher.exit:                                    ; preds = %5, %3, %0
   %.0.i = phi i32 [ -14, %5 ], [ %4, %3 ], [ %2, %0 ]
   %6 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([21 x i8]* @.str, i64 0, i64 0), i32 96, i32 97, i32 98, i32 %.0.i, i32 -14, i32 101) #3
   ret i32 0

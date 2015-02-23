@@ -7,7 +7,7 @@ target triple = "x86_64-pc-linux-gnu"
 @nan = global <4 x float> zeroinitializer, align 16
 @one = global <4 x float> zeroinitializer, align 16
 @.str = private unnamed_addr constant [48 x i8] c"memcmp(&result, &expected, sizeof(__m128)) == 0\00", align 1
-@.str1 = private unnamed_addr constant [19 x i8] c"cpp/test_simd6.cpp\00", align 1
+@.str1 = private unnamed_addr constant [13 x i8] c"test_simd6.c\00", align 1
 @__PRETTY_FUNCTION__.main = private unnamed_addr constant [11 x i8] c"int main()\00", align 1
 @.str2 = private unnamed_addr constant [5 x i8] c"DONE\00", align 1
 
@@ -32,7 +32,7 @@ define i32 @main() #0 {
   br i1 %8, label %10, label %9
 
 ; <label>:9                                       ; preds = %0
-  tail call void @__assert_fail(i8* getelementptr inbounds ([48 x i8]* @.str, i64 0, i64 0), i8* getelementptr inbounds ([19 x i8]* @.str1, i64 0, i64 0), i32 26, i8* getelementptr inbounds ([11 x i8]* @__PRETTY_FUNCTION__.main, i64 0, i64 0)) #7
+  tail call void @__assert_fail(i8* getelementptr inbounds ([48 x i8]* @.str, i64 0, i64 0), i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 26, i8* getelementptr inbounds ([11 x i8]* @__PRETTY_FUNCTION__.main, i64 0, i64 0)) #7
   unreachable
 
 ; <label>:10                                      ; preds = %0
@@ -47,7 +47,7 @@ define i32 @main() #0 {
   br i1 %16, label %18, label %17
 
 ; <label>:17                                      ; preds = %10
-  tail call void @__assert_fail(i8* getelementptr inbounds ([48 x i8]* @.str, i64 0, i64 0), i8* getelementptr inbounds ([19 x i8]* @.str1, i64 0, i64 0), i32 30, i8* getelementptr inbounds ([11 x i8]* @__PRETTY_FUNCTION__.main, i64 0, i64 0)) #7
+  tail call void @__assert_fail(i8* getelementptr inbounds ([48 x i8]* @.str, i64 0, i64 0), i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 30, i8* getelementptr inbounds ([11 x i8]* @__PRETTY_FUNCTION__.main, i64 0, i64 0)) #7
   unreachable
 
 ; <label>:18                                      ; preds = %10
@@ -62,7 +62,7 @@ define i32 @main() #0 {
   br i1 %24, label %26, label %25
 
 ; <label>:25                                      ; preds = %18
-  tail call void @__assert_fail(i8* getelementptr inbounds ([48 x i8]* @.str, i64 0, i64 0), i8* getelementptr inbounds ([19 x i8]* @.str1, i64 0, i64 0), i32 34, i8* getelementptr inbounds ([11 x i8]* @__PRETTY_FUNCTION__.main, i64 0, i64 0)) #7
+  tail call void @__assert_fail(i8* getelementptr inbounds ([48 x i8]* @.str, i64 0, i64 0), i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 34, i8* getelementptr inbounds ([11 x i8]* @__PRETTY_FUNCTION__.main, i64 0, i64 0)) #7
   unreachable
 
 ; <label>:26                                      ; preds = %18
@@ -77,7 +77,7 @@ define i32 @main() #0 {
   br i1 %32, label %34, label %33
 
 ; <label>:33                                      ; preds = %26
-  tail call void @__assert_fail(i8* getelementptr inbounds ([48 x i8]* @.str, i64 0, i64 0), i8* getelementptr inbounds ([19 x i8]* @.str1, i64 0, i64 0), i32 38, i8* getelementptr inbounds ([11 x i8]* @__PRETTY_FUNCTION__.main, i64 0, i64 0)) #7
+  tail call void @__assert_fail(i8* getelementptr inbounds ([48 x i8]* @.str, i64 0, i64 0), i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 38, i8* getelementptr inbounds ([11 x i8]* @__PRETTY_FUNCTION__.main, i64 0, i64 0)) #7
   unreachable
 
 ; <label>:34                                      ; preds = %26
@@ -92,7 +92,7 @@ define i32 @main() #0 {
   br i1 %40, label %42, label %41
 
 ; <label>:41                                      ; preds = %34
-  tail call void @__assert_fail(i8* getelementptr inbounds ([48 x i8]* @.str, i64 0, i64 0), i8* getelementptr inbounds ([19 x i8]* @.str1, i64 0, i64 0), i32 42, i8* getelementptr inbounds ([11 x i8]* @__PRETTY_FUNCTION__.main, i64 0, i64 0)) #7
+  tail call void @__assert_fail(i8* getelementptr inbounds ([48 x i8]* @.str, i64 0, i64 0), i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 42, i8* getelementptr inbounds ([11 x i8]* @__PRETTY_FUNCTION__.main, i64 0, i64 0)) #7
   unreachable
 
 ; <label>:42                                      ; preds = %34
@@ -107,7 +107,7 @@ define i32 @main() #0 {
   br i1 %48, label %50, label %49
 
 ; <label>:49                                      ; preds = %42
-  tail call void @__assert_fail(i8* getelementptr inbounds ([48 x i8]* @.str, i64 0, i64 0), i8* getelementptr inbounds ([19 x i8]* @.str1, i64 0, i64 0), i32 46, i8* getelementptr inbounds ([11 x i8]* @__PRETTY_FUNCTION__.main, i64 0, i64 0)) #7
+  tail call void @__assert_fail(i8* getelementptr inbounds ([48 x i8]* @.str, i64 0, i64 0), i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 46, i8* getelementptr inbounds ([11 x i8]* @__PRETTY_FUNCTION__.main, i64 0, i64 0)) #7
   unreachable
 
 ; <label>:50                                      ; preds = %42
@@ -122,7 +122,7 @@ define i32 @main() #0 {
   br i1 %56, label %58, label %57
 
 ; <label>:57                                      ; preds = %50
-  tail call void @__assert_fail(i8* getelementptr inbounds ([48 x i8]* @.str, i64 0, i64 0), i8* getelementptr inbounds ([19 x i8]* @.str1, i64 0, i64 0), i32 50, i8* getelementptr inbounds ([11 x i8]* @__PRETTY_FUNCTION__.main, i64 0, i64 0)) #7
+  tail call void @__assert_fail(i8* getelementptr inbounds ([48 x i8]* @.str, i64 0, i64 0), i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 50, i8* getelementptr inbounds ([11 x i8]* @__PRETTY_FUNCTION__.main, i64 0, i64 0)) #7
   unreachable
 
 ; <label>:58                                      ; preds = %50
@@ -137,7 +137,7 @@ define i32 @main() #0 {
   br i1 %64, label %66, label %65
 
 ; <label>:65                                      ; preds = %58
-  tail call void @__assert_fail(i8* getelementptr inbounds ([48 x i8]* @.str, i64 0, i64 0), i8* getelementptr inbounds ([19 x i8]* @.str1, i64 0, i64 0), i32 54, i8* getelementptr inbounds ([11 x i8]* @__PRETTY_FUNCTION__.main, i64 0, i64 0)) #7
+  tail call void @__assert_fail(i8* getelementptr inbounds ([48 x i8]* @.str, i64 0, i64 0), i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 54, i8* getelementptr inbounds ([11 x i8]* @__PRETTY_FUNCTION__.main, i64 0, i64 0)) #7
   unreachable
 
 ; <label>:66                                      ; preds = %58
@@ -152,7 +152,7 @@ define i32 @main() #0 {
   br i1 %72, label %74, label %73
 
 ; <label>:73                                      ; preds = %66
-  tail call void @__assert_fail(i8* getelementptr inbounds ([48 x i8]* @.str, i64 0, i64 0), i8* getelementptr inbounds ([19 x i8]* @.str1, i64 0, i64 0), i32 58, i8* getelementptr inbounds ([11 x i8]* @__PRETTY_FUNCTION__.main, i64 0, i64 0)) #7
+  tail call void @__assert_fail(i8* getelementptr inbounds ([48 x i8]* @.str, i64 0, i64 0), i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 58, i8* getelementptr inbounds ([11 x i8]* @__PRETTY_FUNCTION__.main, i64 0, i64 0)) #7
   unreachable
 
 ; <label>:74                                      ; preds = %66
@@ -167,11 +167,11 @@ define i32 @main() #0 {
   br i1 %80, label %82, label %81
 
 ; <label>:81                                      ; preds = %74
-  tail call void @__assert_fail(i8* getelementptr inbounds ([48 x i8]* @.str, i64 0, i64 0), i8* getelementptr inbounds ([19 x i8]* @.str1, i64 0, i64 0), i32 62, i8* getelementptr inbounds ([11 x i8]* @__PRETTY_FUNCTION__.main, i64 0, i64 0)) #7
+  tail call void @__assert_fail(i8* getelementptr inbounds ([48 x i8]* @.str, i64 0, i64 0), i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 62, i8* getelementptr inbounds ([11 x i8]* @__PRETTY_FUNCTION__.main, i64 0, i64 0)) #7
   unreachable
 
 ; <label>:82                                      ; preds = %74
-  %83 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([5 x i8]* @.str2, i64 0, i64 0)) #5
+  %83 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([5 x i8]* @.str2, i64 0, i64 0))
   ret i32 0
 }
 

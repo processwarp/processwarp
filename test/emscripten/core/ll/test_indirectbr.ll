@@ -2,7 +2,7 @@
 target datalayout = "e-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-pc-linux-gnu"
 
-@_ZZ4mainE5addrs = private unnamed_addr constant [2 x i8*] [i8* blockaddress(@main, %12), i8* blockaddress(@main, %15)], align 16
+@main.addrs = private unnamed_addr constant [2 x i8*] [i8* blockaddress(@main, %12), i8* blockaddress(@main, %15)], align 16
 @str = private unnamed_addr constant [5 x i8] c"good\00"
 @str2 = private unnamed_addr constant [4 x i8] c"bad\00"
 
@@ -24,7 +24,7 @@ define i32 @main() #0 {
   %7 = srem i32 %4, 2
   %8 = add nsw i32 %7, 1
   %9 = sext i32 %8 to i64
-  %10 = getelementptr inbounds [2 x i8*]* @_ZZ4mainE5addrs, i64 0, i64 %9
+  %10 = getelementptr inbounds [2 x i8*]* @main.addrs, i64 0, i64 %9
   %11 = load i8** %10, align 8, !tbaa !1
   br label %13
 

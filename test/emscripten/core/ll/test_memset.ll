@@ -31,2495 +31,1757 @@ define i32 @main() #0 {
   store i8 %6, i8* %7, align 1, !tbaa !1
   %indvars.iv.next714 = add nuw nsw i64 %indvars.iv713, 1
   %exitcond715 = icmp eq i64 %indvars.iv.next714, 10240
-  br i1 %exitcond715, label %vector.ph2024, label %2
+  br i1 %exitcond715, label %8, label %2
 
-vector.ph2024:                                    ; preds = %2
-  %8 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 1
-  store i8 -91, i8* %8, align 1
-  br label %vector.body2025
+; <label>:8                                       ; preds = %2
+  %9 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 1
+  store i8 -91, i8* %9, align 1
+  br label %10
 
-vector.body2025:                                  ; preds = %vector.body2025, %vector.ph2024
-  %index2028 = phi i64 [ 0, %vector.ph2024 ], [ %index.next2032, %vector.body2025 ]
-  %vec.phi2037 = phi <4 x i32> [ zeroinitializer, %vector.ph2024 ], [ %15, %vector.body2025 ]
-  %vec.phi2038 = phi <4 x i32> [ zeroinitializer, %vector.ph2024 ], [ %16, %vector.body2025 ]
-  %9 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %index2028
-  %10 = bitcast i8* %9 to <4 x i8>*
-  %wide.load2039 = load <4 x i8>* %10, align 8
-  %.sum2048 = or i64 %index2028, 4
-  %11 = getelementptr [10240 x i8]* %buffer, i64 0, i64 %.sum2048
-  %12 = bitcast i8* %11 to <4 x i8>*
-  %wide.load2040 = load <4 x i8>* %12, align 4
-  %13 = zext <4 x i8> %wide.load2039 to <4 x i32>
-  %14 = zext <4 x i8> %wide.load2040 to <4 x i32>
-  %15 = add nsw <4 x i32> %13, %vec.phi2037
-  %16 = add nsw <4 x i32> %14, %vec.phi2038
-  %index.next2032 = add i64 %index2028, 8
-  %17 = icmp eq i64 %index.next2032, 10240
-  br i1 %17, label %middle.block2026, label %vector.body2025, !llvm.loop !4
+; <label>:10                                      ; preds = %10, %8
+  %indvars.iv710 = phi i64 [ 0, %8 ], [ %indvars.iv.next711, %10 ]
+  %v.0333 = phi i32 [ 0, %8 ], [ %14, %10 ]
+  %11 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv710
+  %12 = load i8* %11, align 1, !tbaa !1
+  %13 = zext i8 %12 to i32
+  %14 = add nsw i32 %13, %v.0333
+  %indvars.iv.next711 = add nuw nsw i64 %indvars.iv710, 1
+  %exitcond712 = icmp eq i64 %indvars.iv.next711, 10240
+  br i1 %exitcond712, label %15, label %10
 
-middle.block2026:                                 ; preds = %vector.body2025
-  %bin.rdx2043 = add <4 x i32> %16, %15
-  %rdx.shuf2044 = shufflevector <4 x i32> %bin.rdx2043, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx2045 = add <4 x i32> %bin.rdx2043, %rdx.shuf2044
-  %rdx.shuf2046 = shufflevector <4 x i32> %bin.rdx2045, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx2047 = add <4 x i32> %bin.rdx2045, %rdx.shuf2046
-  %18 = extractelement <4 x i32> %bin.rdx2047, i32 0
-  %19 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 1, i32 %18) #2
-  br label %20
+; <label>:15                                      ; preds = %10
+  %16 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 1, i32 %14) #2
+  br label %17
 
-; <label>:20                                      ; preds = %20, %middle.block2026
-  %indvars.iv706 = phi i64 [ 0, %middle.block2026 ], [ %indvars.iv.next707, %20 ]
-  %21 = load volatile i32* %seed, align 4
-  %22 = trunc i64 %indvars.iv706 to i32
-  %23 = mul nsw i32 %21, %22
-  %24 = trunc i32 %23 to i8
-  %25 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv706
-  store i8 %24, i8* %25, align 1, !tbaa !1
+; <label>:17                                      ; preds = %17, %15
+  %indvars.iv706 = phi i64 [ 0, %15 ], [ %indvars.iv.next707, %17 ]
+  %18 = load volatile i32* %seed, align 4
+  %19 = trunc i64 %indvars.iv706 to i32
+  %20 = mul nsw i32 %18, %19
+  %21 = trunc i32 %20 to i8
+  %22 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv706
+  store i8 %21, i8* %22, align 1, !tbaa !1
   %indvars.iv.next707 = add nuw nsw i64 %indvars.iv706, 1
   %exitcond708 = icmp eq i64 %indvars.iv.next707, 10240
-  br i1 %exitcond708, label %vector.ph2000, label %20
+  br i1 %exitcond708, label %23, label %17
 
-vector.ph2000:                                    ; preds = %20
-  %26 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 2
-  %27 = bitcast i8* %26 to i16*
-  store i16 -23131, i16* %27, align 2
-  br label %vector.body2001
+; <label>:23                                      ; preds = %17
+  %24 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 2
+  %25 = bitcast i8* %24 to i16*
+  store i16 -23131, i16* %25, align 2
+  br label %26
 
-vector.body2001:                                  ; preds = %vector.body2001, %vector.ph2000
-  %index2004 = phi i64 [ 0, %vector.ph2000 ], [ %index.next2008, %vector.body2001 ]
-  %vec.phi2013 = phi <4 x i32> [ zeroinitializer, %vector.ph2000 ], [ %34, %vector.body2001 ]
-  %vec.phi2014 = phi <4 x i32> [ zeroinitializer, %vector.ph2000 ], [ %35, %vector.body2001 ]
-  %28 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %index2004
-  %29 = bitcast i8* %28 to <4 x i8>*
-  %wide.load2015 = load <4 x i8>* %29, align 8
-  %.sum2049 = or i64 %index2004, 4
-  %30 = getelementptr [10240 x i8]* %buffer, i64 0, i64 %.sum2049
-  %31 = bitcast i8* %30 to <4 x i8>*
-  %wide.load2016 = load <4 x i8>* %31, align 4
-  %32 = zext <4 x i8> %wide.load2015 to <4 x i32>
-  %33 = zext <4 x i8> %wide.load2016 to <4 x i32>
-  %34 = add nsw <4 x i32> %32, %vec.phi2013
-  %35 = add nsw <4 x i32> %33, %vec.phi2014
-  %index.next2008 = add i64 %index2004, 8
-  %36 = icmp eq i64 %index.next2008, 10240
-  br i1 %36, label %middle.block2002, label %vector.body2001, !llvm.loop !7
+; <label>:26                                      ; preds = %26, %23
+  %indvars.iv703 = phi i64 [ 0, %23 ], [ %indvars.iv.next704, %26 ]
+  %v3.0330 = phi i32 [ 0, %23 ], [ %30, %26 ]
+  %27 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv703
+  %28 = load i8* %27, align 1, !tbaa !1
+  %29 = zext i8 %28 to i32
+  %30 = add nsw i32 %29, %v3.0330
+  %indvars.iv.next704 = add nuw nsw i64 %indvars.iv703, 1
+  %exitcond705 = icmp eq i64 %indvars.iv.next704, 10240
+  br i1 %exitcond705, label %31, label %26
 
-middle.block2002:                                 ; preds = %vector.body2001
-  %bin.rdx2019 = add <4 x i32> %35, %34
-  %rdx.shuf2020 = shufflevector <4 x i32> %bin.rdx2019, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx2021 = add <4 x i32> %bin.rdx2019, %rdx.shuf2020
-  %rdx.shuf2022 = shufflevector <4 x i32> %bin.rdx2021, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx2023 = add <4 x i32> %bin.rdx2021, %rdx.shuf2022
-  %37 = extractelement <4 x i32> %bin.rdx2023, i32 0
-  %38 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 2, i32 %37) #2
-  br label %39
+; <label>:31                                      ; preds = %26
+  %32 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 2, i32 %30) #2
+  br label %33
 
-; <label>:39                                      ; preds = %39, %middle.block2002
-  %indvars.iv699 = phi i64 [ 0, %middle.block2002 ], [ %indvars.iv.next700, %39 ]
-  %40 = load volatile i32* %seed, align 4
-  %41 = trunc i64 %indvars.iv699 to i32
-  %42 = mul nsw i32 %40, %41
-  %43 = trunc i32 %42 to i8
-  %44 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv699
-  store i8 %43, i8* %44, align 1, !tbaa !1
+; <label>:33                                      ; preds = %33, %31
+  %indvars.iv699 = phi i64 [ 0, %31 ], [ %indvars.iv.next700, %33 ]
+  %34 = load volatile i32* %seed, align 4
+  %35 = trunc i64 %indvars.iv699 to i32
+  %36 = mul nsw i32 %34, %35
+  %37 = trunc i32 %36 to i8
+  %38 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv699
+  store i8 %37, i8* %38, align 1, !tbaa !1
   %indvars.iv.next700 = add nuw nsw i64 %indvars.iv699, 1
   %exitcond701 = icmp eq i64 %indvars.iv.next700, 10240
-  br i1 %exitcond701, label %vector.ph1976, label %39
+  br i1 %exitcond701, label %39, label %33
 
-vector.ph1976:                                    ; preds = %39
-  %45 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 3
-  call void @llvm.memset.p0i8.i64(i8* %45, i8 -91, i64 3, i32 1, i1 false)
-  br label %vector.body1977
+; <label>:39                                      ; preds = %33
+  %40 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 3
+  call void @llvm.memset.p0i8.i64(i8* %40, i8 -91, i64 3, i32 1, i1 false)
+  br label %41
 
-vector.body1977:                                  ; preds = %vector.body1977, %vector.ph1976
-  %index1980 = phi i64 [ 0, %vector.ph1976 ], [ %index.next1984, %vector.body1977 ]
-  %vec.phi1989 = phi <4 x i32> [ zeroinitializer, %vector.ph1976 ], [ %52, %vector.body1977 ]
-  %vec.phi1990 = phi <4 x i32> [ zeroinitializer, %vector.ph1976 ], [ %53, %vector.body1977 ]
-  %46 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %index1980
-  %47 = bitcast i8* %46 to <4 x i8>*
-  %wide.load1991 = load <4 x i8>* %47, align 8
-  %.sum2050 = or i64 %index1980, 4
-  %48 = getelementptr [10240 x i8]* %buffer, i64 0, i64 %.sum2050
-  %49 = bitcast i8* %48 to <4 x i8>*
-  %wide.load1992 = load <4 x i8>* %49, align 4
-  %50 = zext <4 x i8> %wide.load1991 to <4 x i32>
-  %51 = zext <4 x i8> %wide.load1992 to <4 x i32>
-  %52 = add nsw <4 x i32> %50, %vec.phi1989
-  %53 = add nsw <4 x i32> %51, %vec.phi1990
-  %index.next1984 = add i64 %index1980, 8
-  %54 = icmp eq i64 %index.next1984, 10240
-  br i1 %54, label %middle.block1978, label %vector.body1977, !llvm.loop !8
+; <label>:41                                      ; preds = %41, %39
+  %indvars.iv696 = phi i64 [ 0, %39 ], [ %indvars.iv.next697, %41 ]
+  %v6.0327 = phi i32 [ 0, %39 ], [ %45, %41 ]
+  %42 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv696
+  %43 = load i8* %42, align 1, !tbaa !1
+  %44 = zext i8 %43 to i32
+  %45 = add nsw i32 %44, %v6.0327
+  %indvars.iv.next697 = add nuw nsw i64 %indvars.iv696, 1
+  %exitcond698 = icmp eq i64 %indvars.iv.next697, 10240
+  br i1 %exitcond698, label %46, label %41
 
-middle.block1978:                                 ; preds = %vector.body1977
-  %bin.rdx1995 = add <4 x i32> %53, %52
-  %rdx.shuf1996 = shufflevector <4 x i32> %bin.rdx1995, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1997 = add <4 x i32> %bin.rdx1995, %rdx.shuf1996
-  %rdx.shuf1998 = shufflevector <4 x i32> %bin.rdx1997, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1999 = add <4 x i32> %bin.rdx1997, %rdx.shuf1998
-  %55 = extractelement <4 x i32> %bin.rdx1999, i32 0
-  %56 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 3, i32 %55) #2
-  br label %57
+; <label>:46                                      ; preds = %41
+  %47 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 3, i32 %45) #2
+  br label %48
 
-; <label>:57                                      ; preds = %57, %middle.block1978
-  %indvars.iv692 = phi i64 [ 0, %middle.block1978 ], [ %indvars.iv.next693, %57 ]
-  %58 = load volatile i32* %seed, align 4
-  %59 = trunc i64 %indvars.iv692 to i32
-  %60 = mul nsw i32 %58, %59
-  %61 = trunc i32 %60 to i8
-  %62 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv692
-  store i8 %61, i8* %62, align 1, !tbaa !1
+; <label>:48                                      ; preds = %48, %46
+  %indvars.iv692 = phi i64 [ 0, %46 ], [ %indvars.iv.next693, %48 ]
+  %49 = load volatile i32* %seed, align 4
+  %50 = trunc i64 %indvars.iv692 to i32
+  %51 = mul nsw i32 %49, %50
+  %52 = trunc i32 %51 to i8
+  %53 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv692
+  store i8 %52, i8* %53, align 1, !tbaa !1
   %indvars.iv.next693 = add nuw nsw i64 %indvars.iv692, 1
   %exitcond694 = icmp eq i64 %indvars.iv.next693, 10240
-  br i1 %exitcond694, label %vector.ph1952, label %57
+  br i1 %exitcond694, label %54, label %48
 
-vector.ph1952:                                    ; preds = %57
-  %63 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 4
-  %64 = bitcast i8* %63 to i32*
-  store i32 -1515870811, i32* %64, align 4
-  br label %vector.body1953
+; <label>:54                                      ; preds = %48
+  %55 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 4
+  %56 = bitcast i8* %55 to i32*
+  store i32 -1515870811, i32* %56, align 4
+  br label %57
 
-vector.body1953:                                  ; preds = %vector.body1953, %vector.ph1952
-  %index1956 = phi i64 [ 0, %vector.ph1952 ], [ %index.next1960, %vector.body1953 ]
-  %vec.phi1965 = phi <4 x i32> [ zeroinitializer, %vector.ph1952 ], [ %71, %vector.body1953 ]
-  %vec.phi1966 = phi <4 x i32> [ zeroinitializer, %vector.ph1952 ], [ %72, %vector.body1953 ]
-  %65 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %index1956
-  %66 = bitcast i8* %65 to <4 x i8>*
-  %wide.load1967 = load <4 x i8>* %66, align 8
-  %.sum2051 = or i64 %index1956, 4
-  %67 = getelementptr [10240 x i8]* %buffer, i64 0, i64 %.sum2051
-  %68 = bitcast i8* %67 to <4 x i8>*
-  %wide.load1968 = load <4 x i8>* %68, align 4
-  %69 = zext <4 x i8> %wide.load1967 to <4 x i32>
-  %70 = zext <4 x i8> %wide.load1968 to <4 x i32>
-  %71 = add nsw <4 x i32> %69, %vec.phi1965
-  %72 = add nsw <4 x i32> %70, %vec.phi1966
-  %index.next1960 = add i64 %index1956, 8
-  %73 = icmp eq i64 %index.next1960, 10240
-  br i1 %73, label %middle.block1954, label %vector.body1953, !llvm.loop !9
+; <label>:57                                      ; preds = %57, %54
+  %indvars.iv689 = phi i64 [ 0, %54 ], [ %indvars.iv.next690, %57 ]
+  %v9.0324 = phi i32 [ 0, %54 ], [ %61, %57 ]
+  %58 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv689
+  %59 = load i8* %58, align 1, !tbaa !1
+  %60 = zext i8 %59 to i32
+  %61 = add nsw i32 %60, %v9.0324
+  %indvars.iv.next690 = add nuw nsw i64 %indvars.iv689, 1
+  %exitcond691 = icmp eq i64 %indvars.iv.next690, 10240
+  br i1 %exitcond691, label %62, label %57
 
-middle.block1954:                                 ; preds = %vector.body1953
-  %bin.rdx1971 = add <4 x i32> %72, %71
-  %rdx.shuf1972 = shufflevector <4 x i32> %bin.rdx1971, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1973 = add <4 x i32> %bin.rdx1971, %rdx.shuf1972
-  %rdx.shuf1974 = shufflevector <4 x i32> %bin.rdx1973, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1975 = add <4 x i32> %bin.rdx1973, %rdx.shuf1974
-  %74 = extractelement <4 x i32> %bin.rdx1975, i32 0
-  %75 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 4, i32 %74) #2
-  br label %76
+; <label>:62                                      ; preds = %57
+  %63 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 4, i32 %61) #2
+  br label %64
 
-; <label>:76                                      ; preds = %76, %middle.block1954
-  %indvars.iv685 = phi i64 [ 0, %middle.block1954 ], [ %indvars.iv.next686, %76 ]
-  %77 = load volatile i32* %seed, align 4
-  %78 = trunc i64 %indvars.iv685 to i32
-  %79 = mul nsw i32 %77, %78
-  %80 = trunc i32 %79 to i8
-  %81 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv685
-  store i8 %80, i8* %81, align 1, !tbaa !1
+; <label>:64                                      ; preds = %64, %62
+  %indvars.iv685 = phi i64 [ 0, %62 ], [ %indvars.iv.next686, %64 ]
+  %65 = load volatile i32* %seed, align 4
+  %66 = trunc i64 %indvars.iv685 to i32
+  %67 = mul nsw i32 %65, %66
+  %68 = trunc i32 %67 to i8
+  %69 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv685
+  store i8 %68, i8* %69, align 1, !tbaa !1
   %indvars.iv.next686 = add nuw nsw i64 %indvars.iv685, 1
   %exitcond687 = icmp eq i64 %indvars.iv.next686, 10240
-  br i1 %exitcond687, label %vector.ph1928, label %76
+  br i1 %exitcond687, label %70, label %64
 
-vector.ph1928:                                    ; preds = %76
-  %82 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 5
-  call void @llvm.memset.p0i8.i64(i8* %82, i8 -91, i64 5, i32 1, i1 false)
-  br label %vector.body1929
+; <label>:70                                      ; preds = %64
+  %71 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 5
+  call void @llvm.memset.p0i8.i64(i8* %71, i8 -91, i64 5, i32 1, i1 false)
+  br label %72
 
-vector.body1929:                                  ; preds = %vector.body1929, %vector.ph1928
-  %index1932 = phi i64 [ 0, %vector.ph1928 ], [ %index.next1936, %vector.body1929 ]
-  %vec.phi1941 = phi <4 x i32> [ zeroinitializer, %vector.ph1928 ], [ %89, %vector.body1929 ]
-  %vec.phi1942 = phi <4 x i32> [ zeroinitializer, %vector.ph1928 ], [ %90, %vector.body1929 ]
-  %83 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %index1932
-  %84 = bitcast i8* %83 to <4 x i8>*
-  %wide.load1943 = load <4 x i8>* %84, align 8
-  %.sum2052 = or i64 %index1932, 4
-  %85 = getelementptr [10240 x i8]* %buffer, i64 0, i64 %.sum2052
-  %86 = bitcast i8* %85 to <4 x i8>*
-  %wide.load1944 = load <4 x i8>* %86, align 4
-  %87 = zext <4 x i8> %wide.load1943 to <4 x i32>
-  %88 = zext <4 x i8> %wide.load1944 to <4 x i32>
-  %89 = add nsw <4 x i32> %87, %vec.phi1941
-  %90 = add nsw <4 x i32> %88, %vec.phi1942
-  %index.next1936 = add i64 %index1932, 8
-  %91 = icmp eq i64 %index.next1936, 10240
-  br i1 %91, label %middle.block1930, label %vector.body1929, !llvm.loop !10
+; <label>:72                                      ; preds = %72, %70
+  %indvars.iv682 = phi i64 [ 0, %70 ], [ %indvars.iv.next683, %72 ]
+  %v12.0321 = phi i32 [ 0, %70 ], [ %76, %72 ]
+  %73 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv682
+  %74 = load i8* %73, align 1, !tbaa !1
+  %75 = zext i8 %74 to i32
+  %76 = add nsw i32 %75, %v12.0321
+  %indvars.iv.next683 = add nuw nsw i64 %indvars.iv682, 1
+  %exitcond684 = icmp eq i64 %indvars.iv.next683, 10240
+  br i1 %exitcond684, label %77, label %72
 
-middle.block1930:                                 ; preds = %vector.body1929
-  %bin.rdx1947 = add <4 x i32> %90, %89
-  %rdx.shuf1948 = shufflevector <4 x i32> %bin.rdx1947, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1949 = add <4 x i32> %bin.rdx1947, %rdx.shuf1948
-  %rdx.shuf1950 = shufflevector <4 x i32> %bin.rdx1949, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1951 = add <4 x i32> %bin.rdx1949, %rdx.shuf1950
-  %92 = extractelement <4 x i32> %bin.rdx1951, i32 0
-  %93 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 5, i32 %92) #2
-  br label %94
+; <label>:77                                      ; preds = %72
+  %78 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 5, i32 %76) #2
+  br label %79
 
-; <label>:94                                      ; preds = %94, %middle.block1930
-  %indvars.iv678 = phi i64 [ 0, %middle.block1930 ], [ %indvars.iv.next679, %94 ]
-  %95 = load volatile i32* %seed, align 4
-  %96 = trunc i64 %indvars.iv678 to i32
-  %97 = mul nsw i32 %95, %96
-  %98 = trunc i32 %97 to i8
-  %99 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv678
-  store i8 %98, i8* %99, align 1, !tbaa !1
+; <label>:79                                      ; preds = %79, %77
+  %indvars.iv678 = phi i64 [ 0, %77 ], [ %indvars.iv.next679, %79 ]
+  %80 = load volatile i32* %seed, align 4
+  %81 = trunc i64 %indvars.iv678 to i32
+  %82 = mul nsw i32 %80, %81
+  %83 = trunc i32 %82 to i8
+  %84 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv678
+  store i8 %83, i8* %84, align 1, !tbaa !1
   %indvars.iv.next679 = add nuw nsw i64 %indvars.iv678, 1
   %exitcond680 = icmp eq i64 %indvars.iv.next679, 10240
-  br i1 %exitcond680, label %vector.ph1904, label %94
+  br i1 %exitcond680, label %85, label %79
 
-vector.ph1904:                                    ; preds = %94
-  %100 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 6
-  call void @llvm.memset.p0i8.i64(i8* %100, i8 -91, i64 6, i32 2, i1 false)
-  br label %vector.body1905
+; <label>:85                                      ; preds = %79
+  %86 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 6
+  call void @llvm.memset.p0i8.i64(i8* %86, i8 -91, i64 6, i32 2, i1 false)
+  br label %87
 
-vector.body1905:                                  ; preds = %vector.body1905, %vector.ph1904
-  %index1908 = phi i64 [ 0, %vector.ph1904 ], [ %index.next1912, %vector.body1905 ]
-  %vec.phi1917 = phi <4 x i32> [ zeroinitializer, %vector.ph1904 ], [ %107, %vector.body1905 ]
-  %vec.phi1918 = phi <4 x i32> [ zeroinitializer, %vector.ph1904 ], [ %108, %vector.body1905 ]
-  %101 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %index1908
-  %102 = bitcast i8* %101 to <4 x i8>*
-  %wide.load1919 = load <4 x i8>* %102, align 8
-  %.sum2053 = or i64 %index1908, 4
-  %103 = getelementptr [10240 x i8]* %buffer, i64 0, i64 %.sum2053
-  %104 = bitcast i8* %103 to <4 x i8>*
-  %wide.load1920 = load <4 x i8>* %104, align 4
-  %105 = zext <4 x i8> %wide.load1919 to <4 x i32>
-  %106 = zext <4 x i8> %wide.load1920 to <4 x i32>
-  %107 = add nsw <4 x i32> %105, %vec.phi1917
-  %108 = add nsw <4 x i32> %106, %vec.phi1918
-  %index.next1912 = add i64 %index1908, 8
-  %109 = icmp eq i64 %index.next1912, 10240
-  br i1 %109, label %middle.block1906, label %vector.body1905, !llvm.loop !11
+; <label>:87                                      ; preds = %87, %85
+  %indvars.iv675 = phi i64 [ 0, %85 ], [ %indvars.iv.next676, %87 ]
+  %v15.0318 = phi i32 [ 0, %85 ], [ %91, %87 ]
+  %88 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv675
+  %89 = load i8* %88, align 1, !tbaa !1
+  %90 = zext i8 %89 to i32
+  %91 = add nsw i32 %90, %v15.0318
+  %indvars.iv.next676 = add nuw nsw i64 %indvars.iv675, 1
+  %exitcond677 = icmp eq i64 %indvars.iv.next676, 10240
+  br i1 %exitcond677, label %92, label %87
 
-middle.block1906:                                 ; preds = %vector.body1905
-  %bin.rdx1923 = add <4 x i32> %108, %107
-  %rdx.shuf1924 = shufflevector <4 x i32> %bin.rdx1923, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1925 = add <4 x i32> %bin.rdx1923, %rdx.shuf1924
-  %rdx.shuf1926 = shufflevector <4 x i32> %bin.rdx1925, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1927 = add <4 x i32> %bin.rdx1925, %rdx.shuf1926
-  %110 = extractelement <4 x i32> %bin.rdx1927, i32 0
-  %111 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 6, i32 %110) #2
-  br label %112
+; <label>:92                                      ; preds = %87
+  %93 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 6, i32 %91) #2
+  br label %94
 
-; <label>:112                                     ; preds = %112, %middle.block1906
-  %indvars.iv671 = phi i64 [ 0, %middle.block1906 ], [ %indvars.iv.next672, %112 ]
-  %113 = load volatile i32* %seed, align 4
-  %114 = trunc i64 %indvars.iv671 to i32
-  %115 = mul nsw i32 %113, %114
-  %116 = trunc i32 %115 to i8
-  %117 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv671
-  store i8 %116, i8* %117, align 1, !tbaa !1
+; <label>:94                                      ; preds = %94, %92
+  %indvars.iv671 = phi i64 [ 0, %92 ], [ %indvars.iv.next672, %94 ]
+  %95 = load volatile i32* %seed, align 4
+  %96 = trunc i64 %indvars.iv671 to i32
+  %97 = mul nsw i32 %95, %96
+  %98 = trunc i32 %97 to i8
+  %99 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv671
+  store i8 %98, i8* %99, align 1, !tbaa !1
   %indvars.iv.next672 = add nuw nsw i64 %indvars.iv671, 1
   %exitcond673 = icmp eq i64 %indvars.iv.next672, 10240
-  br i1 %exitcond673, label %vector.ph1880, label %112
+  br i1 %exitcond673, label %100, label %94
 
-vector.ph1880:                                    ; preds = %112
-  %118 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 7
-  call void @llvm.memset.p0i8.i64(i8* %118, i8 -91, i64 7, i32 1, i1 false)
-  br label %vector.body1881
+; <label>:100                                     ; preds = %94
+  %101 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 7
+  call void @llvm.memset.p0i8.i64(i8* %101, i8 -91, i64 7, i32 1, i1 false)
+  br label %102
 
-vector.body1881:                                  ; preds = %vector.body1881, %vector.ph1880
-  %index1884 = phi i64 [ 0, %vector.ph1880 ], [ %index.next1888, %vector.body1881 ]
-  %vec.phi1893 = phi <4 x i32> [ zeroinitializer, %vector.ph1880 ], [ %125, %vector.body1881 ]
-  %vec.phi1894 = phi <4 x i32> [ zeroinitializer, %vector.ph1880 ], [ %126, %vector.body1881 ]
-  %119 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %index1884
-  %120 = bitcast i8* %119 to <4 x i8>*
-  %wide.load1895 = load <4 x i8>* %120, align 8
-  %.sum2054 = or i64 %index1884, 4
-  %121 = getelementptr [10240 x i8]* %buffer, i64 0, i64 %.sum2054
-  %122 = bitcast i8* %121 to <4 x i8>*
-  %wide.load1896 = load <4 x i8>* %122, align 4
-  %123 = zext <4 x i8> %wide.load1895 to <4 x i32>
-  %124 = zext <4 x i8> %wide.load1896 to <4 x i32>
-  %125 = add nsw <4 x i32> %123, %vec.phi1893
-  %126 = add nsw <4 x i32> %124, %vec.phi1894
-  %index.next1888 = add i64 %index1884, 8
-  %127 = icmp eq i64 %index.next1888, 10240
-  br i1 %127, label %middle.block1882, label %vector.body1881, !llvm.loop !12
+; <label>:102                                     ; preds = %102, %100
+  %indvars.iv668 = phi i64 [ 0, %100 ], [ %indvars.iv.next669, %102 ]
+  %v18.0315 = phi i32 [ 0, %100 ], [ %106, %102 ]
+  %103 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv668
+  %104 = load i8* %103, align 1, !tbaa !1
+  %105 = zext i8 %104 to i32
+  %106 = add nsw i32 %105, %v18.0315
+  %indvars.iv.next669 = add nuw nsw i64 %indvars.iv668, 1
+  %exitcond670 = icmp eq i64 %indvars.iv.next669, 10240
+  br i1 %exitcond670, label %107, label %102
 
-middle.block1882:                                 ; preds = %vector.body1881
-  %bin.rdx1899 = add <4 x i32> %126, %125
-  %rdx.shuf1900 = shufflevector <4 x i32> %bin.rdx1899, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1901 = add <4 x i32> %bin.rdx1899, %rdx.shuf1900
-  %rdx.shuf1902 = shufflevector <4 x i32> %bin.rdx1901, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1903 = add <4 x i32> %bin.rdx1901, %rdx.shuf1902
-  %128 = extractelement <4 x i32> %bin.rdx1903, i32 0
-  %129 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 7, i32 %128) #2
-  br label %130
+; <label>:107                                     ; preds = %102
+  %108 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 7, i32 %106) #2
+  br label %109
 
-; <label>:130                                     ; preds = %130, %middle.block1882
-  %indvars.iv664 = phi i64 [ 0, %middle.block1882 ], [ %indvars.iv.next665, %130 ]
-  %131 = load volatile i32* %seed, align 4
-  %132 = trunc i64 %indvars.iv664 to i32
-  %133 = mul nsw i32 %131, %132
-  %134 = trunc i32 %133 to i8
-  %135 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv664
-  store i8 %134, i8* %135, align 1, !tbaa !1
+; <label>:109                                     ; preds = %109, %107
+  %indvars.iv664 = phi i64 [ 0, %107 ], [ %indvars.iv.next665, %109 ]
+  %110 = load volatile i32* %seed, align 4
+  %111 = trunc i64 %indvars.iv664 to i32
+  %112 = mul nsw i32 %110, %111
+  %113 = trunc i32 %112 to i8
+  %114 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv664
+  store i8 %113, i8* %114, align 1, !tbaa !1
   %indvars.iv.next665 = add nuw nsw i64 %indvars.iv664, 1
   %exitcond666 = icmp eq i64 %indvars.iv.next665, 10240
-  br i1 %exitcond666, label %vector.ph1856, label %130
+  br i1 %exitcond666, label %115, label %109
 
-vector.ph1856:                                    ; preds = %130
-  %136 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 8
-  %137 = bitcast i8* %136 to i64*
-  store i64 -6510615555426900571, i64* %137, align 8
-  br label %vector.body1857
+; <label>:115                                     ; preds = %109
+  %116 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 8
+  %117 = bitcast i8* %116 to i64*
+  store i64 -6510615555426900571, i64* %117, align 8
+  br label %118
 
-vector.body1857:                                  ; preds = %vector.body1857, %vector.ph1856
-  %index1860 = phi i64 [ 0, %vector.ph1856 ], [ %index.next1864, %vector.body1857 ]
-  %vec.phi1869 = phi <4 x i32> [ zeroinitializer, %vector.ph1856 ], [ %144, %vector.body1857 ]
-  %vec.phi1870 = phi <4 x i32> [ zeroinitializer, %vector.ph1856 ], [ %145, %vector.body1857 ]
-  %138 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %index1860
-  %139 = bitcast i8* %138 to <4 x i8>*
-  %wide.load1871 = load <4 x i8>* %139, align 8
-  %.sum2055 = or i64 %index1860, 4
-  %140 = getelementptr [10240 x i8]* %buffer, i64 0, i64 %.sum2055
-  %141 = bitcast i8* %140 to <4 x i8>*
-  %wide.load1872 = load <4 x i8>* %141, align 4
-  %142 = zext <4 x i8> %wide.load1871 to <4 x i32>
-  %143 = zext <4 x i8> %wide.load1872 to <4 x i32>
-  %144 = add nsw <4 x i32> %142, %vec.phi1869
-  %145 = add nsw <4 x i32> %143, %vec.phi1870
-  %index.next1864 = add i64 %index1860, 8
-  %146 = icmp eq i64 %index.next1864, 10240
-  br i1 %146, label %middle.block1858, label %vector.body1857, !llvm.loop !13
+; <label>:118                                     ; preds = %118, %115
+  %indvars.iv661 = phi i64 [ 0, %115 ], [ %indvars.iv.next662, %118 ]
+  %v21.0312 = phi i32 [ 0, %115 ], [ %122, %118 ]
+  %119 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv661
+  %120 = load i8* %119, align 1, !tbaa !1
+  %121 = zext i8 %120 to i32
+  %122 = add nsw i32 %121, %v21.0312
+  %indvars.iv.next662 = add nuw nsw i64 %indvars.iv661, 1
+  %exitcond663 = icmp eq i64 %indvars.iv.next662, 10240
+  br i1 %exitcond663, label %123, label %118
 
-middle.block1858:                                 ; preds = %vector.body1857
-  %bin.rdx1875 = add <4 x i32> %145, %144
-  %rdx.shuf1876 = shufflevector <4 x i32> %bin.rdx1875, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1877 = add <4 x i32> %bin.rdx1875, %rdx.shuf1876
-  %rdx.shuf1878 = shufflevector <4 x i32> %bin.rdx1877, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1879 = add <4 x i32> %bin.rdx1877, %rdx.shuf1878
-  %147 = extractelement <4 x i32> %bin.rdx1879, i32 0
-  %148 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 8, i32 %147) #2
-  br label %149
+; <label>:123                                     ; preds = %118
+  %124 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 8, i32 %122) #2
+  br label %125
 
-; <label>:149                                     ; preds = %149, %middle.block1858
-  %indvars.iv657 = phi i64 [ 0, %middle.block1858 ], [ %indvars.iv.next658, %149 ]
-  %150 = load volatile i32* %seed, align 4
-  %151 = trunc i64 %indvars.iv657 to i32
-  %152 = mul nsw i32 %150, %151
-  %153 = trunc i32 %152 to i8
-  %154 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv657
-  store i8 %153, i8* %154, align 1, !tbaa !1
+; <label>:125                                     ; preds = %125, %123
+  %indvars.iv657 = phi i64 [ 0, %123 ], [ %indvars.iv.next658, %125 ]
+  %126 = load volatile i32* %seed, align 4
+  %127 = trunc i64 %indvars.iv657 to i32
+  %128 = mul nsw i32 %126, %127
+  %129 = trunc i32 %128 to i8
+  %130 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv657
+  store i8 %129, i8* %130, align 1, !tbaa !1
   %indvars.iv.next658 = add nuw nsw i64 %indvars.iv657, 1
   %exitcond659 = icmp eq i64 %indvars.iv.next658, 10240
-  br i1 %exitcond659, label %vector.ph1832, label %149
+  br i1 %exitcond659, label %131, label %125
 
-vector.ph1832:                                    ; preds = %149
-  %155 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 9
-  call void @llvm.memset.p0i8.i64(i8* %155, i8 -91, i64 9, i32 1, i1 false)
-  br label %vector.body1833
+; <label>:131                                     ; preds = %125
+  %132 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 9
+  call void @llvm.memset.p0i8.i64(i8* %132, i8 -91, i64 9, i32 1, i1 false)
+  br label %133
 
-vector.body1833:                                  ; preds = %vector.body1833, %vector.ph1832
-  %index1836 = phi i64 [ 0, %vector.ph1832 ], [ %index.next1840, %vector.body1833 ]
-  %vec.phi1845 = phi <4 x i32> [ zeroinitializer, %vector.ph1832 ], [ %162, %vector.body1833 ]
-  %vec.phi1846 = phi <4 x i32> [ zeroinitializer, %vector.ph1832 ], [ %163, %vector.body1833 ]
-  %156 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %index1836
-  %157 = bitcast i8* %156 to <4 x i8>*
-  %wide.load1847 = load <4 x i8>* %157, align 8
-  %.sum2056 = or i64 %index1836, 4
-  %158 = getelementptr [10240 x i8]* %buffer, i64 0, i64 %.sum2056
-  %159 = bitcast i8* %158 to <4 x i8>*
-  %wide.load1848 = load <4 x i8>* %159, align 4
-  %160 = zext <4 x i8> %wide.load1847 to <4 x i32>
-  %161 = zext <4 x i8> %wide.load1848 to <4 x i32>
-  %162 = add nsw <4 x i32> %160, %vec.phi1845
-  %163 = add nsw <4 x i32> %161, %vec.phi1846
-  %index.next1840 = add i64 %index1836, 8
-  %164 = icmp eq i64 %index.next1840, 10240
-  br i1 %164, label %middle.block1834, label %vector.body1833, !llvm.loop !14
+; <label>:133                                     ; preds = %133, %131
+  %indvars.iv654 = phi i64 [ 0, %131 ], [ %indvars.iv.next655, %133 ]
+  %v24.0309 = phi i32 [ 0, %131 ], [ %137, %133 ]
+  %134 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv654
+  %135 = load i8* %134, align 1, !tbaa !1
+  %136 = zext i8 %135 to i32
+  %137 = add nsw i32 %136, %v24.0309
+  %indvars.iv.next655 = add nuw nsw i64 %indvars.iv654, 1
+  %exitcond656 = icmp eq i64 %indvars.iv.next655, 10240
+  br i1 %exitcond656, label %138, label %133
 
-middle.block1834:                                 ; preds = %vector.body1833
-  %bin.rdx1851 = add <4 x i32> %163, %162
-  %rdx.shuf1852 = shufflevector <4 x i32> %bin.rdx1851, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1853 = add <4 x i32> %bin.rdx1851, %rdx.shuf1852
-  %rdx.shuf1854 = shufflevector <4 x i32> %bin.rdx1853, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1855 = add <4 x i32> %bin.rdx1853, %rdx.shuf1854
-  %165 = extractelement <4 x i32> %bin.rdx1855, i32 0
-  %166 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 9, i32 %165) #2
-  br label %167
+; <label>:138                                     ; preds = %133
+  %139 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 9, i32 %137) #2
+  br label %140
 
-; <label>:167                                     ; preds = %167, %middle.block1834
-  %indvars.iv650 = phi i64 [ 0, %middle.block1834 ], [ %indvars.iv.next651, %167 ]
-  %168 = load volatile i32* %seed, align 4
-  %169 = trunc i64 %indvars.iv650 to i32
-  %170 = mul nsw i32 %168, %169
-  %171 = trunc i32 %170 to i8
-  %172 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv650
-  store i8 %171, i8* %172, align 1, !tbaa !1
+; <label>:140                                     ; preds = %140, %138
+  %indvars.iv650 = phi i64 [ 0, %138 ], [ %indvars.iv.next651, %140 ]
+  %141 = load volatile i32* %seed, align 4
+  %142 = trunc i64 %indvars.iv650 to i32
+  %143 = mul nsw i32 %141, %142
+  %144 = trunc i32 %143 to i8
+  %145 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv650
+  store i8 %144, i8* %145, align 1, !tbaa !1
   %indvars.iv.next651 = add nuw nsw i64 %indvars.iv650, 1
   %exitcond652 = icmp eq i64 %indvars.iv.next651, 10240
-  br i1 %exitcond652, label %vector.ph1808, label %167
+  br i1 %exitcond652, label %146, label %140
 
-vector.ph1808:                                    ; preds = %167
-  %173 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 10
-  call void @llvm.memset.p0i8.i64(i8* %173, i8 -91, i64 10, i32 2, i1 false)
-  br label %vector.body1809
+; <label>:146                                     ; preds = %140
+  %147 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 10
+  call void @llvm.memset.p0i8.i64(i8* %147, i8 -91, i64 10, i32 2, i1 false)
+  br label %148
 
-vector.body1809:                                  ; preds = %vector.body1809, %vector.ph1808
-  %index1812 = phi i64 [ 0, %vector.ph1808 ], [ %index.next1816, %vector.body1809 ]
-  %vec.phi1821 = phi <4 x i32> [ zeroinitializer, %vector.ph1808 ], [ %180, %vector.body1809 ]
-  %vec.phi1822 = phi <4 x i32> [ zeroinitializer, %vector.ph1808 ], [ %181, %vector.body1809 ]
-  %174 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %index1812
-  %175 = bitcast i8* %174 to <4 x i8>*
-  %wide.load1823 = load <4 x i8>* %175, align 8
-  %.sum2057 = or i64 %index1812, 4
-  %176 = getelementptr [10240 x i8]* %buffer, i64 0, i64 %.sum2057
-  %177 = bitcast i8* %176 to <4 x i8>*
-  %wide.load1824 = load <4 x i8>* %177, align 4
-  %178 = zext <4 x i8> %wide.load1823 to <4 x i32>
-  %179 = zext <4 x i8> %wide.load1824 to <4 x i32>
-  %180 = add nsw <4 x i32> %178, %vec.phi1821
-  %181 = add nsw <4 x i32> %179, %vec.phi1822
-  %index.next1816 = add i64 %index1812, 8
-  %182 = icmp eq i64 %index.next1816, 10240
-  br i1 %182, label %middle.block1810, label %vector.body1809, !llvm.loop !15
+; <label>:148                                     ; preds = %148, %146
+  %indvars.iv647 = phi i64 [ 0, %146 ], [ %indvars.iv.next648, %148 ]
+  %v27.0306 = phi i32 [ 0, %146 ], [ %152, %148 ]
+  %149 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv647
+  %150 = load i8* %149, align 1, !tbaa !1
+  %151 = zext i8 %150 to i32
+  %152 = add nsw i32 %151, %v27.0306
+  %indvars.iv.next648 = add nuw nsw i64 %indvars.iv647, 1
+  %exitcond649 = icmp eq i64 %indvars.iv.next648, 10240
+  br i1 %exitcond649, label %153, label %148
 
-middle.block1810:                                 ; preds = %vector.body1809
-  %bin.rdx1827 = add <4 x i32> %181, %180
-  %rdx.shuf1828 = shufflevector <4 x i32> %bin.rdx1827, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1829 = add <4 x i32> %bin.rdx1827, %rdx.shuf1828
-  %rdx.shuf1830 = shufflevector <4 x i32> %bin.rdx1829, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1831 = add <4 x i32> %bin.rdx1829, %rdx.shuf1830
-  %183 = extractelement <4 x i32> %bin.rdx1831, i32 0
-  %184 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 10, i32 %183) #2
-  br label %185
+; <label>:153                                     ; preds = %148
+  %154 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 10, i32 %152) #2
+  br label %155
 
-; <label>:185                                     ; preds = %185, %middle.block1810
-  %indvars.iv643 = phi i64 [ 0, %middle.block1810 ], [ %indvars.iv.next644, %185 ]
-  %186 = load volatile i32* %seed, align 4
-  %187 = trunc i64 %indvars.iv643 to i32
-  %188 = mul nsw i32 %186, %187
-  %189 = trunc i32 %188 to i8
-  %190 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv643
-  store i8 %189, i8* %190, align 1, !tbaa !1
+; <label>:155                                     ; preds = %155, %153
+  %indvars.iv643 = phi i64 [ 0, %153 ], [ %indvars.iv.next644, %155 ]
+  %156 = load volatile i32* %seed, align 4
+  %157 = trunc i64 %indvars.iv643 to i32
+  %158 = mul nsw i32 %156, %157
+  %159 = trunc i32 %158 to i8
+  %160 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv643
+  store i8 %159, i8* %160, align 1, !tbaa !1
   %indvars.iv.next644 = add nuw nsw i64 %indvars.iv643, 1
   %exitcond645 = icmp eq i64 %indvars.iv.next644, 10240
-  br i1 %exitcond645, label %vector.ph1784, label %185
+  br i1 %exitcond645, label %161, label %155
 
-vector.ph1784:                                    ; preds = %185
-  %191 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 16
-  call void @llvm.memset.p0i8.i64(i8* %191, i8 -91, i64 16, i32 16, i1 false)
-  br label %vector.body1785
+; <label>:161                                     ; preds = %155
+  %162 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 16
+  call void @llvm.memset.p0i8.i64(i8* %162, i8 -91, i64 16, i32 16, i1 false)
+  br label %163
 
-vector.body1785:                                  ; preds = %vector.body1785, %vector.ph1784
-  %index1788 = phi i64 [ 0, %vector.ph1784 ], [ %index.next1792, %vector.body1785 ]
-  %vec.phi1797 = phi <4 x i32> [ zeroinitializer, %vector.ph1784 ], [ %198, %vector.body1785 ]
-  %vec.phi1798 = phi <4 x i32> [ zeroinitializer, %vector.ph1784 ], [ %199, %vector.body1785 ]
-  %192 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %index1788
-  %193 = bitcast i8* %192 to <4 x i8>*
-  %wide.load1799 = load <4 x i8>* %193, align 8
-  %.sum2058 = or i64 %index1788, 4
-  %194 = getelementptr [10240 x i8]* %buffer, i64 0, i64 %.sum2058
-  %195 = bitcast i8* %194 to <4 x i8>*
-  %wide.load1800 = load <4 x i8>* %195, align 4
-  %196 = zext <4 x i8> %wide.load1799 to <4 x i32>
-  %197 = zext <4 x i8> %wide.load1800 to <4 x i32>
-  %198 = add nsw <4 x i32> %196, %vec.phi1797
-  %199 = add nsw <4 x i32> %197, %vec.phi1798
-  %index.next1792 = add i64 %index1788, 8
-  %200 = icmp eq i64 %index.next1792, 10240
-  br i1 %200, label %middle.block1786, label %vector.body1785, !llvm.loop !16
+; <label>:163                                     ; preds = %163, %161
+  %indvars.iv640 = phi i64 [ 0, %161 ], [ %indvars.iv.next641, %163 ]
+  %v30.0303 = phi i32 [ 0, %161 ], [ %167, %163 ]
+  %164 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv640
+  %165 = load i8* %164, align 1, !tbaa !1
+  %166 = zext i8 %165 to i32
+  %167 = add nsw i32 %166, %v30.0303
+  %indvars.iv.next641 = add nuw nsw i64 %indvars.iv640, 1
+  %exitcond642 = icmp eq i64 %indvars.iv.next641, 10240
+  br i1 %exitcond642, label %168, label %163
 
-middle.block1786:                                 ; preds = %vector.body1785
-  %bin.rdx1803 = add <4 x i32> %199, %198
-  %rdx.shuf1804 = shufflevector <4 x i32> %bin.rdx1803, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1805 = add <4 x i32> %bin.rdx1803, %rdx.shuf1804
-  %rdx.shuf1806 = shufflevector <4 x i32> %bin.rdx1805, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1807 = add <4 x i32> %bin.rdx1805, %rdx.shuf1806
-  %201 = extractelement <4 x i32> %bin.rdx1807, i32 0
-  %202 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 16, i32 %201) #2
-  br label %203
+; <label>:168                                     ; preds = %163
+  %169 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 16, i32 %167) #2
+  br label %170
 
-; <label>:203                                     ; preds = %203, %middle.block1786
-  %indvars.iv636 = phi i64 [ 0, %middle.block1786 ], [ %indvars.iv.next637, %203 ]
-  %204 = load volatile i32* %seed, align 4
-  %205 = trunc i64 %indvars.iv636 to i32
-  %206 = mul nsw i32 %204, %205
-  %207 = trunc i32 %206 to i8
-  %208 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv636
-  store i8 %207, i8* %208, align 1, !tbaa !1
+; <label>:170                                     ; preds = %170, %168
+  %indvars.iv636 = phi i64 [ 0, %168 ], [ %indvars.iv.next637, %170 ]
+  %171 = load volatile i32* %seed, align 4
+  %172 = trunc i64 %indvars.iv636 to i32
+  %173 = mul nsw i32 %171, %172
+  %174 = trunc i32 %173 to i8
+  %175 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv636
+  store i8 %174, i8* %175, align 1, !tbaa !1
   %indvars.iv.next637 = add nuw nsw i64 %indvars.iv636, 1
   %exitcond638 = icmp eq i64 %indvars.iv.next637, 10240
-  br i1 %exitcond638, label %vector.ph1760, label %203
+  br i1 %exitcond638, label %176, label %170
 
-vector.ph1760:                                    ; preds = %203
-  %209 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 15
-  call void @llvm.memset.p0i8.i64(i8* %209, i8 -91, i64 32, i32 1, i1 false)
-  br label %vector.body1761
+; <label>:176                                     ; preds = %170
+  %177 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 15
+  call void @llvm.memset.p0i8.i64(i8* %177, i8 -91, i64 32, i32 1, i1 false)
+  br label %178
 
-vector.body1761:                                  ; preds = %vector.body1761, %vector.ph1760
-  %index1764 = phi i64 [ 0, %vector.ph1760 ], [ %index.next1768, %vector.body1761 ]
-  %vec.phi1773 = phi <4 x i32> [ zeroinitializer, %vector.ph1760 ], [ %216, %vector.body1761 ]
-  %vec.phi1774 = phi <4 x i32> [ zeroinitializer, %vector.ph1760 ], [ %217, %vector.body1761 ]
-  %210 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %index1764
-  %211 = bitcast i8* %210 to <4 x i8>*
-  %wide.load1775 = load <4 x i8>* %211, align 8
-  %.sum2059 = or i64 %index1764, 4
-  %212 = getelementptr [10240 x i8]* %buffer, i64 0, i64 %.sum2059
-  %213 = bitcast i8* %212 to <4 x i8>*
-  %wide.load1776 = load <4 x i8>* %213, align 4
-  %214 = zext <4 x i8> %wide.load1775 to <4 x i32>
-  %215 = zext <4 x i8> %wide.load1776 to <4 x i32>
-  %216 = add nsw <4 x i32> %214, %vec.phi1773
-  %217 = add nsw <4 x i32> %215, %vec.phi1774
-  %index.next1768 = add i64 %index1764, 8
-  %218 = icmp eq i64 %index.next1768, 10240
-  br i1 %218, label %middle.block1762, label %vector.body1761, !llvm.loop !17
+; <label>:178                                     ; preds = %178, %176
+  %indvars.iv633 = phi i64 [ 0, %176 ], [ %indvars.iv.next634, %178 ]
+  %v33.0300 = phi i32 [ 0, %176 ], [ %182, %178 ]
+  %179 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv633
+  %180 = load i8* %179, align 1, !tbaa !1
+  %181 = zext i8 %180 to i32
+  %182 = add nsw i32 %181, %v33.0300
+  %indvars.iv.next634 = add nuw nsw i64 %indvars.iv633, 1
+  %exitcond635 = icmp eq i64 %indvars.iv.next634, 10240
+  br i1 %exitcond635, label %183, label %178
 
-middle.block1762:                                 ; preds = %vector.body1761
-  %bin.rdx1779 = add <4 x i32> %217, %216
-  %rdx.shuf1780 = shufflevector <4 x i32> %bin.rdx1779, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1781 = add <4 x i32> %bin.rdx1779, %rdx.shuf1780
-  %rdx.shuf1782 = shufflevector <4 x i32> %bin.rdx1781, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1783 = add <4 x i32> %bin.rdx1781, %rdx.shuf1782
-  %219 = extractelement <4 x i32> %bin.rdx1783, i32 0
-  %220 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 32, i32 %219) #2
-  br label %221
+; <label>:183                                     ; preds = %178
+  %184 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 32, i32 %182) #2
+  br label %185
 
-; <label>:221                                     ; preds = %221, %middle.block1762
-  %indvars.iv629 = phi i64 [ 0, %middle.block1762 ], [ %indvars.iv.next630, %221 ]
-  %222 = load volatile i32* %seed, align 4
-  %223 = trunc i64 %indvars.iv629 to i32
-  %224 = mul nsw i32 %222, %223
-  %225 = trunc i32 %224 to i8
-  %226 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv629
-  store i8 %225, i8* %226, align 1, !tbaa !1
+; <label>:185                                     ; preds = %185, %183
+  %indvars.iv629 = phi i64 [ 0, %183 ], [ %indvars.iv.next630, %185 ]
+  %186 = load volatile i32* %seed, align 4
+  %187 = trunc i64 %indvars.iv629 to i32
+  %188 = mul nsw i32 %186, %187
+  %189 = trunc i32 %188 to i8
+  %190 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv629
+  store i8 %189, i8* %190, align 1, !tbaa !1
   %indvars.iv.next630 = add nuw nsw i64 %indvars.iv629, 1
   %exitcond631 = icmp eq i64 %indvars.iv.next630, 10240
-  br i1 %exitcond631, label %vector.ph1736, label %221
+  br i1 %exitcond631, label %191, label %185
 
-vector.ph1736:                                    ; preds = %221
-  %227 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 13
-  call void @llvm.memset.p0i8.i64(i8* %227, i8 -91, i64 64, i32 1, i1 false)
-  br label %vector.body1737
+; <label>:191                                     ; preds = %185
+  %192 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 13
+  call void @llvm.memset.p0i8.i64(i8* %192, i8 -91, i64 64, i32 1, i1 false)
+  br label %193
 
-vector.body1737:                                  ; preds = %vector.body1737, %vector.ph1736
-  %index1740 = phi i64 [ 0, %vector.ph1736 ], [ %index.next1744, %vector.body1737 ]
-  %vec.phi1749 = phi <4 x i32> [ zeroinitializer, %vector.ph1736 ], [ %234, %vector.body1737 ]
-  %vec.phi1750 = phi <4 x i32> [ zeroinitializer, %vector.ph1736 ], [ %235, %vector.body1737 ]
-  %228 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %index1740
-  %229 = bitcast i8* %228 to <4 x i8>*
-  %wide.load1751 = load <4 x i8>* %229, align 8
-  %.sum2060 = or i64 %index1740, 4
-  %230 = getelementptr [10240 x i8]* %buffer, i64 0, i64 %.sum2060
-  %231 = bitcast i8* %230 to <4 x i8>*
-  %wide.load1752 = load <4 x i8>* %231, align 4
-  %232 = zext <4 x i8> %wide.load1751 to <4 x i32>
-  %233 = zext <4 x i8> %wide.load1752 to <4 x i32>
-  %234 = add nsw <4 x i32> %232, %vec.phi1749
-  %235 = add nsw <4 x i32> %233, %vec.phi1750
-  %index.next1744 = add i64 %index1740, 8
-  %236 = icmp eq i64 %index.next1744, 10240
-  br i1 %236, label %middle.block1738, label %vector.body1737, !llvm.loop !18
+; <label>:193                                     ; preds = %193, %191
+  %indvars.iv626 = phi i64 [ 0, %191 ], [ %indvars.iv.next627, %193 ]
+  %v36.0297 = phi i32 [ 0, %191 ], [ %197, %193 ]
+  %194 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv626
+  %195 = load i8* %194, align 1, !tbaa !1
+  %196 = zext i8 %195 to i32
+  %197 = add nsw i32 %196, %v36.0297
+  %indvars.iv.next627 = add nuw nsw i64 %indvars.iv626, 1
+  %exitcond628 = icmp eq i64 %indvars.iv.next627, 10240
+  br i1 %exitcond628, label %198, label %193
 
-middle.block1738:                                 ; preds = %vector.body1737
-  %bin.rdx1755 = add <4 x i32> %235, %234
-  %rdx.shuf1756 = shufflevector <4 x i32> %bin.rdx1755, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1757 = add <4 x i32> %bin.rdx1755, %rdx.shuf1756
-  %rdx.shuf1758 = shufflevector <4 x i32> %bin.rdx1757, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1759 = add <4 x i32> %bin.rdx1757, %rdx.shuf1758
-  %237 = extractelement <4 x i32> %bin.rdx1759, i32 0
-  %238 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 64, i32 %237) #2
-  br label %239
+; <label>:198                                     ; preds = %193
+  %199 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 64, i32 %197) #2
+  br label %200
 
-; <label>:239                                     ; preds = %239, %middle.block1738
-  %indvars.iv622 = phi i64 [ 0, %middle.block1738 ], [ %indvars.iv.next623, %239 ]
-  %240 = load volatile i32* %seed, align 4
-  %241 = trunc i64 %indvars.iv622 to i32
-  %242 = mul nsw i32 %240, %241
-  %243 = trunc i32 %242 to i8
-  %244 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv622
-  store i8 %243, i8* %244, align 1, !tbaa !1
+; <label>:200                                     ; preds = %200, %198
+  %indvars.iv622 = phi i64 [ 0, %198 ], [ %indvars.iv.next623, %200 ]
+  %201 = load volatile i32* %seed, align 4
+  %202 = trunc i64 %indvars.iv622 to i32
+  %203 = mul nsw i32 %201, %202
+  %204 = trunc i32 %203 to i8
+  %205 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv622
+  store i8 %204, i8* %205, align 1, !tbaa !1
   %indvars.iv.next623 = add nuw nsw i64 %indvars.iv622, 1
   %exitcond624 = icmp eq i64 %indvars.iv.next623, 10240
-  br i1 %exitcond624, label %vector.ph1712, label %239
+  br i1 %exitcond624, label %206, label %200
 
-vector.ph1712:                                    ; preds = %239
-  call void @llvm.memset.p0i8.i64(i8* %155, i8 -91, i64 128, i32 1, i1 false)
-  br label %vector.body1713
+; <label>:206                                     ; preds = %200
+  call void @llvm.memset.p0i8.i64(i8* %132, i8 -91, i64 128, i32 1, i1 false)
+  br label %207
 
-vector.body1713:                                  ; preds = %vector.body1713, %vector.ph1712
-  %index1716 = phi i64 [ 0, %vector.ph1712 ], [ %index.next1720, %vector.body1713 ]
-  %vec.phi1725 = phi <4 x i32> [ zeroinitializer, %vector.ph1712 ], [ %251, %vector.body1713 ]
-  %vec.phi1726 = phi <4 x i32> [ zeroinitializer, %vector.ph1712 ], [ %252, %vector.body1713 ]
-  %245 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %index1716
-  %246 = bitcast i8* %245 to <4 x i8>*
-  %wide.load1727 = load <4 x i8>* %246, align 8
-  %.sum2061 = or i64 %index1716, 4
-  %247 = getelementptr [10240 x i8]* %buffer, i64 0, i64 %.sum2061
-  %248 = bitcast i8* %247 to <4 x i8>*
-  %wide.load1728 = load <4 x i8>* %248, align 4
-  %249 = zext <4 x i8> %wide.load1727 to <4 x i32>
-  %250 = zext <4 x i8> %wide.load1728 to <4 x i32>
-  %251 = add nsw <4 x i32> %249, %vec.phi1725
-  %252 = add nsw <4 x i32> %250, %vec.phi1726
-  %index.next1720 = add i64 %index1716, 8
-  %253 = icmp eq i64 %index.next1720, 10240
-  br i1 %253, label %middle.block1714, label %vector.body1713, !llvm.loop !19
+; <label>:207                                     ; preds = %207, %206
+  %indvars.iv619 = phi i64 [ 0, %206 ], [ %indvars.iv.next620, %207 ]
+  %v39.0294 = phi i32 [ 0, %206 ], [ %211, %207 ]
+  %208 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv619
+  %209 = load i8* %208, align 1, !tbaa !1
+  %210 = zext i8 %209 to i32
+  %211 = add nsw i32 %210, %v39.0294
+  %indvars.iv.next620 = add nuw nsw i64 %indvars.iv619, 1
+  %exitcond621 = icmp eq i64 %indvars.iv.next620, 10240
+  br i1 %exitcond621, label %212, label %207
 
-middle.block1714:                                 ; preds = %vector.body1713
-  %bin.rdx1731 = add <4 x i32> %252, %251
-  %rdx.shuf1732 = shufflevector <4 x i32> %bin.rdx1731, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1733 = add <4 x i32> %bin.rdx1731, %rdx.shuf1732
-  %rdx.shuf1734 = shufflevector <4 x i32> %bin.rdx1733, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1735 = add <4 x i32> %bin.rdx1733, %rdx.shuf1734
-  %254 = extractelement <4 x i32> %bin.rdx1735, i32 0
-  %255 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 128, i32 %254) #2
-  br label %256
+; <label>:212                                     ; preds = %207
+  %213 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 128, i32 %211) #2
+  br label %214
 
-; <label>:256                                     ; preds = %256, %middle.block1714
-  %indvars.iv615 = phi i64 [ 0, %middle.block1714 ], [ %indvars.iv.next616, %256 ]
-  %257 = load volatile i32* %seed, align 4
-  %258 = trunc i64 %indvars.iv615 to i32
-  %259 = mul nsw i32 %257, %258
-  %260 = trunc i32 %259 to i8
-  %261 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv615
-  store i8 %260, i8* %261, align 1, !tbaa !1
+; <label>:214                                     ; preds = %214, %212
+  %indvars.iv615 = phi i64 [ 0, %212 ], [ %indvars.iv.next616, %214 ]
+  %215 = load volatile i32* %seed, align 4
+  %216 = trunc i64 %indvars.iv615 to i32
+  %217 = mul nsw i32 %215, %216
+  %218 = trunc i32 %217 to i8
+  %219 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv615
+  store i8 %218, i8* %219, align 1, !tbaa !1
   %indvars.iv.next616 = add nuw nsw i64 %indvars.iv615, 1
   %exitcond617 = icmp eq i64 %indvars.iv.next616, 10240
-  br i1 %exitcond617, label %vector.ph1688, label %256
+  br i1 %exitcond617, label %220, label %214
 
-vector.ph1688:                                    ; preds = %256
-  call void @llvm.memset.p0i8.i64(i8* %8, i8 -91, i64 256, i32 1, i1 false)
-  br label %vector.body1689
+; <label>:220                                     ; preds = %214
+  call void @llvm.memset.p0i8.i64(i8* %9, i8 -91, i64 256, i32 1, i1 false)
+  br label %221
 
-vector.body1689:                                  ; preds = %vector.body1689, %vector.ph1688
-  %index1692 = phi i64 [ 0, %vector.ph1688 ], [ %index.next1696, %vector.body1689 ]
-  %vec.phi1701 = phi <4 x i32> [ zeroinitializer, %vector.ph1688 ], [ %268, %vector.body1689 ]
-  %vec.phi1702 = phi <4 x i32> [ zeroinitializer, %vector.ph1688 ], [ %269, %vector.body1689 ]
-  %262 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %index1692
-  %263 = bitcast i8* %262 to <4 x i8>*
-  %wide.load1703 = load <4 x i8>* %263, align 8
-  %.sum2062 = or i64 %index1692, 4
-  %264 = getelementptr [10240 x i8]* %buffer, i64 0, i64 %.sum2062
-  %265 = bitcast i8* %264 to <4 x i8>*
-  %wide.load1704 = load <4 x i8>* %265, align 4
-  %266 = zext <4 x i8> %wide.load1703 to <4 x i32>
-  %267 = zext <4 x i8> %wide.load1704 to <4 x i32>
-  %268 = add nsw <4 x i32> %266, %vec.phi1701
-  %269 = add nsw <4 x i32> %267, %vec.phi1702
-  %index.next1696 = add i64 %index1692, 8
-  %270 = icmp eq i64 %index.next1696, 10240
-  br i1 %270, label %middle.block1690, label %vector.body1689, !llvm.loop !20
+; <label>:221                                     ; preds = %221, %220
+  %indvars.iv612 = phi i64 [ 0, %220 ], [ %indvars.iv.next613, %221 ]
+  %v42.0291 = phi i32 [ 0, %220 ], [ %225, %221 ]
+  %222 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv612
+  %223 = load i8* %222, align 1, !tbaa !1
+  %224 = zext i8 %223 to i32
+  %225 = add nsw i32 %224, %v42.0291
+  %indvars.iv.next613 = add nuw nsw i64 %indvars.iv612, 1
+  %exitcond614 = icmp eq i64 %indvars.iv.next613, 10240
+  br i1 %exitcond614, label %226, label %221
 
-middle.block1690:                                 ; preds = %vector.body1689
-  %bin.rdx1707 = add <4 x i32> %269, %268
-  %rdx.shuf1708 = shufflevector <4 x i32> %bin.rdx1707, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1709 = add <4 x i32> %bin.rdx1707, %rdx.shuf1708
-  %rdx.shuf1710 = shufflevector <4 x i32> %bin.rdx1709, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1711 = add <4 x i32> %bin.rdx1709, %rdx.shuf1710
-  %271 = extractelement <4 x i32> %bin.rdx1711, i32 0
-  %272 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 256, i32 %271) #2
-  br label %273
+; <label>:226                                     ; preds = %221
+  %227 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 256, i32 %225) #2
+  br label %228
 
-; <label>:273                                     ; preds = %273, %middle.block1690
-  %indvars.iv608 = phi i64 [ 0, %middle.block1690 ], [ %indvars.iv.next609, %273 ]
-  %274 = load volatile i32* %seed, align 4
-  %275 = trunc i64 %indvars.iv608 to i32
-  %276 = mul nsw i32 %274, %275
-  %277 = trunc i32 %276 to i8
-  %278 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv608
-  store i8 %277, i8* %278, align 1, !tbaa !1
+; <label>:228                                     ; preds = %228, %226
+  %indvars.iv608 = phi i64 [ 0, %226 ], [ %indvars.iv.next609, %228 ]
+  %229 = load volatile i32* %seed, align 4
+  %230 = trunc i64 %indvars.iv608 to i32
+  %231 = mul nsw i32 %229, %230
+  %232 = trunc i32 %231 to i8
+  %233 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv608
+  store i8 %232, i8* %233, align 1, !tbaa !1
   %indvars.iv.next609 = add nuw nsw i64 %indvars.iv608, 1
   %exitcond610 = icmp eq i64 %indvars.iv.next609, 10240
-  br i1 %exitcond610, label %vector.ph1664, label %273
+  br i1 %exitcond610, label %234, label %228
 
-vector.ph1664:                                    ; preds = %273
-  call void @llvm.memset.p0i8.i64(i8* %26, i8 -91, i64 512, i32 2, i1 false)
-  br label %vector.body1665
+; <label>:234                                     ; preds = %228
+  call void @llvm.memset.p0i8.i64(i8* %24, i8 -91, i64 512, i32 2, i1 false)
+  br label %235
 
-vector.body1665:                                  ; preds = %vector.body1665, %vector.ph1664
-  %index1668 = phi i64 [ 0, %vector.ph1664 ], [ %index.next1672, %vector.body1665 ]
-  %vec.phi1677 = phi <4 x i32> [ zeroinitializer, %vector.ph1664 ], [ %285, %vector.body1665 ]
-  %vec.phi1678 = phi <4 x i32> [ zeroinitializer, %vector.ph1664 ], [ %286, %vector.body1665 ]
-  %279 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %index1668
-  %280 = bitcast i8* %279 to <4 x i8>*
-  %wide.load1679 = load <4 x i8>* %280, align 8
-  %.sum2063 = or i64 %index1668, 4
-  %281 = getelementptr [10240 x i8]* %buffer, i64 0, i64 %.sum2063
-  %282 = bitcast i8* %281 to <4 x i8>*
-  %wide.load1680 = load <4 x i8>* %282, align 4
-  %283 = zext <4 x i8> %wide.load1679 to <4 x i32>
-  %284 = zext <4 x i8> %wide.load1680 to <4 x i32>
-  %285 = add nsw <4 x i32> %283, %vec.phi1677
-  %286 = add nsw <4 x i32> %284, %vec.phi1678
-  %index.next1672 = add i64 %index1668, 8
-  %287 = icmp eq i64 %index.next1672, 10240
-  br i1 %287, label %middle.block1666, label %vector.body1665, !llvm.loop !21
+; <label>:235                                     ; preds = %235, %234
+  %indvars.iv605 = phi i64 [ 0, %234 ], [ %indvars.iv.next606, %235 ]
+  %v45.0288 = phi i32 [ 0, %234 ], [ %239, %235 ]
+  %236 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv605
+  %237 = load i8* %236, align 1, !tbaa !1
+  %238 = zext i8 %237 to i32
+  %239 = add nsw i32 %238, %v45.0288
+  %indvars.iv.next606 = add nuw nsw i64 %indvars.iv605, 1
+  %exitcond607 = icmp eq i64 %indvars.iv.next606, 10240
+  br i1 %exitcond607, label %240, label %235
 
-middle.block1666:                                 ; preds = %vector.body1665
-  %bin.rdx1683 = add <4 x i32> %286, %285
-  %rdx.shuf1684 = shufflevector <4 x i32> %bin.rdx1683, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1685 = add <4 x i32> %bin.rdx1683, %rdx.shuf1684
-  %rdx.shuf1686 = shufflevector <4 x i32> %bin.rdx1685, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1687 = add <4 x i32> %bin.rdx1685, %rdx.shuf1686
-  %288 = extractelement <4 x i32> %bin.rdx1687, i32 0
-  %289 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 512, i32 %288) #2
-  br label %290
+; <label>:240                                     ; preds = %235
+  %241 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 512, i32 %239) #2
+  br label %242
 
-; <label>:290                                     ; preds = %290, %middle.block1666
-  %indvars.iv601 = phi i64 [ 0, %middle.block1666 ], [ %indvars.iv.next602, %290 ]
-  %291 = load volatile i32* %seed, align 4
-  %292 = trunc i64 %indvars.iv601 to i32
-  %293 = mul nsw i32 %291, %292
-  %294 = trunc i32 %293 to i8
-  %295 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv601
-  store i8 %294, i8* %295, align 1, !tbaa !1
+; <label>:242                                     ; preds = %242, %240
+  %indvars.iv601 = phi i64 [ 0, %240 ], [ %indvars.iv.next602, %242 ]
+  %243 = load volatile i32* %seed, align 4
+  %244 = trunc i64 %indvars.iv601 to i32
+  %245 = mul nsw i32 %243, %244
+  %246 = trunc i32 %245 to i8
+  %247 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv601
+  store i8 %246, i8* %247, align 1, !tbaa !1
   %indvars.iv.next602 = add nuw nsw i64 %indvars.iv601, 1
   %exitcond603 = icmp eq i64 %indvars.iv.next602, 10240
-  br i1 %exitcond603, label %vector.ph1640, label %290
+  br i1 %exitcond603, label %248, label %242
 
-vector.ph1640:                                    ; preds = %290
-  call void @llvm.memset.p0i8.i64(i8* %63, i8 -91, i64 1024, i32 4, i1 false)
-  br label %vector.body1641
+; <label>:248                                     ; preds = %242
+  call void @llvm.memset.p0i8.i64(i8* %55, i8 -91, i64 1024, i32 4, i1 false)
+  br label %249
 
-vector.body1641:                                  ; preds = %vector.body1641, %vector.ph1640
-  %index1644 = phi i64 [ 0, %vector.ph1640 ], [ %index.next1648, %vector.body1641 ]
-  %vec.phi1653 = phi <4 x i32> [ zeroinitializer, %vector.ph1640 ], [ %302, %vector.body1641 ]
-  %vec.phi1654 = phi <4 x i32> [ zeroinitializer, %vector.ph1640 ], [ %303, %vector.body1641 ]
-  %296 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %index1644
-  %297 = bitcast i8* %296 to <4 x i8>*
-  %wide.load1655 = load <4 x i8>* %297, align 8
-  %.sum2064 = or i64 %index1644, 4
-  %298 = getelementptr [10240 x i8]* %buffer, i64 0, i64 %.sum2064
-  %299 = bitcast i8* %298 to <4 x i8>*
-  %wide.load1656 = load <4 x i8>* %299, align 4
-  %300 = zext <4 x i8> %wide.load1655 to <4 x i32>
-  %301 = zext <4 x i8> %wide.load1656 to <4 x i32>
-  %302 = add nsw <4 x i32> %300, %vec.phi1653
-  %303 = add nsw <4 x i32> %301, %vec.phi1654
-  %index.next1648 = add i64 %index1644, 8
-  %304 = icmp eq i64 %index.next1648, 10240
-  br i1 %304, label %middle.block1642, label %vector.body1641, !llvm.loop !22
+; <label>:249                                     ; preds = %249, %248
+  %indvars.iv598 = phi i64 [ 0, %248 ], [ %indvars.iv.next599, %249 ]
+  %v48.0285 = phi i32 [ 0, %248 ], [ %253, %249 ]
+  %250 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv598
+  %251 = load i8* %250, align 1, !tbaa !1
+  %252 = zext i8 %251 to i32
+  %253 = add nsw i32 %252, %v48.0285
+  %indvars.iv.next599 = add nuw nsw i64 %indvars.iv598, 1
+  %exitcond600 = icmp eq i64 %indvars.iv.next599, 10240
+  br i1 %exitcond600, label %254, label %249
 
-middle.block1642:                                 ; preds = %vector.body1641
-  %bin.rdx1659 = add <4 x i32> %303, %302
-  %rdx.shuf1660 = shufflevector <4 x i32> %bin.rdx1659, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1661 = add <4 x i32> %bin.rdx1659, %rdx.shuf1660
-  %rdx.shuf1662 = shufflevector <4 x i32> %bin.rdx1661, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1663 = add <4 x i32> %bin.rdx1661, %rdx.shuf1662
-  %305 = extractelement <4 x i32> %bin.rdx1663, i32 0
-  %306 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 1024, i32 %305) #2
+; <label>:254                                     ; preds = %249
+  %255 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 1024, i32 %253) #2
   br label %.preheader280
 
-.preheader280:                                    ; preds = %middle.block1618, %middle.block1642
-  %indvars.iv595 = phi i64 [ 10, %middle.block1642 ], [ %indvars.iv.next596, %middle.block1618 ]
-  br label %307
+.preheader280:                                    ; preds = %272, %254
+  %indvars.iv595 = phi i64 [ 10, %254 ], [ %indvars.iv.next596, %272 ]
+  br label %256
 
-; <label>:307                                     ; preds = %307, %.preheader280
-  %indvars.iv588 = phi i64 [ 0, %.preheader280 ], [ %indvars.iv.next589, %307 ]
-  %308 = load volatile i32* %seed, align 4
-  %309 = trunc i64 %indvars.iv588 to i32
-  %310 = mul nsw i32 %308, %309
-  %311 = trunc i32 %310 to i8
-  %312 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv588
-  store i8 %311, i8* %312, align 1, !tbaa !1
+; <label>:256                                     ; preds = %256, %.preheader280
+  %indvars.iv588 = phi i64 [ 0, %.preheader280 ], [ %indvars.iv.next589, %256 ]
+  %257 = load volatile i32* %seed, align 4
+  %258 = trunc i64 %indvars.iv588 to i32
+  %259 = mul nsw i32 %257, %258
+  %260 = trunc i32 %259 to i8
+  %261 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv588
+  store i8 %260, i8* %261, align 1, !tbaa !1
   %indvars.iv.next589 = add nuw nsw i64 %indvars.iv588, 1
   %exitcond590 = icmp eq i64 %indvars.iv.next589, 10240
-  br i1 %exitcond590, label %vector.ph1616, label %307
+  br i1 %exitcond590, label %262, label %256
 
-vector.ph1616:                                    ; preds = %307
-  %313 = trunc i64 %indvars.iv595 to i32
-  %314 = srem i32 %313, 17
-  %315 = sext i32 %314 to i64
-  %316 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %315
-  call void @llvm.memset.p0i8.i64(i8* %316, i8 -91, i64 %indvars.iv595, i32 1, i1 false)
-  br label %vector.body1617
+; <label>:262                                     ; preds = %256
+  %263 = trunc i64 %indvars.iv595 to i32
+  %264 = srem i32 %263, 17
+  %265 = sext i32 %264 to i64
+  %266 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %265
+  call void @llvm.memset.p0i8.i64(i8* %266, i8 -91, i64 %indvars.iv595, i32 1, i1 false)
+  br label %267
 
-vector.body1617:                                  ; preds = %vector.body1617, %vector.ph1616
-  %index1620 = phi i64 [ 0, %vector.ph1616 ], [ %index.next1624, %vector.body1617 ]
-  %vec.phi1629 = phi <4 x i32> [ zeroinitializer, %vector.ph1616 ], [ %323, %vector.body1617 ]
-  %vec.phi1630 = phi <4 x i32> [ zeroinitializer, %vector.ph1616 ], [ %324, %vector.body1617 ]
-  %317 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %index1620
-  %318 = bitcast i8* %317 to <4 x i8>*
-  %wide.load1631 = load <4 x i8>* %318, align 8
-  %.sum2065 = or i64 %index1620, 4
-  %319 = getelementptr [10240 x i8]* %buffer, i64 0, i64 %.sum2065
-  %320 = bitcast i8* %319 to <4 x i8>*
-  %wide.load1632 = load <4 x i8>* %320, align 4
-  %321 = zext <4 x i8> %wide.load1631 to <4 x i32>
-  %322 = zext <4 x i8> %wide.load1632 to <4 x i32>
-  %323 = add nsw <4 x i32> %321, %vec.phi1629
-  %324 = add nsw <4 x i32> %322, %vec.phi1630
-  %index.next1624 = add i64 %index1620, 8
-  %325 = icmp eq i64 %index.next1624, 10240
-  br i1 %325, label %middle.block1618, label %vector.body1617, !llvm.loop !23
+; <label>:267                                     ; preds = %267, %262
+  %indvars.iv592 = phi i64 [ 0, %262 ], [ %indvars.iv.next593, %267 ]
+  %v51.0282 = phi i32 [ 0, %262 ], [ %271, %267 ]
+  %268 = getelementptr inbounds [10240 x i8]* %buffer, i64 0, i64 %indvars.iv592
+  %269 = load i8* %268, align 1, !tbaa !1
+  %270 = zext i8 %269 to i32
+  %271 = add nsw i32 %270, %v51.0282
+  %indvars.iv.next593 = add nuw nsw i64 %indvars.iv592, 1
+  %exitcond594 = icmp eq i64 %indvars.iv.next593, 10240
+  br i1 %exitcond594, label %272, label %267
 
-middle.block1618:                                 ; preds = %vector.body1617
-  %bin.rdx1635 = add <4 x i32> %324, %323
-  %rdx.shuf1636 = shufflevector <4 x i32> %bin.rdx1635, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1637 = add <4 x i32> %bin.rdx1635, %rdx.shuf1636
-  %rdx.shuf1638 = shufflevector <4 x i32> %bin.rdx1637, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1639 = add <4 x i32> %bin.rdx1637, %rdx.shuf1638
-  %326 = extractelement <4 x i32> %bin.rdx1639, i32 0
-  %327 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 %313, i32 %326) #2
+; <label>:272                                     ; preds = %267
+  %273 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 %263, i32 %271) #2
   %indvars.iv.next596 = add nuw nsw i64 %indvars.iv595, 10
-  %328 = trunc i64 %indvars.iv.next596 to i32
-  %329 = icmp slt i32 %328, 100
-  br i1 %329, label %.preheader280, label %330
+  %274 = trunc i64 %indvars.iv.next596 to i32
+  %275 = icmp slt i32 %274, 100
+  br i1 %275, label %.preheader280, label %276
 
-; <label>:330                                     ; preds = %middle.block1618
+; <label>:276                                     ; preds = %272
   call void @llvm.lifetime.end(i64 10240, i8* %1) #2
   %puts167 = call i32 @puts(i8* getelementptr inbounds ([3 x i8]* @str4, i64 0, i64 0))
-  %331 = bitcast [10240 x i16]* %buffer53 to i8*
-  call void @llvm.lifetime.start(i64 20480, i8* %331) #2
+  %277 = bitcast [10240 x i16]* %buffer53 to i8*
+  call void @llvm.lifetime.start(i64 20480, i8* %277) #2
   store volatile i32 123, i32* %seed54, align 4
-  br label %332
+  br label %278
 
-; <label>:332                                     ; preds = %332, %330
-  %indvars.iv585 = phi i64 [ 0, %330 ], [ %indvars.iv.next586, %332 ]
-  %333 = load volatile i32* %seed54, align 4
-  %334 = trunc i64 %indvars.iv585 to i32
-  %335 = mul nsw i32 %333, %334
-  %336 = trunc i32 %335 to i16
-  %337 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv585
-  store i16 %336, i16* %337, align 2, !tbaa !24
+; <label>:278                                     ; preds = %278, %276
+  %indvars.iv585 = phi i64 [ 0, %276 ], [ %indvars.iv.next586, %278 ]
+  %279 = load volatile i32* %seed54, align 4
+  %280 = trunc i64 %indvars.iv585 to i32
+  %281 = mul nsw i32 %279, %280
+  %282 = trunc i32 %281 to i16
+  %283 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv585
+  store i16 %282, i16* %283, align 2, !tbaa !4
   %indvars.iv.next586 = add nuw nsw i64 %indvars.iv585, 1
   %exitcond587 = icmp eq i64 %indvars.iv.next586, 10240
-  br i1 %exitcond587, label %vector.ph1592, label %332
+  br i1 %exitcond587, label %284, label %278
 
-vector.ph1592:                                    ; preds = %332
-  %338 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 1
-  %339 = bitcast i16* %338 to i8*
-  store i8 -91, i8* %339, align 2
-  br label %vector.body1593
+; <label>:284                                     ; preds = %278
+  %285 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 1
+  %286 = bitcast i16* %285 to i8*
+  store i8 -91, i8* %286, align 2
+  br label %287
 
-vector.body1593:                                  ; preds = %vector.body1593, %vector.ph1592
-  %index1596 = phi i64 [ 0, %vector.ph1592 ], [ %index.next1600, %vector.body1593 ]
-  %vec.phi1605 = phi <4 x i32> [ zeroinitializer, %vector.ph1592 ], [ %346, %vector.body1593 ]
-  %vec.phi1606 = phi <4 x i32> [ zeroinitializer, %vector.ph1592 ], [ %347, %vector.body1593 ]
-  %340 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %index1596
-  %341 = bitcast i16* %340 to <4 x i16>*
-  %wide.load1607 = load <4 x i16>* %341, align 16
-  %.sum2066 = or i64 %index1596, 4
-  %342 = getelementptr [10240 x i16]* %buffer53, i64 0, i64 %.sum2066
-  %343 = bitcast i16* %342 to <4 x i16>*
-  %wide.load1608 = load <4 x i16>* %343, align 8
-  %344 = zext <4 x i16> %wide.load1607 to <4 x i32>
-  %345 = zext <4 x i16> %wide.load1608 to <4 x i32>
-  %346 = add nsw <4 x i32> %344, %vec.phi1605
-  %347 = add nsw <4 x i32> %345, %vec.phi1606
-  %index.next1600 = add i64 %index1596, 8
-  %348 = icmp eq i64 %index.next1600, 10240
-  br i1 %348, label %middle.block1594, label %vector.body1593, !llvm.loop !26
+; <label>:287                                     ; preds = %287, %284
+  %indvars.iv582 = phi i64 [ 0, %284 ], [ %indvars.iv.next583, %287 ]
+  %v56.0277 = phi i32 [ 0, %284 ], [ %291, %287 ]
+  %288 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv582
+  %289 = load i16* %288, align 2, !tbaa !4
+  %290 = zext i16 %289 to i32
+  %291 = add nsw i32 %290, %v56.0277
+  %indvars.iv.next583 = add nuw nsw i64 %indvars.iv582, 1
+  %exitcond584 = icmp eq i64 %indvars.iv.next583, 10240
+  br i1 %exitcond584, label %292, label %287
 
-middle.block1594:                                 ; preds = %vector.body1593
-  %bin.rdx1611 = add <4 x i32> %347, %346
-  %rdx.shuf1612 = shufflevector <4 x i32> %bin.rdx1611, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1613 = add <4 x i32> %bin.rdx1611, %rdx.shuf1612
-  %rdx.shuf1614 = shufflevector <4 x i32> %bin.rdx1613, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1615 = add <4 x i32> %bin.rdx1613, %rdx.shuf1614
-  %349 = extractelement <4 x i32> %bin.rdx1615, i32 0
-  %350 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 1, i32 %349) #2
-  br label %351
+; <label>:292                                     ; preds = %287
+  %293 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 1, i32 %291) #2
+  br label %294
 
-; <label>:351                                     ; preds = %351, %middle.block1594
-  %indvars.iv578 = phi i64 [ 0, %middle.block1594 ], [ %indvars.iv.next579, %351 ]
-  %352 = load volatile i32* %seed54, align 4
-  %353 = trunc i64 %indvars.iv578 to i32
-  %354 = mul nsw i32 %352, %353
-  %355 = trunc i32 %354 to i16
-  %356 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv578
-  store i16 %355, i16* %356, align 2, !tbaa !24
+; <label>:294                                     ; preds = %294, %292
+  %indvars.iv578 = phi i64 [ 0, %292 ], [ %indvars.iv.next579, %294 ]
+  %295 = load volatile i32* %seed54, align 4
+  %296 = trunc i64 %indvars.iv578 to i32
+  %297 = mul nsw i32 %295, %296
+  %298 = trunc i32 %297 to i16
+  %299 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv578
+  store i16 %298, i16* %299, align 2, !tbaa !4
   %indvars.iv.next579 = add nuw nsw i64 %indvars.iv578, 1
   %exitcond580 = icmp eq i64 %indvars.iv.next579, 10240
-  br i1 %exitcond580, label %vector.ph1568, label %351
+  br i1 %exitcond580, label %300, label %294
 
-vector.ph1568:                                    ; preds = %351
-  %357 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 2
-  store i16 -23131, i16* %357, align 4
-  br label %vector.body1569
+; <label>:300                                     ; preds = %294
+  %301 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 2
+  store i16 -23131, i16* %301, align 4
+  br label %302
 
-vector.body1569:                                  ; preds = %vector.body1569, %vector.ph1568
-  %index1572 = phi i64 [ 0, %vector.ph1568 ], [ %index.next1576, %vector.body1569 ]
-  %vec.phi1581 = phi <4 x i32> [ zeroinitializer, %vector.ph1568 ], [ %364, %vector.body1569 ]
-  %vec.phi1582 = phi <4 x i32> [ zeroinitializer, %vector.ph1568 ], [ %365, %vector.body1569 ]
-  %358 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %index1572
-  %359 = bitcast i16* %358 to <4 x i16>*
-  %wide.load1583 = load <4 x i16>* %359, align 16
-  %.sum2067 = or i64 %index1572, 4
-  %360 = getelementptr [10240 x i16]* %buffer53, i64 0, i64 %.sum2067
-  %361 = bitcast i16* %360 to <4 x i16>*
-  %wide.load1584 = load <4 x i16>* %361, align 8
-  %362 = zext <4 x i16> %wide.load1583 to <4 x i32>
-  %363 = zext <4 x i16> %wide.load1584 to <4 x i32>
-  %364 = add nsw <4 x i32> %362, %vec.phi1581
-  %365 = add nsw <4 x i32> %363, %vec.phi1582
-  %index.next1576 = add i64 %index1572, 8
-  %366 = icmp eq i64 %index.next1576, 10240
-  br i1 %366, label %middle.block1570, label %vector.body1569, !llvm.loop !27
+; <label>:302                                     ; preds = %302, %300
+  %indvars.iv575 = phi i64 [ 0, %300 ], [ %indvars.iv.next576, %302 ]
+  %v59.0274 = phi i32 [ 0, %300 ], [ %306, %302 ]
+  %303 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv575
+  %304 = load i16* %303, align 2, !tbaa !4
+  %305 = zext i16 %304 to i32
+  %306 = add nsw i32 %305, %v59.0274
+  %indvars.iv.next576 = add nuw nsw i64 %indvars.iv575, 1
+  %exitcond577 = icmp eq i64 %indvars.iv.next576, 10240
+  br i1 %exitcond577, label %307, label %302
 
-middle.block1570:                                 ; preds = %vector.body1569
-  %bin.rdx1587 = add <4 x i32> %365, %364
-  %rdx.shuf1588 = shufflevector <4 x i32> %bin.rdx1587, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1589 = add <4 x i32> %bin.rdx1587, %rdx.shuf1588
-  %rdx.shuf1590 = shufflevector <4 x i32> %bin.rdx1589, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1591 = add <4 x i32> %bin.rdx1589, %rdx.shuf1590
-  %367 = extractelement <4 x i32> %bin.rdx1591, i32 0
-  %368 = bitcast i16* %357 to i8*
-  %369 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 2, i32 %367) #2
-  br label %370
+; <label>:307                                     ; preds = %302
+  %308 = bitcast i16* %301 to i8*
+  %309 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 2, i32 %306) #2
+  br label %310
 
-; <label>:370                                     ; preds = %370, %middle.block1570
-  %indvars.iv571 = phi i64 [ 0, %middle.block1570 ], [ %indvars.iv.next572, %370 ]
-  %371 = load volatile i32* %seed54, align 4
-  %372 = trunc i64 %indvars.iv571 to i32
-  %373 = mul nsw i32 %371, %372
-  %374 = trunc i32 %373 to i16
-  %375 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv571
-  store i16 %374, i16* %375, align 2, !tbaa !24
+; <label>:310                                     ; preds = %310, %307
+  %indvars.iv571 = phi i64 [ 0, %307 ], [ %indvars.iv.next572, %310 ]
+  %311 = load volatile i32* %seed54, align 4
+  %312 = trunc i64 %indvars.iv571 to i32
+  %313 = mul nsw i32 %311, %312
+  %314 = trunc i32 %313 to i16
+  %315 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv571
+  store i16 %314, i16* %315, align 2, !tbaa !4
   %indvars.iv.next572 = add nuw nsw i64 %indvars.iv571, 1
   %exitcond573 = icmp eq i64 %indvars.iv.next572, 10240
-  br i1 %exitcond573, label %vector.ph1544, label %370
+  br i1 %exitcond573, label %316, label %310
 
-vector.ph1544:                                    ; preds = %370
-  %376 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 3
-  %377 = bitcast i16* %376 to i8*
-  call void @llvm.memset.p0i8.i64(i8* %377, i8 -91, i64 3, i32 2, i1 false)
-  br label %vector.body1545
+; <label>:316                                     ; preds = %310
+  %317 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 3
+  %318 = bitcast i16* %317 to i8*
+  call void @llvm.memset.p0i8.i64(i8* %318, i8 -91, i64 3, i32 2, i1 false)
+  br label %319
 
-vector.body1545:                                  ; preds = %vector.body1545, %vector.ph1544
-  %index1548 = phi i64 [ 0, %vector.ph1544 ], [ %index.next1552, %vector.body1545 ]
-  %vec.phi1557 = phi <4 x i32> [ zeroinitializer, %vector.ph1544 ], [ %384, %vector.body1545 ]
-  %vec.phi1558 = phi <4 x i32> [ zeroinitializer, %vector.ph1544 ], [ %385, %vector.body1545 ]
-  %378 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %index1548
-  %379 = bitcast i16* %378 to <4 x i16>*
-  %wide.load1559 = load <4 x i16>* %379, align 16
-  %.sum2068 = or i64 %index1548, 4
-  %380 = getelementptr [10240 x i16]* %buffer53, i64 0, i64 %.sum2068
-  %381 = bitcast i16* %380 to <4 x i16>*
-  %wide.load1560 = load <4 x i16>* %381, align 8
-  %382 = zext <4 x i16> %wide.load1559 to <4 x i32>
-  %383 = zext <4 x i16> %wide.load1560 to <4 x i32>
-  %384 = add nsw <4 x i32> %382, %vec.phi1557
-  %385 = add nsw <4 x i32> %383, %vec.phi1558
-  %index.next1552 = add i64 %index1548, 8
-  %386 = icmp eq i64 %index.next1552, 10240
-  br i1 %386, label %middle.block1546, label %vector.body1545, !llvm.loop !28
+; <label>:319                                     ; preds = %319, %316
+  %indvars.iv568 = phi i64 [ 0, %316 ], [ %indvars.iv.next569, %319 ]
+  %v62.0271 = phi i32 [ 0, %316 ], [ %323, %319 ]
+  %320 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv568
+  %321 = load i16* %320, align 2, !tbaa !4
+  %322 = zext i16 %321 to i32
+  %323 = add nsw i32 %322, %v62.0271
+  %indvars.iv.next569 = add nuw nsw i64 %indvars.iv568, 1
+  %exitcond570 = icmp eq i64 %indvars.iv.next569, 10240
+  br i1 %exitcond570, label %324, label %319
 
-middle.block1546:                                 ; preds = %vector.body1545
-  %bin.rdx1563 = add <4 x i32> %385, %384
-  %rdx.shuf1564 = shufflevector <4 x i32> %bin.rdx1563, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1565 = add <4 x i32> %bin.rdx1563, %rdx.shuf1564
-  %rdx.shuf1566 = shufflevector <4 x i32> %bin.rdx1565, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1567 = add <4 x i32> %bin.rdx1565, %rdx.shuf1566
-  %387 = extractelement <4 x i32> %bin.rdx1567, i32 0
-  %388 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 3, i32 %387) #2
-  br label %389
+; <label>:324                                     ; preds = %319
+  %325 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 3, i32 %323) #2
+  br label %326
 
-; <label>:389                                     ; preds = %389, %middle.block1546
-  %indvars.iv564 = phi i64 [ 0, %middle.block1546 ], [ %indvars.iv.next565, %389 ]
-  %390 = load volatile i32* %seed54, align 4
-  %391 = trunc i64 %indvars.iv564 to i32
-  %392 = mul nsw i32 %390, %391
-  %393 = trunc i32 %392 to i16
-  %394 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv564
-  store i16 %393, i16* %394, align 2, !tbaa !24
+; <label>:326                                     ; preds = %326, %324
+  %indvars.iv564 = phi i64 [ 0, %324 ], [ %indvars.iv.next565, %326 ]
+  %327 = load volatile i32* %seed54, align 4
+  %328 = trunc i64 %indvars.iv564 to i32
+  %329 = mul nsw i32 %327, %328
+  %330 = trunc i32 %329 to i16
+  %331 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv564
+  store i16 %330, i16* %331, align 2, !tbaa !4
   %indvars.iv.next565 = add nuw nsw i64 %indvars.iv564, 1
   %exitcond566 = icmp eq i64 %indvars.iv.next565, 10240
-  br i1 %exitcond566, label %vector.ph1520, label %389
+  br i1 %exitcond566, label %332, label %326
 
-vector.ph1520:                                    ; preds = %389
-  %395 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 4
-  %396 = bitcast i16* %395 to i32*
-  store i32 -1515870811, i32* %396, align 8
-  br label %vector.body1521
+; <label>:332                                     ; preds = %326
+  %333 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 4
+  %334 = bitcast i16* %333 to i32*
+  store i32 -1515870811, i32* %334, align 8
+  br label %335
 
-vector.body1521:                                  ; preds = %vector.body1521, %vector.ph1520
-  %index1524 = phi i64 [ 0, %vector.ph1520 ], [ %index.next1528, %vector.body1521 ]
-  %vec.phi1533 = phi <4 x i32> [ zeroinitializer, %vector.ph1520 ], [ %403, %vector.body1521 ]
-  %vec.phi1534 = phi <4 x i32> [ zeroinitializer, %vector.ph1520 ], [ %404, %vector.body1521 ]
-  %397 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %index1524
-  %398 = bitcast i16* %397 to <4 x i16>*
-  %wide.load1535 = load <4 x i16>* %398, align 16
-  %.sum2069 = or i64 %index1524, 4
-  %399 = getelementptr [10240 x i16]* %buffer53, i64 0, i64 %.sum2069
-  %400 = bitcast i16* %399 to <4 x i16>*
-  %wide.load1536 = load <4 x i16>* %400, align 8
-  %401 = zext <4 x i16> %wide.load1535 to <4 x i32>
-  %402 = zext <4 x i16> %wide.load1536 to <4 x i32>
-  %403 = add nsw <4 x i32> %401, %vec.phi1533
-  %404 = add nsw <4 x i32> %402, %vec.phi1534
-  %index.next1528 = add i64 %index1524, 8
-  %405 = icmp eq i64 %index.next1528, 10240
-  br i1 %405, label %middle.block1522, label %vector.body1521, !llvm.loop !29
+; <label>:335                                     ; preds = %335, %332
+  %indvars.iv561 = phi i64 [ 0, %332 ], [ %indvars.iv.next562, %335 ]
+  %v65.0268 = phi i32 [ 0, %332 ], [ %339, %335 ]
+  %336 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv561
+  %337 = load i16* %336, align 2, !tbaa !4
+  %338 = zext i16 %337 to i32
+  %339 = add nsw i32 %338, %v65.0268
+  %indvars.iv.next562 = add nuw nsw i64 %indvars.iv561, 1
+  %exitcond563 = icmp eq i64 %indvars.iv.next562, 10240
+  br i1 %exitcond563, label %340, label %335
 
-middle.block1522:                                 ; preds = %vector.body1521
-  %bin.rdx1539 = add <4 x i32> %404, %403
-  %rdx.shuf1540 = shufflevector <4 x i32> %bin.rdx1539, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1541 = add <4 x i32> %bin.rdx1539, %rdx.shuf1540
-  %rdx.shuf1542 = shufflevector <4 x i32> %bin.rdx1541, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1543 = add <4 x i32> %bin.rdx1541, %rdx.shuf1542
-  %406 = extractelement <4 x i32> %bin.rdx1543, i32 0
-  %407 = bitcast i16* %395 to i8*
-  %408 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 4, i32 %406) #2
-  br label %409
+; <label>:340                                     ; preds = %335
+  %341 = bitcast i16* %333 to i8*
+  %342 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 4, i32 %339) #2
+  br label %343
 
-; <label>:409                                     ; preds = %409, %middle.block1522
-  %indvars.iv557 = phi i64 [ 0, %middle.block1522 ], [ %indvars.iv.next558, %409 ]
-  %410 = load volatile i32* %seed54, align 4
-  %411 = trunc i64 %indvars.iv557 to i32
-  %412 = mul nsw i32 %410, %411
-  %413 = trunc i32 %412 to i16
-  %414 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv557
-  store i16 %413, i16* %414, align 2, !tbaa !24
+; <label>:343                                     ; preds = %343, %340
+  %indvars.iv557 = phi i64 [ 0, %340 ], [ %indvars.iv.next558, %343 ]
+  %344 = load volatile i32* %seed54, align 4
+  %345 = trunc i64 %indvars.iv557 to i32
+  %346 = mul nsw i32 %344, %345
+  %347 = trunc i32 %346 to i16
+  %348 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv557
+  store i16 %347, i16* %348, align 2, !tbaa !4
   %indvars.iv.next558 = add nuw nsw i64 %indvars.iv557, 1
   %exitcond559 = icmp eq i64 %indvars.iv.next558, 10240
-  br i1 %exitcond559, label %vector.ph1496, label %409
+  br i1 %exitcond559, label %349, label %343
 
-vector.ph1496:                                    ; preds = %409
-  %415 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 5
-  %416 = bitcast i16* %415 to i8*
-  call void @llvm.memset.p0i8.i64(i8* %416, i8 -91, i64 5, i32 2, i1 false)
-  br label %vector.body1497
+; <label>:349                                     ; preds = %343
+  %350 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 5
+  %351 = bitcast i16* %350 to i8*
+  call void @llvm.memset.p0i8.i64(i8* %351, i8 -91, i64 5, i32 2, i1 false)
+  br label %352
 
-vector.body1497:                                  ; preds = %vector.body1497, %vector.ph1496
-  %index1500 = phi i64 [ 0, %vector.ph1496 ], [ %index.next1504, %vector.body1497 ]
-  %vec.phi1509 = phi <4 x i32> [ zeroinitializer, %vector.ph1496 ], [ %423, %vector.body1497 ]
-  %vec.phi1510 = phi <4 x i32> [ zeroinitializer, %vector.ph1496 ], [ %424, %vector.body1497 ]
-  %417 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %index1500
-  %418 = bitcast i16* %417 to <4 x i16>*
-  %wide.load1511 = load <4 x i16>* %418, align 16
-  %.sum2070 = or i64 %index1500, 4
-  %419 = getelementptr [10240 x i16]* %buffer53, i64 0, i64 %.sum2070
-  %420 = bitcast i16* %419 to <4 x i16>*
-  %wide.load1512 = load <4 x i16>* %420, align 8
-  %421 = zext <4 x i16> %wide.load1511 to <4 x i32>
-  %422 = zext <4 x i16> %wide.load1512 to <4 x i32>
-  %423 = add nsw <4 x i32> %421, %vec.phi1509
-  %424 = add nsw <4 x i32> %422, %vec.phi1510
-  %index.next1504 = add i64 %index1500, 8
-  %425 = icmp eq i64 %index.next1504, 10240
-  br i1 %425, label %middle.block1498, label %vector.body1497, !llvm.loop !30
+; <label>:352                                     ; preds = %352, %349
+  %indvars.iv554 = phi i64 [ 0, %349 ], [ %indvars.iv.next555, %352 ]
+  %v68.0265 = phi i32 [ 0, %349 ], [ %356, %352 ]
+  %353 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv554
+  %354 = load i16* %353, align 2, !tbaa !4
+  %355 = zext i16 %354 to i32
+  %356 = add nsw i32 %355, %v68.0265
+  %indvars.iv.next555 = add nuw nsw i64 %indvars.iv554, 1
+  %exitcond556 = icmp eq i64 %indvars.iv.next555, 10240
+  br i1 %exitcond556, label %357, label %352
 
-middle.block1498:                                 ; preds = %vector.body1497
-  %bin.rdx1515 = add <4 x i32> %424, %423
-  %rdx.shuf1516 = shufflevector <4 x i32> %bin.rdx1515, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1517 = add <4 x i32> %bin.rdx1515, %rdx.shuf1516
-  %rdx.shuf1518 = shufflevector <4 x i32> %bin.rdx1517, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1519 = add <4 x i32> %bin.rdx1517, %rdx.shuf1518
-  %426 = extractelement <4 x i32> %bin.rdx1519, i32 0
-  %427 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 5, i32 %426) #2
-  br label %428
+; <label>:357                                     ; preds = %352
+  %358 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 5, i32 %356) #2
+  br label %359
 
-; <label>:428                                     ; preds = %428, %middle.block1498
-  %indvars.iv550 = phi i64 [ 0, %middle.block1498 ], [ %indvars.iv.next551, %428 ]
-  %429 = load volatile i32* %seed54, align 4
-  %430 = trunc i64 %indvars.iv550 to i32
-  %431 = mul nsw i32 %429, %430
-  %432 = trunc i32 %431 to i16
-  %433 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv550
-  store i16 %432, i16* %433, align 2, !tbaa !24
+; <label>:359                                     ; preds = %359, %357
+  %indvars.iv550 = phi i64 [ 0, %357 ], [ %indvars.iv.next551, %359 ]
+  %360 = load volatile i32* %seed54, align 4
+  %361 = trunc i64 %indvars.iv550 to i32
+  %362 = mul nsw i32 %360, %361
+  %363 = trunc i32 %362 to i16
+  %364 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv550
+  store i16 %363, i16* %364, align 2, !tbaa !4
   %indvars.iv.next551 = add nuw nsw i64 %indvars.iv550, 1
   %exitcond552 = icmp eq i64 %indvars.iv.next551, 10240
-  br i1 %exitcond552, label %vector.ph1472, label %428
+  br i1 %exitcond552, label %365, label %359
 
-vector.ph1472:                                    ; preds = %428
-  %434 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 6
-  %435 = bitcast i16* %434 to i8*
-  call void @llvm.memset.p0i8.i64(i8* %435, i8 -91, i64 6, i32 4, i1 false)
-  br label %vector.body1473
+; <label>:365                                     ; preds = %359
+  %366 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 6
+  %367 = bitcast i16* %366 to i8*
+  call void @llvm.memset.p0i8.i64(i8* %367, i8 -91, i64 6, i32 4, i1 false)
+  br label %368
 
-vector.body1473:                                  ; preds = %vector.body1473, %vector.ph1472
-  %index1476 = phi i64 [ 0, %vector.ph1472 ], [ %index.next1480, %vector.body1473 ]
-  %vec.phi1485 = phi <4 x i32> [ zeroinitializer, %vector.ph1472 ], [ %442, %vector.body1473 ]
-  %vec.phi1486 = phi <4 x i32> [ zeroinitializer, %vector.ph1472 ], [ %443, %vector.body1473 ]
-  %436 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %index1476
-  %437 = bitcast i16* %436 to <4 x i16>*
-  %wide.load1487 = load <4 x i16>* %437, align 16
-  %.sum2071 = or i64 %index1476, 4
-  %438 = getelementptr [10240 x i16]* %buffer53, i64 0, i64 %.sum2071
-  %439 = bitcast i16* %438 to <4 x i16>*
-  %wide.load1488 = load <4 x i16>* %439, align 8
-  %440 = zext <4 x i16> %wide.load1487 to <4 x i32>
-  %441 = zext <4 x i16> %wide.load1488 to <4 x i32>
-  %442 = add nsw <4 x i32> %440, %vec.phi1485
-  %443 = add nsw <4 x i32> %441, %vec.phi1486
-  %index.next1480 = add i64 %index1476, 8
-  %444 = icmp eq i64 %index.next1480, 10240
-  br i1 %444, label %middle.block1474, label %vector.body1473, !llvm.loop !31
+; <label>:368                                     ; preds = %368, %365
+  %indvars.iv547 = phi i64 [ 0, %365 ], [ %indvars.iv.next548, %368 ]
+  %v71.0262 = phi i32 [ 0, %365 ], [ %372, %368 ]
+  %369 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv547
+  %370 = load i16* %369, align 2, !tbaa !4
+  %371 = zext i16 %370 to i32
+  %372 = add nsw i32 %371, %v71.0262
+  %indvars.iv.next548 = add nuw nsw i64 %indvars.iv547, 1
+  %exitcond549 = icmp eq i64 %indvars.iv.next548, 10240
+  br i1 %exitcond549, label %373, label %368
 
-middle.block1474:                                 ; preds = %vector.body1473
-  %bin.rdx1491 = add <4 x i32> %443, %442
-  %rdx.shuf1492 = shufflevector <4 x i32> %bin.rdx1491, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1493 = add <4 x i32> %bin.rdx1491, %rdx.shuf1492
-  %rdx.shuf1494 = shufflevector <4 x i32> %bin.rdx1493, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1495 = add <4 x i32> %bin.rdx1493, %rdx.shuf1494
-  %445 = extractelement <4 x i32> %bin.rdx1495, i32 0
-  %446 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 6, i32 %445) #2
-  br label %447
+; <label>:373                                     ; preds = %368
+  %374 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 6, i32 %372) #2
+  br label %375
 
-; <label>:447                                     ; preds = %447, %middle.block1474
-  %indvars.iv543 = phi i64 [ 0, %middle.block1474 ], [ %indvars.iv.next544, %447 ]
-  %448 = load volatile i32* %seed54, align 4
-  %449 = trunc i64 %indvars.iv543 to i32
-  %450 = mul nsw i32 %448, %449
-  %451 = trunc i32 %450 to i16
-  %452 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv543
-  store i16 %451, i16* %452, align 2, !tbaa !24
+; <label>:375                                     ; preds = %375, %373
+  %indvars.iv543 = phi i64 [ 0, %373 ], [ %indvars.iv.next544, %375 ]
+  %376 = load volatile i32* %seed54, align 4
+  %377 = trunc i64 %indvars.iv543 to i32
+  %378 = mul nsw i32 %376, %377
+  %379 = trunc i32 %378 to i16
+  %380 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv543
+  store i16 %379, i16* %380, align 2, !tbaa !4
   %indvars.iv.next544 = add nuw nsw i64 %indvars.iv543, 1
   %exitcond545 = icmp eq i64 %indvars.iv.next544, 10240
-  br i1 %exitcond545, label %vector.ph1448, label %447
+  br i1 %exitcond545, label %381, label %375
 
-vector.ph1448:                                    ; preds = %447
-  %453 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 7
-  %454 = bitcast i16* %453 to i8*
-  call void @llvm.memset.p0i8.i64(i8* %454, i8 -91, i64 7, i32 2, i1 false)
-  br label %vector.body1449
+; <label>:381                                     ; preds = %375
+  %382 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 7
+  %383 = bitcast i16* %382 to i8*
+  call void @llvm.memset.p0i8.i64(i8* %383, i8 -91, i64 7, i32 2, i1 false)
+  br label %384
 
-vector.body1449:                                  ; preds = %vector.body1449, %vector.ph1448
-  %index1452 = phi i64 [ 0, %vector.ph1448 ], [ %index.next1456, %vector.body1449 ]
-  %vec.phi1461 = phi <4 x i32> [ zeroinitializer, %vector.ph1448 ], [ %461, %vector.body1449 ]
-  %vec.phi1462 = phi <4 x i32> [ zeroinitializer, %vector.ph1448 ], [ %462, %vector.body1449 ]
-  %455 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %index1452
-  %456 = bitcast i16* %455 to <4 x i16>*
-  %wide.load1463 = load <4 x i16>* %456, align 16
-  %.sum2072 = or i64 %index1452, 4
-  %457 = getelementptr [10240 x i16]* %buffer53, i64 0, i64 %.sum2072
-  %458 = bitcast i16* %457 to <4 x i16>*
-  %wide.load1464 = load <4 x i16>* %458, align 8
-  %459 = zext <4 x i16> %wide.load1463 to <4 x i32>
-  %460 = zext <4 x i16> %wide.load1464 to <4 x i32>
-  %461 = add nsw <4 x i32> %459, %vec.phi1461
-  %462 = add nsw <4 x i32> %460, %vec.phi1462
-  %index.next1456 = add i64 %index1452, 8
-  %463 = icmp eq i64 %index.next1456, 10240
-  br i1 %463, label %middle.block1450, label %vector.body1449, !llvm.loop !32
+; <label>:384                                     ; preds = %384, %381
+  %indvars.iv540 = phi i64 [ 0, %381 ], [ %indvars.iv.next541, %384 ]
+  %v74.0259 = phi i32 [ 0, %381 ], [ %388, %384 ]
+  %385 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv540
+  %386 = load i16* %385, align 2, !tbaa !4
+  %387 = zext i16 %386 to i32
+  %388 = add nsw i32 %387, %v74.0259
+  %indvars.iv.next541 = add nuw nsw i64 %indvars.iv540, 1
+  %exitcond542 = icmp eq i64 %indvars.iv.next541, 10240
+  br i1 %exitcond542, label %389, label %384
 
-middle.block1450:                                 ; preds = %vector.body1449
-  %bin.rdx1467 = add <4 x i32> %462, %461
-  %rdx.shuf1468 = shufflevector <4 x i32> %bin.rdx1467, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1469 = add <4 x i32> %bin.rdx1467, %rdx.shuf1468
-  %rdx.shuf1470 = shufflevector <4 x i32> %bin.rdx1469, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1471 = add <4 x i32> %bin.rdx1469, %rdx.shuf1470
-  %464 = extractelement <4 x i32> %bin.rdx1471, i32 0
-  %465 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 7, i32 %464) #2
-  br label %466
+; <label>:389                                     ; preds = %384
+  %390 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 7, i32 %388) #2
+  br label %391
 
-; <label>:466                                     ; preds = %466, %middle.block1450
-  %indvars.iv536 = phi i64 [ 0, %middle.block1450 ], [ %indvars.iv.next537, %466 ]
-  %467 = load volatile i32* %seed54, align 4
-  %468 = trunc i64 %indvars.iv536 to i32
-  %469 = mul nsw i32 %467, %468
-  %470 = trunc i32 %469 to i16
-  %471 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv536
-  store i16 %470, i16* %471, align 2, !tbaa !24
+; <label>:391                                     ; preds = %391, %389
+  %indvars.iv536 = phi i64 [ 0, %389 ], [ %indvars.iv.next537, %391 ]
+  %392 = load volatile i32* %seed54, align 4
+  %393 = trunc i64 %indvars.iv536 to i32
+  %394 = mul nsw i32 %392, %393
+  %395 = trunc i32 %394 to i16
+  %396 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv536
+  store i16 %395, i16* %396, align 2, !tbaa !4
   %indvars.iv.next537 = add nuw nsw i64 %indvars.iv536, 1
   %exitcond538 = icmp eq i64 %indvars.iv.next537, 10240
-  br i1 %exitcond538, label %vector.ph1424, label %466
+  br i1 %exitcond538, label %397, label %391
 
-vector.ph1424:                                    ; preds = %466
-  %472 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 8
-  %473 = bitcast i16* %472 to i64*
-  store i64 -6510615555426900571, i64* %473, align 16
-  br label %vector.body1425
+; <label>:397                                     ; preds = %391
+  %398 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 8
+  %399 = bitcast i16* %398 to i64*
+  store i64 -6510615555426900571, i64* %399, align 16
+  br label %400
 
-vector.body1425:                                  ; preds = %vector.body1425, %vector.ph1424
-  %index1428 = phi i64 [ 0, %vector.ph1424 ], [ %index.next1432, %vector.body1425 ]
-  %vec.phi1437 = phi <4 x i32> [ zeroinitializer, %vector.ph1424 ], [ %480, %vector.body1425 ]
-  %vec.phi1438 = phi <4 x i32> [ zeroinitializer, %vector.ph1424 ], [ %481, %vector.body1425 ]
-  %474 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %index1428
-  %475 = bitcast i16* %474 to <4 x i16>*
-  %wide.load1439 = load <4 x i16>* %475, align 16
-  %.sum2073 = or i64 %index1428, 4
-  %476 = getelementptr [10240 x i16]* %buffer53, i64 0, i64 %.sum2073
-  %477 = bitcast i16* %476 to <4 x i16>*
-  %wide.load1440 = load <4 x i16>* %477, align 8
-  %478 = zext <4 x i16> %wide.load1439 to <4 x i32>
-  %479 = zext <4 x i16> %wide.load1440 to <4 x i32>
-  %480 = add nsw <4 x i32> %478, %vec.phi1437
-  %481 = add nsw <4 x i32> %479, %vec.phi1438
-  %index.next1432 = add i64 %index1428, 8
-  %482 = icmp eq i64 %index.next1432, 10240
-  br i1 %482, label %middle.block1426, label %vector.body1425, !llvm.loop !33
+; <label>:400                                     ; preds = %400, %397
+  %indvars.iv533 = phi i64 [ 0, %397 ], [ %indvars.iv.next534, %400 ]
+  %v77.0256 = phi i32 [ 0, %397 ], [ %404, %400 ]
+  %401 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv533
+  %402 = load i16* %401, align 2, !tbaa !4
+  %403 = zext i16 %402 to i32
+  %404 = add nsw i32 %403, %v77.0256
+  %indvars.iv.next534 = add nuw nsw i64 %indvars.iv533, 1
+  %exitcond535 = icmp eq i64 %indvars.iv.next534, 10240
+  br i1 %exitcond535, label %405, label %400
 
-middle.block1426:                                 ; preds = %vector.body1425
-  %bin.rdx1443 = add <4 x i32> %481, %480
-  %rdx.shuf1444 = shufflevector <4 x i32> %bin.rdx1443, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1445 = add <4 x i32> %bin.rdx1443, %rdx.shuf1444
-  %rdx.shuf1446 = shufflevector <4 x i32> %bin.rdx1445, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1447 = add <4 x i32> %bin.rdx1445, %rdx.shuf1446
-  %483 = extractelement <4 x i32> %bin.rdx1447, i32 0
-  %484 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 8, i32 %483) #2
-  br label %485
+; <label>:405                                     ; preds = %400
+  %406 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 8, i32 %404) #2
+  br label %407
 
-; <label>:485                                     ; preds = %485, %middle.block1426
-  %indvars.iv529 = phi i64 [ 0, %middle.block1426 ], [ %indvars.iv.next530, %485 ]
-  %486 = load volatile i32* %seed54, align 4
-  %487 = trunc i64 %indvars.iv529 to i32
-  %488 = mul nsw i32 %486, %487
-  %489 = trunc i32 %488 to i16
-  %490 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv529
-  store i16 %489, i16* %490, align 2, !tbaa !24
+; <label>:407                                     ; preds = %407, %405
+  %indvars.iv529 = phi i64 [ 0, %405 ], [ %indvars.iv.next530, %407 ]
+  %408 = load volatile i32* %seed54, align 4
+  %409 = trunc i64 %indvars.iv529 to i32
+  %410 = mul nsw i32 %408, %409
+  %411 = trunc i32 %410 to i16
+  %412 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv529
+  store i16 %411, i16* %412, align 2, !tbaa !4
   %indvars.iv.next530 = add nuw nsw i64 %indvars.iv529, 1
   %exitcond531 = icmp eq i64 %indvars.iv.next530, 10240
-  br i1 %exitcond531, label %vector.ph1400, label %485
+  br i1 %exitcond531, label %413, label %407
 
-vector.ph1400:                                    ; preds = %485
-  %491 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 9
-  %492 = bitcast i16* %491 to i8*
-  call void @llvm.memset.p0i8.i64(i8* %492, i8 -91, i64 9, i32 2, i1 false)
-  br label %vector.body1401
+; <label>:413                                     ; preds = %407
+  %414 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 9
+  %415 = bitcast i16* %414 to i8*
+  call void @llvm.memset.p0i8.i64(i8* %415, i8 -91, i64 9, i32 2, i1 false)
+  br label %416
 
-vector.body1401:                                  ; preds = %vector.body1401, %vector.ph1400
-  %index1404 = phi i64 [ 0, %vector.ph1400 ], [ %index.next1408, %vector.body1401 ]
-  %vec.phi1413 = phi <4 x i32> [ zeroinitializer, %vector.ph1400 ], [ %499, %vector.body1401 ]
-  %vec.phi1414 = phi <4 x i32> [ zeroinitializer, %vector.ph1400 ], [ %500, %vector.body1401 ]
-  %493 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %index1404
-  %494 = bitcast i16* %493 to <4 x i16>*
-  %wide.load1415 = load <4 x i16>* %494, align 16
-  %.sum2074 = or i64 %index1404, 4
-  %495 = getelementptr [10240 x i16]* %buffer53, i64 0, i64 %.sum2074
-  %496 = bitcast i16* %495 to <4 x i16>*
-  %wide.load1416 = load <4 x i16>* %496, align 8
-  %497 = zext <4 x i16> %wide.load1415 to <4 x i32>
-  %498 = zext <4 x i16> %wide.load1416 to <4 x i32>
-  %499 = add nsw <4 x i32> %497, %vec.phi1413
-  %500 = add nsw <4 x i32> %498, %vec.phi1414
-  %index.next1408 = add i64 %index1404, 8
-  %501 = icmp eq i64 %index.next1408, 10240
-  br i1 %501, label %middle.block1402, label %vector.body1401, !llvm.loop !34
+; <label>:416                                     ; preds = %416, %413
+  %indvars.iv526 = phi i64 [ 0, %413 ], [ %indvars.iv.next527, %416 ]
+  %v80.0253 = phi i32 [ 0, %413 ], [ %420, %416 ]
+  %417 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv526
+  %418 = load i16* %417, align 2, !tbaa !4
+  %419 = zext i16 %418 to i32
+  %420 = add nsw i32 %419, %v80.0253
+  %indvars.iv.next527 = add nuw nsw i64 %indvars.iv526, 1
+  %exitcond528 = icmp eq i64 %indvars.iv.next527, 10240
+  br i1 %exitcond528, label %421, label %416
 
-middle.block1402:                                 ; preds = %vector.body1401
-  %bin.rdx1419 = add <4 x i32> %500, %499
-  %rdx.shuf1420 = shufflevector <4 x i32> %bin.rdx1419, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1421 = add <4 x i32> %bin.rdx1419, %rdx.shuf1420
-  %rdx.shuf1422 = shufflevector <4 x i32> %bin.rdx1421, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1423 = add <4 x i32> %bin.rdx1421, %rdx.shuf1422
-  %502 = extractelement <4 x i32> %bin.rdx1423, i32 0
-  %503 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 9, i32 %502) #2
-  br label %504
+; <label>:421                                     ; preds = %416
+  %422 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 9, i32 %420) #2
+  br label %423
 
-; <label>:504                                     ; preds = %504, %middle.block1402
-  %indvars.iv522 = phi i64 [ 0, %middle.block1402 ], [ %indvars.iv.next523, %504 ]
-  %505 = load volatile i32* %seed54, align 4
-  %506 = trunc i64 %indvars.iv522 to i32
-  %507 = mul nsw i32 %505, %506
-  %508 = trunc i32 %507 to i16
-  %509 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv522
-  store i16 %508, i16* %509, align 2, !tbaa !24
+; <label>:423                                     ; preds = %423, %421
+  %indvars.iv522 = phi i64 [ 0, %421 ], [ %indvars.iv.next523, %423 ]
+  %424 = load volatile i32* %seed54, align 4
+  %425 = trunc i64 %indvars.iv522 to i32
+  %426 = mul nsw i32 %424, %425
+  %427 = trunc i32 %426 to i16
+  %428 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv522
+  store i16 %427, i16* %428, align 2, !tbaa !4
   %indvars.iv.next523 = add nuw nsw i64 %indvars.iv522, 1
   %exitcond524 = icmp eq i64 %indvars.iv.next523, 10240
-  br i1 %exitcond524, label %vector.ph1376, label %504
+  br i1 %exitcond524, label %429, label %423
 
-vector.ph1376:                                    ; preds = %504
-  %510 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 10
-  %511 = bitcast i16* %510 to i8*
-  call void @llvm.memset.p0i8.i64(i8* %511, i8 -91, i64 10, i32 4, i1 false)
-  br label %vector.body1377
+; <label>:429                                     ; preds = %423
+  %430 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 10
+  %431 = bitcast i16* %430 to i8*
+  call void @llvm.memset.p0i8.i64(i8* %431, i8 -91, i64 10, i32 4, i1 false)
+  br label %432
 
-vector.body1377:                                  ; preds = %vector.body1377, %vector.ph1376
-  %index1380 = phi i64 [ 0, %vector.ph1376 ], [ %index.next1384, %vector.body1377 ]
-  %vec.phi1389 = phi <4 x i32> [ zeroinitializer, %vector.ph1376 ], [ %518, %vector.body1377 ]
-  %vec.phi1390 = phi <4 x i32> [ zeroinitializer, %vector.ph1376 ], [ %519, %vector.body1377 ]
-  %512 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %index1380
-  %513 = bitcast i16* %512 to <4 x i16>*
-  %wide.load1391 = load <4 x i16>* %513, align 16
-  %.sum2075 = or i64 %index1380, 4
-  %514 = getelementptr [10240 x i16]* %buffer53, i64 0, i64 %.sum2075
-  %515 = bitcast i16* %514 to <4 x i16>*
-  %wide.load1392 = load <4 x i16>* %515, align 8
-  %516 = zext <4 x i16> %wide.load1391 to <4 x i32>
-  %517 = zext <4 x i16> %wide.load1392 to <4 x i32>
-  %518 = add nsw <4 x i32> %516, %vec.phi1389
-  %519 = add nsw <4 x i32> %517, %vec.phi1390
-  %index.next1384 = add i64 %index1380, 8
-  %520 = icmp eq i64 %index.next1384, 10240
-  br i1 %520, label %middle.block1378, label %vector.body1377, !llvm.loop !35
+; <label>:432                                     ; preds = %432, %429
+  %indvars.iv519 = phi i64 [ 0, %429 ], [ %indvars.iv.next520, %432 ]
+  %v83.0250 = phi i32 [ 0, %429 ], [ %436, %432 ]
+  %433 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv519
+  %434 = load i16* %433, align 2, !tbaa !4
+  %435 = zext i16 %434 to i32
+  %436 = add nsw i32 %435, %v83.0250
+  %indvars.iv.next520 = add nuw nsw i64 %indvars.iv519, 1
+  %exitcond521 = icmp eq i64 %indvars.iv.next520, 10240
+  br i1 %exitcond521, label %437, label %432
 
-middle.block1378:                                 ; preds = %vector.body1377
-  %bin.rdx1395 = add <4 x i32> %519, %518
-  %rdx.shuf1396 = shufflevector <4 x i32> %bin.rdx1395, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1397 = add <4 x i32> %bin.rdx1395, %rdx.shuf1396
-  %rdx.shuf1398 = shufflevector <4 x i32> %bin.rdx1397, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1399 = add <4 x i32> %bin.rdx1397, %rdx.shuf1398
-  %521 = extractelement <4 x i32> %bin.rdx1399, i32 0
-  %522 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 10, i32 %521) #2
-  br label %523
+; <label>:437                                     ; preds = %432
+  %438 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 10, i32 %436) #2
+  br label %439
 
-; <label>:523                                     ; preds = %523, %middle.block1378
-  %indvars.iv515 = phi i64 [ 0, %middle.block1378 ], [ %indvars.iv.next516, %523 ]
-  %524 = load volatile i32* %seed54, align 4
-  %525 = trunc i64 %indvars.iv515 to i32
-  %526 = mul nsw i32 %524, %525
-  %527 = trunc i32 %526 to i16
-  %528 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv515
-  store i16 %527, i16* %528, align 2, !tbaa !24
+; <label>:439                                     ; preds = %439, %437
+  %indvars.iv515 = phi i64 [ 0, %437 ], [ %indvars.iv.next516, %439 ]
+  %440 = load volatile i32* %seed54, align 4
+  %441 = trunc i64 %indvars.iv515 to i32
+  %442 = mul nsw i32 %440, %441
+  %443 = trunc i32 %442 to i16
+  %444 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv515
+  store i16 %443, i16* %444, align 2, !tbaa !4
   %indvars.iv.next516 = add nuw nsw i64 %indvars.iv515, 1
   %exitcond517 = icmp eq i64 %indvars.iv.next516, 10240
-  br i1 %exitcond517, label %vector.ph1352, label %523
+  br i1 %exitcond517, label %445, label %439
 
-vector.ph1352:                                    ; preds = %523
-  %529 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 16
-  %530 = bitcast i16* %529 to i8*
-  call void @llvm.memset.p0i8.i64(i8* %530, i8 -91, i64 16, i32 16, i1 false)
-  br label %vector.body1353
+; <label>:445                                     ; preds = %439
+  %446 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 16
+  %447 = bitcast i16* %446 to i8*
+  call void @llvm.memset.p0i8.i64(i8* %447, i8 -91, i64 16, i32 16, i1 false)
+  br label %448
 
-vector.body1353:                                  ; preds = %vector.body1353, %vector.ph1352
-  %index1356 = phi i64 [ 0, %vector.ph1352 ], [ %index.next1360, %vector.body1353 ]
-  %vec.phi1365 = phi <4 x i32> [ zeroinitializer, %vector.ph1352 ], [ %537, %vector.body1353 ]
-  %vec.phi1366 = phi <4 x i32> [ zeroinitializer, %vector.ph1352 ], [ %538, %vector.body1353 ]
-  %531 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %index1356
-  %532 = bitcast i16* %531 to <4 x i16>*
-  %wide.load1367 = load <4 x i16>* %532, align 16
-  %.sum2076 = or i64 %index1356, 4
-  %533 = getelementptr [10240 x i16]* %buffer53, i64 0, i64 %.sum2076
-  %534 = bitcast i16* %533 to <4 x i16>*
-  %wide.load1368 = load <4 x i16>* %534, align 8
-  %535 = zext <4 x i16> %wide.load1367 to <4 x i32>
-  %536 = zext <4 x i16> %wide.load1368 to <4 x i32>
-  %537 = add nsw <4 x i32> %535, %vec.phi1365
-  %538 = add nsw <4 x i32> %536, %vec.phi1366
-  %index.next1360 = add i64 %index1356, 8
-  %539 = icmp eq i64 %index.next1360, 10240
-  br i1 %539, label %middle.block1354, label %vector.body1353, !llvm.loop !36
+; <label>:448                                     ; preds = %448, %445
+  %indvars.iv512 = phi i64 [ 0, %445 ], [ %indvars.iv.next513, %448 ]
+  %v86.0247 = phi i32 [ 0, %445 ], [ %452, %448 ]
+  %449 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv512
+  %450 = load i16* %449, align 2, !tbaa !4
+  %451 = zext i16 %450 to i32
+  %452 = add nsw i32 %451, %v86.0247
+  %indvars.iv.next513 = add nuw nsw i64 %indvars.iv512, 1
+  %exitcond514 = icmp eq i64 %indvars.iv.next513, 10240
+  br i1 %exitcond514, label %453, label %448
 
-middle.block1354:                                 ; preds = %vector.body1353
-  %bin.rdx1371 = add <4 x i32> %538, %537
-  %rdx.shuf1372 = shufflevector <4 x i32> %bin.rdx1371, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1373 = add <4 x i32> %bin.rdx1371, %rdx.shuf1372
-  %rdx.shuf1374 = shufflevector <4 x i32> %bin.rdx1373, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1375 = add <4 x i32> %bin.rdx1373, %rdx.shuf1374
-  %540 = extractelement <4 x i32> %bin.rdx1375, i32 0
-  %541 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 16, i32 %540) #2
-  br label %542
+; <label>:453                                     ; preds = %448
+  %454 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 16, i32 %452) #2
+  br label %455
 
-; <label>:542                                     ; preds = %542, %middle.block1354
-  %indvars.iv508 = phi i64 [ 0, %middle.block1354 ], [ %indvars.iv.next509, %542 ]
-  %543 = load volatile i32* %seed54, align 4
-  %544 = trunc i64 %indvars.iv508 to i32
-  %545 = mul nsw i32 %543, %544
-  %546 = trunc i32 %545 to i16
-  %547 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv508
-  store i16 %546, i16* %547, align 2, !tbaa !24
+; <label>:455                                     ; preds = %455, %453
+  %indvars.iv508 = phi i64 [ 0, %453 ], [ %indvars.iv.next509, %455 ]
+  %456 = load volatile i32* %seed54, align 4
+  %457 = trunc i64 %indvars.iv508 to i32
+  %458 = mul nsw i32 %456, %457
+  %459 = trunc i32 %458 to i16
+  %460 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv508
+  store i16 %459, i16* %460, align 2, !tbaa !4
   %indvars.iv.next509 = add nuw nsw i64 %indvars.iv508, 1
   %exitcond510 = icmp eq i64 %indvars.iv.next509, 10240
-  br i1 %exitcond510, label %vector.ph1328, label %542
+  br i1 %exitcond510, label %461, label %455
 
-vector.ph1328:                                    ; preds = %542
-  %548 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 15
-  %549 = bitcast i16* %548 to i8*
-  call void @llvm.memset.p0i8.i64(i8* %549, i8 -91, i64 32, i32 2, i1 false)
-  br label %vector.body1329
+; <label>:461                                     ; preds = %455
+  %462 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 15
+  %463 = bitcast i16* %462 to i8*
+  call void @llvm.memset.p0i8.i64(i8* %463, i8 -91, i64 32, i32 2, i1 false)
+  br label %464
 
-vector.body1329:                                  ; preds = %vector.body1329, %vector.ph1328
-  %index1332 = phi i64 [ 0, %vector.ph1328 ], [ %index.next1336, %vector.body1329 ]
-  %vec.phi1341 = phi <4 x i32> [ zeroinitializer, %vector.ph1328 ], [ %556, %vector.body1329 ]
-  %vec.phi1342 = phi <4 x i32> [ zeroinitializer, %vector.ph1328 ], [ %557, %vector.body1329 ]
-  %550 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %index1332
-  %551 = bitcast i16* %550 to <4 x i16>*
-  %wide.load1343 = load <4 x i16>* %551, align 16
-  %.sum2077 = or i64 %index1332, 4
-  %552 = getelementptr [10240 x i16]* %buffer53, i64 0, i64 %.sum2077
-  %553 = bitcast i16* %552 to <4 x i16>*
-  %wide.load1344 = load <4 x i16>* %553, align 8
-  %554 = zext <4 x i16> %wide.load1343 to <4 x i32>
-  %555 = zext <4 x i16> %wide.load1344 to <4 x i32>
-  %556 = add nsw <4 x i32> %554, %vec.phi1341
-  %557 = add nsw <4 x i32> %555, %vec.phi1342
-  %index.next1336 = add i64 %index1332, 8
-  %558 = icmp eq i64 %index.next1336, 10240
-  br i1 %558, label %middle.block1330, label %vector.body1329, !llvm.loop !37
+; <label>:464                                     ; preds = %464, %461
+  %indvars.iv505 = phi i64 [ 0, %461 ], [ %indvars.iv.next506, %464 ]
+  %v89.0244 = phi i32 [ 0, %461 ], [ %468, %464 ]
+  %465 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv505
+  %466 = load i16* %465, align 2, !tbaa !4
+  %467 = zext i16 %466 to i32
+  %468 = add nsw i32 %467, %v89.0244
+  %indvars.iv.next506 = add nuw nsw i64 %indvars.iv505, 1
+  %exitcond507 = icmp eq i64 %indvars.iv.next506, 10240
+  br i1 %exitcond507, label %469, label %464
 
-middle.block1330:                                 ; preds = %vector.body1329
-  %bin.rdx1347 = add <4 x i32> %557, %556
-  %rdx.shuf1348 = shufflevector <4 x i32> %bin.rdx1347, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1349 = add <4 x i32> %bin.rdx1347, %rdx.shuf1348
-  %rdx.shuf1350 = shufflevector <4 x i32> %bin.rdx1349, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1351 = add <4 x i32> %bin.rdx1349, %rdx.shuf1350
-  %559 = extractelement <4 x i32> %bin.rdx1351, i32 0
-  %560 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 32, i32 %559) #2
-  br label %561
+; <label>:469                                     ; preds = %464
+  %470 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 32, i32 %468) #2
+  br label %471
 
-; <label>:561                                     ; preds = %561, %middle.block1330
-  %indvars.iv501 = phi i64 [ 0, %middle.block1330 ], [ %indvars.iv.next502, %561 ]
-  %562 = load volatile i32* %seed54, align 4
-  %563 = trunc i64 %indvars.iv501 to i32
-  %564 = mul nsw i32 %562, %563
-  %565 = trunc i32 %564 to i16
-  %566 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv501
-  store i16 %565, i16* %566, align 2, !tbaa !24
+; <label>:471                                     ; preds = %471, %469
+  %indvars.iv501 = phi i64 [ 0, %469 ], [ %indvars.iv.next502, %471 ]
+  %472 = load volatile i32* %seed54, align 4
+  %473 = trunc i64 %indvars.iv501 to i32
+  %474 = mul nsw i32 %472, %473
+  %475 = trunc i32 %474 to i16
+  %476 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv501
+  store i16 %475, i16* %476, align 2, !tbaa !4
   %indvars.iv.next502 = add nuw nsw i64 %indvars.iv501, 1
   %exitcond503 = icmp eq i64 %indvars.iv.next502, 10240
-  br i1 %exitcond503, label %vector.ph1304, label %561
+  br i1 %exitcond503, label %477, label %471
 
-vector.ph1304:                                    ; preds = %561
-  %567 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 13
-  %568 = bitcast i16* %567 to i8*
-  call void @llvm.memset.p0i8.i64(i8* %568, i8 -91, i64 64, i32 2, i1 false)
-  br label %vector.body1305
+; <label>:477                                     ; preds = %471
+  %478 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 13
+  %479 = bitcast i16* %478 to i8*
+  call void @llvm.memset.p0i8.i64(i8* %479, i8 -91, i64 64, i32 2, i1 false)
+  br label %480
 
-vector.body1305:                                  ; preds = %vector.body1305, %vector.ph1304
-  %index1308 = phi i64 [ 0, %vector.ph1304 ], [ %index.next1312, %vector.body1305 ]
-  %vec.phi1317 = phi <4 x i32> [ zeroinitializer, %vector.ph1304 ], [ %575, %vector.body1305 ]
-  %vec.phi1318 = phi <4 x i32> [ zeroinitializer, %vector.ph1304 ], [ %576, %vector.body1305 ]
-  %569 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %index1308
-  %570 = bitcast i16* %569 to <4 x i16>*
-  %wide.load1319 = load <4 x i16>* %570, align 16
-  %.sum2078 = or i64 %index1308, 4
-  %571 = getelementptr [10240 x i16]* %buffer53, i64 0, i64 %.sum2078
-  %572 = bitcast i16* %571 to <4 x i16>*
-  %wide.load1320 = load <4 x i16>* %572, align 8
-  %573 = zext <4 x i16> %wide.load1319 to <4 x i32>
-  %574 = zext <4 x i16> %wide.load1320 to <4 x i32>
-  %575 = add nsw <4 x i32> %573, %vec.phi1317
-  %576 = add nsw <4 x i32> %574, %vec.phi1318
-  %index.next1312 = add i64 %index1308, 8
-  %577 = icmp eq i64 %index.next1312, 10240
-  br i1 %577, label %middle.block1306, label %vector.body1305, !llvm.loop !38
+; <label>:480                                     ; preds = %480, %477
+  %indvars.iv498 = phi i64 [ 0, %477 ], [ %indvars.iv.next499, %480 ]
+  %v92.0241 = phi i32 [ 0, %477 ], [ %484, %480 ]
+  %481 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv498
+  %482 = load i16* %481, align 2, !tbaa !4
+  %483 = zext i16 %482 to i32
+  %484 = add nsw i32 %483, %v92.0241
+  %indvars.iv.next499 = add nuw nsw i64 %indvars.iv498, 1
+  %exitcond500 = icmp eq i64 %indvars.iv.next499, 10240
+  br i1 %exitcond500, label %485, label %480
 
-middle.block1306:                                 ; preds = %vector.body1305
-  %bin.rdx1323 = add <4 x i32> %576, %575
-  %rdx.shuf1324 = shufflevector <4 x i32> %bin.rdx1323, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1325 = add <4 x i32> %bin.rdx1323, %rdx.shuf1324
-  %rdx.shuf1326 = shufflevector <4 x i32> %bin.rdx1325, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1327 = add <4 x i32> %bin.rdx1325, %rdx.shuf1326
-  %578 = extractelement <4 x i32> %bin.rdx1327, i32 0
-  %579 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 64, i32 %578) #2
-  br label %580
+; <label>:485                                     ; preds = %480
+  %486 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 64, i32 %484) #2
+  br label %487
 
-; <label>:580                                     ; preds = %580, %middle.block1306
-  %indvars.iv494 = phi i64 [ 0, %middle.block1306 ], [ %indvars.iv.next495, %580 ]
-  %581 = load volatile i32* %seed54, align 4
-  %582 = trunc i64 %indvars.iv494 to i32
-  %583 = mul nsw i32 %581, %582
-  %584 = trunc i32 %583 to i16
-  %585 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv494
-  store i16 %584, i16* %585, align 2, !tbaa !24
+; <label>:487                                     ; preds = %487, %485
+  %indvars.iv494 = phi i64 [ 0, %485 ], [ %indvars.iv.next495, %487 ]
+  %488 = load volatile i32* %seed54, align 4
+  %489 = trunc i64 %indvars.iv494 to i32
+  %490 = mul nsw i32 %488, %489
+  %491 = trunc i32 %490 to i16
+  %492 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv494
+  store i16 %491, i16* %492, align 2, !tbaa !4
   %indvars.iv.next495 = add nuw nsw i64 %indvars.iv494, 1
   %exitcond496 = icmp eq i64 %indvars.iv.next495, 10240
-  br i1 %exitcond496, label %vector.ph1280, label %580
+  br i1 %exitcond496, label %493, label %487
 
-vector.ph1280:                                    ; preds = %580
-  call void @llvm.memset.p0i8.i64(i8* %492, i8 -91, i64 128, i32 2, i1 false)
-  br label %vector.body1281
+; <label>:493                                     ; preds = %487
+  call void @llvm.memset.p0i8.i64(i8* %415, i8 -91, i64 128, i32 2, i1 false)
+  br label %494
 
-vector.body1281:                                  ; preds = %vector.body1281, %vector.ph1280
-  %index1284 = phi i64 [ 0, %vector.ph1280 ], [ %index.next1288, %vector.body1281 ]
-  %vec.phi1293 = phi <4 x i32> [ zeroinitializer, %vector.ph1280 ], [ %592, %vector.body1281 ]
-  %vec.phi1294 = phi <4 x i32> [ zeroinitializer, %vector.ph1280 ], [ %593, %vector.body1281 ]
-  %586 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %index1284
-  %587 = bitcast i16* %586 to <4 x i16>*
-  %wide.load1295 = load <4 x i16>* %587, align 16
-  %.sum2079 = or i64 %index1284, 4
-  %588 = getelementptr [10240 x i16]* %buffer53, i64 0, i64 %.sum2079
-  %589 = bitcast i16* %588 to <4 x i16>*
-  %wide.load1296 = load <4 x i16>* %589, align 8
-  %590 = zext <4 x i16> %wide.load1295 to <4 x i32>
-  %591 = zext <4 x i16> %wide.load1296 to <4 x i32>
-  %592 = add nsw <4 x i32> %590, %vec.phi1293
-  %593 = add nsw <4 x i32> %591, %vec.phi1294
-  %index.next1288 = add i64 %index1284, 8
-  %594 = icmp eq i64 %index.next1288, 10240
-  br i1 %594, label %middle.block1282, label %vector.body1281, !llvm.loop !39
+; <label>:494                                     ; preds = %494, %493
+  %indvars.iv491 = phi i64 [ 0, %493 ], [ %indvars.iv.next492, %494 ]
+  %v95.0238 = phi i32 [ 0, %493 ], [ %498, %494 ]
+  %495 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv491
+  %496 = load i16* %495, align 2, !tbaa !4
+  %497 = zext i16 %496 to i32
+  %498 = add nsw i32 %497, %v95.0238
+  %indvars.iv.next492 = add nuw nsw i64 %indvars.iv491, 1
+  %exitcond493 = icmp eq i64 %indvars.iv.next492, 10240
+  br i1 %exitcond493, label %499, label %494
 
-middle.block1282:                                 ; preds = %vector.body1281
-  %bin.rdx1299 = add <4 x i32> %593, %592
-  %rdx.shuf1300 = shufflevector <4 x i32> %bin.rdx1299, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1301 = add <4 x i32> %bin.rdx1299, %rdx.shuf1300
-  %rdx.shuf1302 = shufflevector <4 x i32> %bin.rdx1301, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1303 = add <4 x i32> %bin.rdx1301, %rdx.shuf1302
-  %595 = extractelement <4 x i32> %bin.rdx1303, i32 0
-  %596 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 128, i32 %595) #2
-  br label %597
+; <label>:499                                     ; preds = %494
+  %500 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 128, i32 %498) #2
+  br label %501
 
-; <label>:597                                     ; preds = %597, %middle.block1282
-  %indvars.iv487 = phi i64 [ 0, %middle.block1282 ], [ %indvars.iv.next488, %597 ]
-  %598 = load volatile i32* %seed54, align 4
-  %599 = trunc i64 %indvars.iv487 to i32
-  %600 = mul nsw i32 %598, %599
-  %601 = trunc i32 %600 to i16
-  %602 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv487
-  store i16 %601, i16* %602, align 2, !tbaa !24
+; <label>:501                                     ; preds = %501, %499
+  %indvars.iv487 = phi i64 [ 0, %499 ], [ %indvars.iv.next488, %501 ]
+  %502 = load volatile i32* %seed54, align 4
+  %503 = trunc i64 %indvars.iv487 to i32
+  %504 = mul nsw i32 %502, %503
+  %505 = trunc i32 %504 to i16
+  %506 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv487
+  store i16 %505, i16* %506, align 2, !tbaa !4
   %indvars.iv.next488 = add nuw nsw i64 %indvars.iv487, 1
   %exitcond489 = icmp eq i64 %indvars.iv.next488, 10240
-  br i1 %exitcond489, label %vector.ph1256, label %597
+  br i1 %exitcond489, label %507, label %501
 
-vector.ph1256:                                    ; preds = %597
-  call void @llvm.memset.p0i8.i64(i8* %339, i8 -91, i64 256, i32 2, i1 false)
-  br label %vector.body1257
+; <label>:507                                     ; preds = %501
+  call void @llvm.memset.p0i8.i64(i8* %286, i8 -91, i64 256, i32 2, i1 false)
+  br label %508
 
-vector.body1257:                                  ; preds = %vector.body1257, %vector.ph1256
-  %index1260 = phi i64 [ 0, %vector.ph1256 ], [ %index.next1264, %vector.body1257 ]
-  %vec.phi1269 = phi <4 x i32> [ zeroinitializer, %vector.ph1256 ], [ %609, %vector.body1257 ]
-  %vec.phi1270 = phi <4 x i32> [ zeroinitializer, %vector.ph1256 ], [ %610, %vector.body1257 ]
-  %603 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %index1260
-  %604 = bitcast i16* %603 to <4 x i16>*
-  %wide.load1271 = load <4 x i16>* %604, align 16
-  %.sum2080 = or i64 %index1260, 4
-  %605 = getelementptr [10240 x i16]* %buffer53, i64 0, i64 %.sum2080
-  %606 = bitcast i16* %605 to <4 x i16>*
-  %wide.load1272 = load <4 x i16>* %606, align 8
-  %607 = zext <4 x i16> %wide.load1271 to <4 x i32>
-  %608 = zext <4 x i16> %wide.load1272 to <4 x i32>
-  %609 = add nsw <4 x i32> %607, %vec.phi1269
-  %610 = add nsw <4 x i32> %608, %vec.phi1270
-  %index.next1264 = add i64 %index1260, 8
-  %611 = icmp eq i64 %index.next1264, 10240
-  br i1 %611, label %middle.block1258, label %vector.body1257, !llvm.loop !40
+; <label>:508                                     ; preds = %508, %507
+  %indvars.iv484 = phi i64 [ 0, %507 ], [ %indvars.iv.next485, %508 ]
+  %v98.0235 = phi i32 [ 0, %507 ], [ %512, %508 ]
+  %509 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv484
+  %510 = load i16* %509, align 2, !tbaa !4
+  %511 = zext i16 %510 to i32
+  %512 = add nsw i32 %511, %v98.0235
+  %indvars.iv.next485 = add nuw nsw i64 %indvars.iv484, 1
+  %exitcond486 = icmp eq i64 %indvars.iv.next485, 10240
+  br i1 %exitcond486, label %513, label %508
 
-middle.block1258:                                 ; preds = %vector.body1257
-  %bin.rdx1275 = add <4 x i32> %610, %609
-  %rdx.shuf1276 = shufflevector <4 x i32> %bin.rdx1275, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1277 = add <4 x i32> %bin.rdx1275, %rdx.shuf1276
-  %rdx.shuf1278 = shufflevector <4 x i32> %bin.rdx1277, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1279 = add <4 x i32> %bin.rdx1277, %rdx.shuf1278
-  %612 = extractelement <4 x i32> %bin.rdx1279, i32 0
-  %613 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 256, i32 %612) #2
-  br label %614
+; <label>:513                                     ; preds = %508
+  %514 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 256, i32 %512) #2
+  br label %515
 
-; <label>:614                                     ; preds = %614, %middle.block1258
-  %indvars.iv480 = phi i64 [ 0, %middle.block1258 ], [ %indvars.iv.next481, %614 ]
-  %615 = load volatile i32* %seed54, align 4
-  %616 = trunc i64 %indvars.iv480 to i32
-  %617 = mul nsw i32 %615, %616
-  %618 = trunc i32 %617 to i16
-  %619 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv480
-  store i16 %618, i16* %619, align 2, !tbaa !24
+; <label>:515                                     ; preds = %515, %513
+  %indvars.iv480 = phi i64 [ 0, %513 ], [ %indvars.iv.next481, %515 ]
+  %516 = load volatile i32* %seed54, align 4
+  %517 = trunc i64 %indvars.iv480 to i32
+  %518 = mul nsw i32 %516, %517
+  %519 = trunc i32 %518 to i16
+  %520 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv480
+  store i16 %519, i16* %520, align 2, !tbaa !4
   %indvars.iv.next481 = add nuw nsw i64 %indvars.iv480, 1
   %exitcond482 = icmp eq i64 %indvars.iv.next481, 10240
-  br i1 %exitcond482, label %vector.ph1232, label %614
+  br i1 %exitcond482, label %521, label %515
 
-vector.ph1232:                                    ; preds = %614
-  call void @llvm.memset.p0i8.i64(i8* %368, i8 -91, i64 512, i32 4, i1 false)
-  br label %vector.body1233
+; <label>:521                                     ; preds = %515
+  call void @llvm.memset.p0i8.i64(i8* %308, i8 -91, i64 512, i32 4, i1 false)
+  br label %522
 
-vector.body1233:                                  ; preds = %vector.body1233, %vector.ph1232
-  %index1236 = phi i64 [ 0, %vector.ph1232 ], [ %index.next1240, %vector.body1233 ]
-  %vec.phi1245 = phi <4 x i32> [ zeroinitializer, %vector.ph1232 ], [ %626, %vector.body1233 ]
-  %vec.phi1246 = phi <4 x i32> [ zeroinitializer, %vector.ph1232 ], [ %627, %vector.body1233 ]
-  %620 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %index1236
-  %621 = bitcast i16* %620 to <4 x i16>*
-  %wide.load1247 = load <4 x i16>* %621, align 16
-  %.sum2081 = or i64 %index1236, 4
-  %622 = getelementptr [10240 x i16]* %buffer53, i64 0, i64 %.sum2081
-  %623 = bitcast i16* %622 to <4 x i16>*
-  %wide.load1248 = load <4 x i16>* %623, align 8
-  %624 = zext <4 x i16> %wide.load1247 to <4 x i32>
-  %625 = zext <4 x i16> %wide.load1248 to <4 x i32>
-  %626 = add nsw <4 x i32> %624, %vec.phi1245
-  %627 = add nsw <4 x i32> %625, %vec.phi1246
-  %index.next1240 = add i64 %index1236, 8
-  %628 = icmp eq i64 %index.next1240, 10240
-  br i1 %628, label %middle.block1234, label %vector.body1233, !llvm.loop !41
+; <label>:522                                     ; preds = %522, %521
+  %indvars.iv477 = phi i64 [ 0, %521 ], [ %indvars.iv.next478, %522 ]
+  %v101.0232 = phi i32 [ 0, %521 ], [ %526, %522 ]
+  %523 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv477
+  %524 = load i16* %523, align 2, !tbaa !4
+  %525 = zext i16 %524 to i32
+  %526 = add nsw i32 %525, %v101.0232
+  %indvars.iv.next478 = add nuw nsw i64 %indvars.iv477, 1
+  %exitcond479 = icmp eq i64 %indvars.iv.next478, 10240
+  br i1 %exitcond479, label %527, label %522
 
-middle.block1234:                                 ; preds = %vector.body1233
-  %bin.rdx1251 = add <4 x i32> %627, %626
-  %rdx.shuf1252 = shufflevector <4 x i32> %bin.rdx1251, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1253 = add <4 x i32> %bin.rdx1251, %rdx.shuf1252
-  %rdx.shuf1254 = shufflevector <4 x i32> %bin.rdx1253, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1255 = add <4 x i32> %bin.rdx1253, %rdx.shuf1254
-  %629 = extractelement <4 x i32> %bin.rdx1255, i32 0
-  %630 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 512, i32 %629) #2
-  br label %631
+; <label>:527                                     ; preds = %522
+  %528 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 512, i32 %526) #2
+  br label %529
 
-; <label>:631                                     ; preds = %631, %middle.block1234
-  %indvars.iv473 = phi i64 [ 0, %middle.block1234 ], [ %indvars.iv.next474, %631 ]
-  %632 = load volatile i32* %seed54, align 4
-  %633 = trunc i64 %indvars.iv473 to i32
-  %634 = mul nsw i32 %632, %633
-  %635 = trunc i32 %634 to i16
-  %636 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv473
-  store i16 %635, i16* %636, align 2, !tbaa !24
+; <label>:529                                     ; preds = %529, %527
+  %indvars.iv473 = phi i64 [ 0, %527 ], [ %indvars.iv.next474, %529 ]
+  %530 = load volatile i32* %seed54, align 4
+  %531 = trunc i64 %indvars.iv473 to i32
+  %532 = mul nsw i32 %530, %531
+  %533 = trunc i32 %532 to i16
+  %534 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv473
+  store i16 %533, i16* %534, align 2, !tbaa !4
   %indvars.iv.next474 = add nuw nsw i64 %indvars.iv473, 1
   %exitcond475 = icmp eq i64 %indvars.iv.next474, 10240
-  br i1 %exitcond475, label %vector.ph1208, label %631
+  br i1 %exitcond475, label %535, label %529
 
-vector.ph1208:                                    ; preds = %631
-  call void @llvm.memset.p0i8.i64(i8* %407, i8 -91, i64 1024, i32 8, i1 false)
-  br label %vector.body1209
+; <label>:535                                     ; preds = %529
+  call void @llvm.memset.p0i8.i64(i8* %341, i8 -91, i64 1024, i32 8, i1 false)
+  br label %536
 
-vector.body1209:                                  ; preds = %vector.body1209, %vector.ph1208
-  %index1212 = phi i64 [ 0, %vector.ph1208 ], [ %index.next1216, %vector.body1209 ]
-  %vec.phi1221 = phi <4 x i32> [ zeroinitializer, %vector.ph1208 ], [ %643, %vector.body1209 ]
-  %vec.phi1222 = phi <4 x i32> [ zeroinitializer, %vector.ph1208 ], [ %644, %vector.body1209 ]
-  %637 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %index1212
-  %638 = bitcast i16* %637 to <4 x i16>*
-  %wide.load1223 = load <4 x i16>* %638, align 16
-  %.sum2082 = or i64 %index1212, 4
-  %639 = getelementptr [10240 x i16]* %buffer53, i64 0, i64 %.sum2082
-  %640 = bitcast i16* %639 to <4 x i16>*
-  %wide.load1224 = load <4 x i16>* %640, align 8
-  %641 = zext <4 x i16> %wide.load1223 to <4 x i32>
-  %642 = zext <4 x i16> %wide.load1224 to <4 x i32>
-  %643 = add nsw <4 x i32> %641, %vec.phi1221
-  %644 = add nsw <4 x i32> %642, %vec.phi1222
-  %index.next1216 = add i64 %index1212, 8
-  %645 = icmp eq i64 %index.next1216, 10240
-  br i1 %645, label %middle.block1210, label %vector.body1209, !llvm.loop !42
+; <label>:536                                     ; preds = %536, %535
+  %indvars.iv470 = phi i64 [ 0, %535 ], [ %indvars.iv.next471, %536 ]
+  %v104.0229 = phi i32 [ 0, %535 ], [ %540, %536 ]
+  %537 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv470
+  %538 = load i16* %537, align 2, !tbaa !4
+  %539 = zext i16 %538 to i32
+  %540 = add nsw i32 %539, %v104.0229
+  %indvars.iv.next471 = add nuw nsw i64 %indvars.iv470, 1
+  %exitcond472 = icmp eq i64 %indvars.iv.next471, 10240
+  br i1 %exitcond472, label %541, label %536
 
-middle.block1210:                                 ; preds = %vector.body1209
-  %bin.rdx1227 = add <4 x i32> %644, %643
-  %rdx.shuf1228 = shufflevector <4 x i32> %bin.rdx1227, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1229 = add <4 x i32> %bin.rdx1227, %rdx.shuf1228
-  %rdx.shuf1230 = shufflevector <4 x i32> %bin.rdx1229, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1231 = add <4 x i32> %bin.rdx1229, %rdx.shuf1230
-  %646 = extractelement <4 x i32> %bin.rdx1231, i32 0
-  %647 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 1024, i32 %646) #2
+; <label>:541                                     ; preds = %536
+  %542 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 1024, i32 %540) #2
   br label %.preheader224
 
-.preheader224:                                    ; preds = %middle.block1186, %middle.block1210
-  %indvars.iv467 = phi i64 [ 10, %middle.block1210 ], [ %indvars.iv.next468, %middle.block1186 ]
-  br label %648
+.preheader224:                                    ; preds = %560, %541
+  %indvars.iv467 = phi i64 [ 10, %541 ], [ %indvars.iv.next468, %560 ]
+  br label %543
 
-; <label>:648                                     ; preds = %648, %.preheader224
-  %indvars.iv460 = phi i64 [ 0, %.preheader224 ], [ %indvars.iv.next461, %648 ]
-  %649 = load volatile i32* %seed54, align 4
-  %650 = trunc i64 %indvars.iv460 to i32
-  %651 = mul nsw i32 %649, %650
-  %652 = trunc i32 %651 to i16
-  %653 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv460
-  store i16 %652, i16* %653, align 2, !tbaa !24
+; <label>:543                                     ; preds = %543, %.preheader224
+  %indvars.iv460 = phi i64 [ 0, %.preheader224 ], [ %indvars.iv.next461, %543 ]
+  %544 = load volatile i32* %seed54, align 4
+  %545 = trunc i64 %indvars.iv460 to i32
+  %546 = mul nsw i32 %544, %545
+  %547 = trunc i32 %546 to i16
+  %548 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv460
+  store i16 %547, i16* %548, align 2, !tbaa !4
   %indvars.iv.next461 = add nuw nsw i64 %indvars.iv460, 1
   %exitcond462 = icmp eq i64 %indvars.iv.next461, 10240
-  br i1 %exitcond462, label %vector.ph1184, label %648
+  br i1 %exitcond462, label %549, label %543
 
-vector.ph1184:                                    ; preds = %648
-  %654 = trunc i64 %indvars.iv467 to i32
-  %655 = srem i32 %654, 17
-  %656 = sext i32 %655 to i64
-  %657 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %656
-  %658 = bitcast i16* %657 to i8*
-  call void @llvm.memset.p0i8.i64(i8* %658, i8 -91, i64 %indvars.iv467, i32 2, i1 false)
-  br label %vector.body1185
+; <label>:549                                     ; preds = %543
+  %550 = trunc i64 %indvars.iv467 to i32
+  %551 = srem i32 %550, 17
+  %552 = sext i32 %551 to i64
+  %553 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %552
+  %554 = bitcast i16* %553 to i8*
+  call void @llvm.memset.p0i8.i64(i8* %554, i8 -91, i64 %indvars.iv467, i32 2, i1 false)
+  br label %555
 
-vector.body1185:                                  ; preds = %vector.body1185, %vector.ph1184
-  %index1188 = phi i64 [ 0, %vector.ph1184 ], [ %index.next1192, %vector.body1185 ]
-  %vec.phi1197 = phi <4 x i32> [ zeroinitializer, %vector.ph1184 ], [ %665, %vector.body1185 ]
-  %vec.phi1198 = phi <4 x i32> [ zeroinitializer, %vector.ph1184 ], [ %666, %vector.body1185 ]
-  %659 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %index1188
-  %660 = bitcast i16* %659 to <4 x i16>*
-  %wide.load1199 = load <4 x i16>* %660, align 16
-  %.sum2083 = or i64 %index1188, 4
-  %661 = getelementptr [10240 x i16]* %buffer53, i64 0, i64 %.sum2083
-  %662 = bitcast i16* %661 to <4 x i16>*
-  %wide.load1200 = load <4 x i16>* %662, align 8
-  %663 = zext <4 x i16> %wide.load1199 to <4 x i32>
-  %664 = zext <4 x i16> %wide.load1200 to <4 x i32>
-  %665 = add nsw <4 x i32> %663, %vec.phi1197
-  %666 = add nsw <4 x i32> %664, %vec.phi1198
-  %index.next1192 = add i64 %index1188, 8
-  %667 = icmp eq i64 %index.next1192, 10240
-  br i1 %667, label %middle.block1186, label %vector.body1185, !llvm.loop !43
+; <label>:555                                     ; preds = %555, %549
+  %indvars.iv464 = phi i64 [ 0, %549 ], [ %indvars.iv.next465, %555 ]
+  %v108.0226 = phi i32 [ 0, %549 ], [ %559, %555 ]
+  %556 = getelementptr inbounds [10240 x i16]* %buffer53, i64 0, i64 %indvars.iv464
+  %557 = load i16* %556, align 2, !tbaa !4
+  %558 = zext i16 %557 to i32
+  %559 = add nsw i32 %558, %v108.0226
+  %indvars.iv.next465 = add nuw nsw i64 %indvars.iv464, 1
+  %exitcond466 = icmp eq i64 %indvars.iv.next465, 10240
+  br i1 %exitcond466, label %560, label %555
 
-middle.block1186:                                 ; preds = %vector.body1185
-  %bin.rdx1203 = add <4 x i32> %666, %665
-  %rdx.shuf1204 = shufflevector <4 x i32> %bin.rdx1203, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1205 = add <4 x i32> %bin.rdx1203, %rdx.shuf1204
-  %rdx.shuf1206 = shufflevector <4 x i32> %bin.rdx1205, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1207 = add <4 x i32> %bin.rdx1205, %rdx.shuf1206
-  %668 = extractelement <4 x i32> %bin.rdx1207, i32 0
-  %669 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 %654, i32 %668) #2
+; <label>:560                                     ; preds = %555
+  %561 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 %550, i32 %559) #2
   %indvars.iv.next468 = add nuw nsw i64 %indvars.iv467, 10
-  %670 = trunc i64 %indvars.iv.next468 to i32
-  %671 = icmp slt i32 %670, 100
-  br i1 %671, label %.preheader224, label %672
+  %562 = trunc i64 %indvars.iv.next468 to i32
+  %563 = icmp slt i32 %562, 100
+  br i1 %563, label %.preheader224, label %564
 
-; <label>:672                                     ; preds = %middle.block1186
-  call void @llvm.lifetime.end(i64 20480, i8* %331) #2
+; <label>:564                                     ; preds = %560
+  call void @llvm.lifetime.end(i64 20480, i8* %277) #2
   %puts168 = call i32 @puts(i8* getelementptr inbounds ([3 x i8]* @str5, i64 0, i64 0))
-  %673 = bitcast [10240 x i32]* %buffer110 to i8*
-  call void @llvm.lifetime.start(i64 40960, i8* %673) #2
+  %565 = bitcast [10240 x i32]* %buffer110 to i8*
+  call void @llvm.lifetime.start(i64 40960, i8* %565) #2
   store volatile i32 123, i32* %seed111, align 4
-  br label %674
+  br label %566
 
-; <label>:674                                     ; preds = %674, %672
-  %indvars.iv457 = phi i64 [ 0, %672 ], [ %indvars.iv.next458, %674 ]
-  %675 = load volatile i32* %seed111, align 4
-  %676 = trunc i64 %indvars.iv457 to i32
-  %677 = mul nsw i32 %675, %676
-  %678 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv457
-  store i32 %677, i32* %678, align 4, !tbaa !44
+; <label>:566                                     ; preds = %566, %564
+  %indvars.iv457 = phi i64 [ 0, %564 ], [ %indvars.iv.next458, %566 ]
+  %567 = load volatile i32* %seed111, align 4
+  %568 = trunc i64 %indvars.iv457 to i32
+  %569 = mul nsw i32 %567, %568
+  %570 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv457
+  store i32 %569, i32* %570, align 4, !tbaa !6
   %indvars.iv.next458 = add nuw nsw i64 %indvars.iv457, 1
   %exitcond459 = icmp eq i64 %indvars.iv.next458, 10240
-  br i1 %exitcond459, label %vector.ph1160, label %674
+  br i1 %exitcond459, label %571, label %566
 
-vector.ph1160:                                    ; preds = %674
-  %679 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 1
-  %680 = bitcast i32* %679 to i8*
-  store i8 -91, i8* %680, align 4
-  br label %vector.body1161
+; <label>:571                                     ; preds = %566
+  %572 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 1
+  %573 = bitcast i32* %572 to i8*
+  store i8 -91, i8* %573, align 4
+  br label %574
 
-vector.body1161:                                  ; preds = %vector.body1161, %vector.ph1160
-  %index1164 = phi i64 [ 0, %vector.ph1160 ], [ %index.next1168, %vector.body1161 ]
-  %vec.phi1173 = phi <4 x i32> [ zeroinitializer, %vector.ph1160 ], [ %685, %vector.body1161 ]
-  %vec.phi1174 = phi <4 x i32> [ zeroinitializer, %vector.ph1160 ], [ %686, %vector.body1161 ]
-  %681 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %index1164
-  %682 = bitcast i32* %681 to <4 x i32>*
-  %wide.load1175 = load <4 x i32>* %682, align 16
-  %.sum2084 = or i64 %index1164, 4
-  %683 = getelementptr [10240 x i32]* %buffer110, i64 0, i64 %.sum2084
-  %684 = bitcast i32* %683 to <4 x i32>*
-  %wide.load1176 = load <4 x i32>* %684, align 16
-  %685 = add <4 x i32> %wide.load1175, %vec.phi1173
-  %686 = add <4 x i32> %wide.load1176, %vec.phi1174
-  %index.next1168 = add i64 %index1164, 8
-  %687 = icmp eq i64 %index.next1168, 10240
-  br i1 %687, label %middle.block1162, label %vector.body1161, !llvm.loop !46
+; <label>:574                                     ; preds = %574, %571
+  %indvars.iv454 = phi i64 [ 0, %571 ], [ %indvars.iv.next455, %574 ]
+  %v113.0221 = phi i32 [ 0, %571 ], [ %577, %574 ]
+  %575 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv454
+  %576 = load i32* %575, align 4, !tbaa !6
+  %577 = add i32 %576, %v113.0221
+  %indvars.iv.next455 = add nuw nsw i64 %indvars.iv454, 1
+  %exitcond456 = icmp eq i64 %indvars.iv.next455, 10240
+  br i1 %exitcond456, label %578, label %574
 
-middle.block1162:                                 ; preds = %vector.body1161
-  %bin.rdx1179 = add <4 x i32> %686, %685
-  %rdx.shuf1180 = shufflevector <4 x i32> %bin.rdx1179, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1181 = add <4 x i32> %bin.rdx1179, %rdx.shuf1180
-  %rdx.shuf1182 = shufflevector <4 x i32> %bin.rdx1181, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1183 = add <4 x i32> %bin.rdx1181, %rdx.shuf1182
-  %688 = extractelement <4 x i32> %bin.rdx1183, i32 0
-  %689 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 1, i32 %688) #2
-  br label %690
+; <label>:578                                     ; preds = %574
+  %579 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 1, i32 %577) #2
+  br label %580
 
-; <label>:690                                     ; preds = %690, %middle.block1162
-  %indvars.iv450 = phi i64 [ 0, %middle.block1162 ], [ %indvars.iv.next451, %690 ]
-  %691 = load volatile i32* %seed111, align 4
-  %692 = trunc i64 %indvars.iv450 to i32
-  %693 = mul nsw i32 %691, %692
-  %694 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv450
-  store i32 %693, i32* %694, align 4, !tbaa !44
+; <label>:580                                     ; preds = %580, %578
+  %indvars.iv450 = phi i64 [ 0, %578 ], [ %indvars.iv.next451, %580 ]
+  %581 = load volatile i32* %seed111, align 4
+  %582 = trunc i64 %indvars.iv450 to i32
+  %583 = mul nsw i32 %581, %582
+  %584 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv450
+  store i32 %583, i32* %584, align 4, !tbaa !6
   %indvars.iv.next451 = add nuw nsw i64 %indvars.iv450, 1
   %exitcond452 = icmp eq i64 %indvars.iv.next451, 10240
-  br i1 %exitcond452, label %vector.ph1136, label %690
+  br i1 %exitcond452, label %585, label %580
 
-vector.ph1136:                                    ; preds = %690
-  %695 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 2
-  %696 = bitcast i32* %695 to i16*
-  store i16 -23131, i16* %696, align 8
-  br label %vector.body1137
+; <label>:585                                     ; preds = %580
+  %586 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 2
+  %587 = bitcast i32* %586 to i16*
+  store i16 -23131, i16* %587, align 8
+  br label %588
 
-vector.body1137:                                  ; preds = %vector.body1137, %vector.ph1136
-  %index1140 = phi i64 [ 0, %vector.ph1136 ], [ %index.next1144, %vector.body1137 ]
-  %vec.phi1149 = phi <4 x i32> [ zeroinitializer, %vector.ph1136 ], [ %701, %vector.body1137 ]
-  %vec.phi1150 = phi <4 x i32> [ zeroinitializer, %vector.ph1136 ], [ %702, %vector.body1137 ]
-  %697 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %index1140
-  %698 = bitcast i32* %697 to <4 x i32>*
-  %wide.load1151 = load <4 x i32>* %698, align 16
-  %.sum2085 = or i64 %index1140, 4
-  %699 = getelementptr [10240 x i32]* %buffer110, i64 0, i64 %.sum2085
-  %700 = bitcast i32* %699 to <4 x i32>*
-  %wide.load1152 = load <4 x i32>* %700, align 16
-  %701 = add <4 x i32> %wide.load1151, %vec.phi1149
-  %702 = add <4 x i32> %wide.load1152, %vec.phi1150
-  %index.next1144 = add i64 %index1140, 8
-  %703 = icmp eq i64 %index.next1144, 10240
-  br i1 %703, label %middle.block1138, label %vector.body1137, !llvm.loop !47
+; <label>:588                                     ; preds = %588, %585
+  %indvars.iv447 = phi i64 [ 0, %585 ], [ %indvars.iv.next448, %588 ]
+  %v116.0218 = phi i32 [ 0, %585 ], [ %591, %588 ]
+  %589 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv447
+  %590 = load i32* %589, align 4, !tbaa !6
+  %591 = add i32 %590, %v116.0218
+  %indvars.iv.next448 = add nuw nsw i64 %indvars.iv447, 1
+  %exitcond449 = icmp eq i64 %indvars.iv.next448, 10240
+  br i1 %exitcond449, label %592, label %588
 
-middle.block1138:                                 ; preds = %vector.body1137
-  %bin.rdx1155 = add <4 x i32> %702, %701
-  %rdx.shuf1156 = shufflevector <4 x i32> %bin.rdx1155, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1157 = add <4 x i32> %bin.rdx1155, %rdx.shuf1156
-  %rdx.shuf1158 = shufflevector <4 x i32> %bin.rdx1157, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1159 = add <4 x i32> %bin.rdx1157, %rdx.shuf1158
-  %704 = extractelement <4 x i32> %bin.rdx1159, i32 0
-  %705 = bitcast i32* %695 to i8*
-  %706 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 2, i32 %704) #2
-  br label %707
+; <label>:592                                     ; preds = %588
+  %593 = bitcast i32* %586 to i8*
+  %594 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 2, i32 %591) #2
+  br label %595
 
-; <label>:707                                     ; preds = %707, %middle.block1138
-  %indvars.iv443 = phi i64 [ 0, %middle.block1138 ], [ %indvars.iv.next444, %707 ]
-  %708 = load volatile i32* %seed111, align 4
-  %709 = trunc i64 %indvars.iv443 to i32
-  %710 = mul nsw i32 %708, %709
-  %711 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv443
-  store i32 %710, i32* %711, align 4, !tbaa !44
+; <label>:595                                     ; preds = %595, %592
+  %indvars.iv443 = phi i64 [ 0, %592 ], [ %indvars.iv.next444, %595 ]
+  %596 = load volatile i32* %seed111, align 4
+  %597 = trunc i64 %indvars.iv443 to i32
+  %598 = mul nsw i32 %596, %597
+  %599 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv443
+  store i32 %598, i32* %599, align 4, !tbaa !6
   %indvars.iv.next444 = add nuw nsw i64 %indvars.iv443, 1
   %exitcond445 = icmp eq i64 %indvars.iv.next444, 10240
-  br i1 %exitcond445, label %vector.ph1112, label %707
+  br i1 %exitcond445, label %600, label %595
 
-vector.ph1112:                                    ; preds = %707
-  %712 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 3
-  %713 = bitcast i32* %712 to i8*
-  call void @llvm.memset.p0i8.i64(i8* %713, i8 -91, i64 3, i32 4, i1 false)
-  br label %vector.body1113
+; <label>:600                                     ; preds = %595
+  %601 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 3
+  %602 = bitcast i32* %601 to i8*
+  call void @llvm.memset.p0i8.i64(i8* %602, i8 -91, i64 3, i32 4, i1 false)
+  br label %603
 
-vector.body1113:                                  ; preds = %vector.body1113, %vector.ph1112
-  %index1116 = phi i64 [ 0, %vector.ph1112 ], [ %index.next1120, %vector.body1113 ]
-  %vec.phi1125 = phi <4 x i32> [ zeroinitializer, %vector.ph1112 ], [ %718, %vector.body1113 ]
-  %vec.phi1126 = phi <4 x i32> [ zeroinitializer, %vector.ph1112 ], [ %719, %vector.body1113 ]
-  %714 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %index1116
-  %715 = bitcast i32* %714 to <4 x i32>*
-  %wide.load1127 = load <4 x i32>* %715, align 16
-  %.sum2086 = or i64 %index1116, 4
-  %716 = getelementptr [10240 x i32]* %buffer110, i64 0, i64 %.sum2086
-  %717 = bitcast i32* %716 to <4 x i32>*
-  %wide.load1128 = load <4 x i32>* %717, align 16
-  %718 = add <4 x i32> %wide.load1127, %vec.phi1125
-  %719 = add <4 x i32> %wide.load1128, %vec.phi1126
-  %index.next1120 = add i64 %index1116, 8
-  %720 = icmp eq i64 %index.next1120, 10240
-  br i1 %720, label %middle.block1114, label %vector.body1113, !llvm.loop !48
+; <label>:603                                     ; preds = %603, %600
+  %indvars.iv440 = phi i64 [ 0, %600 ], [ %indvars.iv.next441, %603 ]
+  %v119.0215 = phi i32 [ 0, %600 ], [ %606, %603 ]
+  %604 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv440
+  %605 = load i32* %604, align 4, !tbaa !6
+  %606 = add i32 %605, %v119.0215
+  %indvars.iv.next441 = add nuw nsw i64 %indvars.iv440, 1
+  %exitcond442 = icmp eq i64 %indvars.iv.next441, 10240
+  br i1 %exitcond442, label %607, label %603
 
-middle.block1114:                                 ; preds = %vector.body1113
-  %bin.rdx1131 = add <4 x i32> %719, %718
-  %rdx.shuf1132 = shufflevector <4 x i32> %bin.rdx1131, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1133 = add <4 x i32> %bin.rdx1131, %rdx.shuf1132
-  %rdx.shuf1134 = shufflevector <4 x i32> %bin.rdx1133, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1135 = add <4 x i32> %bin.rdx1133, %rdx.shuf1134
-  %721 = extractelement <4 x i32> %bin.rdx1135, i32 0
-  %722 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 3, i32 %721) #2
-  br label %723
+; <label>:607                                     ; preds = %603
+  %608 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 3, i32 %606) #2
+  br label %609
 
-; <label>:723                                     ; preds = %723, %middle.block1114
-  %indvars.iv436 = phi i64 [ 0, %middle.block1114 ], [ %indvars.iv.next437, %723 ]
-  %724 = load volatile i32* %seed111, align 4
-  %725 = trunc i64 %indvars.iv436 to i32
-  %726 = mul nsw i32 %724, %725
-  %727 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv436
-  store i32 %726, i32* %727, align 4, !tbaa !44
+; <label>:609                                     ; preds = %609, %607
+  %indvars.iv436 = phi i64 [ 0, %607 ], [ %indvars.iv.next437, %609 ]
+  %610 = load volatile i32* %seed111, align 4
+  %611 = trunc i64 %indvars.iv436 to i32
+  %612 = mul nsw i32 %610, %611
+  %613 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv436
+  store i32 %612, i32* %613, align 4, !tbaa !6
   %indvars.iv.next437 = add nuw nsw i64 %indvars.iv436, 1
   %exitcond438 = icmp eq i64 %indvars.iv.next437, 10240
-  br i1 %exitcond438, label %vector.ph1088, label %723
+  br i1 %exitcond438, label %614, label %609
 
-vector.ph1088:                                    ; preds = %723
-  %728 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 4
-  store i32 -1515870811, i32* %728, align 16
-  br label %vector.body1089
+; <label>:614                                     ; preds = %609
+  %615 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 4
+  store i32 -1515870811, i32* %615, align 16
+  br label %616
 
-vector.body1089:                                  ; preds = %vector.body1089, %vector.ph1088
-  %index1092 = phi i64 [ 0, %vector.ph1088 ], [ %index.next1096, %vector.body1089 ]
-  %vec.phi1101 = phi <4 x i32> [ zeroinitializer, %vector.ph1088 ], [ %733, %vector.body1089 ]
-  %vec.phi1102 = phi <4 x i32> [ zeroinitializer, %vector.ph1088 ], [ %734, %vector.body1089 ]
-  %729 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %index1092
-  %730 = bitcast i32* %729 to <4 x i32>*
-  %wide.load1103 = load <4 x i32>* %730, align 16
-  %.sum2087 = or i64 %index1092, 4
-  %731 = getelementptr [10240 x i32]* %buffer110, i64 0, i64 %.sum2087
-  %732 = bitcast i32* %731 to <4 x i32>*
-  %wide.load1104 = load <4 x i32>* %732, align 16
-  %733 = add <4 x i32> %wide.load1103, %vec.phi1101
-  %734 = add <4 x i32> %wide.load1104, %vec.phi1102
-  %index.next1096 = add i64 %index1092, 8
-  %735 = icmp eq i64 %index.next1096, 10240
-  br i1 %735, label %middle.block1090, label %vector.body1089, !llvm.loop !49
+; <label>:616                                     ; preds = %616, %614
+  %indvars.iv433 = phi i64 [ 0, %614 ], [ %indvars.iv.next434, %616 ]
+  %v122.0212 = phi i32 [ 0, %614 ], [ %619, %616 ]
+  %617 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv433
+  %618 = load i32* %617, align 4, !tbaa !6
+  %619 = add i32 %618, %v122.0212
+  %indvars.iv.next434 = add nuw nsw i64 %indvars.iv433, 1
+  %exitcond435 = icmp eq i64 %indvars.iv.next434, 10240
+  br i1 %exitcond435, label %620, label %616
 
-middle.block1090:                                 ; preds = %vector.body1089
-  %bin.rdx1107 = add <4 x i32> %734, %733
-  %rdx.shuf1108 = shufflevector <4 x i32> %bin.rdx1107, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1109 = add <4 x i32> %bin.rdx1107, %rdx.shuf1108
-  %rdx.shuf1110 = shufflevector <4 x i32> %bin.rdx1109, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1111 = add <4 x i32> %bin.rdx1109, %rdx.shuf1110
-  %736 = extractelement <4 x i32> %bin.rdx1111, i32 0
-  %737 = bitcast i32* %728 to i8*
-  %738 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 4, i32 %736) #2
-  br label %739
+; <label>:620                                     ; preds = %616
+  %621 = bitcast i32* %615 to i8*
+  %622 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 4, i32 %619) #2
+  br label %623
 
-; <label>:739                                     ; preds = %739, %middle.block1090
-  %indvars.iv429 = phi i64 [ 0, %middle.block1090 ], [ %indvars.iv.next430, %739 ]
-  %740 = load volatile i32* %seed111, align 4
-  %741 = trunc i64 %indvars.iv429 to i32
-  %742 = mul nsw i32 %740, %741
-  %743 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv429
-  store i32 %742, i32* %743, align 4, !tbaa !44
+; <label>:623                                     ; preds = %623, %620
+  %indvars.iv429 = phi i64 [ 0, %620 ], [ %indvars.iv.next430, %623 ]
+  %624 = load volatile i32* %seed111, align 4
+  %625 = trunc i64 %indvars.iv429 to i32
+  %626 = mul nsw i32 %624, %625
+  %627 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv429
+  store i32 %626, i32* %627, align 4, !tbaa !6
   %indvars.iv.next430 = add nuw nsw i64 %indvars.iv429, 1
   %exitcond431 = icmp eq i64 %indvars.iv.next430, 10240
-  br i1 %exitcond431, label %vector.ph1064, label %739
+  br i1 %exitcond431, label %628, label %623
 
-vector.ph1064:                                    ; preds = %739
-  %744 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 5
-  %745 = bitcast i32* %744 to i8*
-  call void @llvm.memset.p0i8.i64(i8* %745, i8 -91, i64 5, i32 4, i1 false)
-  br label %vector.body1065
+; <label>:628                                     ; preds = %623
+  %629 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 5
+  %630 = bitcast i32* %629 to i8*
+  call void @llvm.memset.p0i8.i64(i8* %630, i8 -91, i64 5, i32 4, i1 false)
+  br label %631
 
-vector.body1065:                                  ; preds = %vector.body1065, %vector.ph1064
-  %index1068 = phi i64 [ 0, %vector.ph1064 ], [ %index.next1072, %vector.body1065 ]
-  %vec.phi1077 = phi <4 x i32> [ zeroinitializer, %vector.ph1064 ], [ %750, %vector.body1065 ]
-  %vec.phi1078 = phi <4 x i32> [ zeroinitializer, %vector.ph1064 ], [ %751, %vector.body1065 ]
-  %746 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %index1068
-  %747 = bitcast i32* %746 to <4 x i32>*
-  %wide.load1079 = load <4 x i32>* %747, align 16
-  %.sum2088 = or i64 %index1068, 4
-  %748 = getelementptr [10240 x i32]* %buffer110, i64 0, i64 %.sum2088
-  %749 = bitcast i32* %748 to <4 x i32>*
-  %wide.load1080 = load <4 x i32>* %749, align 16
-  %750 = add <4 x i32> %wide.load1079, %vec.phi1077
-  %751 = add <4 x i32> %wide.load1080, %vec.phi1078
-  %index.next1072 = add i64 %index1068, 8
-  %752 = icmp eq i64 %index.next1072, 10240
-  br i1 %752, label %middle.block1066, label %vector.body1065, !llvm.loop !50
+; <label>:631                                     ; preds = %631, %628
+  %indvars.iv426 = phi i64 [ 0, %628 ], [ %indvars.iv.next427, %631 ]
+  %v125.0209 = phi i32 [ 0, %628 ], [ %634, %631 ]
+  %632 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv426
+  %633 = load i32* %632, align 4, !tbaa !6
+  %634 = add i32 %633, %v125.0209
+  %indvars.iv.next427 = add nuw nsw i64 %indvars.iv426, 1
+  %exitcond428 = icmp eq i64 %indvars.iv.next427, 10240
+  br i1 %exitcond428, label %635, label %631
 
-middle.block1066:                                 ; preds = %vector.body1065
-  %bin.rdx1083 = add <4 x i32> %751, %750
-  %rdx.shuf1084 = shufflevector <4 x i32> %bin.rdx1083, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1085 = add <4 x i32> %bin.rdx1083, %rdx.shuf1084
-  %rdx.shuf1086 = shufflevector <4 x i32> %bin.rdx1085, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1087 = add <4 x i32> %bin.rdx1085, %rdx.shuf1086
-  %753 = extractelement <4 x i32> %bin.rdx1087, i32 0
-  %754 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 5, i32 %753) #2
-  br label %755
+; <label>:635                                     ; preds = %631
+  %636 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 5, i32 %634) #2
+  br label %637
 
-; <label>:755                                     ; preds = %755, %middle.block1066
-  %indvars.iv422 = phi i64 [ 0, %middle.block1066 ], [ %indvars.iv.next423, %755 ]
-  %756 = load volatile i32* %seed111, align 4
-  %757 = trunc i64 %indvars.iv422 to i32
-  %758 = mul nsw i32 %756, %757
-  %759 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv422
-  store i32 %758, i32* %759, align 4, !tbaa !44
+; <label>:637                                     ; preds = %637, %635
+  %indvars.iv422 = phi i64 [ 0, %635 ], [ %indvars.iv.next423, %637 ]
+  %638 = load volatile i32* %seed111, align 4
+  %639 = trunc i64 %indvars.iv422 to i32
+  %640 = mul nsw i32 %638, %639
+  %641 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv422
+  store i32 %640, i32* %641, align 4, !tbaa !6
   %indvars.iv.next423 = add nuw nsw i64 %indvars.iv422, 1
   %exitcond424 = icmp eq i64 %indvars.iv.next423, 10240
-  br i1 %exitcond424, label %vector.ph1040, label %755
+  br i1 %exitcond424, label %642, label %637
 
-vector.ph1040:                                    ; preds = %755
-  %760 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 6
-  %761 = bitcast i32* %760 to i8*
-  call void @llvm.memset.p0i8.i64(i8* %761, i8 -91, i64 6, i32 8, i1 false)
-  br label %vector.body1041
+; <label>:642                                     ; preds = %637
+  %643 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 6
+  %644 = bitcast i32* %643 to i8*
+  call void @llvm.memset.p0i8.i64(i8* %644, i8 -91, i64 6, i32 8, i1 false)
+  br label %645
 
-vector.body1041:                                  ; preds = %vector.body1041, %vector.ph1040
-  %index1044 = phi i64 [ 0, %vector.ph1040 ], [ %index.next1048, %vector.body1041 ]
-  %vec.phi1053 = phi <4 x i32> [ zeroinitializer, %vector.ph1040 ], [ %766, %vector.body1041 ]
-  %vec.phi1054 = phi <4 x i32> [ zeroinitializer, %vector.ph1040 ], [ %767, %vector.body1041 ]
-  %762 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %index1044
-  %763 = bitcast i32* %762 to <4 x i32>*
-  %wide.load1055 = load <4 x i32>* %763, align 16
-  %.sum2089 = or i64 %index1044, 4
-  %764 = getelementptr [10240 x i32]* %buffer110, i64 0, i64 %.sum2089
-  %765 = bitcast i32* %764 to <4 x i32>*
-  %wide.load1056 = load <4 x i32>* %765, align 16
-  %766 = add <4 x i32> %wide.load1055, %vec.phi1053
-  %767 = add <4 x i32> %wide.load1056, %vec.phi1054
-  %index.next1048 = add i64 %index1044, 8
-  %768 = icmp eq i64 %index.next1048, 10240
-  br i1 %768, label %middle.block1042, label %vector.body1041, !llvm.loop !51
+; <label>:645                                     ; preds = %645, %642
+  %indvars.iv419 = phi i64 [ 0, %642 ], [ %indvars.iv.next420, %645 ]
+  %v128.0206 = phi i32 [ 0, %642 ], [ %648, %645 ]
+  %646 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv419
+  %647 = load i32* %646, align 4, !tbaa !6
+  %648 = add i32 %647, %v128.0206
+  %indvars.iv.next420 = add nuw nsw i64 %indvars.iv419, 1
+  %exitcond421 = icmp eq i64 %indvars.iv.next420, 10240
+  br i1 %exitcond421, label %649, label %645
 
-middle.block1042:                                 ; preds = %vector.body1041
-  %bin.rdx1059 = add <4 x i32> %767, %766
-  %rdx.shuf1060 = shufflevector <4 x i32> %bin.rdx1059, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1061 = add <4 x i32> %bin.rdx1059, %rdx.shuf1060
-  %rdx.shuf1062 = shufflevector <4 x i32> %bin.rdx1061, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1063 = add <4 x i32> %bin.rdx1061, %rdx.shuf1062
-  %769 = extractelement <4 x i32> %bin.rdx1063, i32 0
-  %770 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 6, i32 %769) #2
-  br label %771
+; <label>:649                                     ; preds = %645
+  %650 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 6, i32 %648) #2
+  br label %651
 
-; <label>:771                                     ; preds = %771, %middle.block1042
-  %indvars.iv415 = phi i64 [ 0, %middle.block1042 ], [ %indvars.iv.next416, %771 ]
-  %772 = load volatile i32* %seed111, align 4
-  %773 = trunc i64 %indvars.iv415 to i32
-  %774 = mul nsw i32 %772, %773
-  %775 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv415
-  store i32 %774, i32* %775, align 4, !tbaa !44
+; <label>:651                                     ; preds = %651, %649
+  %indvars.iv415 = phi i64 [ 0, %649 ], [ %indvars.iv.next416, %651 ]
+  %652 = load volatile i32* %seed111, align 4
+  %653 = trunc i64 %indvars.iv415 to i32
+  %654 = mul nsw i32 %652, %653
+  %655 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv415
+  store i32 %654, i32* %655, align 4, !tbaa !6
   %indvars.iv.next416 = add nuw nsw i64 %indvars.iv415, 1
   %exitcond417 = icmp eq i64 %indvars.iv.next416, 10240
-  br i1 %exitcond417, label %vector.ph1016, label %771
+  br i1 %exitcond417, label %656, label %651
 
-vector.ph1016:                                    ; preds = %771
-  %776 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 7
-  %777 = bitcast i32* %776 to i8*
-  call void @llvm.memset.p0i8.i64(i8* %777, i8 -91, i64 7, i32 4, i1 false)
-  br label %vector.body1017
+; <label>:656                                     ; preds = %651
+  %657 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 7
+  %658 = bitcast i32* %657 to i8*
+  call void @llvm.memset.p0i8.i64(i8* %658, i8 -91, i64 7, i32 4, i1 false)
+  br label %659
 
-vector.body1017:                                  ; preds = %vector.body1017, %vector.ph1016
-  %index1020 = phi i64 [ 0, %vector.ph1016 ], [ %index.next1024, %vector.body1017 ]
-  %vec.phi1029 = phi <4 x i32> [ zeroinitializer, %vector.ph1016 ], [ %782, %vector.body1017 ]
-  %vec.phi1030 = phi <4 x i32> [ zeroinitializer, %vector.ph1016 ], [ %783, %vector.body1017 ]
-  %778 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %index1020
-  %779 = bitcast i32* %778 to <4 x i32>*
-  %wide.load1031 = load <4 x i32>* %779, align 16
-  %.sum2090 = or i64 %index1020, 4
-  %780 = getelementptr [10240 x i32]* %buffer110, i64 0, i64 %.sum2090
-  %781 = bitcast i32* %780 to <4 x i32>*
-  %wide.load1032 = load <4 x i32>* %781, align 16
-  %782 = add <4 x i32> %wide.load1031, %vec.phi1029
-  %783 = add <4 x i32> %wide.load1032, %vec.phi1030
-  %index.next1024 = add i64 %index1020, 8
-  %784 = icmp eq i64 %index.next1024, 10240
-  br i1 %784, label %middle.block1018, label %vector.body1017, !llvm.loop !52
+; <label>:659                                     ; preds = %659, %656
+  %indvars.iv412 = phi i64 [ 0, %656 ], [ %indvars.iv.next413, %659 ]
+  %v131.0203 = phi i32 [ 0, %656 ], [ %662, %659 ]
+  %660 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv412
+  %661 = load i32* %660, align 4, !tbaa !6
+  %662 = add i32 %661, %v131.0203
+  %indvars.iv.next413 = add nuw nsw i64 %indvars.iv412, 1
+  %exitcond414 = icmp eq i64 %indvars.iv.next413, 10240
+  br i1 %exitcond414, label %663, label %659
 
-middle.block1018:                                 ; preds = %vector.body1017
-  %bin.rdx1035 = add <4 x i32> %783, %782
-  %rdx.shuf1036 = shufflevector <4 x i32> %bin.rdx1035, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1037 = add <4 x i32> %bin.rdx1035, %rdx.shuf1036
-  %rdx.shuf1038 = shufflevector <4 x i32> %bin.rdx1037, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1039 = add <4 x i32> %bin.rdx1037, %rdx.shuf1038
-  %785 = extractelement <4 x i32> %bin.rdx1039, i32 0
-  %786 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 7, i32 %785) #2
-  br label %787
+; <label>:663                                     ; preds = %659
+  %664 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 7, i32 %662) #2
+  br label %665
 
-; <label>:787                                     ; preds = %787, %middle.block1018
-  %indvars.iv408 = phi i64 [ 0, %middle.block1018 ], [ %indvars.iv.next409, %787 ]
-  %788 = load volatile i32* %seed111, align 4
-  %789 = trunc i64 %indvars.iv408 to i32
-  %790 = mul nsw i32 %788, %789
-  %791 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv408
-  store i32 %790, i32* %791, align 4, !tbaa !44
+; <label>:665                                     ; preds = %665, %663
+  %indvars.iv408 = phi i64 [ 0, %663 ], [ %indvars.iv.next409, %665 ]
+  %666 = load volatile i32* %seed111, align 4
+  %667 = trunc i64 %indvars.iv408 to i32
+  %668 = mul nsw i32 %666, %667
+  %669 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv408
+  store i32 %668, i32* %669, align 4, !tbaa !6
   %indvars.iv.next409 = add nuw nsw i64 %indvars.iv408, 1
   %exitcond410 = icmp eq i64 %indvars.iv.next409, 10240
-  br i1 %exitcond410, label %vector.ph992, label %787
+  br i1 %exitcond410, label %670, label %665
 
-vector.ph992:                                     ; preds = %787
-  %792 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 8
-  %793 = bitcast i32* %792 to i64*
-  store i64 -6510615555426900571, i64* %793, align 16
-  br label %vector.body993
+; <label>:670                                     ; preds = %665
+  %671 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 8
+  %672 = bitcast i32* %671 to i64*
+  store i64 -6510615555426900571, i64* %672, align 16
+  br label %673
 
-vector.body993:                                   ; preds = %vector.body993, %vector.ph992
-  %index996 = phi i64 [ 0, %vector.ph992 ], [ %index.next1000, %vector.body993 ]
-  %vec.phi1005 = phi <4 x i32> [ zeroinitializer, %vector.ph992 ], [ %798, %vector.body993 ]
-  %vec.phi1006 = phi <4 x i32> [ zeroinitializer, %vector.ph992 ], [ %799, %vector.body993 ]
-  %794 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %index996
-  %795 = bitcast i32* %794 to <4 x i32>*
-  %wide.load1007 = load <4 x i32>* %795, align 16
-  %.sum2091 = or i64 %index996, 4
-  %796 = getelementptr [10240 x i32]* %buffer110, i64 0, i64 %.sum2091
-  %797 = bitcast i32* %796 to <4 x i32>*
-  %wide.load1008 = load <4 x i32>* %797, align 16
-  %798 = add <4 x i32> %wide.load1007, %vec.phi1005
-  %799 = add <4 x i32> %wide.load1008, %vec.phi1006
-  %index.next1000 = add i64 %index996, 8
-  %800 = icmp eq i64 %index.next1000, 10240
-  br i1 %800, label %middle.block994, label %vector.body993, !llvm.loop !53
+; <label>:673                                     ; preds = %673, %670
+  %indvars.iv405 = phi i64 [ 0, %670 ], [ %indvars.iv.next406, %673 ]
+  %v134.0200 = phi i32 [ 0, %670 ], [ %676, %673 ]
+  %674 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv405
+  %675 = load i32* %674, align 4, !tbaa !6
+  %676 = add i32 %675, %v134.0200
+  %indvars.iv.next406 = add nuw nsw i64 %indvars.iv405, 1
+  %exitcond407 = icmp eq i64 %indvars.iv.next406, 10240
+  br i1 %exitcond407, label %677, label %673
 
-middle.block994:                                  ; preds = %vector.body993
-  %bin.rdx1011 = add <4 x i32> %799, %798
-  %rdx.shuf1012 = shufflevector <4 x i32> %bin.rdx1011, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx1013 = add <4 x i32> %bin.rdx1011, %rdx.shuf1012
-  %rdx.shuf1014 = shufflevector <4 x i32> %bin.rdx1013, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx1015 = add <4 x i32> %bin.rdx1013, %rdx.shuf1014
-  %801 = extractelement <4 x i32> %bin.rdx1015, i32 0
-  %802 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 8, i32 %801) #2
-  br label %803
+; <label>:677                                     ; preds = %673
+  %678 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 8, i32 %676) #2
+  br label %679
 
-; <label>:803                                     ; preds = %803, %middle.block994
-  %indvars.iv401 = phi i64 [ 0, %middle.block994 ], [ %indvars.iv.next402, %803 ]
-  %804 = load volatile i32* %seed111, align 4
-  %805 = trunc i64 %indvars.iv401 to i32
-  %806 = mul nsw i32 %804, %805
-  %807 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv401
-  store i32 %806, i32* %807, align 4, !tbaa !44
+; <label>:679                                     ; preds = %679, %677
+  %indvars.iv401 = phi i64 [ 0, %677 ], [ %indvars.iv.next402, %679 ]
+  %680 = load volatile i32* %seed111, align 4
+  %681 = trunc i64 %indvars.iv401 to i32
+  %682 = mul nsw i32 %680, %681
+  %683 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv401
+  store i32 %682, i32* %683, align 4, !tbaa !6
   %indvars.iv.next402 = add nuw nsw i64 %indvars.iv401, 1
   %exitcond403 = icmp eq i64 %indvars.iv.next402, 10240
-  br i1 %exitcond403, label %vector.ph968, label %803
+  br i1 %exitcond403, label %684, label %679
 
-vector.ph968:                                     ; preds = %803
-  %808 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 9
-  %809 = bitcast i32* %808 to i8*
-  call void @llvm.memset.p0i8.i64(i8* %809, i8 -91, i64 9, i32 4, i1 false)
-  br label %vector.body969
+; <label>:684                                     ; preds = %679
+  %685 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 9
+  %686 = bitcast i32* %685 to i8*
+  call void @llvm.memset.p0i8.i64(i8* %686, i8 -91, i64 9, i32 4, i1 false)
+  br label %687
 
-vector.body969:                                   ; preds = %vector.body969, %vector.ph968
-  %index972 = phi i64 [ 0, %vector.ph968 ], [ %index.next976, %vector.body969 ]
-  %vec.phi981 = phi <4 x i32> [ zeroinitializer, %vector.ph968 ], [ %814, %vector.body969 ]
-  %vec.phi982 = phi <4 x i32> [ zeroinitializer, %vector.ph968 ], [ %815, %vector.body969 ]
-  %810 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %index972
-  %811 = bitcast i32* %810 to <4 x i32>*
-  %wide.load983 = load <4 x i32>* %811, align 16
-  %.sum2092 = or i64 %index972, 4
-  %812 = getelementptr [10240 x i32]* %buffer110, i64 0, i64 %.sum2092
-  %813 = bitcast i32* %812 to <4 x i32>*
-  %wide.load984 = load <4 x i32>* %813, align 16
-  %814 = add <4 x i32> %wide.load983, %vec.phi981
-  %815 = add <4 x i32> %wide.load984, %vec.phi982
-  %index.next976 = add i64 %index972, 8
-  %816 = icmp eq i64 %index.next976, 10240
-  br i1 %816, label %middle.block970, label %vector.body969, !llvm.loop !54
+; <label>:687                                     ; preds = %687, %684
+  %indvars.iv398 = phi i64 [ 0, %684 ], [ %indvars.iv.next399, %687 ]
+  %v137.0197 = phi i32 [ 0, %684 ], [ %690, %687 ]
+  %688 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv398
+  %689 = load i32* %688, align 4, !tbaa !6
+  %690 = add i32 %689, %v137.0197
+  %indvars.iv.next399 = add nuw nsw i64 %indvars.iv398, 1
+  %exitcond400 = icmp eq i64 %indvars.iv.next399, 10240
+  br i1 %exitcond400, label %691, label %687
 
-middle.block970:                                  ; preds = %vector.body969
-  %bin.rdx987 = add <4 x i32> %815, %814
-  %rdx.shuf988 = shufflevector <4 x i32> %bin.rdx987, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx989 = add <4 x i32> %bin.rdx987, %rdx.shuf988
-  %rdx.shuf990 = shufflevector <4 x i32> %bin.rdx989, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx991 = add <4 x i32> %bin.rdx989, %rdx.shuf990
-  %817 = extractelement <4 x i32> %bin.rdx991, i32 0
-  %818 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 9, i32 %817) #2
-  br label %819
+; <label>:691                                     ; preds = %687
+  %692 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 9, i32 %690) #2
+  br label %693
 
-; <label>:819                                     ; preds = %819, %middle.block970
-  %indvars.iv394 = phi i64 [ 0, %middle.block970 ], [ %indvars.iv.next395, %819 ]
-  %820 = load volatile i32* %seed111, align 4
-  %821 = trunc i64 %indvars.iv394 to i32
-  %822 = mul nsw i32 %820, %821
-  %823 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv394
-  store i32 %822, i32* %823, align 4, !tbaa !44
+; <label>:693                                     ; preds = %693, %691
+  %indvars.iv394 = phi i64 [ 0, %691 ], [ %indvars.iv.next395, %693 ]
+  %694 = load volatile i32* %seed111, align 4
+  %695 = trunc i64 %indvars.iv394 to i32
+  %696 = mul nsw i32 %694, %695
+  %697 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv394
+  store i32 %696, i32* %697, align 4, !tbaa !6
   %indvars.iv.next395 = add nuw nsw i64 %indvars.iv394, 1
   %exitcond396 = icmp eq i64 %indvars.iv.next395, 10240
-  br i1 %exitcond396, label %vector.ph944, label %819
+  br i1 %exitcond396, label %698, label %693
 
-vector.ph944:                                     ; preds = %819
-  %824 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 10
-  %825 = bitcast i32* %824 to i8*
-  call void @llvm.memset.p0i8.i64(i8* %825, i8 -91, i64 10, i32 8, i1 false)
-  br label %vector.body945
+; <label>:698                                     ; preds = %693
+  %699 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 10
+  %700 = bitcast i32* %699 to i8*
+  call void @llvm.memset.p0i8.i64(i8* %700, i8 -91, i64 10, i32 8, i1 false)
+  br label %701
 
-vector.body945:                                   ; preds = %vector.body945, %vector.ph944
-  %index948 = phi i64 [ 0, %vector.ph944 ], [ %index.next952, %vector.body945 ]
-  %vec.phi957 = phi <4 x i32> [ zeroinitializer, %vector.ph944 ], [ %830, %vector.body945 ]
-  %vec.phi958 = phi <4 x i32> [ zeroinitializer, %vector.ph944 ], [ %831, %vector.body945 ]
-  %826 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %index948
-  %827 = bitcast i32* %826 to <4 x i32>*
-  %wide.load959 = load <4 x i32>* %827, align 16
-  %.sum2093 = or i64 %index948, 4
-  %828 = getelementptr [10240 x i32]* %buffer110, i64 0, i64 %.sum2093
-  %829 = bitcast i32* %828 to <4 x i32>*
-  %wide.load960 = load <4 x i32>* %829, align 16
-  %830 = add <4 x i32> %wide.load959, %vec.phi957
-  %831 = add <4 x i32> %wide.load960, %vec.phi958
-  %index.next952 = add i64 %index948, 8
-  %832 = icmp eq i64 %index.next952, 10240
-  br i1 %832, label %middle.block946, label %vector.body945, !llvm.loop !55
+; <label>:701                                     ; preds = %701, %698
+  %indvars.iv391 = phi i64 [ 0, %698 ], [ %indvars.iv.next392, %701 ]
+  %v140.0194 = phi i32 [ 0, %698 ], [ %704, %701 ]
+  %702 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv391
+  %703 = load i32* %702, align 4, !tbaa !6
+  %704 = add i32 %703, %v140.0194
+  %indvars.iv.next392 = add nuw nsw i64 %indvars.iv391, 1
+  %exitcond393 = icmp eq i64 %indvars.iv.next392, 10240
+  br i1 %exitcond393, label %705, label %701
 
-middle.block946:                                  ; preds = %vector.body945
-  %bin.rdx963 = add <4 x i32> %831, %830
-  %rdx.shuf964 = shufflevector <4 x i32> %bin.rdx963, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx965 = add <4 x i32> %bin.rdx963, %rdx.shuf964
-  %rdx.shuf966 = shufflevector <4 x i32> %bin.rdx965, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx967 = add <4 x i32> %bin.rdx965, %rdx.shuf966
-  %833 = extractelement <4 x i32> %bin.rdx967, i32 0
-  %834 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 10, i32 %833) #2
-  br label %835
+; <label>:705                                     ; preds = %701
+  %706 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 10, i32 %704) #2
+  br label %707
 
-; <label>:835                                     ; preds = %835, %middle.block946
-  %indvars.iv387 = phi i64 [ 0, %middle.block946 ], [ %indvars.iv.next388, %835 ]
-  %836 = load volatile i32* %seed111, align 4
-  %837 = trunc i64 %indvars.iv387 to i32
-  %838 = mul nsw i32 %836, %837
-  %839 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv387
-  store i32 %838, i32* %839, align 4, !tbaa !44
+; <label>:707                                     ; preds = %707, %705
+  %indvars.iv387 = phi i64 [ 0, %705 ], [ %indvars.iv.next388, %707 ]
+  %708 = load volatile i32* %seed111, align 4
+  %709 = trunc i64 %indvars.iv387 to i32
+  %710 = mul nsw i32 %708, %709
+  %711 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv387
+  store i32 %710, i32* %711, align 4, !tbaa !6
   %indvars.iv.next388 = add nuw nsw i64 %indvars.iv387, 1
   %exitcond389 = icmp eq i64 %indvars.iv.next388, 10240
-  br i1 %exitcond389, label %vector.ph920, label %835
+  br i1 %exitcond389, label %712, label %707
 
-vector.ph920:                                     ; preds = %835
-  %840 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 16
-  %841 = bitcast i32* %840 to i8*
-  call void @llvm.memset.p0i8.i64(i8* %841, i8 -91, i64 16, i32 16, i1 false)
-  br label %vector.body921
+; <label>:712                                     ; preds = %707
+  %713 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 16
+  %714 = bitcast i32* %713 to i8*
+  call void @llvm.memset.p0i8.i64(i8* %714, i8 -91, i64 16, i32 16, i1 false)
+  br label %715
 
-vector.body921:                                   ; preds = %vector.body921, %vector.ph920
-  %index924 = phi i64 [ 0, %vector.ph920 ], [ %index.next928, %vector.body921 ]
-  %vec.phi933 = phi <4 x i32> [ zeroinitializer, %vector.ph920 ], [ %846, %vector.body921 ]
-  %vec.phi934 = phi <4 x i32> [ zeroinitializer, %vector.ph920 ], [ %847, %vector.body921 ]
-  %842 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %index924
-  %843 = bitcast i32* %842 to <4 x i32>*
-  %wide.load935 = load <4 x i32>* %843, align 16
-  %.sum2094 = or i64 %index924, 4
-  %844 = getelementptr [10240 x i32]* %buffer110, i64 0, i64 %.sum2094
-  %845 = bitcast i32* %844 to <4 x i32>*
-  %wide.load936 = load <4 x i32>* %845, align 16
-  %846 = add <4 x i32> %wide.load935, %vec.phi933
-  %847 = add <4 x i32> %wide.load936, %vec.phi934
-  %index.next928 = add i64 %index924, 8
-  %848 = icmp eq i64 %index.next928, 10240
-  br i1 %848, label %middle.block922, label %vector.body921, !llvm.loop !56
+; <label>:715                                     ; preds = %715, %712
+  %indvars.iv384 = phi i64 [ 0, %712 ], [ %indvars.iv.next385, %715 ]
+  %v143.0191 = phi i32 [ 0, %712 ], [ %718, %715 ]
+  %716 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv384
+  %717 = load i32* %716, align 4, !tbaa !6
+  %718 = add i32 %717, %v143.0191
+  %indvars.iv.next385 = add nuw nsw i64 %indvars.iv384, 1
+  %exitcond386 = icmp eq i64 %indvars.iv.next385, 10240
+  br i1 %exitcond386, label %719, label %715
 
-middle.block922:                                  ; preds = %vector.body921
-  %bin.rdx939 = add <4 x i32> %847, %846
-  %rdx.shuf940 = shufflevector <4 x i32> %bin.rdx939, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx941 = add <4 x i32> %bin.rdx939, %rdx.shuf940
-  %rdx.shuf942 = shufflevector <4 x i32> %bin.rdx941, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx943 = add <4 x i32> %bin.rdx941, %rdx.shuf942
-  %849 = extractelement <4 x i32> %bin.rdx943, i32 0
-  %850 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 16, i32 %849) #2
-  br label %851
+; <label>:719                                     ; preds = %715
+  %720 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 16, i32 %718) #2
+  br label %721
 
-; <label>:851                                     ; preds = %851, %middle.block922
-  %indvars.iv380 = phi i64 [ 0, %middle.block922 ], [ %indvars.iv.next381, %851 ]
-  %852 = load volatile i32* %seed111, align 4
-  %853 = trunc i64 %indvars.iv380 to i32
-  %854 = mul nsw i32 %852, %853
-  %855 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv380
-  store i32 %854, i32* %855, align 4, !tbaa !44
+; <label>:721                                     ; preds = %721, %719
+  %indvars.iv380 = phi i64 [ 0, %719 ], [ %indvars.iv.next381, %721 ]
+  %722 = load volatile i32* %seed111, align 4
+  %723 = trunc i64 %indvars.iv380 to i32
+  %724 = mul nsw i32 %722, %723
+  %725 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv380
+  store i32 %724, i32* %725, align 4, !tbaa !6
   %indvars.iv.next381 = add nuw nsw i64 %indvars.iv380, 1
   %exitcond382 = icmp eq i64 %indvars.iv.next381, 10240
-  br i1 %exitcond382, label %vector.ph896, label %851
+  br i1 %exitcond382, label %726, label %721
 
-vector.ph896:                                     ; preds = %851
-  %856 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 15
-  %857 = bitcast i32* %856 to i8*
-  call void @llvm.memset.p0i8.i64(i8* %857, i8 -91, i64 32, i32 4, i1 false)
-  br label %vector.body897
+; <label>:726                                     ; preds = %721
+  %727 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 15
+  %728 = bitcast i32* %727 to i8*
+  call void @llvm.memset.p0i8.i64(i8* %728, i8 -91, i64 32, i32 4, i1 false)
+  br label %729
 
-vector.body897:                                   ; preds = %vector.body897, %vector.ph896
-  %index900 = phi i64 [ 0, %vector.ph896 ], [ %index.next904, %vector.body897 ]
-  %vec.phi909 = phi <4 x i32> [ zeroinitializer, %vector.ph896 ], [ %862, %vector.body897 ]
-  %vec.phi910 = phi <4 x i32> [ zeroinitializer, %vector.ph896 ], [ %863, %vector.body897 ]
-  %858 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %index900
-  %859 = bitcast i32* %858 to <4 x i32>*
-  %wide.load911 = load <4 x i32>* %859, align 16
-  %.sum2095 = or i64 %index900, 4
-  %860 = getelementptr [10240 x i32]* %buffer110, i64 0, i64 %.sum2095
-  %861 = bitcast i32* %860 to <4 x i32>*
-  %wide.load912 = load <4 x i32>* %861, align 16
-  %862 = add <4 x i32> %wide.load911, %vec.phi909
-  %863 = add <4 x i32> %wide.load912, %vec.phi910
-  %index.next904 = add i64 %index900, 8
-  %864 = icmp eq i64 %index.next904, 10240
-  br i1 %864, label %middle.block898, label %vector.body897, !llvm.loop !57
+; <label>:729                                     ; preds = %729, %726
+  %indvars.iv377 = phi i64 [ 0, %726 ], [ %indvars.iv.next378, %729 ]
+  %v146.0188 = phi i32 [ 0, %726 ], [ %732, %729 ]
+  %730 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv377
+  %731 = load i32* %730, align 4, !tbaa !6
+  %732 = add i32 %731, %v146.0188
+  %indvars.iv.next378 = add nuw nsw i64 %indvars.iv377, 1
+  %exitcond379 = icmp eq i64 %indvars.iv.next378, 10240
+  br i1 %exitcond379, label %733, label %729
 
-middle.block898:                                  ; preds = %vector.body897
-  %bin.rdx915 = add <4 x i32> %863, %862
-  %rdx.shuf916 = shufflevector <4 x i32> %bin.rdx915, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx917 = add <4 x i32> %bin.rdx915, %rdx.shuf916
-  %rdx.shuf918 = shufflevector <4 x i32> %bin.rdx917, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx919 = add <4 x i32> %bin.rdx917, %rdx.shuf918
-  %865 = extractelement <4 x i32> %bin.rdx919, i32 0
-  %866 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 32, i32 %865) #2
-  br label %867
+; <label>:733                                     ; preds = %729
+  %734 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 32, i32 %732) #2
+  br label %735
 
-; <label>:867                                     ; preds = %867, %middle.block898
-  %indvars.iv373 = phi i64 [ 0, %middle.block898 ], [ %indvars.iv.next374, %867 ]
-  %868 = load volatile i32* %seed111, align 4
-  %869 = trunc i64 %indvars.iv373 to i32
-  %870 = mul nsw i32 %868, %869
-  %871 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv373
-  store i32 %870, i32* %871, align 4, !tbaa !44
+; <label>:735                                     ; preds = %735, %733
+  %indvars.iv373 = phi i64 [ 0, %733 ], [ %indvars.iv.next374, %735 ]
+  %736 = load volatile i32* %seed111, align 4
+  %737 = trunc i64 %indvars.iv373 to i32
+  %738 = mul nsw i32 %736, %737
+  %739 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv373
+  store i32 %738, i32* %739, align 4, !tbaa !6
   %indvars.iv.next374 = add nuw nsw i64 %indvars.iv373, 1
   %exitcond375 = icmp eq i64 %indvars.iv.next374, 10240
-  br i1 %exitcond375, label %vector.ph872, label %867
+  br i1 %exitcond375, label %740, label %735
 
-vector.ph872:                                     ; preds = %867
-  %872 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 13
-  %873 = bitcast i32* %872 to i8*
-  call void @llvm.memset.p0i8.i64(i8* %873, i8 -91, i64 64, i32 4, i1 false)
-  br label %vector.body873
+; <label>:740                                     ; preds = %735
+  %741 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 13
+  %742 = bitcast i32* %741 to i8*
+  call void @llvm.memset.p0i8.i64(i8* %742, i8 -91, i64 64, i32 4, i1 false)
+  br label %743
 
-vector.body873:                                   ; preds = %vector.body873, %vector.ph872
-  %index876 = phi i64 [ 0, %vector.ph872 ], [ %index.next880, %vector.body873 ]
-  %vec.phi885 = phi <4 x i32> [ zeroinitializer, %vector.ph872 ], [ %878, %vector.body873 ]
-  %vec.phi886 = phi <4 x i32> [ zeroinitializer, %vector.ph872 ], [ %879, %vector.body873 ]
-  %874 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %index876
-  %875 = bitcast i32* %874 to <4 x i32>*
-  %wide.load887 = load <4 x i32>* %875, align 16
-  %.sum2096 = or i64 %index876, 4
-  %876 = getelementptr [10240 x i32]* %buffer110, i64 0, i64 %.sum2096
-  %877 = bitcast i32* %876 to <4 x i32>*
-  %wide.load888 = load <4 x i32>* %877, align 16
-  %878 = add <4 x i32> %wide.load887, %vec.phi885
-  %879 = add <4 x i32> %wide.load888, %vec.phi886
-  %index.next880 = add i64 %index876, 8
-  %880 = icmp eq i64 %index.next880, 10240
-  br i1 %880, label %middle.block874, label %vector.body873, !llvm.loop !58
+; <label>:743                                     ; preds = %743, %740
+  %indvars.iv370 = phi i64 [ 0, %740 ], [ %indvars.iv.next371, %743 ]
+  %v149.0185 = phi i32 [ 0, %740 ], [ %746, %743 ]
+  %744 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv370
+  %745 = load i32* %744, align 4, !tbaa !6
+  %746 = add i32 %745, %v149.0185
+  %indvars.iv.next371 = add nuw nsw i64 %indvars.iv370, 1
+  %exitcond372 = icmp eq i64 %indvars.iv.next371, 10240
+  br i1 %exitcond372, label %747, label %743
 
-middle.block874:                                  ; preds = %vector.body873
-  %bin.rdx891 = add <4 x i32> %879, %878
-  %rdx.shuf892 = shufflevector <4 x i32> %bin.rdx891, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx893 = add <4 x i32> %bin.rdx891, %rdx.shuf892
-  %rdx.shuf894 = shufflevector <4 x i32> %bin.rdx893, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx895 = add <4 x i32> %bin.rdx893, %rdx.shuf894
-  %881 = extractelement <4 x i32> %bin.rdx895, i32 0
-  %882 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 64, i32 %881) #2
-  br label %883
+; <label>:747                                     ; preds = %743
+  %748 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 64, i32 %746) #2
+  br label %749
 
-; <label>:883                                     ; preds = %883, %middle.block874
-  %indvars.iv366 = phi i64 [ 0, %middle.block874 ], [ %indvars.iv.next367, %883 ]
-  %884 = load volatile i32* %seed111, align 4
-  %885 = trunc i64 %indvars.iv366 to i32
-  %886 = mul nsw i32 %884, %885
-  %887 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv366
-  store i32 %886, i32* %887, align 4, !tbaa !44
+; <label>:749                                     ; preds = %749, %747
+  %indvars.iv366 = phi i64 [ 0, %747 ], [ %indvars.iv.next367, %749 ]
+  %750 = load volatile i32* %seed111, align 4
+  %751 = trunc i64 %indvars.iv366 to i32
+  %752 = mul nsw i32 %750, %751
+  %753 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv366
+  store i32 %752, i32* %753, align 4, !tbaa !6
   %indvars.iv.next367 = add nuw nsw i64 %indvars.iv366, 1
   %exitcond368 = icmp eq i64 %indvars.iv.next367, 10240
-  br i1 %exitcond368, label %vector.ph848, label %883
+  br i1 %exitcond368, label %754, label %749
 
-vector.ph848:                                     ; preds = %883
-  call void @llvm.memset.p0i8.i64(i8* %809, i8 -91, i64 128, i32 4, i1 false)
-  br label %vector.body849
+; <label>:754                                     ; preds = %749
+  call void @llvm.memset.p0i8.i64(i8* %686, i8 -91, i64 128, i32 4, i1 false)
+  br label %755
 
-vector.body849:                                   ; preds = %vector.body849, %vector.ph848
-  %index852 = phi i64 [ 0, %vector.ph848 ], [ %index.next856, %vector.body849 ]
-  %vec.phi861 = phi <4 x i32> [ zeroinitializer, %vector.ph848 ], [ %892, %vector.body849 ]
-  %vec.phi862 = phi <4 x i32> [ zeroinitializer, %vector.ph848 ], [ %893, %vector.body849 ]
-  %888 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %index852
-  %889 = bitcast i32* %888 to <4 x i32>*
-  %wide.load863 = load <4 x i32>* %889, align 16
-  %.sum2097 = or i64 %index852, 4
-  %890 = getelementptr [10240 x i32]* %buffer110, i64 0, i64 %.sum2097
-  %891 = bitcast i32* %890 to <4 x i32>*
-  %wide.load864 = load <4 x i32>* %891, align 16
-  %892 = add <4 x i32> %wide.load863, %vec.phi861
-  %893 = add <4 x i32> %wide.load864, %vec.phi862
-  %index.next856 = add i64 %index852, 8
-  %894 = icmp eq i64 %index.next856, 10240
-  br i1 %894, label %middle.block850, label %vector.body849, !llvm.loop !59
+; <label>:755                                     ; preds = %755, %754
+  %indvars.iv363 = phi i64 [ 0, %754 ], [ %indvars.iv.next364, %755 ]
+  %v152.0182 = phi i32 [ 0, %754 ], [ %758, %755 ]
+  %756 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv363
+  %757 = load i32* %756, align 4, !tbaa !6
+  %758 = add i32 %757, %v152.0182
+  %indvars.iv.next364 = add nuw nsw i64 %indvars.iv363, 1
+  %exitcond365 = icmp eq i64 %indvars.iv.next364, 10240
+  br i1 %exitcond365, label %759, label %755
 
-middle.block850:                                  ; preds = %vector.body849
-  %bin.rdx867 = add <4 x i32> %893, %892
-  %rdx.shuf868 = shufflevector <4 x i32> %bin.rdx867, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx869 = add <4 x i32> %bin.rdx867, %rdx.shuf868
-  %rdx.shuf870 = shufflevector <4 x i32> %bin.rdx869, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx871 = add <4 x i32> %bin.rdx869, %rdx.shuf870
-  %895 = extractelement <4 x i32> %bin.rdx871, i32 0
-  %896 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 128, i32 %895) #2
-  br label %897
+; <label>:759                                     ; preds = %755
+  %760 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 128, i32 %758) #2
+  br label %761
 
-; <label>:897                                     ; preds = %897, %middle.block850
-  %indvars.iv359 = phi i64 [ 0, %middle.block850 ], [ %indvars.iv.next360, %897 ]
-  %898 = load volatile i32* %seed111, align 4
-  %899 = trunc i64 %indvars.iv359 to i32
-  %900 = mul nsw i32 %898, %899
-  %901 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv359
-  store i32 %900, i32* %901, align 4, !tbaa !44
+; <label>:761                                     ; preds = %761, %759
+  %indvars.iv359 = phi i64 [ 0, %759 ], [ %indvars.iv.next360, %761 ]
+  %762 = load volatile i32* %seed111, align 4
+  %763 = trunc i64 %indvars.iv359 to i32
+  %764 = mul nsw i32 %762, %763
+  %765 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv359
+  store i32 %764, i32* %765, align 4, !tbaa !6
   %indvars.iv.next360 = add nuw nsw i64 %indvars.iv359, 1
   %exitcond361 = icmp eq i64 %indvars.iv.next360, 10240
-  br i1 %exitcond361, label %vector.ph824, label %897
+  br i1 %exitcond361, label %766, label %761
 
-vector.ph824:                                     ; preds = %897
-  call void @llvm.memset.p0i8.i64(i8* %680, i8 -91, i64 256, i32 4, i1 false)
-  br label %vector.body825
+; <label>:766                                     ; preds = %761
+  call void @llvm.memset.p0i8.i64(i8* %573, i8 -91, i64 256, i32 4, i1 false)
+  br label %767
 
-vector.body825:                                   ; preds = %vector.body825, %vector.ph824
-  %index828 = phi i64 [ 0, %vector.ph824 ], [ %index.next832, %vector.body825 ]
-  %vec.phi837 = phi <4 x i32> [ zeroinitializer, %vector.ph824 ], [ %906, %vector.body825 ]
-  %vec.phi838 = phi <4 x i32> [ zeroinitializer, %vector.ph824 ], [ %907, %vector.body825 ]
-  %902 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %index828
-  %903 = bitcast i32* %902 to <4 x i32>*
-  %wide.load839 = load <4 x i32>* %903, align 16
-  %.sum2098 = or i64 %index828, 4
-  %904 = getelementptr [10240 x i32]* %buffer110, i64 0, i64 %.sum2098
-  %905 = bitcast i32* %904 to <4 x i32>*
-  %wide.load840 = load <4 x i32>* %905, align 16
-  %906 = add <4 x i32> %wide.load839, %vec.phi837
-  %907 = add <4 x i32> %wide.load840, %vec.phi838
-  %index.next832 = add i64 %index828, 8
-  %908 = icmp eq i64 %index.next832, 10240
-  br i1 %908, label %middle.block826, label %vector.body825, !llvm.loop !60
+; <label>:767                                     ; preds = %767, %766
+  %indvars.iv356 = phi i64 [ 0, %766 ], [ %indvars.iv.next357, %767 ]
+  %v155.0179 = phi i32 [ 0, %766 ], [ %770, %767 ]
+  %768 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv356
+  %769 = load i32* %768, align 4, !tbaa !6
+  %770 = add i32 %769, %v155.0179
+  %indvars.iv.next357 = add nuw nsw i64 %indvars.iv356, 1
+  %exitcond358 = icmp eq i64 %indvars.iv.next357, 10240
+  br i1 %exitcond358, label %771, label %767
 
-middle.block826:                                  ; preds = %vector.body825
-  %bin.rdx843 = add <4 x i32> %907, %906
-  %rdx.shuf844 = shufflevector <4 x i32> %bin.rdx843, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx845 = add <4 x i32> %bin.rdx843, %rdx.shuf844
-  %rdx.shuf846 = shufflevector <4 x i32> %bin.rdx845, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx847 = add <4 x i32> %bin.rdx845, %rdx.shuf846
-  %909 = extractelement <4 x i32> %bin.rdx847, i32 0
-  %910 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 256, i32 %909) #2
-  br label %911
+; <label>:771                                     ; preds = %767
+  %772 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 256, i32 %770) #2
+  br label %773
 
-; <label>:911                                     ; preds = %911, %middle.block826
-  %indvars.iv352 = phi i64 [ 0, %middle.block826 ], [ %indvars.iv.next353, %911 ]
-  %912 = load volatile i32* %seed111, align 4
-  %913 = trunc i64 %indvars.iv352 to i32
-  %914 = mul nsw i32 %912, %913
-  %915 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv352
-  store i32 %914, i32* %915, align 4, !tbaa !44
+; <label>:773                                     ; preds = %773, %771
+  %indvars.iv352 = phi i64 [ 0, %771 ], [ %indvars.iv.next353, %773 ]
+  %774 = load volatile i32* %seed111, align 4
+  %775 = trunc i64 %indvars.iv352 to i32
+  %776 = mul nsw i32 %774, %775
+  %777 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv352
+  store i32 %776, i32* %777, align 4, !tbaa !6
   %indvars.iv.next353 = add nuw nsw i64 %indvars.iv352, 1
   %exitcond354 = icmp eq i64 %indvars.iv.next353, 10240
-  br i1 %exitcond354, label %vector.ph800, label %911
+  br i1 %exitcond354, label %778, label %773
 
-vector.ph800:                                     ; preds = %911
-  call void @llvm.memset.p0i8.i64(i8* %705, i8 -91, i64 512, i32 8, i1 false)
-  br label %vector.body801
+; <label>:778                                     ; preds = %773
+  call void @llvm.memset.p0i8.i64(i8* %593, i8 -91, i64 512, i32 8, i1 false)
+  br label %779
 
-vector.body801:                                   ; preds = %vector.body801, %vector.ph800
-  %index804 = phi i64 [ 0, %vector.ph800 ], [ %index.next808, %vector.body801 ]
-  %vec.phi813 = phi <4 x i32> [ zeroinitializer, %vector.ph800 ], [ %920, %vector.body801 ]
-  %vec.phi814 = phi <4 x i32> [ zeroinitializer, %vector.ph800 ], [ %921, %vector.body801 ]
-  %916 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %index804
-  %917 = bitcast i32* %916 to <4 x i32>*
-  %wide.load815 = load <4 x i32>* %917, align 16
-  %.sum2099 = or i64 %index804, 4
-  %918 = getelementptr [10240 x i32]* %buffer110, i64 0, i64 %.sum2099
-  %919 = bitcast i32* %918 to <4 x i32>*
-  %wide.load816 = load <4 x i32>* %919, align 16
-  %920 = add <4 x i32> %wide.load815, %vec.phi813
-  %921 = add <4 x i32> %wide.load816, %vec.phi814
-  %index.next808 = add i64 %index804, 8
-  %922 = icmp eq i64 %index.next808, 10240
-  br i1 %922, label %middle.block802, label %vector.body801, !llvm.loop !61
+; <label>:779                                     ; preds = %779, %778
+  %indvars.iv349 = phi i64 [ 0, %778 ], [ %indvars.iv.next350, %779 ]
+  %v158.0176 = phi i32 [ 0, %778 ], [ %782, %779 ]
+  %780 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv349
+  %781 = load i32* %780, align 4, !tbaa !6
+  %782 = add i32 %781, %v158.0176
+  %indvars.iv.next350 = add nuw nsw i64 %indvars.iv349, 1
+  %exitcond351 = icmp eq i64 %indvars.iv.next350, 10240
+  br i1 %exitcond351, label %783, label %779
 
-middle.block802:                                  ; preds = %vector.body801
-  %bin.rdx819 = add <4 x i32> %921, %920
-  %rdx.shuf820 = shufflevector <4 x i32> %bin.rdx819, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx821 = add <4 x i32> %bin.rdx819, %rdx.shuf820
-  %rdx.shuf822 = shufflevector <4 x i32> %bin.rdx821, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx823 = add <4 x i32> %bin.rdx821, %rdx.shuf822
-  %923 = extractelement <4 x i32> %bin.rdx823, i32 0
-  %924 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 512, i32 %923) #2
-  br label %925
+; <label>:783                                     ; preds = %779
+  %784 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 512, i32 %782) #2
+  br label %785
 
-; <label>:925                                     ; preds = %925, %middle.block802
-  %indvars.iv345 = phi i64 [ 0, %middle.block802 ], [ %indvars.iv.next346, %925 ]
-  %926 = load volatile i32* %seed111, align 4
-  %927 = trunc i64 %indvars.iv345 to i32
-  %928 = mul nsw i32 %926, %927
-  %929 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv345
-  store i32 %928, i32* %929, align 4, !tbaa !44
+; <label>:785                                     ; preds = %785, %783
+  %indvars.iv345 = phi i64 [ 0, %783 ], [ %indvars.iv.next346, %785 ]
+  %786 = load volatile i32* %seed111, align 4
+  %787 = trunc i64 %indvars.iv345 to i32
+  %788 = mul nsw i32 %786, %787
+  %789 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv345
+  store i32 %788, i32* %789, align 4, !tbaa !6
   %indvars.iv.next346 = add nuw nsw i64 %indvars.iv345, 1
   %exitcond347 = icmp eq i64 %indvars.iv.next346, 10240
-  br i1 %exitcond347, label %vector.ph776, label %925
+  br i1 %exitcond347, label %790, label %785
 
-vector.ph776:                                     ; preds = %925
-  call void @llvm.memset.p0i8.i64(i8* %737, i8 -91, i64 1024, i32 16, i1 false)
-  br label %vector.body777
+; <label>:790                                     ; preds = %785
+  call void @llvm.memset.p0i8.i64(i8* %621, i8 -91, i64 1024, i32 16, i1 false)
+  br label %791
 
-vector.body777:                                   ; preds = %vector.body777, %vector.ph776
-  %index780 = phi i64 [ 0, %vector.ph776 ], [ %index.next784, %vector.body777 ]
-  %vec.phi789 = phi <4 x i32> [ zeroinitializer, %vector.ph776 ], [ %934, %vector.body777 ]
-  %vec.phi790 = phi <4 x i32> [ zeroinitializer, %vector.ph776 ], [ %935, %vector.body777 ]
-  %930 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %index780
-  %931 = bitcast i32* %930 to <4 x i32>*
-  %wide.load791 = load <4 x i32>* %931, align 16
-  %.sum2100 = or i64 %index780, 4
-  %932 = getelementptr [10240 x i32]* %buffer110, i64 0, i64 %.sum2100
-  %933 = bitcast i32* %932 to <4 x i32>*
-  %wide.load792 = load <4 x i32>* %933, align 16
-  %934 = add <4 x i32> %wide.load791, %vec.phi789
-  %935 = add <4 x i32> %wide.load792, %vec.phi790
-  %index.next784 = add i64 %index780, 8
-  %936 = icmp eq i64 %index.next784, 10240
-  br i1 %936, label %middle.block778, label %vector.body777, !llvm.loop !62
+; <label>:791                                     ; preds = %791, %790
+  %indvars.iv342 = phi i64 [ 0, %790 ], [ %indvars.iv.next343, %791 ]
+  %v161.0173 = phi i32 [ 0, %790 ], [ %794, %791 ]
+  %792 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv342
+  %793 = load i32* %792, align 4, !tbaa !6
+  %794 = add i32 %793, %v161.0173
+  %indvars.iv.next343 = add nuw nsw i64 %indvars.iv342, 1
+  %exitcond344 = icmp eq i64 %indvars.iv.next343, 10240
+  br i1 %exitcond344, label %795, label %791
 
-middle.block778:                                  ; preds = %vector.body777
-  %bin.rdx795 = add <4 x i32> %935, %934
-  %rdx.shuf796 = shufflevector <4 x i32> %bin.rdx795, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx797 = add <4 x i32> %bin.rdx795, %rdx.shuf796
-  %rdx.shuf798 = shufflevector <4 x i32> %bin.rdx797, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx799 = add <4 x i32> %bin.rdx797, %rdx.shuf798
-  %937 = extractelement <4 x i32> %bin.rdx799, i32 0
-  %938 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 1024, i32 %937) #2
+; <label>:795                                     ; preds = %791
+  %796 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 1024, i32 %794) #2
   br label %.preheader
 
-.preheader:                                       ; preds = %middle.block, %middle.block778
-  %indvars.iv339 = phi i64 [ 10, %middle.block778 ], [ %indvars.iv.next340, %middle.block ]
-  br label %939
+.preheader:                                       ; preds = %812, %795
+  %indvars.iv339 = phi i64 [ 10, %795 ], [ %indvars.iv.next340, %812 ]
+  br label %797
 
-; <label>:939                                     ; preds = %939, %.preheader
-  %indvars.iv = phi i64 [ 0, %.preheader ], [ %indvars.iv.next, %939 ]
-  %940 = load volatile i32* %seed111, align 4
-  %941 = trunc i64 %indvars.iv to i32
-  %942 = mul nsw i32 %940, %941
-  %943 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv
-  store i32 %942, i32* %943, align 4, !tbaa !44
+; <label>:797                                     ; preds = %797, %.preheader
+  %indvars.iv = phi i64 [ 0, %.preheader ], [ %indvars.iv.next, %797 ]
+  %798 = load volatile i32* %seed111, align 4
+  %799 = trunc i64 %indvars.iv to i32
+  %800 = mul nsw i32 %798, %799
+  %801 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv
+  store i32 %800, i32* %801, align 4, !tbaa !6
   %indvars.iv.next = add nuw nsw i64 %indvars.iv, 1
   %exitcond = icmp eq i64 %indvars.iv.next, 10240
-  br i1 %exitcond, label %vector.ph, label %939
+  br i1 %exitcond, label %802, label %797
 
-vector.ph:                                        ; preds = %939
-  %944 = trunc i64 %indvars.iv339 to i32
-  %945 = srem i32 %944, 17
-  %946 = sext i32 %945 to i64
-  %947 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %946
-  %948 = bitcast i32* %947 to i8*
-  call void @llvm.memset.p0i8.i64(i8* %948, i8 -91, i64 %indvars.iv339, i32 4, i1 false)
-  br label %vector.body
+; <label>:802                                     ; preds = %797
+  %803 = trunc i64 %indvars.iv339 to i32
+  %804 = srem i32 %803, 17
+  %805 = sext i32 %804 to i64
+  %806 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %805
+  %807 = bitcast i32* %806 to i8*
+  call void @llvm.memset.p0i8.i64(i8* %807, i8 -91, i64 %indvars.iv339, i32 4, i1 false)
+  br label %808
 
-vector.body:                                      ; preds = %vector.body, %vector.ph
-  %index = phi i64 [ 0, %vector.ph ], [ %index.next, %vector.body ]
-  %vec.phi = phi <4 x i32> [ zeroinitializer, %vector.ph ], [ %953, %vector.body ]
-  %vec.phi770 = phi <4 x i32> [ zeroinitializer, %vector.ph ], [ %954, %vector.body ]
-  %949 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %index
-  %950 = bitcast i32* %949 to <4 x i32>*
-  %wide.load = load <4 x i32>* %950, align 16
-  %.sum2101 = or i64 %index, 4
-  %951 = getelementptr [10240 x i32]* %buffer110, i64 0, i64 %.sum2101
-  %952 = bitcast i32* %951 to <4 x i32>*
-  %wide.load771 = load <4 x i32>* %952, align 16
-  %953 = add <4 x i32> %wide.load, %vec.phi
-  %954 = add <4 x i32> %wide.load771, %vec.phi770
-  %index.next = add i64 %index, 8
-  %955 = icmp eq i64 %index.next, 10240
-  br i1 %955, label %middle.block, label %vector.body, !llvm.loop !63
+; <label>:808                                     ; preds = %808, %802
+  %indvars.iv336 = phi i64 [ 0, %802 ], [ %indvars.iv.next337, %808 ]
+  %v165.0170 = phi i32 [ 0, %802 ], [ %811, %808 ]
+  %809 = getelementptr inbounds [10240 x i32]* %buffer110, i64 0, i64 %indvars.iv336
+  %810 = load i32* %809, align 4, !tbaa !6
+  %811 = add i32 %810, %v165.0170
+  %indvars.iv.next337 = add nuw nsw i64 %indvars.iv336, 1
+  %exitcond338 = icmp eq i64 %indvars.iv.next337, 10240
+  br i1 %exitcond338, label %812, label %808
 
-middle.block:                                     ; preds = %vector.body
-  %bin.rdx = add <4 x i32> %954, %953
-  %rdx.shuf = shufflevector <4 x i32> %bin.rdx, <4 x i32> undef, <4 x i32> <i32 2, i32 3, i32 undef, i32 undef>
-  %bin.rdx773 = add <4 x i32> %bin.rdx, %rdx.shuf
-  %rdx.shuf774 = shufflevector <4 x i32> %bin.rdx773, <4 x i32> undef, <4 x i32> <i32 1, i32 undef, i32 undef, i32 undef>
-  %bin.rdx775 = add <4 x i32> %bin.rdx773, %rdx.shuf774
-  %956 = extractelement <4 x i32> %bin.rdx775, i32 0
-  %957 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 %944, i32 %956) #2
+; <label>:812                                     ; preds = %808
+  %813 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([13 x i8]* @.str1, i64 0, i64 0), i32 %803, i32 %811) #2
   %indvars.iv.next340 = add nuw nsw i64 %indvars.iv339, 10
-  %958 = trunc i64 %indvars.iv.next340 to i32
-  %959 = icmp slt i32 %958, 100
-  br i1 %959, label %.preheader, label %960
+  %814 = trunc i64 %indvars.iv.next340 to i32
+  %815 = icmp slt i32 %814, 100
+  br i1 %815, label %.preheader, label %816
 
-; <label>:960                                     ; preds = %middle.block
-  call void @llvm.lifetime.end(i64 40960, i8* %673) #2
+; <label>:816                                     ; preds = %812
+  call void @llvm.lifetime.end(i64 40960, i8* %565) #2
   ret i32 1
 }
 
@@ -2548,63 +1810,7 @@ attributes #2 = { nounwind }
 !1 = metadata !{metadata !2, metadata !2, i64 0}
 !2 = metadata !{metadata !"omnipotent char", metadata !3, i64 0}
 !3 = metadata !{metadata !"Simple C/C++ TBAA"}
-!4 = metadata !{metadata !4, metadata !5, metadata !6}
-!5 = metadata !{metadata !"llvm.loop.vectorize.width", i32 1}
-!6 = metadata !{metadata !"llvm.loop.interleave.count", i32 1}
-!7 = metadata !{metadata !7, metadata !5, metadata !6}
-!8 = metadata !{metadata !8, metadata !5, metadata !6}
-!9 = metadata !{metadata !9, metadata !5, metadata !6}
-!10 = metadata !{metadata !10, metadata !5, metadata !6}
-!11 = metadata !{metadata !11, metadata !5, metadata !6}
-!12 = metadata !{metadata !12, metadata !5, metadata !6}
-!13 = metadata !{metadata !13, metadata !5, metadata !6}
-!14 = metadata !{metadata !14, metadata !5, metadata !6}
-!15 = metadata !{metadata !15, metadata !5, metadata !6}
-!16 = metadata !{metadata !16, metadata !5, metadata !6}
-!17 = metadata !{metadata !17, metadata !5, metadata !6}
-!18 = metadata !{metadata !18, metadata !5, metadata !6}
-!19 = metadata !{metadata !19, metadata !5, metadata !6}
-!20 = metadata !{metadata !20, metadata !5, metadata !6}
-!21 = metadata !{metadata !21, metadata !5, metadata !6}
-!22 = metadata !{metadata !22, metadata !5, metadata !6}
-!23 = metadata !{metadata !23, metadata !5, metadata !6}
-!24 = metadata !{metadata !25, metadata !25, i64 0}
-!25 = metadata !{metadata !"short", metadata !2, i64 0}
-!26 = metadata !{metadata !26, metadata !5, metadata !6}
-!27 = metadata !{metadata !27, metadata !5, metadata !6}
-!28 = metadata !{metadata !28, metadata !5, metadata !6}
-!29 = metadata !{metadata !29, metadata !5, metadata !6}
-!30 = metadata !{metadata !30, metadata !5, metadata !6}
-!31 = metadata !{metadata !31, metadata !5, metadata !6}
-!32 = metadata !{metadata !32, metadata !5, metadata !6}
-!33 = metadata !{metadata !33, metadata !5, metadata !6}
-!34 = metadata !{metadata !34, metadata !5, metadata !6}
-!35 = metadata !{metadata !35, metadata !5, metadata !6}
-!36 = metadata !{metadata !36, metadata !5, metadata !6}
-!37 = metadata !{metadata !37, metadata !5, metadata !6}
-!38 = metadata !{metadata !38, metadata !5, metadata !6}
-!39 = metadata !{metadata !39, metadata !5, metadata !6}
-!40 = metadata !{metadata !40, metadata !5, metadata !6}
-!41 = metadata !{metadata !41, metadata !5, metadata !6}
-!42 = metadata !{metadata !42, metadata !5, metadata !6}
-!43 = metadata !{metadata !43, metadata !5, metadata !6}
-!44 = metadata !{metadata !45, metadata !45, i64 0}
-!45 = metadata !{metadata !"int", metadata !2, i64 0}
-!46 = metadata !{metadata !46, metadata !5, metadata !6}
-!47 = metadata !{metadata !47, metadata !5, metadata !6}
-!48 = metadata !{metadata !48, metadata !5, metadata !6}
-!49 = metadata !{metadata !49, metadata !5, metadata !6}
-!50 = metadata !{metadata !50, metadata !5, metadata !6}
-!51 = metadata !{metadata !51, metadata !5, metadata !6}
-!52 = metadata !{metadata !52, metadata !5, metadata !6}
-!53 = metadata !{metadata !53, metadata !5, metadata !6}
-!54 = metadata !{metadata !54, metadata !5, metadata !6}
-!55 = metadata !{metadata !55, metadata !5, metadata !6}
-!56 = metadata !{metadata !56, metadata !5, metadata !6}
-!57 = metadata !{metadata !57, metadata !5, metadata !6}
-!58 = metadata !{metadata !58, metadata !5, metadata !6}
-!59 = metadata !{metadata !59, metadata !5, metadata !6}
-!60 = metadata !{metadata !60, metadata !5, metadata !6}
-!61 = metadata !{metadata !61, metadata !5, metadata !6}
-!62 = metadata !{metadata !62, metadata !5, metadata !6}
-!63 = metadata !{metadata !63, metadata !5, metadata !6}
+!4 = metadata !{metadata !5, metadata !5, i64 0}
+!5 = metadata !{metadata !"short", metadata !2, i64 0}
+!6 = metadata !{metadata !7, metadata !7, i64 0}
+!7 = metadata !{metadata !"int", metadata !2, i64 0}

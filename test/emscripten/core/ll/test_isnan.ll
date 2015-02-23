@@ -5,7 +5,7 @@ target triple = "x86_64-pc-linux-gnu"
 @.str = private unnamed_addr constant [14 x i8] c"%d - %f - %d\0A\00", align 1
 
 ; Function Attrs: nounwind uwtable
-define i32 @_Z5IsNaNd(double %x) #0 {
+define i32 @IsNaN(double %x) #0 {
   %y = alloca double, align 8
   %z = alloca double, align 8
   store volatile double %x, double* %y, align 8

@@ -5,7 +5,7 @@ target triple = "x86_64-pc-linux-gnu"
 @.str = private unnamed_addr constant [9 x i8] c"*%d,%d*\0A\00", align 1
 
 ; Function Attrs: nounwind readnone uwtable
-define i32 @_Z5funcyi(i32 %x) #0 {
+define i32 @funcy(i32 %x) #0 {
   %1 = mul nsw i32 %x, 9
   ret i32 %1
 }

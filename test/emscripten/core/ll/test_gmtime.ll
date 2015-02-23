@@ -6,7 +6,7 @@ target triple = "x86_64-pc-linux-gnu"
 
 @.str = private unnamed_addr constant [20 x i8] c"yday: %d, hour: %d\0A\00", align 1
 @.str1 = private unnamed_addr constant [21 x i8] c"yday == ptm->tm_yday\00", align 1
-@.str2 = private unnamed_addr constant [20 x i8] c"cpp/test_gmtime.cpp\00", align 1
+@.str2 = private unnamed_addr constant [14 x i8] c"test_gmtime.c\00", align 1
 @__PRETTY_FUNCTION__.main = private unnamed_addr constant [11 x i8] c"int main()\00", align 1
 @str = private unnamed_addr constant [4 x i8] c"ok!\00"
 
@@ -41,7 +41,7 @@ define i32 @main() #0 {
   br i1 %17, label %19, label %18
 
 ; <label>:18                                      ; preds = %16
-  call void @__assert_fail(i8* getelementptr inbounds ([21 x i8]* @.str1, i64 0, i64 0), i8* getelementptr inbounds ([20 x i8]* @.str2, i64 0, i64 0), i32 21, i8* getelementptr inbounds ([11 x i8]* @__PRETTY_FUNCTION__.main, i64 0, i64 0)) #4
+  call void @__assert_fail(i8* getelementptr inbounds ([21 x i8]* @.str1, i64 0, i64 0), i8* getelementptr inbounds ([14 x i8]* @.str2, i64 0, i64 0), i32 21, i8* getelementptr inbounds ([11 x i8]* @__PRETTY_FUNCTION__.main, i64 0, i64 0)) #4
   unreachable
 
 ; <label>:19                                      ; preds = %16, %9
@@ -87,6 +87,6 @@ attributes #4 = { noreturn nounwind }
 !3 = metadata !{metadata !"omnipotent char", metadata !4, i64 0}
 !4 = metadata !{metadata !"Simple C/C++ TBAA"}
 !5 = metadata !{metadata !6, metadata !7, i64 28}
-!6 = metadata !{metadata !"_ZTS2tm", metadata !7, i64 0, metadata !7, i64 4, metadata !7, i64 8, metadata !7, i64 12, metadata !7, i64 16, metadata !7, i64 20, metadata !7, i64 24, metadata !7, i64 28, metadata !7, i64 32, metadata !2, i64 40, metadata !8, i64 48}
+!6 = metadata !{metadata !"tm", metadata !7, i64 0, metadata !7, i64 4, metadata !7, i64 8, metadata !7, i64 12, metadata !7, i64 16, metadata !7, i64 20, metadata !7, i64 24, metadata !7, i64 28, metadata !7, i64 32, metadata !2, i64 40, metadata !8, i64 48}
 !7 = metadata !{metadata !"int", metadata !3, i64 0}
 !8 = metadata !{metadata !"any pointer", metadata !3, i64 0}

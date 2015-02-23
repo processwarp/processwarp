@@ -5,7 +5,7 @@ target triple = "x86_64-pc-linux-gnu"
 @.str = private unnamed_addr constant [6 x i8] c"%.2f\0A\00", align 1
 
 ; Function Attrs: nounwind uwtable
-define double @_Z3getv() #0 {
+define double @get() #0 {
   %1 = tail call double asm sideeffect "Math.abs(-12/3.3)", "=r,~{dirflag},~{fpsr},~{flags}"() #2, !srcloc !1
   tail call void asm sideeffect "#comment1", "~{dirflag},~{fpsr},~{flags}"() #2, !srcloc !2
   tail call void asm sideeffect "#comment2", "~{dirflag},~{fpsr},~{flags}"() #2, !srcloc !3
