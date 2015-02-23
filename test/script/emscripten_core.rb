@@ -23,7 +23,7 @@ Dir.chdir(LL_PATH) do
         *Open3.popen3("#{TARGET_FILE} -c #{CONFIG_FILE} -l #{File.join(LL_PATH, fname)}")
 
       begin
-        Timeout.timeout(180) do
+        Timeout.timeout(60) do
           # 標準入力はさっさと閉じる
           stdin.close()
         
