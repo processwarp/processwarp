@@ -373,6 +373,7 @@ void VMachine::execute(int max_clock) {
 	  thread.type_complex.type_store = &store;
 	}
 	stackinfo.type_cache2 = &store;
+	print_debug("set_type = %016" PRIx64 "\n", stackinfo.type);
       } break;
 
       case Opcode::SET_OUTPUT: {
