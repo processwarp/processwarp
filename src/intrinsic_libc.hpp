@@ -127,5 +127,17 @@ namespace usagi {
      */
     static bool setjmp(VMachine& vm, Thread& th, IntrinsicFuncParam p,
 		       vaddr_t dst, std::vector<uint8_t>& src);
+
+    /**
+     * strtol関数。文字列を数値に変換する。
+     * srcから取り出すパラメタは以下のとおり。
+     * vaddr_t nptr
+     * vaddr_t endptr
+     * i32 base
+     * 戻り値は以下のとおり
+     * i64
+     */
+    static bool strtol(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+		       vaddr_t dst, std::vector<uint8_t>& src);
   };
 }

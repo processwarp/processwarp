@@ -273,6 +273,9 @@ void IntrinsicLibc::regist(VMachine& vm) {
   vm.regist_intrinsic_func("setjmp", IntrinsicLibc::setjmp, 0);
   vm.regist_intrinsic_func("longjmp", IntrinsicLibc::longjmp, 0);
 
+  vm.regist_intrinsic_func("strtol", IntrinsicLibc::strtol, 0);
+  vm.regist_intrinsic_func("strtoll", IntrinsicLibc::strtol, 0);
+
   vm.regist_intrinsic_func("llvm.memcpy.p0i8.p0i8.i8",  IntrinsicLibc::memcpy, 8);
   vm.regist_intrinsic_func("llvm.memcpy.p0i8.p0i8.i16", IntrinsicLibc::memcpy, 16);
   vm.regist_intrinsic_func("llvm.memcpy.p0i8.p0i8.i32", IntrinsicLibc::memcpy, 32);
@@ -332,5 +335,38 @@ bool IntrinsicLibc::setjmp(VMachine& vm, Thread& th, IntrinsicFuncParam p,
   
   // setjmp自体の戻り値は0
   *reinterpret_cast<int32_t*>(vm.get_raw_addr(dst)) = 0;
+  return false;
+}
+
+// strtol関数。文字列を数値に変換する。
+bool IntrinsicLibc::strtol(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+			   vaddr_t dst, std::vector<uint8_t>& src) {
+  int seek = 0;
+  // 引数の読み込み
+  vaddr_t nptr = VMachine::read_intrinsic_param_ptr(src, &seek);
+  vaddr_t endptr = VMachine::read_intrinsic_param_ptr(src, &seek);
+  uint32_t base = VMachine::read_intrinsic_param_i32(src, &seek);
+
+  // 読み込んだパラメタ長と渡されたパラメタ長は同じはず
+  assert(static_cast<signed>(src.size()) == seek);
+
+  if (endptr == VADDR_NULL) {
+    // endptrがnullの場合は、戻り値をそのまま渡すだけ
+    *reinterpret_cast<int64_t*>(vm.get_raw_addr(dst)) =
+      std::strtol(reinterpret_cast<char*>(vm.get_raw_addr(nptr)), nullptr, base);
+
+  } else {
+    // endptrが指定されている場合、ポインタの書き換えが必要
+    char *work_ptr;
+    *reinterpret_cast<int64_t*>(vm.get_raw_addr(dst)) =
+      std::strtol(reinterpret_cast<char*>(vm.get_raw_addr(nptr)), &work_ptr, base);
+    
+    if (work_ptr == nullptr) {
+      *reinterpret_cast<vaddr_t*>(vm.get_raw_addr(endptr)) = VADDR_NULL;
+    } else {
+      *reinterpret_cast<vaddr_t*>(vm.get_raw_addr(endptr)) =
+	nptr + (reinterpret_cast<uint8_t*>(work_ptr) - vm.get_raw_addr(nptr));
+    }
+  }
   return false;
 }
