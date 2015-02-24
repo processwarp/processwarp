@@ -254,7 +254,7 @@ template <typename T> void TypeExtended<T>::op_shr(uint8_t* dst, uint8_t* a, uin
 template <typename T> void TypeExtended<T>::type_cast(uint8_t* dst, vaddr_t type, uint8_t* src) {
   switch(type) {
   case BasicType::TY_POINTER:
-    *reinterpret_cast<void**>(dst) = reinterpret_cast<void*>(src); break;
+    *reinterpret_cast<vaddr_t*>(dst) = static_cast<unsigned>(*reinterpret_cast<T*>(src)); break;
     
   case BasicType::TY_UI8:
     *reinterpret_cast<uint8_t*>(dst) = static_cast<uint8_t>(*reinterpret_cast<T*>(src)); break;
@@ -290,6 +290,10 @@ template <typename T> void TypeExtended<T>::type_cast(uint8_t* dst, vaddr_t type
     throw_error_message(Error::CAST_VIOLATION, Util::vaddr2str(type));
   } break;
   }
+
+  print_debug("type_cast:%s <- %s\n",
+	      Util::numptr2str(dst, 8).c_str(),
+	      Util::numptr2str(src, sizeof(T)).c_str());
 }
 
 // bit_cast命令に対応したキャスト演算を行う。
@@ -362,13 +366,34 @@ void TypePointer::op_not_equal(uint8_t* dst, uint8_t* a, uint8_t* b) {
 
 // type_cast命令に対応したキャスト演算を行う。
 void TypePointer::type_cast(uint8_t* dst, vaddr_t type, uint8_t* src) {
-  // ポインタと同じ64ビット長整数への変換にのみ対応
-  if (type == BasicType::TY_UI64 || type == BasicType::TY_SI64) {
-    *reinterpret_cast<vaddr_t*>(dst) = *reinterpret_cast<uint64_t*>(src);
+  switch (type) {
+  case BasicType::TY_UI8:
+  case BasicType::TY_SI8:
+    *reinterpret_cast<uint8_t*>(dst) = static_cast<uint8_t>(*reinterpret_cast<vaddr_t*>(src));
+    break;
     
-  } else {
+  case BasicType::TY_UI16:
+  case BasicType::TY_SI16:
+    *reinterpret_cast<uint16_t*>(dst) = static_cast<uint16_t>(*reinterpret_cast<vaddr_t*>(src));
+    break;
+    
+  case BasicType::TY_UI32:
+  case BasicType::TY_SI32:
+    *reinterpret_cast<uint32_t*>(dst) = static_cast<uint32_t>(*reinterpret_cast<vaddr_t*>(src));
+    break;
+    
+  case BasicType::TY_UI64:
+  case BasicType::TY_SI64:
+    *reinterpret_cast<uint64_t*>(dst) = static_cast<uint64_t>(*reinterpret_cast<vaddr_t*>(src));
+    break;
+    
+  default:
     throw_error_message(Error::CAST_VIOLATION, Util::vaddr2str(type));
   }
+  
+  print_debug("type_cast:%s <- %s\n",
+	      Util::numptr2str(dst, 8).c_str(),
+	      Util::numptr2str(src, sizeof(vaddr_t)).c_str());
 }
 
 // 値をコピーする。
