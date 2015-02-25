@@ -11,6 +11,7 @@
 #include "func_store.hpp"
 #include "instruction.hpp"
 #include "intrinsic_bit.hpp"
+#include "intrinsic_glfw3.hpp"
 #include "intrinsic_libc.hpp"
 #include "intrinsic_memory.hpp"
 #include "intrinsic_overflow.hpp"
@@ -100,8 +101,7 @@ inline uint8_t* get_cache(vaddr_t addr, VMemory& vmemory) {
 inline FuncStore& get_function(instruction_t code, OperandParam& param) {
   int operand = Instruction::get_operand(code);
   if ((operand & HEAD_OPERAND) != 0) {
-    vaddr_t position = (FILL_OPERAND - operand);
-    assert(position < param.k.size);
+    assert((FILL_OPERAND - operand) < param.k.size);
     // 定数の場合1の補数表現からの復元
     vaddr_t addr =
       *reinterpret_cast<vaddr_t*>(param.k.head.get() + (FILL_OPERAND - operand));
@@ -138,8 +138,18 @@ inline TypeStore& get_type(instruction_t code, OperandParam& param) {
 }
 
 // コンストラクタ。
-VMachine::VMachine() :
+VMachine::VMachine(std::vector<void*>& _libs) :
+  libs(_libs),
   status(SETUP) {
+}
+
+// 仮想アドレスとネイティブポインタのペアを解消する。
+void VMachine::destory_native_ptr(vaddr_t addr) {
+  assert(addr != VADDR_NULL);
+  assert(native_ptr.find(addr) != native_ptr.end());
+
+  native_ptr.erase(addr);
+  if (addr < last_free_native_ptr) last_free_native_ptr = addr;
 }
 
 // VM命令を実行する。
@@ -682,8 +692,9 @@ void VMachine::call_external(external_func_t func,
     case BasicType::TY_POINTER: {
       ffi_arg_types.push_back(&ffi_type_pointer);
       vaddr_t addr = *reinterpret_cast<vaddr_t*>(args.data() + seek + sizeof(vaddr_t));
-      if (addr == VADDR_NULL) {
-	*reinterpret_cast<void**>(args.data() + seek + sizeof(vaddr_t)) = nullptr;
+      auto native = native_ptr.find(addr);
+      if (native != native_ptr.end()) {
+	*reinterpret_cast<void**>(args.data() + seek + sizeof(vaddr_t)) = native->second;
 	
       } else {
 	DataStore& pointed = vmemory.get_data(addr);
@@ -802,12 +813,18 @@ std::pair<size_t, unsigned int> VMachine::calc_type_size(vaddr_t type) {
 
 // VMの終了処理を行う。
 void VMachine::close() {
-  // ロードした外部のライブラリを閉じる
-  /*
-    for (auto it = ext_libs.begin(); it != ext_libs.end(); it ++) {
-    dlclose(*it);
-    }
-  //*/
+}
+
+// ネイティブポインタに仮想アドレス対応付ける。
+vaddr_t VMachine::create_native_ptr(void* ptr) {
+  while(native_ptr.find(last_free_native_ptr) != native_ptr.end()) {
+    last_free_native_ptr ++;
+  }
+  native_ptr.insert(std::make_pair(last_free_native_ptr, ptr));
+  
+  print_debug("create native pair:%s %p\n",
+	      Util::numptr2str(&last_free_native_ptr, sizeof(vaddr_t)).c_str(), ptr);
+  return (last_free_native_ptr ++);
 }
 
 // 配列型の型情報を作成する。
@@ -867,25 +884,42 @@ void VMachine::deploy_function_normal(const std::string& name,
 // ライブラリなど、外部の関数へのポインタを取得する。
 external_func_t VMachine::get_external_func(const Symbols::Symbol& name) {
   print_debug("get external func:%s\n", name.str().c_str());
-  external_func_t func = reinterpret_cast<external_func_t>(dlsym(RTLD_NEXT, name.str().c_str()));
-
-  // エラーを確認
   char* error;
+  // 標準ライブラリから試す
+  void* sym = dlsym(RTLD_DEFAULT, name.str().c_str());
   if ((error = dlerror()) != nullptr) {
+    sym = nullptr;
+    for (auto it : libs) {
+      sym = dlsym(it, name.str().c_str());
+      if ((error = dlerror()) == nullptr) {
+	break;
+      } else {
+	sym = nullptr;
+      }
+    }
+  }
+  if (sym == nullptr) {
     throw_error_message(Error::EXT_LIBRARY, error);
   }
+  external_func_t func = reinterpret_cast<external_func_t>(sym);
 
   return func;
 }
 
 // 仮想アドレスに相当する実アドレスを取得する。
 uint8_t* VMachine::get_raw_addr(vaddr_t addr) {
-  DataStore& store = vmemory.get_data(addr);
-  // アクセス違反を確認する
-  if (VMemory::get_addr_lower(addr) > store.size) {
-    throw_error_message(Error::SEGMENT_FAULT, Util::vaddr2str(addr));
+  auto native = native_ptr.find(addr);
+  if (native != native_ptr.end()) {
+    return reinterpret_cast<uint8_t*>(native->second);
+    
+  } else {
+    DataStore& store = vmemory.get_data(addr);
+    // アクセス違反を確認する
+    if (VMemory::get_addr_lower(addr) > store.size) {
+      throw_error_message(Error::SEGMENT_FAULT, Util::vaddr2str(addr));
+    }
+    return reinterpret_cast<uint8_t*>(store.head.get() + VMemory::get_addr_lower(addr));
   }
-  return reinterpret_cast<uint8_t*>(store.head.get() + VMemory::get_addr_lower(addr));
 }
 
 // 型依存の演算インスタンスを取得する。
@@ -1146,25 +1180,32 @@ void VMachine::setup() {
 
 #undef M_ALLOC_BASIC_TYPE
 
+  // ネイティブポインタペアリング用アドレスを予約
+  vmemory.reserve_data_addr(AddrType::AD_PTR);
+  native_ptr.insert(std::make_pair(VADDR_NULL, nullptr));
+  last_free_native_ptr = AddrType::AD_PTR + 1;
+
   // VMの組み込み関数をロード
   IntrinsicBit::regist(*this);
+  IntrinsicGlfw3::regist(*this);
   IntrinsicLibc::regist(*this);
   IntrinsicMemory::regist(*this);
   IntrinsicOverflow::regist(*this);
   IntrinsicPosix::regist(*this);
   IntrinsicVaArg::regist(*this);
 
-  // Cの標準ライブラリをロード
-  /*
-    void* dl_handle = dlopen(, RTLD_LAZY);
-    if (!dl_handle) {
-    throw_error_message(Error::EXT_LIBRARY, dlerror());
-    }
-  //*/
+  print_debug("finis setup.\n");
 }
 
 // ワープ後のVMの設定をする。
 void VMachine::setup_continuous() {
+}
+
+// 仮想アドレスに対応づくネイティブポインタを変更する。
+void VMachine::update_native_ptr(vaddr_t addr, void* ptr) {
+  assert(addr != VADDR_NULL && ptr != nullptr);
+  assert(native_ptr.find(addr) != native_ptr.end());
+  native_ptr[addr] = ptr;
 }
 
 // データ領域を確保する。

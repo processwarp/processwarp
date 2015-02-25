@@ -4,7 +4,8 @@ RM          = rm -f
 OBJS        = llvm_asm_loader.o symbols.o usagi.o util.o vmachine.o vmemory.o \
               error.o func_store.o data_store.o type_store.o server.o xmpp.o convert.o \
               stackinfo.o type_based.o intrinsic_libc.o intrinsic_memory.o \
-              intrinsic_posix.o intrinsic_va_arg.o intrinsic_overflow.o intrinsic_bit.o
+              intrinsic_posix.o intrinsic_va_arg.o intrinsic_overflow.o intrinsic_bit.o \
+              intrinsic_glfw3.o
 
 TARGETS     = usagi
 
@@ -34,7 +35,7 @@ macosx:
 	CXX="clang++ -std=c++0x -stdlib=libc++" \
 	LD="clang++ -std=c++0x -stdlib=libc++" \
 	CXXFLAGS="-g -O0 -Wall -I/usr/include/ffi -I/usr/local/Cellar/llvm/3.5.1/include -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS `pkg-config gloox --cflags`" \
-	LDLIBS="-L/usr/local/Cellar/llvm/3.5.1/lib -lLLVM-3.5 -lffi `pkg-config gloox --libs`"
+	LDLIBS="-L/usr/local/Cellar/llvm/3.5.1/lib -lLLVM-3.5 -lffi `pkg-config gloox --libs` -framework OpenGL -lglfw3"
 
 usagi:$(OBJS)
 	$(LD) -o $@ $^ $(LDLIBS)
@@ -55,6 +56,8 @@ intrinsic_bit.hpp:definitions.hpp
 intrinsic_bit.o:intrinsic_bit.cpp intrinsic_bit.hpp vmachine.hpp
 intrinsic_libc.hpp:definitions.hpp
 intrinsic_libc.o:intrinsic_libc.cpp intrinsic_libc.hpp vmachine.hpp
+intrinsic_glfw3.hpp:definitions.hpp
+intrinsic_glfw3.o:intrinsic_glfw3.cpp intrinsic_glfw3.hpp vmachine.hpp
 intrinsic_memory.hpp:definitions.hpp
 intrinsic_memory.o:intrinsic_memory.cpp intrinsic_memory.hpp vmachine.hpp
 intrinsic_overflow.hpp:definitions.hpp

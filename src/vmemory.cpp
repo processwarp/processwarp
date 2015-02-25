@@ -339,6 +339,13 @@ TypeStore& VMemory::get_type(vaddr_t addr) {
   return type->second;
 }
 
+// データアドレスを予約する。
+void VMemory::reserve_data_addr(vaddr_t addr) {
+  assert(data_reserved.find(addr) == data_reserved.end());
+
+  data_reserved.insert(addr);
+}
+
 // 関数のアドレスを予約する。
 vaddr_t VMemory::reserve_func_addr() {
   // 空きアドレスの検索

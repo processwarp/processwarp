@@ -86,6 +86,7 @@ namespace usagi {
     AD_CONSTANT = 0x8000000000000000, ///< 定数判定フラグ
     AD_FUNCTION = 0xF000000000000000, ///< 関数
     AD_MASK     = 0xF000000000000000,
+    AD_PTR      = 0x4000000100000000,
   };
 
   /** プロセスID */

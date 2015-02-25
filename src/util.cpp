@@ -56,7 +56,9 @@ static const char* OPCODE_STR[] = {
   "VA_ARG",
 };
 
+#ifndef NDEBUG
 const llvm::Instruction* Util::llvm_instruction;
+#endif
 
 // 未実装機能を表すメソッド。
 void Util::_fixme(long line, const char* file, std::string mesg) {

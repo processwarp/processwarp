@@ -33,6 +33,9 @@ namespace usagi {
     typedef std::map<vpid_t, std::unique_ptr<VMachine>> VMS;
     VMS vms;
 
+    /** サーバがロードしたライブラリ */
+    std::vector<void*> libs;
+    
     /** XMPP接続 */
     Xmpp xmpp;
 
@@ -60,6 +63,11 @@ namespace usagi {
      * @param command コマンド
      */
     void command_warp_out(const picojson::object& command);
+
+    /**
+     * サーバの終了ルーチン。
+     */
+    void end();
 
     /**
      * サーバの繰り返しルーチン。

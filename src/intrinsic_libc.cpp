@@ -145,7 +145,7 @@ bool IntrinsicLibc::memcpy(VMachine& vm, Thread& th, IntrinsicFuncParam p,
   // コピー元アドレスを取得
   vaddr_t p_src = VMachine::read_intrinsic_param_ptr(src, &seek);
   // コピーサイズを取得
-  uint64_t p_size;
+  uint64_t p_size = 0;
   switch(p.i64) {
   case 8:  p_size = static_cast<int64_t>(VMachine::read_intrinsic_param_i8 (src, &seek)); break;
   case 16: p_size = static_cast<int64_t>(VMachine::read_intrinsic_param_i16(src, &seek)); break;
@@ -179,7 +179,7 @@ bool IntrinsicLibc::memmove(VMachine& vm, Thread& th, IntrinsicFuncParam p,
   // コピー元アドレスを取得
   vaddr_t p_src = VMachine::read_intrinsic_param_ptr(src, &seek);
   // コピーサイズを取得
-  uint64_t p_size;
+  uint64_t p_size = 0;
   switch(p.i64) {
   case 8:  p_size = static_cast<int64_t>(VMachine::read_intrinsic_param_i8 (src, &seek)); break;
   case 16: p_size = static_cast<int64_t>(VMachine::read_intrinsic_param_i16(src, &seek)); break;
@@ -213,7 +213,7 @@ bool IntrinsicLibc::memset(VMachine& vm, Thread& th, IntrinsicFuncParam p,
   // 設定値を取得
   uint8_t p_val = VMachine::read_intrinsic_param_i8(src, &seek);
   // 設定サイズを取得
-  uint64_t p_len;
+  uint64_t p_len = 0;
   switch(p.i64) {
   case 8:  p_len = static_cast<int64_t>(VMachine::read_intrinsic_param_i8 (src, &seek)); break;
   case 16: p_len = static_cast<int64_t>(VMachine::read_intrinsic_param_i16(src, &seek)); break;

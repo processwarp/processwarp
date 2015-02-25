@@ -200,6 +200,15 @@ namespace usagi {
     TypeStore& get_type(vaddr_t addr);
 
     /**
+     * データアドレスを予約する。
+     * 割り当ての仕組み上、addrで指定したアドレスタイプに従い
+     * 0〜256TByteの範囲でアドレスの予約がされる。
+     * addrはlower部分が0のアドレスである(領域の先頭)である必要がある。
+     * @param addr 予約するアドレス。
+     */
+    void reserve_data_addr(vaddr_t addr);
+
+    /**
      * 関数のアドレスを予約する。
      * @return 予約したアドレス。
      */

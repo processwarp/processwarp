@@ -6,5 +6,10 @@
 	"server":"llamerada.net",
 	"jid":"account1@llamerada.net",
 	"password":"passwd1"
-    }
+    },
+    
+    "libs":[
+	"/usr/local/lib/libglfw3.3.dylib",
+	"/System/Library/Frameworks/OpenGL.framework/Versions/A/OpenGL"
+    ]
 }

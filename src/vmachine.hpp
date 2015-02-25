@@ -38,6 +38,7 @@ namespace usagi {
       FINISH,  ///< 正常終了
     };
 
+    std::vector<void*>& libs; ///< ロードした外部のライブラリ
     IntrinsicFuncs intrinsic_funcs; //< VM組み込み関数一覧
     IntrinsicAddrs intrinsic_addrs; //< VM組み込みアドレス一覧(他VMにコピーしない)
     CallsAtExit calls_at_exit; //< 終了処理時に呼び出す関数一覧
@@ -46,12 +47,14 @@ namespace usagi {
     Symbols symbols;    ///< シンボル
     Threads threads;    ///< スレッド一覧
     VMemory vmemory;    ///< 仮想メモリ空間
-    //std::vector<void*> ext_libs; ///< ロードした外部のライブラリ
+    std::map<vaddr_t, void*> native_ptr; ///< 仮想アドレスとネイティブポインタのペア
+    vaddr_t last_free_native_ptr;
     
     /**
      * コンストラクタ。
+     * @param _libs 外部ライブラリ一覧
      */
-    VMachine();
+    VMachine(std::vector<void*>& _libs);
 
     /**
      * 外部の関数を呼び出す。
@@ -83,6 +86,15 @@ namespace usagi {
      * VMの終了処理を行う。
      */
     void close();
+
+    /**
+     * ネイティブポインタに仮想アドレス対応付ける。
+     * get_raw_addr利用時に、引数に指定したアドレスが取得可能となる。
+     * freeを利用して対応付けが解除される。
+     * @param ptr ネイティブポインタ
+     * @return 対応付けられた仮想アドレス。
+     */
+    vaddr_t create_native_ptr(void* ptr);
 
     /**
      * 配列型の型情報を作成する。
@@ -136,6 +148,12 @@ namespace usagi {
 				vaddr_t ret_type,
 				const FuncStore::NormalProp& prop,
 				vaddr_t addr);
+
+    /**
+     * 仮想アドレスとネイティブポインタのペアを解消する。
+     * @param addr 仮想アドレス
+     */
+    void destory_native_ptr(vaddr_t addr);
 
     /**
      * VM命令を実行する。
@@ -281,6 +299,13 @@ namespace usagi {
      * ワープ後のVMの設定をする。
      */
     void setup_continuous();
+
+    /**
+     * 仮想アドレスに対応づくネイティブポインタを変更する。
+     * @param addr 対象の仮想アドレス。
+     * @param ptr ネイティブポインタ
+     */
+    void update_native_ptr(vaddr_t addr, void* ptr);
 
     /**
      * データ領域を確保する。

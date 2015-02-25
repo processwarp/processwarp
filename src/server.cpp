@@ -1,4 +1,5 @@
 
+#include <dlfcn.h>
 #include <time.h>
 
 #include "convert.hpp"
@@ -10,7 +11,7 @@ using namespace usagi;
 
 // 新規VMを割り当てる。
 vpid_t Server::assign_vm(const picojson::object& conf) {
-  std::unique_ptr<VMachine> vm(new VMachine());
+  std::unique_ptr<VMachine> vm(new VMachine(libs));
   vm->setup();
 
   { // プログラムをロード
@@ -146,7 +147,7 @@ void Server::command_warp_out(const picojson::object& command) {
   std::string pid = command.at("pid").get<std::string>();
 
   // VM、変換器を作成
-  std::unique_ptr<VMachine> vm(new VMachine());
+  std::unique_ptr<VMachine> vm(new VMachine(libs));
   vm->setup();
   Convert convert(*vm);
 
@@ -173,6 +174,14 @@ void Server::command_warp_out(const picojson::object& command) {
   
   // VMに関連づいたon_warp_outのメソッドを呼び出す
   //for(vaddr_t cl_addr : vm->on_warp_out) vm->exec_closure(cl_addr);
+}
+
+// サーバの繰り返しルーチン。
+void Server::end() {
+  // 動的ライブラリのclose
+  for(auto lib : libs) {
+    dlclose(lib);
+  }
 }
 
 // サーバの繰り返しルーチン。
@@ -236,6 +245,19 @@ void Server::start(const picojson::object& conf) {
   // ファイルを開いたかどうか
   bool is_filed = false;
 
+
+  // 動的ライブラリのロード
+  if (conf.find("libs") != conf.end()) {
+    const picojson::array& lib_paths = conf.at("libs").get<picojson::array>();
+    for (auto lib : lib_paths) {
+      void* dl_handle = dlopen(lib.get<std::string>().c_str(), RTLD_LAZY);
+      if (!dl_handle) {
+	throw_error_message(Error::EXT_LIBRARY, dlerror());
+      }
+      libs.push_back(dl_handle);
+    }
+  }
+
   // ネットワークモードに応じた分岐
   std::string network = conf.at("network").get<std::string>();
   if (network == "xmpp") {
@@ -256,6 +278,7 @@ void Server::start(const picojson::object& conf) {
     // filesディレクティブ(配列)からfileを取り出してロードする。
     for (auto it = files.begin(); it != files.end(); it ++) {
       picojson::object file = it->get<picojson::object>();
+
       assign_vm(file);
       is_filed = true;
     }
