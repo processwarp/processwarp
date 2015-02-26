@@ -72,7 +72,7 @@ bool IntrinsicLibc::longjmp(VMachine& vm, Thread& th, IntrinsicFuncParam p,
 
   int seek2 = 0;
   // stack_count
-  vm_int_t stack_count = *reinterpret_cast<vm_int_t*>(env + seek2);
+  vm_uint_t stack_count = *reinterpret_cast<vm_uint_t*>(env + seek2);
   seek2 += sizeof(vm_int_t);
   // setjmpした時よりスタックが少ない場合エラー
   if (th.stackinfos.size() < stack_count) {
@@ -304,7 +304,7 @@ bool IntrinsicLibc::setjmp(VMachine& vm, Thread& th, IntrinsicFuncParam p,
   int seek2 = 0;
   const StackInfo& si = *(th.stackinfos.back());
   // stack_count
-  *reinterpret_cast<vm_int_t*>(env + seek2) = th.stackinfos.size();
+  *reinterpret_cast<vm_uint_t*>(env + seek2) = th.stackinfos.size();
   seek2 += sizeof(vm_int_t);
   // ret_addr
   *reinterpret_cast<vaddr_t*>(env + seek2) = dst;

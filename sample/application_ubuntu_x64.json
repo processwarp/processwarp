@@ -1,0 +1,15 @@
+{
+    "mode":"application",
+    
+    "network":"xmpp",
+    "xmpp":{
+	"server":"llamerada.net",
+	"jid":"account1@llamerada.net",
+	"password":"passwd1"
+    },
+    
+    "libs":[
+	"/usr/lib/x86_64-linux-gnu/libglfw.so.3",
+	"/usr/lib/x86_64-linux-gnu/mesa/libGL.so.1"
+    ]
+}

@@ -7,7 +7,7 @@ extern "C" {
 #endif
 
   typedef struct __jmp_buf {
-    __pw_vm_int_t stack_count;
+    __pw_vm_uint_t stack_count;
     __pw_vm_ptr_t ret_addr;
     __pw_vm_uint_t pc;
     __pw_vm_uint_t phi0;
