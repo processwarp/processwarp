@@ -34,6 +34,12 @@ namespace usagi {
       SETUP,   ///< 起動中
       ACTIVE,  ///< 実行中(実行中スレッドあり)
       PASSIVE, ///< 実行中(実行中スレッドなし)
+
+      WAIT_WARP,  ///<
+      BEFOR_WARP, ///< befor warp
+      WARP,       ///< 
+      AFTER_WARP, ///< after warp
+
       ERROR,   ///< エラー終了
       FINISH,  ///< 正常終了
     };
@@ -49,6 +55,10 @@ namespace usagi {
     VMemory vmemory;    ///< 仮想メモリ空間
     std::map<vaddr_t, void*> native_ptr; ///< 仮想アドレスとネイティブポインタのペア
     vaddr_t last_free_native_ptr;
+    
+    std::string warp_to; ///< id for warp to
+    vm_uint_t warp_stack_size; ///< stack size when befor warp
+    vm_uint_t warp_call_count;
     
     /**
      * コンストラクタ。
@@ -67,6 +77,13 @@ namespace usagi {
 		       vaddr_t ret_type,
 		       uint8_t* ret_addr,
 		       std::vector<uint8_t>& args);
+
+    /**
+     * Setup to call function that type : void (*)(void).
+     * @param thread thread in running.
+     * @param func_addr addr of target function.
+     */
+    void call_setup_voidfunc(Thread& thread, vaddr_t func_addr);
     
     /**
      * 型のサイズと最大アライメントを計算する。
@@ -296,9 +313,15 @@ namespace usagi {
     void setup();
 
     /**
-     * ワープ後のVMの設定をする。
+     * Setup of warp out
      */
-    void setup_continuous();
+    void setup_warpout();
+
+    /**
+     * Setup of warp in
+     * @param address target client id
+     */
+    bool setup_warpin(const std::string& address);
 
     /**
      * 仮想アドレスに対応づくネイティブポインタを変更する。

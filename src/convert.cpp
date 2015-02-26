@@ -105,6 +105,27 @@ picojson::value Convert::export_thread(const Thread& src, Related& related) {
     dst_stackinfos.push_back(picojson::value(dst_stackinfo));
   }
   dst.insert(std::make_pair("stackinfos", picojson::value(dst_stackinfos)));
+  
+  // funcs_at_befor_warp
+  picojson::array dst_fabw;
+  for (auto it : src.funcs_at_befor_warp) {
+    dst_fabw.push_back(vaddr2json(it));
+  }
+  dst.insert(std::make_pair("funcs_at_befor_warp", picojson::value(dst_fabw)));
+
+  // funcs_at_after_warp
+  picojson::array dst_faaw;
+  for (auto it : src.funcs_at_after_warp) {
+    dst_faaw.push_back(vaddr2json(it));
+  }
+  dst.insert(std::make_pair("funcs_at_after_warp", picojson::value(dst_faaw)));
+
+  // warp_parameter
+  picojson::object dst_warp_parameter;
+  for (auto it : src.warp_parameter) {
+    dst_warp_parameter.insert(std::make_pair(Util::num2hex_str(it.first), num2json(it.second)));
+  }
+  dst.insert(std::make_pair("warp_parameter", picojson::value(dst_warp_parameter)));
 
   return picojson::value(dst);
 }
@@ -161,6 +182,25 @@ void Convert::import_thread(const picojson::value& src) {
     stackinfo->address = json2vaddr(obj_si.at("address"));
     
     thread->stackinfos.push_back(std::move(stackinfo));
+  }
+
+  // funcs_at_befor_warp
+  const picojson::array& fabw = obj_src.at("funcs_at_befor_warp").get<picojson::array>();
+  for (auto it : fabw) {
+    thread->funcs_at_befor_warp.push_back(json2vaddr(it));
+  }
+  
+  // funcs_at_after_warp
+  const picojson::array& faaw = obj_src.at("funcs_at_after_warp").get<picojson::array>();
+  for (auto it : faaw) {
+    thread->funcs_at_after_warp.push_back(json2vaddr(it));
+  }
+
+  // warp_parameter
+  const picojson::object& warp_parameter = obj_src.at("warp_parameter").get<picojson::object>();
+  for (auto it : warp_parameter) {
+    thread->warp_parameter.insert(std::make_pair(std::strtol(it.first.c_str(), nullptr, 16),
+						 json2num<vm_uint_t>(it.second)));
   }
 
   vm.threads.push_back(std::move(thread));

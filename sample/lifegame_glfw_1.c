@@ -5,9 +5,13 @@
 #include <time.h>
 #include <GLFW/glfw3.h>
 
-static const int W = 128;
-static const int H = 128;
-static const float CELL_SIZE = 4;
+#include <processwarp.h>
+
+static const int W = 32;
+static const int H = 32;
+static const float CELL_SIZE = 10;
+
+GLFWwindow* window;
 
 char obverse[W][H];
 char reverse[W][H];
@@ -85,15 +89,30 @@ void draw() {
   }
 }
 
-int main(int argc, char* argv[]) {
-
+void init() {
+  printf("begin init\n");
   srand((unsigned)time(NULL));
 
   glfwInit();
-  GLFWwindow* window = glfwCreateWindow(W * CELL_SIZE, H * CELL_SIZE, "life game", NULL, NULL);
+  window = glfwCreateWindow(W * CELL_SIZE, H * CELL_SIZE, "life game", NULL, NULL);
   glfwMakeContextCurrent(window);
   glfwSwapInterval(1);
-  
+  printf("end init\n");
+}
+
+void quit() {
+  printf("begin quit\n");
+  glfwDestroyWindow(window);
+  glfwTerminate();
+  printf("end quit\n");
+}
+
+int main(int argc, char* argv[]) {
+  set_processwarp_param(PW_KEY_WARP_TIMING, PW_VAL_ON_POLLING); // ★
+  at_befor_warp(quit); // ★
+  at_after_warp(init); // ★
+
+  init();
   shuffle();
 
   while (!glfwWindowShouldClose(window)) {
@@ -105,10 +124,10 @@ int main(int argc, char* argv[]) {
     
     glfwSwapBuffers(window);
     glfwPollEvents();
+    poll_warp_request(); // ★
   }
 
-  glfwDestroyWindow(window);
-  glfwTerminate();
+  quit();
 
   return EXIT_SUCCESS;
 }

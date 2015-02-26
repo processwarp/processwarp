@@ -5,7 +5,7 @@ OBJS        = llvm_asm_loader.o symbols.o usagi.o util.o vmachine.o vmemory.o \
               error.o func_store.o data_store.o type_store.o server.o xmpp.o convert.o \
               stackinfo.o type_based.o intrinsic_libc.o intrinsic_memory.o \
               intrinsic_posix.o intrinsic_va_arg.o intrinsic_overflow.o intrinsic_bit.o \
-              intrinsic_glfw3.o
+              intrinsic_glfw3.o intrinsic_warp.o
 
 TARGETS     = usagi
 
@@ -66,6 +66,8 @@ intrinsic_posix.hpp:definitions.hpp
 intrinsic_posix.o:intrinsic_posix.cpp intrinsic_posix.hpp vmachine.hpp
 intrinsic_va_arg.hpp:definitions.hpp
 intrinsic_va_arg.o:intrinsic_va_arg.cpp intrinsic_va_arg.hpp vmachine.hpp
+intrinsic_warp.hpp:definitions.hpp
+intrinsic_warp.o:intrinsic_warp.cpp intrinsic_warp.hpp vmachine.hpp
 llvm_asm_loader.hpp:definitions.hpp
 llvm_asm_loader.o:llvm_asm_loader.cpp error.hpp instruction.hpp llvm_asm_loader.hpp util.hpp vmachine.hpp
 data_store.hpp:definitions.hpp

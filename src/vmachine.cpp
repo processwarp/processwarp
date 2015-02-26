@@ -17,6 +17,7 @@
 #include "intrinsic_overflow.hpp"
 #include "intrinsic_posix.hpp"
 #include "intrinsic_va_arg.hpp"
+#include "intrinsic_warp.hpp"
 #include "stackinfo.hpp"
 #include "type_based.hpp"
 #include "util.hpp"
@@ -159,44 +160,37 @@ void VMachine::execute(int max_clock) {
     if (thread.stackinfos.size() == 1) {
       // calls_at_exitに関数が登録されている場合、順番に実行する
       if (!calls_at_exit.empty() && status != ERROR && status != FINISH) {
-	// calls_at_exitの先頭の関数を呼び出し状態にセット
-	FuncStore& func = vmemory.get_func(calls_at_exit.top());
-	std::unique_ptr<StackInfo> stackinfo
-	  (new StackInfo(func.addr,
-			 VADDR_NON, // 戻り値なし
-			 0, 0, // 正常、異常終了時のpc設定もなし
-			 (func.normal_prop.stack_size != 0 ?
-			  vmemory.alloc_data(func.normal_prop.stack_size, false).addr :
-			  VADDR_NON)));
-	
+	vaddr_t func_addr = calls_at_exit.top();
 	// 関数中でatexitを呼ばれる可能性があるので、先頭の関数を呼び出し前に除去する
 	calls_at_exit.pop();
-
-	// 関数の型に合わせて呼び出す。
-	if (func.type == FuncType::FC_NORMAL) {
-	  thread.stackinfos.push_back(std::unique_ptr<StackInfo>(stackinfo.release()));
-
-	} else if (func.type == FuncType::FC_INTRINSIC) {
-	  // VM組み込み関数の呼び出し
-	  assert(func.intrinsic != nullptr);
-	  std::vector<uint8_t> work;
-	  func.intrinsic(*this, thread, func.intrinsic_param, VADDR_NON, work);
-
-	} else {
-	  if (func.external == nullptr) {
-	    func.external = get_external_func(func.name);
-	  }
-
-	  // 関数の呼び出し
-	  std::vector<uint8_t> work;
-	  call_external(func.external, func.ret_type, nullptr, work);
-	}
+	// calls_at_exitの先頭の関数を呼び出し状態にセット
+	call_setup_voidfunc(thread, func_addr);
 	goto re_entry;
 
       } else {
 	// エラーまたは正常終了に設定。
 	if (status != ERROR) status = FINISH;
 	return;
+      }
+    }
+    if (status == BEFOR_WARP && thread.stackinfos.size() == warp_stack_size) {
+      if (thread.funcs_at_befor_warp.size() > warp_call_count) {
+	call_setup_voidfunc(thread, thread.funcs_at_befor_warp.at(warp_call_count));
+	warp_call_count ++;
+	goto re_entry;
+	
+      } else {
+	status = WARP;
+      }
+    }
+    if (status == AFTER_WARP && thread.stackinfos.size() == warp_stack_size) {
+      if (thread.funcs_at_befor_warp.size() > warp_call_count) {
+	call_setup_voidfunc(thread, thread.funcs_at_befor_warp.at(warp_call_count));
+	warp_call_count ++;
+	goto re_entry;
+	
+      } else {
+	status = ACTIVE;
       }
     }
 
@@ -208,7 +202,9 @@ void VMachine::execute(int max_clock) {
     DataStore& k = vmemory.get_data(func.normal_prop.k);
     OperandParam op_param = {*stackinfo.stack_cache, k, vmemory};
 
-    for (; status == ACTIVE && max_clock > 0; max_clock --) {
+    for (; (status == ACTIVE || status == WAIT_WARP ||
+	    status == BEFOR_WARP || status == AFTER_WARP) &&
+	   max_clock > 0; max_clock --) {
       instruction_t code = insts.at(stackinfo.pc);
       print_debug("pc:%d, k:%ld, insts:%ld, code:%08x %s\n",
 		  stackinfo.pc, k.size / sizeof(vaddr_t),
@@ -783,6 +779,37 @@ void VMachine::call_external(external_func_t func,
   memcpy(ret_addr, ret_buf.data(), ret_size);
 }
 
+// Setup to call function that type : void (*)(void).
+void VMachine::call_setup_voidfunc(Thread& thread, vaddr_t func_addr) {
+  FuncStore& func = vmemory.get_func(func_addr);
+  std::unique_ptr<StackInfo> stackinfo
+    (new StackInfo(func.addr,
+		   VADDR_NON, // 戻り値なし
+		   0, 0, // 正常、異常終了時のpc設定もなし
+		   (func.normal_prop.stack_size != 0 ?
+		    vmemory.alloc_data(func.normal_prop.stack_size, false).addr :
+		    VADDR_NON)));  
+  // 関数の型に合わせて呼び出す。
+  if (func.type == FuncType::FC_NORMAL) {
+    thread.stackinfos.push_back(std::unique_ptr<StackInfo>(stackinfo.release()));
+    
+  } else if (func.type == FuncType::FC_INTRINSIC) {
+    // VM組み込み関数の呼び出し
+    assert(func.intrinsic != nullptr);
+    std::vector<uint8_t> work;
+    func.intrinsic(*this, thread, func.intrinsic_param, VADDR_NON, work);
+    
+  } else {
+    if (func.external == nullptr) {
+      func.external = get_external_func(func.name);
+    }
+    
+    // 関数の呼び出し
+    std::vector<uint8_t> work;
+    call_external(func.external, func.ret_type, nullptr, work);
+  }
+}
+
 // 型のサイズと最大アライメントを計算する。
 std::pair<size_t, unsigned int> VMachine::calc_type_size(const std::vector<vaddr_t>& member) {
   size_t size = 0;
@@ -1193,12 +1220,37 @@ void VMachine::setup() {
   IntrinsicOverflow::regist(*this);
   IntrinsicPosix::regist(*this);
   IntrinsicVaArg::regist(*this);
+  IntrinsicWarp::regist(*this);
 
   print_debug("finis setup.\n");
 }
 
-// ワープ後のVMの設定をする。
-void VMachine::setup_continuous() {
+// Setup of warp out
+void VMachine::setup_warpout() {
+  warp_stack_size = threads.back()->stackinfos.size();
+  warp_call_count = 0;
+  status = AFTER_WARP;
+}
+
+// Setup of warp in
+bool VMachine::setup_warpin(const std::string& address) {
+  // Status must be normal when warp
+  if (status != ACTIVE) {
+    return false;
+  }
+
+  warp_to = address;
+  
+  if (threads.back()->warp_parameter[PW_KEY_WARP_TIMING] == PW_VAL_ON_ANYTIME) {
+    warp_stack_size = threads.back()->stackinfos.size();
+    warp_call_count = 0;
+    status = BEFOR_WARP;
+
+  } else { // On polling
+    status = WAIT_WARP;
+  }
+
+  return true;
 }
 
 // 仮想アドレスに対応づくネイティブポインタを変更する。

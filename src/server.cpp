@@ -64,17 +64,19 @@ void Server::command_ps(const picojson::object& command) {
 
 // 指定マシンへプロセスを転送する。
 void Server::command_warp_in(const picojson::object& command) {
-  picojson::object reply;
-  picojson::object dump;
-
   // 対象と送信先を取得
   vpid_t pid     = command.at("pid").get<std::string>();
   std::string to = command.at("to" ).get<std::string>();
 
-  fixme("送信可能かチェックする機能(on_warp_in最中は転送不可など)");
-
   // 対象VMからスレッドを取得
   VMachine& vm   = *(vms.at(pid).get());
+  vm.setup_warpin(to);
+}
+
+void Server::warp_in(VMachine& vm, vpid_t pid) {
+  picojson::object reply;
+  picojson::object dump;
+
   // LThread& thread = vm.vmemory.get<LThread>(vm.current_thread);
 
   // VMに関連づいたon_warp_inのメソッドを呼び出す
@@ -133,7 +135,7 @@ void Server::command_warp_in(const picojson::object& command) {
   reply.insert(std::make_pair("dump", picojson::value(dump)));
 
   // 応答を送信
-  xmpp.send_message(to, picojson::value(reply).serialize());
+  xmpp.send_message(vm.warp_to, picojson::value(reply).serialize());
   
   // スレッドを停止
   vm.status = VMachine::PASSIVE;
@@ -166,7 +168,7 @@ void Server::command_warp_out(const picojson::object& command) {
   //for(auto it : command.at("on_warp_out").get<picojson::array>())
   //vm->on_warp_out.push_back(vmemory.get_addr_by_string(it.get<std::string>(), true));
   
-  vm->setup_continuous();
+  vm->setup_warpout();
 
   // アクティブにしたVMを一覧に登録
   vm->status = VMachine::ACTIVE;
@@ -189,8 +191,14 @@ void Server::loop() {
   // VMの処理を進める
   for (Server::VMS::iterator it_vm = vms.begin(); it_vm != vms.end(); it_vm ++) {
     VMachine& vm = *(it_vm->second);
-    if (vm.status == VMachine::ACTIVE) {
+    if (vm.status == VMachine::ACTIVE ||
+	vm.status == VMachine::WAIT_WARP ||
+	vm.status == VMachine::BEFOR_WARP ||
+	vm.status == VMachine::AFTER_WARP) {
       vm.execute(10);
+      
+    } else if (vm.status == VMachine::WARP) {
+      warp_in(vm, it_vm->first);
     }
   }
 

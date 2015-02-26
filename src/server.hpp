@@ -79,5 +79,12 @@ namespace usagi {
      * @param conf サーバ機動設定
      */
     void start(const picojson::object& conf);
+
+    /**
+     * Dump and send process
+     * @param vm target virtual machine
+     * @param pid target process id
+     */
+    void warp_in(VMachine& vm, vpid_t pid);
   };
 }

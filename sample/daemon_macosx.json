@@ -8,5 +8,10 @@
 	"password":"passwd2"
     },
 
+    "libs":[
+	"/usr/local/lib/libglfw3.3.dylib",
+	"/System/Library/Frameworks/OpenGL.framework/Versions/A/OpenGL"
+    ],
+
     "files":[]
 }
