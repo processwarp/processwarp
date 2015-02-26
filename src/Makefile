@@ -28,7 +28,7 @@ linux:
 	CXX="g++ -std=c++11" \
 	LD="g++ -std=c++11" \
 	CXXFLAGS="-g -O0 -Wall -I/usr/local/include -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS `pkg-config gloox --cflags`" \
-	LDLIBS="-L/usr/local/lib -lLLVMAsmParser -lLLVMCore -lLLVMSupport -lcurses -ldl -lpthread -lffi `pkg-config gloox --libs`"
+	LDLIBS="-L/usr/local/lib -lLLVMAsmParser -lLLVMCore -lLLVMSupport -lcurses -ldl -lpthread -lffi `pkg-config gloox --libs` -lglfw -lGL"
 
 macosx:
 	$(MAKE) all \
