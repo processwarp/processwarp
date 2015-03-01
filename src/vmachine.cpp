@@ -339,6 +339,7 @@ void VMachine::execute(int max_clock) {
 
       case Opcode::RETURN: {
 	StackInfo& upperinfo = *(thread.stackinfos.at(thread.stackinfos.size() - 2).get());
+	resolve_stackinfo_cache(&thread, &upperinfo);
 
 	if (Instruction::get_operand(code) == FILL_OPERAND) {
 	  // 戻り値がないので何もしない
