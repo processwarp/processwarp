@@ -3,7 +3,12 @@
 #include <inttypes.h>
 #include <memory>
 
+#if defined(__APPLE__) && defined(__MACH__)
 #include <ffi.h>
+#elif defined(__linux__)
+#include <ffi/ffi.h>
+#endif
+
 #include <dlfcn.h>
 #include <unistd.h>
 
@@ -650,6 +655,8 @@ void VMachine::execute(int max_clock) {
   }
 }
 
+#ifndef EMSCRIPTEN
+
 // 外部の関数を呼び出す。
 void VMachine::call_external(external_func_t func,
 			     vaddr_t ret_type,
@@ -779,6 +786,18 @@ void VMachine::call_external(external_func_t func,
   // 戻り値格納用領域から戻り値を取り出し。
   memcpy(ret_addr, ret_buf.data(), ret_size);
 }
+
+#else
+
+// 外部の関数を呼び出す。
+void VMachine::call_external(external_func_t func,
+			     vaddr_t ret_type,
+			     uint8_t* ret_addr,
+			     std::vector<uint8_t>& args) {
+  assert(false);
+}
+
+#endif
 
 // Setup to call function that type : void (*)(void).
 void VMachine::call_setup_voidfunc(Thread& thread, vaddr_t func_addr) {

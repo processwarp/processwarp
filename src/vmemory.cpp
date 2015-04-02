@@ -122,7 +122,7 @@ bool VMemory::addr_is_type(vaddr_t addr) {
 }
 
 // メモリ空間に新しいデータ領域を確保する。
-DataStore& VMemory::alloc_data(size_t size, bool is_const, vaddr_t addr) {
+DataStore& VMemory::alloc_data(uint64_t size, bool is_const, vaddr_t addr) {
   print_debug("alloc_data size:%ld, addr:%016" PRIx64 "\n", size, addr);
   assert(size != 0);
 

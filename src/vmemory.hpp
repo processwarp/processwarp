@@ -45,7 +45,7 @@ namespace usagi {
      * @param addr 確保先仮想アドレス。VADDR_NONを指定すると空いているアドレスを割り当てる。
      * @return 確保したアドレスとデータ領域。
      */
-    DataStore& alloc_data(size_t size, bool is_const, vaddr_t addr = VADDR_NON);
+    DataStore& alloc_data(uint64_t size, bool is_const, vaddr_t addr = VADDR_NON);
 
     /**
      * メモリ空間に新しい通常の関数領域を確保する。
