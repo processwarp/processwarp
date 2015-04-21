@@ -1,5 +1,8 @@
 
+#ifndef EMSCRIPTEN
 #include <dlfcn.h>
+#endif
+
 #include <time.h>
 
 #include "convert.hpp"
@@ -180,10 +183,12 @@ void Server::command_warp_out(const picojson::object& command) {
 
 // サーバの繰り返しルーチン。
 void Server::end() {
+#ifndef EMSCRIPTEN
   // 動的ライブラリのclose
   for(auto lib : libs) {
     dlclose(lib);
   }
+#endif
 }
 
 // サーバの繰り返しルーチン。
@@ -253,7 +258,7 @@ void Server::start(const picojson::object& conf) {
   // ファイルを開いたかどうか
   bool is_filed = false;
 
-
+#ifndef EMSCRIPTEN
   // 動的ライブラリのロード
   if (conf.find("libs") != conf.end()) {
     const picojson::array& lib_paths = conf.at("libs").get<picojson::array>();
@@ -265,6 +270,7 @@ void Server::start(const picojson::object& conf) {
       libs.push_back(dl_handle);
     }
   }
+#endif
 
   // ネットワークモードに応じた分岐
   std::string network = conf.at("network").get<std::string>();

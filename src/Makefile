@@ -20,7 +20,7 @@ WEBS        = symbols.cpp util.cpp vmachine.cpp vmemory.cpp \
               intrinsic_glfw3.cpp intrinsic_warp.cpp main.cpp
 
 EMXX        = em++ -std=c++0x
-EMXXFLAGS   = -O2 -DNDEBUG -o usagi.html
+EMXXFLAGS   = -O2 -o usagi.html --shell-file /Users/llamerada/Develop/usagi/src/shell.html --bind -DNDEBUG -s EXPORT_ALL=1
 
 TARGETS     = usagi loader
 
@@ -49,7 +49,7 @@ macosx:
 	$(MAKE) all \
 	CXX="clang++ -std=c++0x -stdlib=libc++" \
 	LD="clang++ -std=c++0x -stdlib=libc++" \
-	CXXFLAGS="-g -O0 -Wall -I/usr/include/ffi -I/usr/local/Cellar/llvm/3.5.1/include -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS `pkg-config gloox --cflags`" \
+	CXXFLAGS="-DNDEBUG -g -O2 -Wall -I/usr/include/ffi -I/usr/local/Cellar/llvm/3.5.1/include -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS `pkg-config gloox --cflags`" \
 	LDLIBS="-L/usr/local/Cellar/llvm/3.5.1/lib -lLLVM-3.5 -lffi `pkg-config gloox --libs` -framework OpenGL -lglfw3"
 
 web:

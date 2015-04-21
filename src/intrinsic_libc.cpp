@@ -3,6 +3,11 @@
 #include <cinttypes>
 #include <cstring>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#include <emscripten/bind.h>
+#endif
+
 #include "intrinsic_libc.hpp"
 #include "vmachine.hpp"
 

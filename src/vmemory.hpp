@@ -52,12 +52,16 @@ namespace usagi {
      * 同一アドレスに領域が確保されていた場合、エラーとなる。
      * @param name 関数名称
      * @param ret_type 戻り値の型
+     * @param arg_num 引数の数
+     * @param is_var_arg 可変長引数かどうか
      * @param normal_prop 通常の関数のプロパティ
      * @param addr 確保先仮想アドレス。VADDR_NONを指定すると空いているアドレスを割り当てる。
      * @return 確保したアドレスと領域。
      */
     FuncStore& alloc_func(const Symbols::Symbol& name,
 			  vaddr_t ret_type,
+			  unsigned int arg_num,
+			  bool is_var_arg,
 			  const FuncStore::NormalProp& normal_prop,
 			  vaddr_t addr = VADDR_NON);
 
@@ -66,6 +70,8 @@ namespace usagi {
      * 同一アドレスに領域が確保されていた場合、エラーとなる。
      * @param name 関数名称。
      * @param ret_type 戻り値の型。
+     * @param arg_num 引数の数
+     * @param is_var_arg 可変長引数かどうか
      * @param intrinsic VM組み込み関数へのポインタ。
      * @param param 組み込み関数へ渡す固定パラメタ。
      * @param addr 確保先仮想アドレス。VADDR_NONを指定すると空いているアドレスを割り当てる。
@@ -73,6 +79,8 @@ namespace usagi {
      */
     FuncStore& alloc_func(const Symbols::Symbol& name,
 			  vaddr_t ret_type,
+			  unsigned int arg_num,
+			  bool is_var_arg,
 			  const intrinsic_func_t intrinsic, 
 			  const IntrinsicFuncParam param,
 			  vaddr_t addr = VADDR_NON);
@@ -82,11 +90,15 @@ namespace usagi {
      * 同一アドレスに領域が確保されていた場合、エラーとなる。
      * @param name 関数名称
      * @param ret_type 戻り値の型
+     * @param arg_num 引数の数
+     * @param is_var_arg 可変長引数かどうか
      * @param addr 確保先仮想アドレス。VADDR_NONを指定すると空いているアドレスを割り当てる。
      * @return 確保したアドレスと領域。
      */
     FuncStore& alloc_func(const Symbols::Symbol& name,
 			  vaddr_t ret_type,
+			  unsigned int arg_num,
+			  bool is_var_arg,
 			  vaddr_t addr = VADDR_NON);
 
     /**
@@ -145,7 +157,7 @@ namespace usagi {
      * @param addr 確保先仮想アドレス。VADDR_NONを指定すると空いているアドレスを割り当てる。
      * @return 確保したアドレスと領域。
      */
-    TypeStore& alloc_type_vector(size_t size,
+    TypeStore& alloc_type_vector(uint64_t size,
 				 unsigned int alignment,
 				 vaddr_t element,
 				 unsigned int num,
@@ -227,8 +239,6 @@ namespace usagi {
     std::map<vaddr_t, TypeStore> type_store_map;
     /** 型領域として予約されたアドレス一覧 */
     std::set<vaddr_t> type_reserved;
-    
-    //at_death("VMemory\n");
     
     /** 空きアドレス */
     vaddr_t last_free[0x10];

@@ -54,7 +54,7 @@ void Xmpp::send_reply(const std::string& message) {
 
 // ターゲットにメッセージを送信する。
 void Xmpp::send_message(const std::string& target, const std::string& message) {
-  print_debug("send : (%s) %s\n", target.c_str(), message.c_str());
+  printf("send : (%s) %s\n", target.c_str(), message.c_str());
 
   if (sessions.find(target) == sessions.end()) {
     // 送信先先へのセッションを作る

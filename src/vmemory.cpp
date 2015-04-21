@@ -123,7 +123,7 @@ bool VMemory::addr_is_type(vaddr_t addr) {
 
 // メモリ空間に新しいデータ領域を確保する。
 DataStore& VMemory::alloc_data(uint64_t size, bool is_const, vaddr_t addr) {
-  print_debug("alloc_data size:%ld, addr:%016" PRIx64 "\n", size, addr);
+  print_debug("alloc_data size:%" PRIx64 ", addr:%016" PRIx64 "\n", size, addr);
   assert(size != 0);
 
   // サイズからアドレスタイプを判定する
@@ -147,6 +147,8 @@ DataStore& VMemory::alloc_data(uint64_t size, bool is_const, vaddr_t addr) {
 // メモリ空間に新しい通常の関数領域を確保する。
 FuncStore& VMemory::alloc_func(const Symbols::Symbol& name,
 			       vaddr_t ret_type,
+			       unsigned int arg_num,
+			       bool is_var_arg,
 			       const FuncStore::NormalProp& normal_prop,
 			       vaddr_t addr) {
   print_debug("alloc_func(N) name:%s, addr:%016" PRIx64 "\n", name.str().c_str(), addr);
@@ -157,12 +159,15 @@ FuncStore& VMemory::alloc_func(const Symbols::Symbol& name,
 		     addr);
 
   return func_store_map.insert
-    (std::make_pair(addr, FuncStore(addr, name, ret_type, normal_prop))).first->second;
+    (std::make_pair(addr, FuncStore
+		    (addr, name, ret_type, arg_num, is_var_arg, normal_prop))).first->second;
 }
 
 // メモリ空間に新しいVM組み込み関数領域を確保する。
 FuncStore& VMemory::alloc_func(const Symbols::Symbol& name,
 			       vaddr_t ret_type,
+			       unsigned int arg_num,
+			       bool is_var_arg,
 			       const intrinsic_func_t intrinsic,
 			       const IntrinsicFuncParam param,
 			       vaddr_t addr) {
@@ -175,12 +180,15 @@ FuncStore& VMemory::alloc_func(const Symbols::Symbol& name,
 		     addr);
 
   return func_store_map.insert
-    (std::make_pair(addr, FuncStore(addr, name, ret_type, intrinsic, param))).first->second;
+    (std::make_pair(addr, FuncStore
+		    (addr, name, ret_type, arg_num, is_var_arg, intrinsic, param))).first->second;
 }
 
 // メモリ空間に新しい外部関数領域を確保する。
 FuncStore& VMemory::alloc_func(const Symbols::Symbol& name,
 			       vaddr_t ret_type,
+			       unsigned int arg_num,
+			       bool is_var_arg,
 			       vaddr_t addr) {
   print_debug("alloc_func(E) name:%s, addr:%016" PRIx64 "\n", name.str().c_str(), addr);
   // 空きアドレスの検索
@@ -190,7 +198,7 @@ FuncStore& VMemory::alloc_func(const Symbols::Symbol& name,
 		     addr);
 
   return func_store_map.insert
-    (std::make_pair(addr, FuncStore(addr, name, ret_type))).first->second;
+    (std::make_pair(addr, FuncStore(addr, name, ret_type, arg_num, is_var_arg))).first->second;
 }
 
 // メモリ空間に配列型領域を確保する。
@@ -244,12 +252,12 @@ TypeStore& VMemory::alloc_type_struct(size_t size,
 }
 
 // メモリ空間に配列型領域を確保する。
-TypeStore& VMemory::alloc_type_vector(size_t size,
+TypeStore& VMemory::alloc_type_vector(uint64_t size,
 				      unsigned int alignment,
 				      vaddr_t element,
 				      unsigned int num,
 				      vaddr_t addr) {
-  print_debug("alloc_type_vector size:%ld, alignment:%d, element:%016" PRIx64
+  print_debug("alloc_type_vector size:%" PRIx64 ", alignment:%d, element:%016" PRIx64
 	      ", num:%d, addr:%016" PRIx64 "\n",
 	      size, alignment, element, num, addr);
   // 空きアドレスの検索

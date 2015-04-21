@@ -75,6 +75,10 @@ int LlvmAsmLoader::assign_type(FunctionContext& fc, const llvm::Type* t, bool si
   // 新規割り当て
   vaddr_t type = load_type(t, sign);
   int k = fc.k.size();
+  int align = data_layout->getABIIntegerTypeAlignment(sizeof(vaddr_t) * 8);
+  if ((k % align) != 0) {
+    k = (k / align + 1) * align;
+  }
   fc.loaded_type.insert(std::make_pair(key, -k - 1));
   fc.k.resize(k + sizeof(vaddr_t));
   *reinterpret_cast<vaddr_t*>(&fc.k.at(k)) = type;
@@ -95,6 +99,7 @@ int LlvmAsmLoader::assign_operand(FunctionContext& fc, const llvm::Value* v) {
   // 異なる変数に同一のアドレスを割り当てないように最低1byteを確保する。
   int size = data_layout->getTypeAllocSize(v->getType());
   if (size == 0) size = 1;
+  int align = data_layout->getPrefTypeAlignment(v->getType());
 
   // 割り当てサイズの確認
   assert(data_layout->getTypeStoreSize(v->getType()) ==
@@ -108,6 +113,10 @@ int LlvmAsmLoader::assign_operand(FunctionContext& fc, const llvm::Value* v) {
 
     // 既存の定数でない場合、末尾に割り当てる。
     int k = fc.k.size();
+    // 必要に応じてアライメントを合わせる
+    if ((k % align) != 0) {
+      k = (k / align + 1) * align;
+    }
     ValueDest dst;
     dst.is_k = true;
     dst.addr.k = k;
@@ -119,6 +128,10 @@ int LlvmAsmLoader::assign_operand(FunctionContext& fc, const llvm::Value* v) {
 
   } else {
     // 既存のローカル変数でない場合、末尾に割り当てている。
+    // 必要に応じてアライメントを合わせる
+    if ((fc.stack_sum % align) != 0) {
+      fc.stack_sum = (fc.stack_sum / align + 1) * align;
+    }
     fc.stack_value.insert(std::make_pair(v, fc.stack_sum));
     fc.stack_sum += size;
 
@@ -452,6 +465,8 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
     vaddr_t addr = map_func.at(function);
     vm.deploy_function(function->getName(),
 		       load_type(function->getReturnType(), false),
+		       function->arg_size(),
+		       function->isVarArg(),
 		       addr);
     left_func.erase(function);
 
@@ -1253,10 +1268,7 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
       }
     }
 
-    prop.is_var_arg = function->isVarArg();
-    prop.arg_num    = function->arg_size();
     prop.stack_size = fc.stack_sum;
-
     // 定数領域を作成
     prop.k = vm.v_malloc(k.size(), true);
     vm.v_memcpy(prop.k, k.data(), k.size());
@@ -1270,6 +1282,8 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
     vaddr_t addr = map_func.at(function);
     vm.deploy_function_normal(function->getName().str(),
 			      load_type(function->getReturnType(), false),
+			      function->arg_size(),
+			      function->isVarArg(),
 			      prop, addr);
     left_func.erase(function);
   }

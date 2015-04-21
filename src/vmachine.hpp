@@ -68,13 +68,11 @@ namespace usagi {
 
     /**
      * 外部の関数を呼び出す。
-     * @param func 外部の関数へのポインタ
-     * @param ret_type 戻り値の型
+     * @param func 外部の関数情報
      * @param ret_addr 戻り値の格納場所(実際のアドレス)
      * @param args 引数(型とデータを交互にかくのうしたもの)
      */
-    void call_external(external_func_t func,
-		       vaddr_t ret_type,
+    void call_external(const FuncStore& func,
 		       uint8_t* ret_addr,
 		       std::vector<uint8_t>& args);
 
@@ -148,21 +146,29 @@ namespace usagi {
      * 関数名を元にVM組み込み関数かライブラリ関数として分岐する。
      * @param name 関数名
      * @param ret_type 戻り値の型
+     * @param arg_num 引数の数
+     * @param is_var_arg 可変長引数かどうか
      * @param addr 展開先アドレス
      */
     void deploy_function(const std::string& name,
 			 vaddr_t ret_type,
+			 unsigned int arg_num,
+			 bool is_var_arg,
 			 vaddr_t addr);
 
     /**
      * 通常の関数(VMで解釈、実行する)を指定アドレスに展開する。
      * @param name 関数名
      * @param ret_type 戻り値の型
+     * @param arg_num 引数の数
+     * @param is_var_arg 可変長引数かどうか
      * @param prop 通常の関数のプロパティ
      * @param addr 展開先アドレス
      */
     void deploy_function_normal(const std::string& name,
 				vaddr_t ret_type,
+				unsigned int arg_num,
+				bool is_var_arg,
 				const FuncStore::NormalProp& prop,
 				vaddr_t addr);
 

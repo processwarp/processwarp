@@ -6,6 +6,7 @@
 #include <iostream>
 
 #ifndef NDEBUG
+#ifndef EMSCRIPTEN
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Module.h>
@@ -16,6 +17,7 @@
 #include <llvm/AsmParser/Parser.h>
 #include <llvm/Support/ManagedStatic.h>
 #include <llvm/Support/SourceMgr.h>
+#endif
 #endif
 
 #include "definitions.hpp"
@@ -89,27 +91,21 @@ namespace usagi {
      */
 #ifdef NDEBUG
 #define print_debug(...) //
-#else
+#else  // NDEBUG
+#ifndef EMSCRIPTEN
 #define print_debug(...) {						\
-    fprintf(stderr, "\x1b[36mdebug\x1b[39m [%d@" __FILE__ "] ", __LINE__); \
-    fprintf(stderr, "" __VA_ARGS__);					\
+      fprintf(stderr, "\x1b[36mdebug\x1b[39m [%d@" __FILE__ "] ", __LINE__); \
+      fprintf(stderr, "" __VA_ARGS__);					\
     }
-#endif
+#else  // EMSCRIPTEN
+#define print_debug(...) {						\
+      fprintf(stderr, "debug [%d@" __FILE__ "] ", __LINE__); \
+      fprintf(stderr, "" __VA_ARGS__);					\
+    }
+#endif // EMSCRIPTEN
+#endif // NDEBUG
 
-#ifdef NDEBUG
-#define at_death(...) //
-#else
-#define at_death(...)							\
-    class AtDeath {							\
-    public:								\
-    virtual ~AtDeath() {						\
-      fprintf(stderr, "\x1b[36mdebug at death\x1b[39m " __VA_ARGS__);	\
-    }									\
-    };									\
-    AtDeath atdeath
-#endif
-
-#ifdef NDEBUG
+#if defined(NDEBUG) || defined(EMSCRIPTEN)
 #define save_llvm_instruction(I) //
 #define print_llvm_instruction() //
 #else

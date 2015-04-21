@@ -35,9 +35,9 @@ bool IntrinsicWarp::at_befor_warp(VMachine& vm, Thread& th, IntrinsicFuncParam p
 // This function check to warp is requested.
 bool IntrinsicWarp::poll_warp_request(VMachine& vm, Thread& th, IntrinsicFuncParam p,
 				      vaddr_t dst, std::vector<uint8_t>& src) {
-  int seek = 0;
+  //int seek = 0;
   // Size of src must be same as parameter read.
-  assert(static_cast<signed>(src.size()) == seek);
+  assert(static_cast<signed>(src.size()) == 0);
 
   if (vm.status == VMachine::WAIT_WARP) {
     vm.warp_stack_size = th.stackinfos.size();

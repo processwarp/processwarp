@@ -9,7 +9,12 @@
 #include <ffi/ffi.h>
 #endif
 
+#ifndef EMSCRIPTEN
 #include <dlfcn.h>
+#else
+#include <emscripten/emscripten.h>
+#endif
+
 #include <unistd.h>
 
 #include "error.hpp"
@@ -277,7 +282,7 @@ void VMachine::execute(int max_clock) {
 	  OperandRet value = get_operand(value_inst, op_param);
 
 	  if (new_func.type == FuncType::FC_NORMAL &&
-	      args < new_func.normal_prop.arg_num) {
+	      args < new_func.arg_num) {
 	    // 通常の引数はスタックの先頭にコピー
 	    memcpy(new_stackinfo->stack_cache->head.get() + written_size, value.cache, type.size);
 	    written_size += type.size;
@@ -298,8 +303,8 @@ void VMachine::execute(int max_clock) {
 	print_debug("call %s\n", new_func.name.str().c_str());
 	if (new_func.type == FuncType::FC_NORMAL) {
 	  // 可変長引数でない場合、引数の数をチェック
-	  if (args < new_func.normal_prop.arg_num ||
-	      (!new_func.normal_prop.is_var_arg && args != new_func.normal_prop.arg_num))
+	  if (args < new_func.arg_num ||
+	      (!new_func.is_var_arg && args != new_func.arg_num))
 	    throw_error(Error::TYPE_VIOLATION);
 
 	  // 可変長引数分がある場合、別領域を作成
@@ -337,7 +342,7 @@ void VMachine::execute(int max_clock) {
 	  }
 
 	  // 関数の呼び出し
-	  call_external(new_func.external, new_func.ret_type, stackinfo.output_cache, work);
+	  call_external(new_func, stackinfo.output_cache, work);
 	}
 	
       } break;
@@ -655,16 +660,14 @@ void VMachine::execute(int max_clock) {
   }
 }
 
-#ifndef EMSCRIPTEN
-
 // 外部の関数を呼び出す。
-void VMachine::call_external(external_func_t func,
-			     vaddr_t ret_type,
+void VMachine::call_external(const FuncStore& func,
 			     uint8_t* ret_addr,
 			     std::vector<uint8_t>& args) {
+#ifndef EMSCRIPTEN
   // 戻り値の型変換
   ffi_type* ffi_ret_type = nullptr;
-  switch(ret_type) {
+  switch(func.ret_type) {
   case BasicType::TY_VOID: ffi_ret_type = &ffi_type_void;   break;
     //case BasicType::TY_POINTER: ffi_ret_type = &ffi_type_pointer; break;
   case BasicType::TY_UI8:  ffi_ret_type = &ffi_type_uint8;  break;
@@ -679,7 +682,7 @@ void VMachine::call_external(external_func_t func,
   case BasicType::TY_F64:  ffi_ret_type = &ffi_type_double; break;
 
   default: {
-    fixme(Util::vaddr2str(ret_type));
+    fixme(Util::vaddr2str(func.ret_type));
     assert(false); // TODO 他の型の対応
   } break;
   }
@@ -777,27 +780,196 @@ void VMachine::call_external(external_func_t func,
   }
   
   // 戻り値格納用の領域を作成
-  size_t ret_size = vmemory.get_type(ret_type).size;
+  size_t ret_size = vmemory.get_type(func.ret_type).size;
   // sizeof(void*)の倍数領域を確保する。
   std::vector<void*> ret_buf(ret_size / sizeof(void*) +
 			     (ret_size % sizeof(void*) == 0 ? 0 : 1));
   // メソッド呼び出し
-  ffi_call(&cif, func, ret_buf.data(), ffi_args.data());
+  ffi_call(&cif, func.external, ret_buf.data(), ffi_args.data());
   // 戻り値格納用領域から戻り値を取り出し。
   memcpy(ret_addr, ret_buf.data(), ret_size);
-}
+  
+#else // !defined(EMSCRIPTEN)
+  // 戻り値格納用の領域を作成
+  size_t ret_size = vmemory.get_type(func.ret_type).size;
+  // sizeof(void*)の倍数領域を確保する。
+  std::vector<void*> ret_buf(ret_size / sizeof(void*) +
+			     (ret_size % sizeof(void*) == 0 ? 0 : 1));
+  
+  // EMSCRIPTENのJavaScriptを合成する。
+  std::stringstream asm_code;
+  std::stringstream asm_param;
+  std::vector<uint32_t> vararg_buf;
+  if (func.ret_type != BasicType::TY_VOID) {
+    asm_code << "setValue(" << static_cast<void*>(ret_buf.data()) << ","
+	     << "ccall('" << func.name.str() << "', 'number', [";
+    
+  } else {
+    asm_code << "ccall('" << func.name.str() << "', 'v', [";
+  }
+  
+  unsigned int seek  = 0;
+  unsigned int count = 0;
+  while(seek < args.size() && count < func.arg_num) {
+    
+    if (seek != 0) {
+      asm_code  << ",";
+      asm_param << ",";
+    }
+    asm_code << "'number'";
+    
+    TypeStore& type = vmemory.get_type(*reinterpret_cast<vaddr_t*>(args.data() + seek));
+    switch(type.addr) {
+    case BasicType::TY_POINTER: {
+      vaddr_t addr = *reinterpret_cast<vaddr_t*>(args.data() + seek + sizeof(vaddr_t));
+      auto native = native_ptr.find(addr);
+      if (native != native_ptr.end()) {
+	asm_param << static_cast<void*>(native->second);
+	
+      } else {
+	DataStore& pointed = vmemory.get_data(addr);
+	asm_param << static_cast<void*>(pointed.head.get() + VMemory::get_addr_lower(addr));
+      }
+    } break;
 
-#else
+    case BasicType::TY_UI8:
+    case BasicType::TY_SI8: {
+      asm_param << "getValue(" << static_cast<void*>(args.data() + seek + sizeof(vaddr_t)) << ",'i8')";
+    } break;
 
-// 外部の関数を呼び出す。
-void VMachine::call_external(external_func_t func,
-			     vaddr_t ret_type,
-			     uint8_t* ret_addr,
-			     std::vector<uint8_t>& args) {
-  assert(false);
-}
+    case BasicType::TY_UI16:
+    case BasicType::TY_SI16: {
+      asm_param << "getValue(" << static_cast<void*>(args.data() + seek + sizeof(vaddr_t)) << ",'i16')";
+    } break;
 
+    case BasicType::TY_UI32:
+    case BasicType::TY_SI32: {
+      asm_param << "getValue(" << static_cast<void*>(args.data() + seek + sizeof(vaddr_t)) << ",'i32')";
+    } break;
+
+    case BasicType::TY_UI64:
+    case BasicType::TY_SI64: {
+      asm_param << "getValue(" << static_cast<void*>(args.data() + seek + sizeof(vaddr_t)) << ",'i64')";
+    } break;
+
+    case BasicType::TY_F32: {
+      asm_param << "getValue(" << static_cast<void*>(args.data() + seek + sizeof(vaddr_t)) << ",'float')";
+    } break;
+
+    case BasicType::TY_F64: {
+      asm_param << "getValue(" << static_cast<void*>(args.data() + seek + sizeof(vaddr_t)) << ",'double')";
+    } break;
+    };
+
+    seek  += sizeof(vaddr_t) + type.size;
+    count += 1;
+  }
+  if (!func.is_var_arg) {
+    if (seek != args.size()) {
+      assert(false);
+    }
+    
+  } else {
+    while(seek < args.size()) {
+      TypeStore& type = vmemory.get_type(*reinterpret_cast<vaddr_t*>(args.data() + seek));
+      switch(type.addr) {
+      case BasicType::TY_POINTER: {
+	vaddr_t addr = *reinterpret_cast<vaddr_t*>(args.data() + seek + sizeof(vaddr_t));
+	auto native = native_ptr.find(addr);
+	void* raw_ptr;
+	if (native != native_ptr.end()) {
+	  raw_ptr = static_cast<void*>(native->second);
+	
+	} else {
+	  DataStore& pointed = vmemory.get_data(addr);
+	  raw_ptr = static_cast<void*>(pointed.head.get() + VMemory::get_addr_lower(addr));
+	}
+	vararg_buf.resize(vararg_buf.size() + 1);
+	memcpy(&vararg_buf.back(), &raw_ptr, sizeof(void*));
+      } break;
+
+      case BasicType::TY_UI8:
+      case BasicType::TY_SI8: {
+	int32_t raw_val = static_cast<int32_t>(*reinterpret_cast<int8_t*>(args.data() + seek + sizeof(vaddr_t)));
+	vararg_buf.resize(vararg_buf.size() + 1);
+	memcpy(&vararg_buf.back(), &raw_val, sizeof(raw_val));
+      } break;
+	
+      case BasicType::TY_UI16:
+      case BasicType::TY_SI16: {
+	int32_t raw_val = static_cast<int32_t>(*reinterpret_cast<int16_t*>(args.data() + seek + sizeof(vaddr_t)));
+	vararg_buf.resize(vararg_buf.size() + 1);
+	memcpy(&vararg_buf.back(), &raw_val, sizeof(raw_val));
+      } break;
+	
+      case BasicType::TY_UI32:
+      case BasicType::TY_SI32: {
+	int32_t raw_val = *reinterpret_cast<int32_t*>(args.data() + seek + sizeof(vaddr_t));
+	vararg_buf.resize(vararg_buf.size() + 1);
+	memcpy(&vararg_buf.back(), &raw_val, sizeof(raw_val));
+      } break;
+
+      case BasicType::TY_UI64:
+      case BasicType::TY_SI64: {
+	uint64_t raw_val = *reinterpret_cast<uint64_t*>(args.data() + seek + sizeof(vaddr_t));
+	vararg_buf.resize(vararg_buf.size() + 2);
+	memcpy(&vararg_buf.back(), &raw_val, sizeof(raw_val));
+      } break;
+
+      case BasicType::TY_F32: {
+	double raw_val = static_cast<double>(*reinterpret_cast<float*>(args.data() + seek + sizeof(vaddr_t)));
+	vararg_buf.resize(vararg_buf.size() + 2);
+	memcpy(&vararg_buf.back(), &raw_val, sizeof(raw_val));
+      } break;
+
+      case BasicType::TY_F64: {
+	double raw_val = *reinterpret_cast<double*>(args.data() + seek + sizeof(vaddr_t));
+	vararg_buf.resize(vararg_buf.size() + 2);
+	memcpy(&vararg_buf.back(), &raw_val, sizeof(raw_val));
+      } break;
+      };
+      seek  += sizeof(vaddr_t) + type.size;
+    }
+    
+    asm_code  << ",'number'";
+    asm_param << "," << static_cast<void*>(vararg_buf.data());
+  }
+  asm_code << "],[" << asm_param.str() << "])";
+  
+  // 戻り値の型を合成する。
+  switch(func.ret_type) {
+  case BasicType::TY_VOID: asm_code << ";";   break;
+    //case BasicType::TY_POINTER: ffi_ret_type = &ffi_type_pointer; break;
+  case BasicType::TY_UI8:  asm_code << ", 'i8');";  break;
+  case BasicType::TY_UI16: asm_code << ", 'i16');"; break;
+  case BasicType::TY_UI32: asm_code << ", 'i32');"; break;
+  case BasicType::TY_UI64: asm_code << ", 'i64');"; break;
+  case BasicType::TY_SI8:  asm_code << ", 'i8');";  break;
+  case BasicType::TY_SI16: asm_code << ", 'i16');"; break;
+  case BasicType::TY_SI32: asm_code << ", 'i32');"; break;
+  case BasicType::TY_SI64: asm_code << ", 'i64');"; break;
+  case BasicType::TY_F32:  asm_code << ", 'float');";  break;
+  case BasicType::TY_F64:  asm_code << ", 'double');"; break;
+    
+  default: {
+    fixme(Util::vaddr2str(func.ret_type));
+    assert(false); // TODO 他の型の対応
+  } break;
+  }
+
+  print_debug("asm:%s\n", asm_code.str().c_str());
+  // JavaScript経由でEMSCRIPTENの関数を利用する
+  emscripten_run_script(asm_code.str().c_str());
+
+  if (func.ret_type != BasicType::TY_VOID) {
+    // 戻り値格納用領域から戻り値を取り出し。
+    memcpy(ret_addr, ret_buf.data(), ret_size);
+  }
+  
 #endif
+}
+
+
 
 // Setup to call function that type : void (*)(void).
 void VMachine::call_setup_voidfunc(Thread& thread, vaddr_t func_addr) {
@@ -826,7 +998,7 @@ void VMachine::call_setup_voidfunc(Thread& thread, vaddr_t func_addr) {
     
     // 関数の呼び出し
     std::vector<uint8_t> work;
-    call_external(func.external, func.ret_type, nullptr, work);
+    call_external(func, nullptr, work);
   }
 }
 
@@ -906,33 +1078,40 @@ TypeStore& VMachine::create_type_vector(vaddr_t element, unsigned int num) {
 }
 
 // ネイティブ関数を指定アドレスに展開する。
-void VMachine::deploy_function(const std::string& name, vaddr_t ret_type, vaddr_t addr) {
+void VMachine::deploy_function(const std::string& name,
+			       vaddr_t ret_type,
+			       unsigned int arg_num,
+			       bool is_var_arg,
+			       vaddr_t addr) {
   auto ifunc = intrinsic_funcs.find(name);
   if (ifunc == intrinsic_funcs.end()) {
     // 組み込み関数に名前がなかった場合、ライブラリ関数として展開。
-    vmemory.alloc_func(symbols.get(name), ret_type, addr);
+    vmemory.alloc_func(symbols.get(name), ret_type, arg_num, is_var_arg, addr);
 
   } else {
     // 組み込み関数に名前があった場合組み込み関数として展開。
     vmemory.alloc_func(symbols.get(name), ret_type,
-		       ifunc->second.first, ifunc->second.second, addr);
+		       arg_num, is_var_arg, ifunc->second.first, ifunc->second.second, addr);
   }
 }
 
 // 通常の関数(VMで解釈、実行する)を指定アドレスに展開する。
 void VMachine::deploy_function_normal(const std::string& name,
 				      vaddr_t ret_type,
+				      unsigned int arg_num,
+				      bool is_var_arg,
 				      const FuncStore::NormalProp& prop,
 				      vaddr_t addr) {
   // 関数領域を確保
-  vmemory.alloc_func(symbols.get(name), ret_type, prop, addr);
+  vmemory.alloc_func(symbols.get(name), ret_type, arg_num, is_var_arg, prop, addr);
 }
 
 // ライブラリなど、外部の関数へのポインタを取得する。
 external_func_t VMachine::get_external_func(const Symbols::Symbol& name) {
   print_debug("get external func:%s\n", name.str().c_str());
+#ifndef EMSCRIPTEN
   char* error;
-  // 標準ライブラリから試す
+  // Search function that have the same name by dlsym.
   void* sym = dlsym(RTLD_DEFAULT, name.str().c_str());
   if ((error = dlerror()) != nullptr) {
     sym = nullptr;
@@ -951,6 +1130,11 @@ external_func_t VMachine::get_external_func(const Symbols::Symbol& name) {
   external_func_t func = reinterpret_cast<external_func_t>(sym);
 
   return func;
+
+#else
+  // dlsym isn't used on EMSCRIPTEN.
+  return nullptr;
+#endif
 }
 
 // 仮想アドレスに相当する実アドレスを取得する。
@@ -1109,7 +1293,7 @@ void VMachine::run(const std::vector<std::string>& args,
 
   // maink関数の内容に応じて、init_stackを作成する
   DataStore* init_stack;
-  if (main_func.normal_prop.arg_num == 2 || main_func.normal_prop.arg_num == 3) {
+  if (main_func.arg_num == 2 || main_func.arg_num == 3) {
     // main関数の戻り値と引数を格納するのに必要な領域サイズを計算
     const size_t ret_size = calc_type_size(main_func.ret_type).first;
     size_t init_stack_size = ret_size + sizeof(vaddr_t) * args.size();
@@ -1117,7 +1301,7 @@ void VMachine::run(const std::vector<std::string>& args,
       init_stack_size += args.at(i).length() + 1;
     }
     // 第3引数まである場合はenvpに必要な領域サイズも計算
-    if (main_func.normal_prop.arg_num == 3) {
+    if (main_func.arg_num == 3) {
       init_stack_size += sizeof(vaddr_t) * (envs.size() + 1);
       for (auto pair : envs) {
 	// +2 は'='と'\0'用
@@ -1145,7 +1329,7 @@ void VMachine::run(const std::vector<std::string>& args,
     }
 
     // 第3引数まである場合はenvpとして渡すポインタの配列、環境変数文字列をを格納する
-    if (main_func.normal_prop.arg_num == 3) {
+    if (main_func.arg_num == 3) {
       // main関数のスタックにenvpを格納する。
       unsigned int arg_size = sum;
       vaddr_t envp = init_stack->addr + sum;
@@ -1162,7 +1346,7 @@ void VMachine::run(const std::vector<std::string>& args,
       memcpy(init_stack->head.get() + arg_size + sizeof(vaddr_t) * i, &VADDR_NULL, sizeof(vaddr_t));
     }
 
-  } else if (main_func.normal_prop.arg_num != 0) {
+  } else if (main_func.arg_num != 0) {
     // int main()でもint main(int, char**)でもないようだ
     throw_error(Error::SPEC_VIOLATION);
 

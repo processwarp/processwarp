@@ -244,12 +244,12 @@ picojson::value Convert::export_func(const FuncStore& src, Related& related) {
   // 戻り値の型
   dst.insert(std::make_pair("ret_type", vaddr2json(src.ret_type)));
   related.insert(src.ret_type);
+  // 引数の数
+  dst.insert(std::make_pair("arg_num", num2json(src.arg_num)));
+  // 可変長引数かどうか
+  dst.insert(std::make_pair("is_var_arg", picojson::value(src.is_var_arg)));
 
   if (src.type == FuncType::FC_NORMAL) {
-    // 可変長引数かどうか
-    dst.insert(std::make_pair("is_var_arg", picojson::value(src.normal_prop.is_var_arg)));
-    // 引数の数
-    dst.insert(std::make_pair("arg_num", num2json(src.normal_prop.arg_num)));
     // 関数で利用するスタックサイズ
     dst.insert(std::make_pair("stack_size", num2json(src.normal_prop.stack_size)));
     // 命令配列
@@ -336,14 +336,14 @@ void Convert::import_func(vaddr_t addr, const picojson::object& src) {
   std::string name = src.at("name").get<std::string>();
   // 戻り値の型
   vaddr_t ret_type = json2vaddr(src.at("ret_type"));
+  // 引数の数
+  unsigned int arg_num = json2num<unsigned int>(src.at("arg_num"));
+  // 可変長引数かどうか
+  bool is_var_arg = src.at("is_var_arg").get<bool>();
 
   switch(type) {
   case FuncType::FC_NORMAL: {
     FuncStore::NormalProp prop;
-    // 可変長引数かどうか
-    prop.is_var_arg = src.at("is_var_arg").get<bool>();
-    // 引数の数
-    prop.arg_num = json2num<unsigned int>(src.at("arg_num"));
     // 関数で利用するスタックサイズ
     prop.stack_size = json2num<unsigned int>(src.at("stack_size"));
     // 命令配列
@@ -355,15 +355,15 @@ void Convert::import_func(vaddr_t addr, const picojson::object& src) {
     // 定数領域
     prop.k = json2vaddr(src.at("k"));
 
-    vm.deploy_function_normal(name, ret_type, prop, addr);
+    vm.deploy_function_normal(name, ret_type, arg_num, is_var_arg, prop, addr);
   } break;
 
   case FuncType::FC_INTRINSIC: {
-    vm.deploy_function(name, ret_type, addr);
+    vm.deploy_function(name, ret_type, arg_num, is_var_arg, addr);
   } break;
 
   case FuncType::FC_EXTERNAL: {
-    vm.deploy_function(name, ret_type, addr);
+    vm.deploy_function(name, ret_type, arg_num, is_var_arg, addr);
   } break;
 
   default: {
