@@ -212,7 +212,7 @@ void VMachine::execute(int max_clock) {
     DataStore& k = vmemory.get_data(func.normal_prop.k);
     OperandParam op_param = {*stackinfo.stack_cache, k, vmemory};
 
-    for (; (status == ACTIVE || status == WAIT_WARP ||
+    for (; (status == ACTIVE || status == EXITING || status == WAIT_WARP ||
 	    status == BEFOR_WARP || status == AFTER_WARP) &&
 	   max_clock > 0; max_clock --) {
       instruction_t code = insts.at(stackinfo.pc);
@@ -1104,6 +1104,27 @@ void VMachine::deploy_function_normal(const std::string& name,
 				      vaddr_t addr) {
   // 関数領域を確保
   vmemory.alloc_func(symbols.get(name), ret_type, arg_num, is_var_arg, prop, addr);
+}
+
+// Change status to exit.
+void VMachine::exit() {
+  print_debug("Exit process");
+
+  if (status == SETUP || status == PASSIVE) {
+    status = FINISH;
+    
+  } else if (status == ACTIVE || status == WAIT_WARP ||
+	     status == BEFOR_WARP || status == WARP ||
+	     status == AFTER_WARP) {
+    status = ACTIVE;
+    threads.front().get()->stackinfos.resize(1);
+    
+  } else if (status ==  EXITING) {
+    // Do noting.
+    
+  } else {
+    assert(false);
+  }
 }
 
 // ライブラリなど、外部の関数へのポインタを取得する。

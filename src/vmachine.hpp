@@ -34,6 +34,7 @@ namespace usagi {
       SETUP,   ///< 起動中
       ACTIVE,  ///< 実行中(実行中スレッドあり)
       PASSIVE, ///< 実行中(実行中スレッドなし)
+      EXITING, ///< 終了処理中
 
       WAIT_WARP,  ///<
       BEFOR_WARP, ///< befor warp
@@ -183,6 +184,11 @@ namespace usagi {
      * @param max_clock コンテキストスイッチまで最長クロック数
      */
     void execute(int max_clock);
+
+    /**
+     * Change status to exit.
+     */
+    void exit();
 
     /**
      * アドレスに格納された値にアクセスする。

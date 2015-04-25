@@ -54,6 +54,18 @@ static void ems_loop() {
 
       } else if (vm.status == VMachine::WARP) {
 	warp_process(pid);
+	
+      } else if (vm.status == VMachine::ERROR) {
+	// tell process finished for javascript
+	std::stringstream asm_code;
+	asm_code << "error_process('" << pid << "');";
+	emscripten_run_script(asm_code.str().c_str());
+	
+      } else if (vm.status == VMachine::FINISH) {
+	// tell process finished for javascript
+	std::stringstream asm_code;
+	asm_code << "release_process('" << pid << "');";
+	emscripten_run_script(asm_code.str().c_str());
       }
     }
     
@@ -147,9 +159,17 @@ void create_process(std::string pid) {
 }
 
 void delete_process(std::string pid) {
-  // プロセスが存在するはず
-  assert(processes.find(pid) != processes.end());
-  processes.erase(pid);
+  // プロセスが存在する場合削除
+  if (processes.find(pid) != processes.end()) {
+    processes.erase(pid);
+  }
+}
+
+void setup_exit(std::string pid) {
+  if (processes.find(pid) == processes.end()) return;
+  Process& process = processes.at(pid);
+  VMachine& vm     = *(process.vm);
+  vm.exit();
 }
 
 void setup_warp(std::string pid, std::string device_id) {
@@ -211,6 +231,7 @@ EMSCRIPTEN_BINDINGS(mod) {
   function("set_device_id",  &set_device_id);
   function("create_process", &create_process);
   function("delete_process", &delete_process);
+  function("setup_exit",     &setup_exit);
   function("setup_warp",     &setup_warp);
 }
 
