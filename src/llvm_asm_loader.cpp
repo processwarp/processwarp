@@ -1415,8 +1415,8 @@ void LlvmAsmLoader::load_module(llvm::Module* module) {
 	const FuncStore::NormalProp& prop = func.normal_prop;
 	print_debug("func(normal):\t%016" PRIx64 "\n", addr);
 	print_debug("\tname:\t%s\n", func.name.str().c_str());
-	print_debug("\tis_var_arg:\t%d\n", prop.is_var_arg);
-	print_debug("\targ_num:\t%d\n", prop.arg_num);
+	print_debug("\tis_var_arg:\t%d\n", func.is_var_arg);
+	print_debug("\targ_num:\t%d\n", func.arg_num);
 	print_debug("\tstack_size:\t%d\n", prop.stack_size);
 	print_debug("\tcode:(%ld)\n", prop.code.size());
 	int i = 0;
