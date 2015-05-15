@@ -3,9 +3,7 @@
 #include <inttypes.h>
 #include <memory>
 
-#if defined(__APPLE__) && defined(__MACH__)
-#include <ffi.h>
-#elif defined(__linux__)
+#if (defined(__APPLE__) && defined(__MACH__)) || defined(__linux__)
 #include <ffi/ffi.h>
 #endif
 
