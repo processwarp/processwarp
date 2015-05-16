@@ -37,7 +37,7 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     list(APPEND extra_libs ${GLOOX_LIBRARIES})
 endif()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wno-unused-parameter")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
