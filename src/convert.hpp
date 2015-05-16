@@ -6,7 +6,7 @@
 
 #include "definitions.hpp"
 
-namespace usagi {
+namespace processwarp {
   class Thread;
   class DataStore;
   class FuncStore;

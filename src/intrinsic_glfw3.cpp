@@ -4,7 +4,7 @@
 #include "intrinsic_glfw3.hpp"
 #include "vmachine.hpp"
 
-using namespace usagi;
+using namespace processwarp;
 
 // This function creates a window and its associated OpenGL or OpenGL ES context.
 bool IntrinsicGlfw3::createWindow(VMachine& vm, Thread& th, IntrinsicFuncParam p,

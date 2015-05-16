@@ -6,7 +6,7 @@
 #include "definitions.hpp"
 #include "stackinfo.hpp"
 
-namespace usagi {
+namespace processwarp {
   /**
    * スレッド
    */

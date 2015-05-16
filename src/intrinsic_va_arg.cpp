@@ -2,7 +2,7 @@
 #include "intrinsic_va_arg.hpp"
 #include "vmachine.hpp"
 
-using namespace usagi;
+using namespace processwarp;
 
 // VMにライブラリを登録する。
 void IntrinsicVaArg::regist(VMachine& vm) {

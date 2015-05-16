@@ -3,7 +3,7 @@
 
 #include "type_store.hpp"
 
-using namespace usagi;
+using namespace processwarp;
 
 // コンストラクタ(基本型)。
 TypeStore::TypeStore(vaddr_t addr_,

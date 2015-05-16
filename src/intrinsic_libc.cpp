@@ -11,7 +11,7 @@
 #include "intrinsic_libc.hpp"
 #include "vmachine.hpp"
 
-using namespace usagi;
+using namespace processwarp;
 
 // atexit関数。
 bool IntrinsicLibc::atexit(VMachine& vm, Thread& th, IntrinsicFuncParam p,

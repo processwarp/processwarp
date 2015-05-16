@@ -2,7 +2,7 @@
 
 #include "definitions.hpp"
 
-namespace usagi {
+namespace processwarp {
   /**
    * POSIXライブラリのうち、LLVM組み込みとして用意するもの。
    */

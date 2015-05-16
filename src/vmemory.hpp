@@ -11,7 +11,7 @@
 #include "type_store.hpp"
 #include "util.hpp"
 
-namespace usagi {
+namespace processwarp {
   /**
    * 仮想メモリ空間を管理するクラス。
    */

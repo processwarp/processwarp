@@ -3,7 +3,7 @@
 #include "vmachine.hpp"
 #include "lib/safeint3.hpp"
 
-using namespace usagi;
+using namespace processwarp;
 
 // VMにライブラリを登録する。
 void IntrinsicOverflow::regist(VMachine& vm) {

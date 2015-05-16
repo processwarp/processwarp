@@ -70,12 +70,12 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
         intrinsic_va_arg.cpp
         intrinsic_warp.cpp
         llvm_asm_loader.cpp
+        processwarp.cpp
         server.cpp
         stackinfo.cpp
         symbols.cpp
         type_based.cpp
         type_store.cpp
-        usagi.cpp
         util.cpp
         vmachine.cpp
         vmemory.cpp

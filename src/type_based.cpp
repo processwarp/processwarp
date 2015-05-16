@@ -9,7 +9,7 @@
 #include "type_store.hpp"
 #include "util.hpp"
 
-using namespace usagi;
+using namespace processwarp;
 
 // デストラクタ。
 TypeBased::~TypeBased() {
@@ -96,7 +96,7 @@ template <typename T> bool TypeExtended<T>::is_or_nans(uint8_t* a, uint8_t* b) {
   throw_error(Error::INST_VIOLATION);
 }
 
-namespace usagi {
+namespace processwarp {
 
   // 比較命令(isnan(a) || isnan(b))に対応した演算を行う。
   template<> bool TypeExtended<double>::is_or_nans(uint8_t* a, uint8_t* b) {
@@ -165,7 +165,7 @@ M_COMP_OPERATOR_TYPE_EXTENDED(op_not_equal,     !=); // a!=b
 
 #undef M_COMP_OPERATOR_TYPE_EXTENDED
 
-namespace usagi {
+namespace processwarp {
   /**
    * サポートしない2項演算子用のメソッドを生成する
    * @param op メソッド名
@@ -229,7 +229,7 @@ namespace usagi {
 		Util::numptr2str(b, sizeof(float)).c_str());
   }
 
-} // close "namespace usagi"
+} // close "namespace processwarp"
 
 // shl命令に対応した加算を行う。
 template <typename T> void TypeExtended<T>::op_shl(uint8_t* dst, uint8_t* a, uint8_t* b) {
@@ -403,13 +403,13 @@ void TypeComplex::copy(uint8_t* dst, uint8_t* src) {
 }
 
 // 明示的テンプレートのインスタンス化
-template class usagi::TypeExtended<int8_t>;
-template class usagi::TypeExtended<int16_t>;
-template class usagi::TypeExtended<int32_t>;
-template class usagi::TypeExtended<int64_t>;
-template class usagi::TypeExtended<uint8_t>;
-template class usagi::TypeExtended<uint16_t>;
-template class usagi::TypeExtended<uint32_t>;
-template class usagi::TypeExtended<uint64_t>;
-template class usagi::TypeExtended<float>;
-template class usagi::TypeExtended<double>;
+template class processwarp::TypeExtended<int8_t>;
+template class processwarp::TypeExtended<int16_t>;
+template class processwarp::TypeExtended<int32_t>;
+template class processwarp::TypeExtended<int64_t>;
+template class processwarp::TypeExtended<uint8_t>;
+template class processwarp::TypeExtended<uint16_t>;
+template class processwarp::TypeExtended<uint32_t>;
+template class processwarp::TypeExtended<uint64_t>;
+template class processwarp::TypeExtended<float>;
+template class processwarp::TypeExtended<double>;

@@ -1,7 +1,7 @@
 #include "intrinsic_bit.hpp"
 #include "vmachine.hpp"
 
-using namespace usagi;
+using namespace processwarp;
 
 // byte-swap関数。
 bool IntrinsicBit::bswap(VMachine& vm, Thread& th, IntrinsicFuncParam p,

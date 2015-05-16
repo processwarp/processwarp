@@ -7,7 +7,7 @@
 #include <gloox/messagesession.h>
 #include <string>
 
-namespace usagi {
+namespace processwarp {
   class Xmpp : public gloox::ConnectionListener, gloox::MessageHandler {
   public:
     /**

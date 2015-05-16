@@ -1,7 +1,7 @@
 
 #include "func_store.hpp"
 
-using namespace usagi;
+using namespace processwarp;
 
 static const FuncStore::NormalProp DUMMY_PROP = {};
 static const IntrinsicFuncParam DUMMY_INTRINSIC_PARAM = {.ptr = nullptr};

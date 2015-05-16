@@ -10,7 +10,7 @@
 #include "llvm_asm_loader.hpp"
 #include "server.hpp"
 
-using namespace usagi;
+using namespace processwarp;
 
 // 新規VMを割り当てる。
 vpid_t Server::assign_vm(const picojson::object& conf) {

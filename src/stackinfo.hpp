@@ -5,7 +5,7 @@
 #include "definitions.hpp"
 #include "type_based.hpp"
 
-namespace usagi {
+namespace processwarp {
   class FuncStore;
   class DataStore;
   class TypeStore;

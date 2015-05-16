@@ -12,7 +12,7 @@
 #include "llvm_asm_loader.hpp"
 #include "vmachine.hpp"
 
-using namespace usagi;
+using namespace processwarp;
 
 static const std::string pool_path("/tmp/");
 

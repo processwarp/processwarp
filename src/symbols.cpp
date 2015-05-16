@@ -1,7 +1,7 @@
 
 #include "symbols.hpp"
 
-using namespace usagi;
+using namespace processwarp;
 
 // シンボル文字列を取得する。
 const std::string& Symbols::Symbol::str() const {

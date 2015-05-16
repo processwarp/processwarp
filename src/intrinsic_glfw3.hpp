@@ -2,7 +2,7 @@
 
 #include "definitions.hpp"
 
-namespace usagi {
+namespace processwarp {
   /**
    * Functions for wrap GLFW3
    */

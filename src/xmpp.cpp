@@ -6,7 +6,7 @@
 #include "util.hpp"
 #include "xmpp.hpp"
 
-using namespace usagi;
+using namespace processwarp;
 
 static int STATUS_START      = 0;
 static int STATUS_CONNECT    = 1;

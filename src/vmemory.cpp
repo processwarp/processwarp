@@ -8,7 +8,7 @@
 #include "util.hpp"
 #include "vmemory.hpp"
 
-using namespace usagi;
+using namespace processwarp;
 
 static const vaddr_t UPPER_MASKS[] = {
   0xFFFFFFFFFFFFFFFF, // 型

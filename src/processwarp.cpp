@@ -13,7 +13,7 @@
 #include "server.hpp"
 #include "vmachine.hpp"
 
-using namespace usagi;
+using namespace processwarp;
 
 /**
  * エントリーポイント。

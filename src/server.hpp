@@ -9,7 +9,7 @@
 #include "vmachine.hpp"
 #include "xmpp.hpp"
 
-namespace usagi {
+namespace processwarp {
   /**
    * サーバクラス。
    */

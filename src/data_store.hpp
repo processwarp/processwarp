@@ -5,7 +5,7 @@
 
 #include "definitions.hpp"
 
-namespace usagi {
+namespace processwarp {
   /**
    * 仮想メモリ空間で生データを格納するクラス。
    */

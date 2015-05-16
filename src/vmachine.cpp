@@ -34,7 +34,7 @@
 #include "util.hpp"
 #include "vmachine.hpp"
 
-using namespace usagi;
+using namespace processwarp;
 
 static TypeBased* TYPE_BASES[] = {
   nullptr, // 0

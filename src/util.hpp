@@ -22,7 +22,7 @@
 
 #include "definitions.hpp"
 
-namespace usagi {
+namespace processwarp {
   class Util {
   public:
     /**

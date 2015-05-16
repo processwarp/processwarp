@@ -2,7 +2,7 @@
 #include "intrinsic_memory.hpp"
 #include "vmachine.hpp"
 
-using namespace usagi;
+using namespace processwarp;
 
 // llvm.lifetime.start関数。
 bool IntrinsicMemory::lifetime_start(VMachine& vm, Thread& th, IntrinsicFuncParam p,

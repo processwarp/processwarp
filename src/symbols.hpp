@@ -4,7 +4,7 @@
 #include <map>
 #include <memory>
 
-namespace usagi {
+namespace processwarp {
   /**
    * 同一の文字列に対して、同一のインスタンス：シンボルを生成するクラス。
    * 例えば、異なるアドレスに配置された複数の"a"から、同一の"a"へのアドレスを戻す。

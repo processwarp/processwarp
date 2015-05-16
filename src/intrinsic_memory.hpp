@@ -2,7 +2,7 @@
 
 #include "definitions.hpp"
 
-namespace usagi {
+namespace processwarp {
   /**
    * メモリ利用マーク関連のLLVM組み込み関数。
    */

@@ -2,7 +2,7 @@
 
 #include "definitions.hpp"
 
-namespace usagi {
+namespace processwarp {
   class IntrinsicWarp {
   public:
 

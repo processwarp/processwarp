@@ -2,7 +2,7 @@
 #include "intrinsic_warp.hpp"
 #include "vmachine.hpp"
 
-using namespace usagi;
+using namespace processwarp;
 
 // This function register function that will be called at after warp.
 bool IntrinsicWarp::at_after_warp(VMachine& vm, Thread& th, IntrinsicFuncParam p,

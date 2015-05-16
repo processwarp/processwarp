@@ -11,7 +11,7 @@
 #include "util.hpp"
 #include "vmachine.hpp"
 
-using namespace usagi;
+using namespace processwarp;
 
 // mapのキーとして格納するので<演算子の動作を定義する。
 bool LlvmAsmLoader::ValueDest::operator<(const ValueDest& other) const {

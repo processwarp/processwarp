@@ -2,7 +2,7 @@
 #include "util.hpp"
 #include "instruction.hpp"
 
-using namespace usagi;
+using namespace processwarp;
 
 static const char* OPCODE_STR[] = {
   "NOP",

@@ -7,7 +7,7 @@
 
 #include "../include/processwarp.h"
 
-namespace usagi {
+namespace processwarp {
   class VMachine;
   class Thread;
 

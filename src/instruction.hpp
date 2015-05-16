@@ -4,7 +4,7 @@
 
 #include "definitions.hpp"
 
-namespace usagi {
+namespace processwarp {
   class Instruction {
   public:
     /**

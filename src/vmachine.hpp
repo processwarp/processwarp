@@ -11,7 +11,7 @@
 #include "thread.hpp"
 #include "vmemory.hpp"
 
-namespace usagi {
+namespace processwarp {
   /**
    * 仮想マシンクラス。
    * 仮想マシンは１つのメモリ空間、複数のスレッド、コマンド実行から成り立つ。

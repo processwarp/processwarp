@@ -19,7 +19,7 @@ namespace llvm {
   class Module;
 }
 
-namespace usagi {
+namespace processwarp {
   class VMachine;
 
   /**

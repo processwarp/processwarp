@@ -1,7 +1,7 @@
 
 #include "data_store.hpp"
 
-using namespace usagi;
+using namespace processwarp;
 
 // コンストラクタ
 DataStore::DataStore(vaddr_t addr_, size_t size_) :

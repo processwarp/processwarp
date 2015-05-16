@@ -13,7 +13,7 @@
 #include "error.hpp"
 #include "vmachine.hpp"
 
-using namespace usagi;
+using namespace processwarp;
 using namespace emscripten;
 
 //#ifndef __EMSCRIPTEN__

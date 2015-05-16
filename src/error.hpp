@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace usagi {
+namespace processwarp {
 
 #define throw_error(R) throw Error(__FILE__, __LINE__, (R), "")
 #define throw_error_message(R, M) throw Error(__FILE__, __LINE__, (R), (M))

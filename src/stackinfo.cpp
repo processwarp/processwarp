@@ -3,7 +3,7 @@
 #include "func_store.hpp"
 #include "stackinfo.hpp"
 
-using namespace usagi;
+using namespace processwarp;
 
 // コンストラクタ。
 StackInfo::StackInfo(vaddr_t func_,

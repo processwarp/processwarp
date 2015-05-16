@@ -1,7 +1,7 @@
 
 #include "error.hpp"
 
-using namespace usagi;
+using namespace processwarp;
 
 // VM内例外のコンストラクタ。
 Error::Error(const std::string& file, int line, Reason reason_, const std::string& mesg_) :

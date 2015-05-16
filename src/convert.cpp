@@ -3,7 +3,7 @@
 #include "util.hpp"
 #include "vmachine.hpp"
 
-using namespace usagi;
+using namespace processwarp;
 
 /**
  * 数値をJSON-object形式に変換する。

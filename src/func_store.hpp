@@ -5,7 +5,7 @@
 #include "definitions.hpp"
 #include "symbols.hpp"
 
-namespace usagi {
+namespace processwarp {
   /**
    * 関数クラス。
    */

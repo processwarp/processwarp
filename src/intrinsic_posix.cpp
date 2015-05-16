@@ -6,7 +6,7 @@
 #include "intrinsic_posix.hpp"
 #include "vmachine.hpp"
 
-using namespace usagi;
+using namespace processwarp;
 
 // __assert_fail(assertの内部実装)関数。
 bool IntrinsicPosix::__assert_fail(VMachine& vm, Thread& th, IntrinsicFuncParam p,
