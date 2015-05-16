@@ -43,11 +43,21 @@ LlvmAsmLoader::~LlvmAsmLoader() {
   
 // LLVMのアセンブリファイルを読み込んで仮想マシンにロードする。
 void LlvmAsmLoader::load_file(const std::string& filename) {
+#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR == 5
   llvm::SMDiagnostic error;
   llvm::Module* module = llvm::ParseAssemblyFile(filename, error, context);
   if (module == nullptr)
     throw_error_message(Error::PARSE, error.getMessage().str() + "[" + filename + "]");
   load_module(module);
+  
+#else
+  // for 3.6
+  llvm::SMDiagnostic error;
+  std::unique_ptr<llvm::Module> module = llvm::parseAssemblyFile(filename, error, context);
+  if (module == nullptr)
+    throw_error_message(Error::PARSE, error.getMessage().str() + "[" + filename + "]");
+  load_module(module.get());
+#endif
 }
 
 // ロード済みの値とアドレスの対応関係を登録する。
