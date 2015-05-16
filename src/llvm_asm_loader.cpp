@@ -497,7 +497,9 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
     // ブロック名とそれの開始位置
     std::map<unsigned int, unsigned int> block_start;
 
-    FunctionContext fc = {prop.code, k, stack_values, 0};
+    FunctionContext fc = {prop.code, k, stack_values, 0,
+                          std::map<const llvm::Value*, int>(),
+                          std::map<std::pair<const llvm::Type*, bool>, int>()};
     
     // 引数を変数の先頭に登録
     for (auto arg = function->getArgumentList().begin();
@@ -1344,7 +1346,9 @@ void LlvmAsmLoader::load_globals(const llvm::Module::GlobalListType& variables) 
   FuncStore::NormalProp prop;
   std::vector<uint8_t> k;
   std::map<const llvm::Value*, int> stack_values;
-  FunctionContext fc = {prop.code, k, stack_values, 0};
+  FunctionContext fc = {prop.code, k, stack_values, 0,
+                        std::map<const llvm::Value*, int>(),
+                        std::map<std::pair<const llvm::Type*, bool>, int>()};
   // 初期値がある場合は値をロードする
   for (auto it = map_global.begin(); it != map_global.end(); it ++) {
     const llvm::GlobalVariable* gl =
