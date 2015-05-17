@@ -70,7 +70,7 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
         intrinsic_va_arg.cpp
         intrinsic_warp.cpp
         llvm_asm_loader.cpp
-        processwarp.cpp
+	main_core.cpp
         server.cpp
         stackinfo.cpp
         symbols.cpp
@@ -82,8 +82,8 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
         xmpp.cpp
     )
 
-    add_executable(processwarp ${CORE_FILES})
-    target_link_libraries(processwarp ${extra_libs})
+    add_executable(core ${CORE_FILES})
+    target_link_libraries(core ${extra_libs})
 endif()
 
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
@@ -101,7 +101,7 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
         intrinsic_va_arg.cpp
         intrinsic_warp.cpp
         llvm_asm_loader.cpp
-        llvm_loader.cpp
+        main_loader.cpp
         stackinfo.cpp
         symbols.cpp
         type_based.cpp
@@ -129,7 +129,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
         intrinsic_posix.cpp
         intrinsic_va_arg.cpp
         intrinsic_warp.cpp
-        main.cpp
+        main_webfront.cpp
         stackinfo.cpp
         symbols.cpp
         type_based.cpp
