@@ -29,6 +29,9 @@ namespace processwarp {
       TOO_MANY_VALUE, ///< 変数、定数がオペランドで表現できない
       EXT_LIBRARY,    ///< 外部ライブラリの読み出しエラー
       EXT_CALL,       ///< 外部関数の読み出しエラー
+      NETWORK,    ///< Network
+      SERVER_SYS, ///< System error on server.
+      SERVER_APP, ///< Application error on server.
     };
 
     /// 例外の理由

@@ -38,6 +38,13 @@ namespace processwarp {
     static bool addr_is_type(vaddr_t addr);
 
     /**
+     * Check addr is allocated.
+     * @param addr Target address.
+     * @return True if address is allocated yet.
+     */
+    bool addr_is_used(vaddr_t addr);
+
+    /**
      * メモリ空間に新しいデータ領域を確保する。
      * 同一アドレスにデータ領域が確保されていた場合、エラーとなる。
      * @param size データ領域のサイズ。

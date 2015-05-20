@@ -1,0 +1,13 @@
+{
+    "server":  "http://localhost:8080/webfront/",
+    "account": "test1",
+    "password":"test1",
+    "device-name": "MacOSX",
+
+    "libs":[
+	"/usr/local/lib/libglfw3.3.dylib",
+	"/System/Library/Frameworks/OpenGL.framework/Versions/A/OpenGL"
+    ],
+
+    "apps":[]
+}

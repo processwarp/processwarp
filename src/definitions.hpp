@@ -62,9 +62,6 @@ namespace processwarp {
   /** スタックの作業用バッファサイズ */
   static const int STACK_BUFFER_SIZE = 2;
 
-  /** 仮想プロセスID */
-  typedef std::string vpid_t;
-
   /** オペランドの最大値 */
   static const instruction_t FILL_OPERAND = 0x03FFFFFF;
   static const instruction_t HEAD_OPERAND = 0x02000000;

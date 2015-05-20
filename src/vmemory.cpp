@@ -121,6 +121,25 @@ bool VMemory::addr_is_type(vaddr_t addr) {
   return (addr & AddrType::AD_MASK) == AddrType::AD_TYPE;
 }
 
+// Check addr is allocated.
+bool VMemory::addr_is_used(vaddr_t addr) {
+  if (addr_is_func(addr)) {
+    return func_store_map.find(addr) != func_store_map.end();
+
+  } else if (addr_is_type(addr)) {
+    return type_store_map.find(addr) != type_store_map.end();
+
+  } else {
+    auto data = data_store_map.find(get_addr_upper(addr));
+    if (data == data_store_map.end()) {
+      return false;
+
+    } else {
+      return get_addr_lower(addr) < data->second.size;
+    }
+  }
+}
+
 // メモリ空間に新しいデータ領域を確保する。
 DataStore& VMemory::alloc_data(uint64_t size, bool is_const, vaddr_t addr) {
   print_debug("alloc_data size:%" PRIx64 ", addr:%016" PRIx64 "\n", size, addr);
