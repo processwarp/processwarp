@@ -35,15 +35,20 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     message("SIO_DIR must be set.")
     return()
   endif()
-  include_directories("${SIO_DIR}/src")
-  link_directories(${SIO_DIR})
-  list(APPEND extra_libs "sioclient")
+  include_directories("${SIO_DIR}/include")
+  link_directories("${SIO_DIR}/lib/Release")
+  list(APPEND extra_libs "sioclient_tls")
 
   # Boost
   find_package(Boost REQUIRED COMPONENTS system date_time random)
   include_directories(${Boost_INCLUDE_DIRS})
   link_directories(${Boost_LIBRARY_DIRS})
   list(APPEND extra_libs ${Boost_LIBRARIES})
+
+  # OpenSSL
+  find_package(OpenSSL)
+  include_directories(${OPENSSL_INCLUDE_DIR})
+  list(APPEND extra_libs ${OPENSSL_LIBRARIES})
 endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wno-unused-parameter")
