@@ -65,11 +65,17 @@ void SocketIo::connect(const std::string& url) {
 
 // Pooling
 void SocketIo::pool() {
-  std::lock_guard<std::mutex> guard(sio_mutex);
-  while (!sio_queue.empty()) {
-    auto front = sio_queue.front();
-    const std::string& name(front.first);
-    const sio::message::ptr data(front.second);
+  while (true) {
+    std::string name;
+    sio::message::ptr data;
+    {
+      std::lock_guard<std::mutex> guard(sio_mutex);
+      if (sio_queue.empty()) break;
+      auto front = sio_queue.front();
+      name = front.first;
+      data.reset(front.second);
+      sio_queue.pop();
+    }
 
 #define M_STRING_CONVERT(K) (data->get_map().at(K).get() != nullptr ? data->get_map().at(K)->get_string() : "")
     if (name == "sys_error") {
@@ -161,7 +167,6 @@ void SocketIo::pool() {
     }
 
 #undef M_STRING_CONVERT
-    sio_queue.pop();
   }
 }
     
