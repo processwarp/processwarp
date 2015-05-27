@@ -1,5 +1,5 @@
 {
-    "server":  "http://localhost:8080/webfront/",
+    "server":  "https://localhost:4433/webfront/",
     "account": "test1",
     "password":"test1",
     "device-name": "MacOSX",
