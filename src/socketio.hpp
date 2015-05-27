@@ -143,6 +143,18 @@ namespace processwarp {
      * @param pid Target pid.
      */
     virtual void recv_exit_process(const std::string& pid) = 0;
+
+    /**
+     * Recv console for test.
+     * @param pid Source pid.
+     * @param dev Device name (stdout/stderr).
+     * @param payload output stream or text.
+     * @param from_device_id Source deice-id.
+     */
+    virtual void recv_test_console(const std::string& pid,
+				   const std::string& dev,
+				   const std::string& payload,
+				   const std::string& from_device_id) = 0;
   };
   
   /**
@@ -291,6 +303,16 @@ namespace processwarp {
      * }
      */
     void send_exit_process(const std::string& pid);
+
+    /**
+     * Send console for test.
+     * @param pid Source pid.
+     * @param dev Device name (stdout/stderr).
+     * @param payload output stream or text.
+     */
+    void send_test_console(const std::string& pid,
+			   const std::string& dev,
+			   const std::string& payload);
 
   private:
     enum SioStatus {

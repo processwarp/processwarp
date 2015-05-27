@@ -248,6 +248,21 @@ public:
   void recv_exit_process(const std::string& pid) override {
     controller.exit_process(pid);
   }
+
+  // Recv console for test.
+  void recv_test_console(const std::string& pid,
+			 const std::string& dev,
+			 const std::string& payload,
+			 const std::string& from_device_id) {
+#ifndef NDEBUG
+    if (dev == "stdout") {
+      std::cout << payload;
+    } else {
+      std::cerr << payload;
+    }
+#endif
+  }
+
   
   void init(const picojson::object& conf) {
     // Load dynamic link libraries.

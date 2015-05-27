@@ -59,6 +59,7 @@ void SocketIo::connect(const std::string& url) {
   M_BIND_SOCKETIO_EVENT("warp_data_1");
   M_BIND_SOCKETIO_EVENT("warp_data_2");
   M_BIND_SOCKETIO_EVENT("exit_process");
+  M_BIND_SOCKETIO_EVENT("test_console");
 
 #undef M_BIND_SOCKETIO_EVENT
 }
@@ -73,7 +74,7 @@ void SocketIo::pool() {
       if (sio_queue.empty()) break;
       auto front = sio_queue.front();
       name = front.first;
-      data.reset(front.second);
+      data = front.second;
       sio_queue.pop();
     }
 
@@ -161,6 +162,14 @@ void SocketIo::pool() {
       
     } else if (name == "exit_process") {
       delegate.recv_exit_process(data->get_map().at("pid")->get_string());
+
+    } else if (name == "test_console") {
+#ifndef NDEBUG
+      delegate.recv_test_console(M_STRING_CONVERT("pid"),
+				 M_STRING_CONVERT("dev"),
+				 *data->get_map().at("payload")->get_binary(),
+				 M_STRING_CONVERT("from_device_id"));
+#endif
 
     } else {
       assert(false);
@@ -322,6 +331,23 @@ void SocketIo::send_exit_process(const std::string& pid) {
   map.insert(std::make_pair("pid", sio::string_message::create(pid)));
 
   socket->emit("exit_process", data);
+}
+
+// Send console for test.
+void SocketIo::send_test_console(const std::string& pid,
+		       const std::string& dev,
+		       const std::string& payload) {
+#ifndef NDEBUG
+  sio::message::ptr data(sio::object_message::create());
+  std::map<std::string, sio::message::ptr>& map = data->get_map();
+  
+  map.insert(std::make_pair("pid", sio::string_message::create(pid)));
+  map.insert(std::make_pair("dev", sio::string_message::create(dev)));
+  map.insert(std::make_pair("payload", sio::binary_message::create
+			    (std::shared_ptr<const std::string>(new std::string(payload)))));
+  
+  socket->emit("test_console", data);
+#endif
 }
 
 // Event listener for Socket.IO's close event.
