@@ -20,8 +20,6 @@ int main(int argc, char* argv[]) {
   // 標準入力を読み込み
   std::string line;
   while(std::getline(std::cin, line, '\0')) {
-    picojson::object param;
-
     // 標準入力をJSONに変換
     picojson::value v;
     std::istringstream is(line);
@@ -30,12 +28,10 @@ int main(int argc, char* argv[]) {
       std::cerr << err << std::endl;
       exit(EXIT_FAILURE);
     }
-    param = v.get<picojson::object>();
+    picojson::object result = v.get<picojson::object>();
     
     // PIDパラメタを取得
-    std::string pid       = param.at("pid").get<std::string>();
-    std::string tid       = param.at("tid").get<std::string>();
-    std::string device_id = param.at("device_id").get<std::string>();
+    std::string pid = result.at("pid").get<std::string>();
     
     try {
       // VMを用意
@@ -78,20 +74,13 @@ int main(int argc, char* argv[]) {
       ofs << picojson::value(body).serialize();
     
       // 結果を標準出力に書き込み
-      picojson::object result;
       result.insert(std::make_pair("result",    picojson::value(0.0)));
-      result.insert(std::make_pair("pid",       picojson::value(pid)));
-      result.insert(std::make_pair("tid",       picojson::value(tid)));
-      result.insert(std::make_pair("device_id", picojson::value(device_id)));
       std::cout << picojson::value(result).serialize() << '\0';
     
     } catch(const Error& ex) {
       // エラー内容を標準出力に書き込み
       picojson::object result;
       result.insert(std::make_pair("result",    picojson::value(-1.0)));
-      result.insert(std::make_pair("pid",       picojson::value(pid)));
-      result.insert(std::make_pair("tid",       picojson::value(tid)));
-      result.insert(std::make_pair("device_id", picojson::value(device_id)));
       result.insert(std::make_pair("reason",    picojson::value(std::to_string(ex.reason))));
       result.insert(std::make_pair("message",   picojson::value(ex.mesg)));
       std::cout << picojson::value(result).serialize() << '\0';
@@ -100,9 +89,6 @@ int main(int argc, char* argv[]) {
       // エラー内容を標準出力に書き込み
       picojson::object result;
       result.insert(std::make_pair("result",    picojson::value(-1.0)));
-      result.insert(std::make_pair("pid",       picojson::value(pid)));
-      result.insert(std::make_pair("tid",       picojson::value(tid)));
-      result.insert(std::make_pair("device_id", picojson::value(device_id)));
       result.insert(std::make_pair("reason",    picojson::value(std::to_string(-1))));
       result.insert(std::make_pair("message",   picojson::value(std::string(ex.what()))));
       std::cout << picojson::value(result).serialize() << '\0';
@@ -112,9 +98,6 @@ int main(int argc, char* argv[]) {
       // エラー内容を標準出力に書き込み
       picojson::object result;
       result.insert(std::make_pair("result",    picojson::value(-1.0)));
-      result.insert(std::make_pair("pid",       picojson::value(pid)));
-      result.insert(std::make_pair("tid",       picojson::value(tid)));
-      result.insert(std::make_pair("device_id", picojson::value(device_id)));
       result.insert(std::make_pair("reason",    picojson::value(std::to_string(-2))));
       result.insert(std::make_pair("message",   picojson::value(std::string(std::strerror(errsv)))));
       std::cout << picojson::value(result).serialize() << '\0';
