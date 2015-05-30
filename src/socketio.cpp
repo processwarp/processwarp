@@ -178,7 +178,22 @@ void SocketIo::pool() {
 #undef M_STRING_CONVERT
   }
 }
-    
+
+// Send load llvm command.
+void SocketIo::send_load_llvm(const std::string& name,
+			      const std::string& file,
+			      const std::string& dst_device_id) {
+  sio::message::ptr data(sio::object_message::create());
+  std::map<std::string, sio::message::ptr>& map = data->get_map();
+  
+  map.insert(std::make_pair("name", sio::string_message::create(name)));
+  map.insert(std::make_pair("file", sio::binary_message::create
+			    (std::shared_ptr<const std::string>(new std::string(file)))));
+  map.insert(std::make_pair("dst_device_id", sio::string_message::create(dst_device_id)));
+  
+  socket->emit("load_llvm", data);
+}
+
 // Send login command.
 void SocketIo::send_login(const std::string& account,
 			  const std::string& password) {

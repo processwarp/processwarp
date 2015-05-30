@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <regex>
 #include <string>
 #include <vector>
 
@@ -21,6 +22,9 @@ public:
   Controller controller;
   SocketIo socket;
 
+  /** Configuration */
+  const picojson::object conf;
+
   /** Device name. */
   std::string device_name;
   /** Device ID. */
@@ -32,12 +36,81 @@ public:
   /** Map of pid and program name. */
   std::map<std::string, std::string> procs;
 
+  /** Map of device-id and device-name. */
+  std::map<std::string, std::string> devices;
+
   /**
    * Constructor
+   * @param _conf Configuration.
    */
-  NativeVm() :
+  NativeVm(const picojson::object& _conf) :
     controller(*this),
-    socket(*this) {
+    socket(*this),
+    conf(_conf) {
+  }
+
+  /**
+   * Load applications list on configure file and command line argument.
+   */
+  void load_apps() {
+    if (conf.find("apps") == conf.end()) return;
+    const picojson::array& apps = conf.at("apps").get<picojson::array>();
+    
+    for (auto it : apps) {
+      const picojson::object& app = it.get<picojson::object>();
+      // Check application type.
+      if (app.find("type") != app.end() &&
+	  app.at("type").get<std::string>() != "llvm") {
+	throw_error_message(Error::CONFIGURE, "Unknown application type.");
+      }
+      
+      // Get name from filename.
+      if (app.find("file") == app.end()) {
+	throw_error_message(Error::CONFIGURE, "Unrecognizable application file.");
+      }
+      std::string name;
+      std::smatch match;
+      if (regex_search(app.at("file").get<std::string>(),
+		       match, std::regex("[^\\\\/]*$"))) {
+	name = match.str();
+
+      } else {
+	assert(false);
+      }
+      
+      // Load file.
+      std::ifstream ifs(app.at("file").get<std::string>());
+      if (!ifs.is_open()) {
+	throw_error_message(Error::CONFIGURE, "Unrecognizable application file.");
+      }
+      std::stringstream file;
+      std::string line;
+      while (std::getline(ifs, line, '\n')) {
+	file << line << '\n';
+      }
+      ifs.close();
+      
+      // Search device.
+      std::string dst_device_id = "";
+      if (app.find("device") == app.end()) {
+	dst_device_id = device_id;
+
+      } else {
+	std::string device_name = app.at("device").get<std::string>();
+	for (auto it : devices) {
+	  if (it.second == device_name) {
+	    dst_device_id = it.first;
+	    break;
+	  }
+	}
+	if (dst_device_id == "") {
+	  throw_error_message(Error::CONFIGURE, "Unknown device name.");
+	}
+      }
+
+      // Send request.
+      socket.send_load_llvm(name, file.str(), dst_device_id);
+    }
   }
   
   // Call when send data to other device.
@@ -108,6 +181,9 @@ public:
       throw_error(Error::SERVER_APP);
     }
 
+    // Keep last devices.
+    this->devices = devices;
+
     bool is_new_device = true;
     for(auto it : devices) {
       if (it.second == device_name) {
@@ -132,6 +208,9 @@ public:
 
     // Syncronize processes empty because processes not running just run program.
     socket.send_sync_proc_list(std::map<std::string, SocketIoProc>());
+
+    // Execute applications.
+    load_apps();
   }
 
   // Call when recv sync proc list message from server.
@@ -284,33 +363,26 @@ public:
     socket.connect(conf.at("server").get<std::string>());
     socket.send_login(conf.at("account").get<std::string>(),
 		      conf.at("password").get<std::string>());
-
-    // If exist apps directive, load listuped applications.
-    /*
-    if (conf.find("apps") != conf.end()) {
-      const picojson::array& apps = conf.at("apps").get<picojson::array>();
-      
-      for (auto it = apps.begin(); it != apps.end(); it ++) {
-	picojson::object filename = it->get<picojson::object>();
-	
-	assign_vm(filename);
-      }
-    }
-    //*/
   }
 
-  void run(const picojson::object& conf) {
+  void run() {
     init(conf);
+#ifndef NDEBUG
+    bool is_run_app = false;
+#endif
     
     // Main loop
     while(true) {
 #ifndef NDEBUG
       // Stop program when application is not running on test.
-      /* TODO ■
-      if(getenv("TEST") != nullptr &&
-	 server.vms.size() != 0) {
-	break;
-	}//*/
+      if(getenv("TEST") != nullptr) {
+	if (procs.size() != 0) {
+	  is_run_app = true;
+	}
+	if (is_run_app && procs.size() == 0) {
+	  break;
+	}
+      }
 #endif
       socket.pool();
       controller.loop();
@@ -329,11 +401,12 @@ int main(int argc, char* argv[]) {
   option long_options[] = {
     {"config", required_argument, nullptr, 'c'},
     {"llvm",   required_argument, nullptr, 'l'},
+    {"device", required_argument, nullptr, 'd'},
     {0, 0, 0, 0} // terminate
   };
   
   // Analyse command line option using getopt.
-  while((opt = getopt_long(argc, argv, "ac:l:", long_options, &option_index)) != -1) {
+  while((opt = getopt_long(argc, argv, "ac:l:d:", long_options, &option_index)) != -1) {
     switch(opt) {
     case 'c': {
       // Read configuration file.
@@ -362,11 +435,23 @@ int main(int argc, char* argv[]) {
       // Make per application directive in 'apps' directive.
       picojson::object app;
       app.insert(std::make_pair("type", picojson::value(std::string("llvm"))));
-      app.insert(std::make_pair("path", picojson::value(std::string(optarg))));
+      app.insert(std::make_pair("file", picojson::value(std::string(optarg))));
       app.insert(std::make_pair("args", picojson::value(picojson::array())));
       
       picojson::array& apps = conf.at("apps").get<picojson::array>();
       apps.push_back(picojson::value(app));
+    } break;
+
+    case 'd': {
+      if (conf.find("apps") == conf.end()) goto on_error;
+      picojson::array& apps = conf.at("apps").get<picojson::array>();
+
+      for (auto& it : apps) {
+	picojson::object& app = it.get<picojson::object>();
+	if (app.find("device") == app.end()) {
+	  app.insert(std::make_pair("device", picojson::value(std::string(optarg))));
+	}
+      }
     } break;
 
     case ':':
@@ -392,14 +477,14 @@ int main(int argc, char* argv[]) {
   }
 
   { // Run.
-    NativeVm native_vm;
-    native_vm.run(conf);
+    NativeVm native_vm(conf);
+    native_vm.run();
 
     // Finish
     return EXIT_SUCCESS;
   }
 
  on_error:
-  printf("Usage : COMMAND -c path [-l path [-- ...]]\n");
+  printf("Usage : COMMAND -c path [-l path [-d device] [-- ...]]\n");
   return EXIT_FAILURE;
 }

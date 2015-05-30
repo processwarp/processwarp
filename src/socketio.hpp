@@ -178,7 +178,22 @@ namespace processwarp {
      * Pooling.
      */
     void pool();
-    
+
+    /**
+     * Send load llvm command.
+     * Packet format: {
+     *   name: <Application name>,
+     *   file: <File content(binary)>,
+     *   dest_device_id: <Destination device-id>
+     * }
+     * @param name Application name.
+     * @param file File content(binary).
+     * @param dst_device_id Destination device-id.
+     */
+    void send_load_llvm(const std::string& name,
+			const std::string& file,
+			const std::string& dst_device_id);
+
     /**
      * Send login command.
      * Packet format: {
