@@ -167,6 +167,11 @@ namespace processwarp {
      * @param delegate Delegate for recv event.
      */
     SocketIo(SocketIoDelegate& delegate);
+
+    /**
+     * Destructor with close Socket.IO.
+     */
+    virtual ~SocketIo();
     
     /**
      * Connect to server.

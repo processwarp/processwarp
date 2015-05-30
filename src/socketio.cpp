@@ -13,6 +13,13 @@ SocketIo::SocketIo(SocketIoDelegate& _delegate) :
   delegate(_delegate) {
 }
 
+// Destructor with close Socket.IO.
+SocketIo::~SocketIo() {
+  client.sync_close();
+  client.clear_con_listeners();
+}
+
+
 // Connect to server.
 void SocketIo::connect(const std::string& url) {
   // Bind basic event to Socket.IO.
