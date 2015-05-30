@@ -32,6 +32,8 @@ int main(int argc, char* argv[]) {
     
     // PIDパラメタを取得
     std::string pid = result.at("pid").get<std::string>();
+    // 起動引数を取得
+    picojson::array json_args = result.at("args").get<picojson::array>();
     
     try {
       // VMを用意
@@ -46,6 +48,9 @@ int main(int argc, char* argv[]) {
       std::map<std::string, std::string> envs;
       // 仮引数
       std::vector<std::string> args;
+      for (auto& json_arg : json_args) {
+	args.push_back(json_arg.get<std::string>());
+      }
       // 起動状態へ
       vm.run(args, envs);
       

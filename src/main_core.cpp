@@ -89,6 +89,15 @@ public:
 	file << line << '\n';
       }
       ifs.close();
+
+      // Get args.
+      std::vector<std::string> args;
+      args.push_back(app.at("file").get<std::string>());
+      if (app.find("args") != app.end()) {
+	for (auto& it : app.at("args").get<picojson::array>()) {
+	  args.push_back(it.get<std::string>());
+	}
+      }
       
       // Search device.
       std::string dst_device_id = "";
@@ -109,7 +118,7 @@ public:
       }
 
       // Send request.
-      socket.send_load_llvm(name, file.str(), dst_device_id);
+      socket.send_load_llvm(name, file.str(), args, dst_device_id);
     }
   }
   

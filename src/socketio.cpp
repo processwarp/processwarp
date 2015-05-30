@@ -189,13 +189,20 @@ void SocketIo::pool() {
 // Send load llvm command.
 void SocketIo::send_load_llvm(const std::string& name,
 			      const std::string& file,
+			      const std::vector<std::string>& args,
 			      const std::string& dst_device_id) {
   sio::message::ptr data(sio::object_message::create());
+  sio::message::ptr args_ptr(sio::array_message::create());
   std::map<std::string, sio::message::ptr>& map = data->get_map();
+  std::vector<sio::message::ptr>& args_vtr = args_ptr->get_vector();
   
   map.insert(std::make_pair("name", sio::string_message::create(name)));
   map.insert(std::make_pair("file", sio::binary_message::create
 			    (std::shared_ptr<const std::string>(new std::string(file)))));
+  for (auto& arg : args) {
+    args_vtr.push_back(sio::string_message::create(arg));
+  }
+  map.insert(std::make_pair("args", args_ptr));
   map.insert(std::make_pair("dst_device_id", sio::string_message::create(dst_device_id)));
   
   socket->emit("load_llvm", data);

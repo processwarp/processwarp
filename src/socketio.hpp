@@ -189,14 +189,17 @@ namespace processwarp {
      * Packet format: {
      *   name: <Application name>,
      *   file: <File content(binary)>,
+     *   args: [<arg1>, <arg2>,...]
      *   dest_device_id: <Destination device-id>
      * }
      * @param name Application name.
      * @param file File content(binary).
+     * @param args List of arguments for program.
      * @param dst_device_id Destination device-id.
      */
     void send_load_llvm(const std::string& name,
 			const std::string& file,
+			const std::vector<std::string>& args,
 			const std::string& dst_device_id);
 
     /**
