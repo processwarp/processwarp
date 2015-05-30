@@ -33,8 +33,8 @@ public:
   /** Dynamic link libraries. */
   std::vector<void*> libs;
 
-  /** Map of pid and program name. */
-  std::map<std::string, std::string> procs;
+  /** Map of pid and process infomation. */
+  std::map<std::string, SocketIoProc> procs;
 
   /** Map of device-id and device-name. */
   std::map<std::string, std::string> devices;
@@ -131,26 +131,7 @@ public:
   void on_finish_proccess(const std::string& pid) override {
     procs.erase(pid);
 
-    std::map<std::string, SocketIoProc> sio_procs;
-    for (auto it : procs) {
-      SocketIoProc sio_proc;
-      sio_proc.pid  = it.first;
-      sio_proc.name = it.second;
-      sio_proc.threads.insert(make_pair("1", device_id));
-
-      sio_procs.insert(std::make_pair(sio_proc.pid, sio_proc));
-    }
-
-    print_debug("(s)\n");
-    for (auto it : sio_procs) {
-      print_debug("pid:%s\n  pid:%s\n  name:%s\n",
-		  it.first.c_str(), it.second.pid.c_str(), it.second.name.c_str());
-      for (auto it2 : it.second.threads) {
-	print_debug("    %s : %s\n", it2.first.c_str(), it2.second.c_str());
-      }
-    }
-
-    socket.send_sync_proc_list(sio_procs);
+    socket.send_sync_proc_list(procs);
   }
 
   // Call when rise error.
@@ -215,15 +196,6 @@ public:
 
   // Call when recv sync proc list message from server.
   void recv_sync_proc_list(const std::map<std::string, SocketIoProc>& new_procs) override {
-    print_debug("(r)\n");
-    for (auto it : new_procs) {
-      print_debug("pid:%s\n  pid:%s\n  name:%s\n",
-		  it.first.c_str(), it.second.pid.c_str(), it.second.name.c_str());
-      for (auto it2 : it.second.threads) {
-	print_debug("    %s : %s\n", it2.first.c_str(), it2.second.c_str());
-      }
-    }
-    
     // Check finished process.
     auto it = procs.begin();
     while (it != procs.end()) {
@@ -238,14 +210,7 @@ public:
     }
 
     // Update process list.
-    for (auto it : new_procs) {
-      if (procs.find(it.first) == procs.end()) {
-	procs.insert(std::make_pair(it.first, it.second.name));
-
-      } else {
-	procs.at(it.first) = it.second.name;
-      }
-    }
+    procs = new_procs;
   }
 
   // Call when recv warp request from other device.
@@ -274,7 +239,24 @@ public:
     if (from_account == "") {
       // Accept from the same account.
       socket.send_warp_request_2(pid, tid, from_device_id, 0);
-      procs.insert(std::make_pair(pid, name));
+
+      // Update procs.
+      // Create new proccess infomation for new process.
+      if (procs.find(pid) == procs.end()) {
+	SocketIoProc proc_info;
+	proc_info.pid  = pid;
+	proc_info.name = name;
+	procs.insert(std::make_pair(pid, proc_info));
+      }
+      // Update or create thread pair.
+      SocketIoProc& proc_info = procs.at(pid);
+      if (proc_info.threads.find(tid) != proc_info.threads.end()) {
+	proc_info.threads.at(tid) = device_id;
+
+      } else {
+	proc_info.threads.insert(std::make_pair(tid, device_id));
+      }
+      
       controller.create_process(pid, libs);
 
     } else {
