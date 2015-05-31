@@ -36,9 +36,11 @@ int main(int argc, char* argv[]) {
     picojson::array json_args = result.at("args").get<picojson::array>();
     
     try {
-      // VMを用意
-      std::vector<void*> libs; // 変換プログラムではライブラリのロードを行わないので空
-      VMachine vm(libs);
+      // Setup virtual machine.
+      // Library is empty because don't use in loader.
+      std::vector<void*> libs;
+      std::map<std::string, std::string> lib_filter;
+      VMachine vm(libs, lib_filter);
       vm.setup();
     
       // プログラムをロード

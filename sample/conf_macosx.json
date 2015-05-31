@@ -9,5 +9,9 @@
 	"/System/Library/Frameworks/OpenGL.framework/Versions/A/OpenGL"
     ],
 
+    "lib-filter":[
+	"/Users/llamerada/Develop/processwarp-core/sample/libs_macosx.json"
+    ],
+
     "apps":[]
 }

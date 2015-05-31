@@ -32,6 +32,8 @@ public:
   
   /** Dynamic link libraries. */
   std::vector<void*> libs;
+  /** Map of API name call from and call for that can access. */
+  std::map<std::string, std::string> lib_filter;
 
   /** Map of pid and process infomation. */
   std::map<std::string, SocketIoProc> procs;
@@ -266,7 +268,7 @@ public:
 	proc_info.threads.insert(std::make_pair(tid, device_id));
       }
       
-      controller.create_process(pid, libs);
+      controller.create_process(pid, libs, lib_filter);
 
     } else {
       // Deny from other account.
@@ -346,7 +348,29 @@ public:
 	libs.push_back(dl_handle);
       }
     }
-  
+
+    // Load api filter.
+    if (conf.find("lib-filter") != conf.end()) {
+      const picojson::array& filter_files = conf.at("lib-filter").get<picojson::array>();
+      for (auto filter : filter_files) {
+	std::ifstream ifs(filter.get<std::string>());
+	if (!ifs.is_open()) {
+	  throw_error_message(Error::CONFIGURE, filter.get<std::string>());
+	}
+	picojson::value v;
+	std::string err = picojson::parse(v, ifs);
+	ifs.close();
+	if (!err.empty()) {
+	  throw_error_message(Error::CONFIGURE, err);
+	}
+	
+	picojson::object& o = v.get<picojson::object>();
+	for (auto& it : o) {
+	  lib_filter.insert(std::make_pair(it.first, it.second.get<std::string>()));
+	}
+      }
+    }
+    
     // Get device-name.
     device_name = conf.at("device-name").get<std::string>();
   

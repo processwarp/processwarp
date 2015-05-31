@@ -46,6 +46,12 @@ namespace processwarp {
     };
 
     std::vector<void*>& libs; ///< ロードした外部のライブラリ
+    /**
+     * Map of API name call from and call for that can access.
+     * Key:API nam call from application.
+     * Value:API name call for OS.
+     */
+    std::map<std::string, std::string> lib_filter;
     IntrinsicFuncs intrinsic_funcs; //< VM組み込み関数一覧
     IntrinsicAddrs intrinsic_addrs; //< VM組み込みアドレス一覧(他VMにコピーしない)
     CallsAtExit calls_at_exit; //< 終了処理時に呼び出す関数一覧
@@ -62,10 +68,12 @@ namespace processwarp {
     vm_uint_t warp_call_count;
     
     /**
-     * コンストラクタ。
-     * @param _libs 外部ライブラリ一覧
+     * Constructor.
+     * @param libs List of external libraries.
+     * @param lib_filter Map of API name call from and call for.
      */
-    VMachine(std::vector<void*>& _libs);
+    VMachine(std::vector<void*>& libs,
+	     const std::map<std::string, std::string>& lib_filter);
 
     /**
      * 外部の関数を呼び出す。

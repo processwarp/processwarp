@@ -61,6 +61,8 @@ class WebfrontDelegate : public ControllerDelegate {
 
 /** Empty libraries because don't use dlsym on Emscripten. */
 static std::vector<void*> LIBS;
+static std::map<std::string, std::string> lib_filter;
+
 /** Instance of delegate. */
 WebfrontDelegate delegate;
 /** Instance of controller. */
@@ -69,6 +71,16 @@ Controller controller(delegate);
 /** Main loop for Emscripten. */
 static void ems_loop() {
   controller.loop();
+}
+
+void init_lib_filter() {
+  static const char* API_NAME_PAIR[][2] = {
+    {"printf", "printf"}
+  };
+
+  for (unsigned int i = 0; i < sizeof(API_NAME_PAIR) / sizeof(API_NAME_PAIR[0]); i ++) {
+    lib_filter.insert(std::make_pair(API_NAME_PAIR[i][0], API_NAME_PAIR[i][1]));
+  }
 }
 
 bool recv_warp_data(const std::string& pid, const std::string& tid, const std::string& data) {
@@ -80,7 +92,7 @@ void set_device_id(std::string device_id) {
 }
 
 void create_process(std::string pid) {
-  controller.create_process(pid, LIBS);
+  controller.create_process(pid, LIBS, lib_filter);
 }
 
 void delete_process(std::string pid) {
@@ -101,6 +113,7 @@ void warp_process(std::string pid, std::string device_id) {
  * @return return code.
  */
 int main() {
+  init_lib_filter();
   // set main loop for Emscripten
   emscripten_set_main_loop(ems_loop, 0, true);
   

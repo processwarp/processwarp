@@ -149,9 +149,11 @@ inline TypeStore& get_type(instruction_t code, OperandParam& param) {
   return param.vmemory.get_type(addr);
 }
 
-// コンストラクタ。
-VMachine::VMachine(std::vector<void*>& _libs) :
+// Constructor.
+VMachine::VMachine(std::vector<void*>& _libs,
+		   const std::map<std::string, std::string>& _lib_filter) :
   libs(_libs),
+  lib_filter(_lib_filter),
   status(SETUP) {
 }
 
@@ -1131,14 +1133,19 @@ void VMachine::exit() {
 // ライブラリなど、外部の関数へのポインタを取得する。
 external_func_t VMachine::get_external_func(const Symbols::Symbol& name) {
   print_debug("get external func:%s\n", name.str().c_str());
+  if (lib_filter.find(name.str()) == lib_filter.end()) {
+    throw_error_message(Error::SYM_NOT_FOUND, name.str());
+  }
+  const char* sym_char = lib_filter.at(name.str()).c_str();
+  
 #ifndef EMSCRIPTEN
   char* error;
   // Search function that have the same name by dlsym.
-  void* sym = dlsym(RTLD_DEFAULT, name.str().c_str());
+  void* sym = dlsym(RTLD_DEFAULT, sym_char);
   if ((error = dlerror()) != nullptr) {
     sym = nullptr;
     for (auto it : libs) {
-      sym = dlsym(it, name.str().c_str());
+      sym = dlsym(it, sym_char);
       if ((error = dlerror()) == nullptr) {
 	break;
       } else {

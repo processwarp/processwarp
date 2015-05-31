@@ -130,9 +130,11 @@ bool Controller::recv_warp_data(const std::string& pid,
 
 // Create empty process.
 void Controller::create_process(const std::string& pid,
-				std::vector<void*> libs) {
+				std::vector<void*> libs,
+				const std::map<std::string, std::string>& lib_filter) {
   assert(procs.find(pid) == procs.end());
-  procs.insert(std::make_pair(pid, std::shared_ptr<VMachine>(new VMachine(libs))));
+  procs.insert(std::make_pair(pid, std::shared_ptr<VMachine>
+			      (new VMachine(libs, lib_filter))));
   procs.at(pid)->setup();
 }
 

@@ -86,10 +86,12 @@ namespace processwarp {
     /**
      * Create empty process.
      * @param pid New process's pid.
-     * @param lib Libraries link to process.
+     * @param libs List of external libraries.
+     * @param lib_filter Map of API name call from and call for.
      */
     void create_process(const std::string& pid,
-			std::vector<void*> libs);
+			std::vector<void*> libs,
+			const std::map<std::string, std::string>& lib_filter);
 
     /**
      * Delete process.
