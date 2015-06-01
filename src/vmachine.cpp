@@ -1136,9 +1136,8 @@ external_func_t VMachine::get_external_func(const Symbols::Symbol& name) {
   if (lib_filter.find(name.str()) == lib_filter.end()) {
     throw_error_message(Error::SYM_NOT_FOUND, name.str());
   }
-  const char* sym_char = lib_filter.at(name.str()).c_str();
-  
 #ifndef EMSCRIPTEN
+  const char* sym_char = lib_filter.at(name.str()).c_str();
   char* error;
   // Search function that have the same name by dlsym.
   void* sym = dlsym(RTLD_DEFAULT, sym_char);
