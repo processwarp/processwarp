@@ -140,7 +140,6 @@ public:
   
   // Call when process was finish.
   void on_finish_proccess(const std::string& pid) override {
-    controller.delete_process(pid);
     procs.erase(pid);
 
     socket.send_sync_proc_list(procs);
