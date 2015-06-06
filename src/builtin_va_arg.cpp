@@ -1,25 +1,25 @@
 
-#include "intrinsic_va_arg.hpp"
+#include "builtin_va_arg.hpp"
 #include "vmachine.hpp"
 
 using namespace processwarp;
 
 // VMにライブラリを登録する。
-void IntrinsicVaArg::regist(VMachine& vm) {
-  vm.regist_intrinsic_func("__intrinsic_va_arg", IntrinsicVaArg::arg, 0);
-  vm.regist_intrinsic_func("llvm.va_start", IntrinsicVaArg::start, 0);
-  vm.regist_intrinsic_func("llvm.va_end", IntrinsicVaArg::end, 0);
-  vm.regist_intrinsic_func("llvm.va_copy", IntrinsicVaArg::copy, 0);
+void BuiltinVaArg::regist(VMachine& vm) {
+  vm.regist_builtin_func("__builtin_va_arg", BuiltinVaArg::arg, 0);
+  vm.regist_builtin_func("llvm.va_start", BuiltinVaArg::start, 0);
+  vm.regist_builtin_func("llvm.va_end", BuiltinVaArg::end, 0);
+  vm.regist_builtin_func("llvm.va_copy", BuiltinVaArg::copy, 0);
 }
 
-// __intrinsic_va_arg関数。
-bool IntrinsicVaArg::arg(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+// __builtin_va_arg関数。
+bool BuiltinVaArg::arg(VMachine& vm, Thread& th, BuiltinFuncParam p,
 			 vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
   // i8* arglistを取り出す。
-  vaddr_t arglist = VMachine::read_intrinsic_param_ptr(src, &seek);
+  vaddr_t arglist = VMachine::read_builtin_param_ptr(src, &seek);
   // i64 sizeof argumentを取り出す。
-  uint64_t arg_size =VMachine::read_intrinsic_param_i64(src, &seek);
+  uint64_t arg_size =VMachine::read_builtin_param_i64(src, &seek);
   
   vaddr_t va_arg = *reinterpret_cast<vaddr_t*>(vm.get_raw_addr(arglist));
   // 型情報を取得
@@ -48,13 +48,13 @@ bool IntrinsicVaArg::arg(VMachine& vm, Thread& th, IntrinsicFuncParam p,
 }
 
 // llvm.va_copy関数。
-bool IntrinsicVaArg::copy(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+bool BuiltinVaArg::copy(VMachine& vm, Thread& th, BuiltinFuncParam p,
 			  vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
   // i8* destarglistを取り出す。
-  vaddr_t destarglist = VMachine::read_intrinsic_param_ptr(src, &seek);
+  vaddr_t destarglist = VMachine::read_builtin_param_ptr(src, &seek);
   // i8* srcarglistを取り出す。
-  vaddr_t srcarglist = VMachine::read_intrinsic_param_ptr(src, &seek);
+  vaddr_t srcarglist = VMachine::read_builtin_param_ptr(src, &seek);
 
   // srcからdestへポインタでさした中身をコピーする
   *reinterpret_cast<vaddr_t*>(vm.get_raw_addr(destarglist)) =
@@ -64,18 +64,18 @@ bool IntrinsicVaArg::copy(VMachine& vm, Thread& th, IntrinsicFuncParam p,
 }
 
 // llvm.va_end関数。
-bool IntrinsicVaArg::end(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+bool BuiltinVaArg::end(VMachine& vm, Thread& th, BuiltinFuncParam p,
 			 vaddr_t dst, std::vector<uint8_t>& src) {
   // 資源の解放などは無いので、何もしなくて良い。
   return false;
 }
 
 // llvm.va_start関数。
-bool IntrinsicVaArg::start(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+bool BuiltinVaArg::start(VMachine& vm, Thread& th, BuiltinFuncParam p,
 			   vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
   // i8* arglistを取り出す
-  vaddr_t arglist = VMachine::read_intrinsic_param_ptr(src, &seek);
+  vaddr_t arglist = VMachine::read_builtin_param_ptr(src, &seek);
 
   // arglistで指定したアドレスに可変長引数の先頭アドレスを格納しておく
   *reinterpret_cast<vaddr_t*>(vm.get_raw_addr(arglist)) = th.stackinfos.back()->var_arg;

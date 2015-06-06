@@ -19,14 +19,14 @@ namespace processwarp {
   class VMachine {
   public:
     /** VM組み込み関数一覧 */
-    typedef std::map<const std::string, std::pair<intrinsic_func_t, IntrinsicFuncParam>>
-      IntrinsicFuncs;
+    typedef std::map<const std::string, std::pair<builtin_func_t, BuiltinFuncParam>>
+      BuiltinFuncs;
     /** 大域変数、関数シンボル→アドレス型 */
     typedef std::map<const Symbols::Symbol*, vaddr_t> Globals;
     /** スレッド一覧型 */
     typedef std::vector<std::unique_ptr<Thread>> Threads;
     /** VM組み込みアドレス一覧 */
-    typedef std::set<vaddr_t> IntrinsicAddrs;
+    typedef std::set<vaddr_t> BuiltinAddrs;
     /** 終了処理時に呼び出す関数一覧 */
     typedef std::stack<vaddr_t> CallsAtExit;
     /** VM実行状態一覧 */
@@ -52,8 +52,8 @@ namespace processwarp {
      * Value:API name call for OS.
      */
     std::map<std::string, std::string> lib_filter;
-    IntrinsicFuncs intrinsic_funcs; //< VM組み込み関数一覧
-    IntrinsicAddrs intrinsic_addrs; //< VM組み込みアドレス一覧(他VMにコピーしない)
+    BuiltinFuncs builtin_funcs; //< VM組み込み関数一覧
+    BuiltinAddrs builtin_addrs; //< VM組み込みアドレス一覧(他VMにコピーしない)
     CallsAtExit calls_at_exit; //< 終了処理時に呼び出す関数一覧
     Globals globals;    ///< 大域変数、関数シンボル→アドレス
     Status  status;     ///< VM実行状態
@@ -242,7 +242,7 @@ namespace processwarp {
      * @param seek seek位置。
      * @return 読みだした値。
      */
-    static vaddr_t read_intrinsic_param_ptr(const std::vector<uint8_t>& src, int* seek);
+    static vaddr_t read_builtin_param_ptr(const std::vector<uint8_t>& src, int* seek);
 
     /**
      * 組み込み関数用に引数を取り出す(int8_t)。
@@ -251,7 +251,7 @@ namespace processwarp {
      * @param seek seek位置。
      * @return 読みだした値。
      */
-    static uint8_t  read_intrinsic_param_i8 (const std::vector<uint8_t>& src, int* seek);
+    static uint8_t  read_builtin_param_i8 (const std::vector<uint8_t>& src, int* seek);
     
     /**
      * 組み込み関数用に引数を取り出す(int16_t)。
@@ -260,7 +260,7 @@ namespace processwarp {
      * @param seek seek位置。
      * @return 読みだした値。
      */
-    static uint16_t read_intrinsic_param_i16(const std::vector<uint8_t>& src, int* seek);
+    static uint16_t read_builtin_param_i16(const std::vector<uint8_t>& src, int* seek);
 
     /**
      * 組み込み関数用に引数を取り出す(int32_t)。
@@ -269,7 +269,7 @@ namespace processwarp {
      * @param seek seek位置。
      * @return 読みだした値。
      */
-    static uint32_t read_intrinsic_param_i32(const std::vector<uint8_t>& src, int* seek);
+    static uint32_t read_builtin_param_i32(const std::vector<uint8_t>& src, int* seek);
 
     /**
      * 組み込み関数用に引数を取り出す(int64_t)。
@@ -278,7 +278,7 @@ namespace processwarp {
      * @param seek seek位置。
      * @return 読みだした値。
      */
-    static uint64_t read_intrinsic_param_i64(const std::vector<uint8_t>& src, int* seek);
+    static uint64_t read_builtin_param_i64(const std::vector<uint8_t>& src, int* seek);
 
     /**
      * 組み込み関数をVMに登録する。
@@ -286,8 +286,8 @@ namespace processwarp {
      * @param func 組み込み関数へのポインタ。
      * @param i64 組み込み関数へ渡す固定パラメタ。
      */
-    void regist_intrinsic_func(const std::string& name,
-			       intrinsic_func_t func, int i64);
+    void regist_builtin_func(const std::string& name,
+			       builtin_func_t func, int i64);
 
     /**
      * 組み込み関数をVMに登録する。
@@ -295,8 +295,8 @@ namespace processwarp {
      * @param func 組み込み関数へのポインタ。
      * @param i64 組み込み関数へ渡す固定パラメタ。
      */
-    void regist_intrinsic_func(const std::string& name,
-			       intrinsic_func_t func, void* ptr);
+    void regist_builtin_func(const std::string& name,
+			       builtin_func_t func, void* ptr);
 
     /**
      * StackInfoのキャッシュを解決し、実行前の状態にする。

@@ -358,7 +358,7 @@ void Convert::import_func(vaddr_t addr, const picojson::object& src) {
     vm.deploy_function_normal(name, ret_type, arg_num, is_var_arg, prop, addr);
   } break;
 
-  case FuncType::FC_INTRINSIC: {
+  case FuncType::FC_BUILTIN: {
     vm.deploy_function(name, ret_type, arg_num, is_var_arg, addr);
   } break;
 

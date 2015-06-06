@@ -187,8 +187,8 @@ FuncStore& VMemory::alloc_func(const Symbols::Symbol& name,
 			       vaddr_t ret_type,
 			       unsigned int arg_num,
 			       bool is_var_arg,
-			       const intrinsic_func_t intrinsic,
-			       const IntrinsicFuncParam param,
+			       const builtin_func_t builtin,
+			       const BuiltinFuncParam param,
 			       vaddr_t addr) {
   print_debug("alloc_func(I) name:%s, addr:%016" PRIx64 ", param:%016" PRIx64 "\n",
 	      name.str().c_str(), addr, param.i64);
@@ -200,7 +200,7 @@ FuncStore& VMemory::alloc_func(const Symbols::Symbol& name,
 
   return func_store_map.insert
     (std::make_pair(addr, FuncStore
-		    (addr, name, ret_type, arg_num, is_var_arg, intrinsic, param))).first->second;
+		    (addr, name, ret_type, arg_num, is_var_arg, builtin, param))).first->second;
 }
 
 // メモリ空間に新しい外部関数領域を確保する。

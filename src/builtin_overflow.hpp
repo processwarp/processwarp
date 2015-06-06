@@ -3,7 +3,7 @@
 #include "definitions.hpp"
 
 namespace processwarp {
-  class IntrinsicOverflow {
+  class BuiltinOverflow {
   public:
     /**
      * VMにライブラリを登録する。
@@ -20,7 +20,7 @@ namespace processwarp {
      * T 計算結果
      * i1 overflowを検出した場合1が設定される
      */
-    static bool sadd(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+    static bool sadd(VMachine& vm, Thread& th, BuiltinFuncParam p,
 		     vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
@@ -32,7 +32,7 @@ namespace processwarp {
      * T 計算結果
      * i1 overflowを検出した場合1が設定される
      */
-    static bool smul(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+    static bool smul(VMachine& vm, Thread& th, BuiltinFuncParam p,
 		     vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
@@ -44,7 +44,7 @@ namespace processwarp {
      * T 計算結果
      * i1 overflowを検出した場合1が設定される
      */
-    static bool ssub(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+    static bool ssub(VMachine& vm, Thread& th, BuiltinFuncParam p,
 		     vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
@@ -56,7 +56,7 @@ namespace processwarp {
      * T 計算結果
      * i1 overflowを検出した場合1が設定される
      */
-    static bool uadd(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+    static bool uadd(VMachine& vm, Thread& th, BuiltinFuncParam p,
 		     vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
@@ -68,7 +68,7 @@ namespace processwarp {
      * T 計算結果
      * i1 overflowを検出した場合1が設定される
      */
-    static bool umul(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+    static bool umul(VMachine& vm, Thread& th, BuiltinFuncParam p,
 		     vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
@@ -80,7 +80,7 @@ namespace processwarp {
      * T 計算結果
      * i1 overflowを検出した場合1が設定される
      */
-    static bool usub(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+    static bool usub(VMachine& vm, Thread& th, BuiltinFuncParam p,
 		     vaddr_t dst, std::vector<uint8_t>& src);
   };
 }

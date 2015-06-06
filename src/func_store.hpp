@@ -39,9 +39,9 @@ namespace processwarp {
     
     // VM組み込み関数で利用するメンバ
     /// VM組み込み関数のポインタ
-    const intrinsic_func_t intrinsic;
+    const builtin_func_t builtin;
     /// 組み込み関数に渡す固定パラメータ
-    const IntrinsicFuncParam intrinsic_param;
+    const BuiltinFuncParam builtin_param;
 
     // ライブラリなど外部の関数の場合利用するメンバ
     /// ライブラリなど外部の関数のポインタ
@@ -70,16 +70,16 @@ namespace processwarp {
      * @param ret_type_ 戻り値の型
      * @param arg_num_ 引数の数
      * @param is_var_arg_ 可変長引数かどうか
-     * @param intrinsic_ VM組み込み関数へのポインタ
-     * @param intrinsic_param_ VM組み込み関数へ渡す固定パラメタ
+     * @param builtin_ VM組み込み関数へのポインタ
+     * @param builtin_param_ VM組み込み関数へ渡す固定パラメタ
      */
     FuncStore(vaddr_t addr_,
 	      const Symbols::Symbol& name_,
 	      vaddr_t ret_type_,
 	      unsigned int arg_num_,
 	      bool is_var_arg_,
-	      const intrinsic_func_t intrinsic_,
-	      const IntrinsicFuncParam intrinsic_param_);
+	      const builtin_func_t builtin_,
+	      const BuiltinFuncParam builtin_param_);
 
     /**
      * 外部の関数のコンストラクタ。

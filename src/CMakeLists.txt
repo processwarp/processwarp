@@ -77,14 +77,14 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     data_store.cpp
     error.cpp
     func_store.cpp
-    intrinsic_bit.cpp
-    intrinsic_glfw3.cpp
-    intrinsic_libc.cpp
-    intrinsic_memory.cpp
-    intrinsic_overflow.cpp
-    intrinsic_posix.cpp
-    intrinsic_va_arg.cpp
-    intrinsic_warp.cpp
+    builtin_bit.cpp
+    builtin_glfw3.cpp
+    builtin_libc.cpp
+    builtin_memory.cpp
+    builtin_overflow.cpp
+    builtin_posix.cpp
+    builtin_va_arg.cpp
+    builtin_warp.cpp
     llvm_asm_loader.cpp
     main_core.cpp
     socketio.cpp
@@ -107,14 +107,14 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     data_store.cpp
     error.cpp
     func_store.cpp
-    intrinsic_bit.cpp
-    intrinsic_glfw3.cpp
-    intrinsic_libc.cpp
-    intrinsic_memory.cpp
-    intrinsic_overflow.cpp
-    intrinsic_posix.cpp
-    intrinsic_va_arg.cpp
-    intrinsic_warp.cpp
+    builtin_bit.cpp
+    builtin_glfw3.cpp
+    builtin_libc.cpp
+    builtin_memory.cpp
+    builtin_overflow.cpp
+    builtin_posix.cpp
+    builtin_va_arg.cpp
+    builtin_warp.cpp
     llvm_asm_loader.cpp
     main_loader.cpp
     stackinfo.cpp
@@ -137,14 +137,14 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     data_store.cpp
     error.cpp
     func_store.cpp
-    intrinsic_bit.cpp
-    intrinsic_glfw3.cpp
-    intrinsic_libc.cpp
-    intrinsic_memory.cpp
-    intrinsic_overflow.cpp
-    intrinsic_posix.cpp
-    intrinsic_va_arg.cpp
-    intrinsic_warp.cpp
+    builtin_bit.cpp
+    builtin_glfw3.cpp
+    builtin_libc.cpp
+    builtin_memory.cpp
+    builtin_overflow.cpp
+    builtin_posix.cpp
+    builtin_va_arg.cpp
+    builtin_warp.cpp
     main_webfront.cpp
     stackinfo.cpp
     symbols.cpp

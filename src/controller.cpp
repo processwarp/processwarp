@@ -178,7 +178,7 @@ void Controller::do_warp_process(std::string pid) {
     // Don't export null instance.
     if (it == VADDR_NULL || it == VADDR_NON) continue;
     // Don't export build in instance.
-    if (vm.intrinsic_addrs.find(it) != vm.intrinsic_addrs.end()) continue;
+    if (vm.builtin_addrs.find(it) != vm.builtin_addrs.end()) continue;
     
     dump.insert(std::make_pair(Util::vaddr2str(it), convert.export_store(it, related)));
     // Free allocated data.

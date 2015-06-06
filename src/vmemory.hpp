@@ -79,7 +79,7 @@ namespace processwarp {
      * @param ret_type 戻り値の型。
      * @param arg_num 引数の数
      * @param is_var_arg 可変長引数かどうか
-     * @param intrinsic VM組み込み関数へのポインタ。
+     * @param builtin VM組み込み関数へのポインタ。
      * @param param 組み込み関数へ渡す固定パラメタ。
      * @param addr 確保先仮想アドレス。VADDR_NONを指定すると空いているアドレスを割り当てる。
      * @return 確保したアドレスと領域。
@@ -88,8 +88,8 @@ namespace processwarp {
 			  vaddr_t ret_type,
 			  unsigned int arg_num,
 			  bool is_var_arg,
-			  const intrinsic_func_t intrinsic, 
-			  const IntrinsicFuncParam param,
+			  const builtin_func_t builtin, 
+			  const BuiltinFuncParam param,
 			  vaddr_t addr = VADDR_NON);
 
     /**

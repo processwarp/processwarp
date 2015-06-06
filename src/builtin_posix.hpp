@@ -6,7 +6,7 @@ namespace processwarp {
   /**
    * POSIXライブラリのうち、LLVM組み込みとして用意するもの。
    */
-  class IntrinsicPosix {
+  class BuiltinPosix {
   public:
     /**
      * __assert_fail(assertの内部実装)関数。
@@ -16,7 +16,7 @@ namespace processwarp {
      * i32 line
      * vaddr_t(const) function
      */
-    static bool __assert_fail(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+    static bool __assert_fail(VMachine& vm, Thread& th, BuiltinFuncParam p,
 			      vaddr_t dst, std::vector<uint8_t>& src);
 
     /**

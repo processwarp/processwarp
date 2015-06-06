@@ -71,7 +71,7 @@ int main(int argc, char* argv[]) {
 	// NULLはexportしない
 	if (*it == VADDR_NULL || *it == VADDR_NON) continue;
 	// VM組み込みのアドレスはexportしない
-	if (vm.intrinsic_addrs.find(*it) != vm.intrinsic_addrs.end()) continue;
+	if (vm.builtin_addrs.find(*it) != vm.builtin_addrs.end()) continue;
 	
 	dump.insert(std::make_pair(Util::vaddr2str(*it), convert.export_store(*it, related)));
       }

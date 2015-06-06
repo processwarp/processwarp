@@ -4,7 +4,7 @@
 using namespace processwarp;
 
 static const FuncStore::NormalProp DUMMY_PROP = {};
-static const IntrinsicFuncParam DUMMY_INTRINSIC_PARAM = {.ptr = nullptr};
+static const BuiltinFuncParam DUMMY_BUILTIN_PARAM = {.ptr = nullptr};
 
 // 通常の関数のコンストラクタ。
 FuncStore::FuncStore(vaddr_t addr_,
@@ -20,8 +20,8 @@ FuncStore::FuncStore(vaddr_t addr_,
   arg_num(arg_num_),
   is_var_arg(is_var_arg_),
   normal_prop(normal_prop_),
-  intrinsic(nullptr),
-  intrinsic_param(DUMMY_INTRINSIC_PARAM),
+  builtin(nullptr),
+  builtin_param(DUMMY_BUILTIN_PARAM),
   external(nullptr)
 {
 }
@@ -32,17 +32,17 @@ FuncStore::FuncStore(vaddr_t addr_,
 		     vaddr_t ret_type_,
 		     unsigned int arg_num_,
 		     bool is_var_arg_,
-		     const intrinsic_func_t intrinsic_,
-		     const IntrinsicFuncParam intrinsic_param_) :
+		     const builtin_func_t builtin_,
+		     const BuiltinFuncParam builtin_param_) :
   addr(addr_),
-  type(FC_INTRINSIC),
+  type(FC_BUILTIN),
   name(name_),
   ret_type(ret_type_),
   arg_num(arg_num_),
   is_var_arg(is_var_arg_),
   normal_prop(DUMMY_PROP),
-  intrinsic(intrinsic_),
-  intrinsic_param(intrinsic_param_),
+  builtin(builtin_),
+  builtin_param(builtin_param_),
   external(nullptr)
 {
 }
@@ -60,8 +60,8 @@ FuncStore::FuncStore(vaddr_t addr_,
   arg_num(arg_num_),
   is_var_arg(is_var_arg_),
   normal_prop(DUMMY_PROP),
-  intrinsic(nullptr),
-  intrinsic_param(DUMMY_INTRINSIC_PARAM),
+  builtin(nullptr),
+  builtin_param(DUMMY_BUILTIN_PARAM),
   external(nullptr)
 {
 }

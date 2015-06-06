@@ -3,7 +3,7 @@
 #include "definitions.hpp"
 
 namespace processwarp {
-  class IntrinsicVaArg {
+  class BuiltinVaArg {
   public:
     /**
      * VMにライブラリを登録する。
@@ -12,14 +12,14 @@ namespace processwarp {
     static void regist(VMachine& vm);
 
     /**
-     * __intrinsic_va_arg関数。
+     * __builtin_va_arg関数。
      * srcから取り出すパラメタは以下のとおり。
      * i8* arglist
      * i64 sizeof argument
      * 戻り値は以下のとおり
      * void* 取り出した値へのポインタ
      */
-    static bool arg(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+    static bool arg(VMachine& vm, Thread& th, BuiltinFuncParam p,
 		    vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
@@ -28,7 +28,7 @@ namespace processwarp {
      * i8* destarglist
      * i8* srcarglist
      */
-    static bool copy(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+    static bool copy(VMachine& vm, Thread& th, BuiltinFuncParam p,
 		     vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
@@ -36,7 +36,7 @@ namespace processwarp {
      * srcから取り出すパラメタは以下のとおり。
      * i8* arglist
      */
-    static bool end(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+    static bool end(VMachine& vm, Thread& th, BuiltinFuncParam p,
 		    vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
@@ -44,7 +44,7 @@ namespace processwarp {
      * srcから取り出すパラメタは以下のとおり。
      * i8* arglist
      */
-    static bool start(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+    static bool start(VMachine& vm, Thread& th, BuiltinFuncParam p,
 		      vaddr_t dst, std::vector<uint8_t>& src);
   };
 }

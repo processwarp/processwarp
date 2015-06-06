@@ -6,7 +6,7 @@ namespace processwarp {
   /**
    * Functions for wrap GLFW3
    */
-  class IntrinsicGlfw3 {
+  class BuiltinGlfw3 {
   public:
     /**
      * This function creates a window and its associated OpenGL or OpenGL ES context.
@@ -19,7 +19,7 @@ namespace processwarp {
      * return into dst;
      * vaddr_t
      */
-    static bool createWindow(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+    static bool createWindow(VMachine& vm, Thread& th, BuiltinFuncParam p,
 				 vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
@@ -27,7 +27,7 @@ namespace processwarp {
      * paramter from src;
      * vaddr_t window
      */
-    static bool destroyWindow(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+    static bool destroyWindow(VMachine& vm, Thread& th, BuiltinFuncParam p,
 				  vaddr_t dst, std::vector<uint8_t>& src);
 
     /**

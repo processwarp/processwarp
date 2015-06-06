@@ -21,14 +21,14 @@
 #include "error.hpp"
 #include "func_store.hpp"
 #include "instruction.hpp"
-#include "intrinsic_bit.hpp"
-#include "intrinsic_glfw3.hpp"
-#include "intrinsic_libc.hpp"
-#include "intrinsic_memory.hpp"
-#include "intrinsic_overflow.hpp"
-#include "intrinsic_posix.hpp"
-#include "intrinsic_va_arg.hpp"
-#include "intrinsic_warp.hpp"
+#include "builtin_bit.hpp"
+#include "builtin_glfw3.hpp"
+#include "builtin_libc.hpp"
+#include "builtin_memory.hpp"
+#include "builtin_overflow.hpp"
+#include "builtin_posix.hpp"
+#include "builtin_va_arg.hpp"
+#include "builtin_warp.hpp"
 #include "stackinfo.hpp"
 #include "type_based.hpp"
 #include "util.hpp"
@@ -332,10 +332,10 @@ void VMachine::execute(int max_clock) {
 	  thread.stackinfos.push_back(std::unique_ptr<StackInfo>(new_stackinfo.release()));
 	  goto re_entry;
 	  
-	} else if (new_func.type == FuncType::FC_INTRINSIC) {
+	} else if (new_func.type == FuncType::FC_BUILTIN) {
 	  // VM組み込み関数の呼び出し
-	  assert(new_func.intrinsic != nullptr);
-	  if (new_func.intrinsic(*this, thread, new_func.intrinsic_param, stackinfo.output, work)) {
+	  assert(new_func.builtin != nullptr);
+	  if (new_func.builtin(*this, thread, new_func.builtin_param, stackinfo.output, work)) {
 	    goto re_entry;
 	  }
 
@@ -988,11 +988,11 @@ void VMachine::call_setup_voidfunc(Thread& thread, vaddr_t func_addr) {
   if (func.type == FuncType::FC_NORMAL) {
     thread.stackinfos.push_back(std::unique_ptr<StackInfo>(stackinfo.release()));
     
-  } else if (func.type == FuncType::FC_INTRINSIC) {
+  } else if (func.type == FuncType::FC_BUILTIN) {
     // VM組み込み関数の呼び出し
-    assert(func.intrinsic != nullptr);
+    assert(func.builtin != nullptr);
     std::vector<uint8_t> work;
-    func.intrinsic(*this, thread, func.intrinsic_param, VADDR_NON, work);
+    func.builtin(*this, thread, func.builtin_param, VADDR_NON, work);
     
   } else {
     if (func.external == nullptr) {
@@ -1086,8 +1086,8 @@ void VMachine::deploy_function(const std::string& name,
 			       unsigned int arg_num,
 			       bool is_var_arg,
 			       vaddr_t addr) {
-  auto ifunc = intrinsic_funcs.find(name);
-  if (ifunc == intrinsic_funcs.end()) {
+  auto ifunc = builtin_funcs.find(name);
+  if (ifunc == builtin_funcs.end()) {
     // 組み込み関数に名前がなかった場合、ライブラリ関数として展開。
     vmemory.alloc_func(symbols.get(name), ret_type, arg_num, is_var_arg, addr);
 
@@ -1203,7 +1203,7 @@ TypeBased* VMachine::get_type_based(vaddr_t type) {
  * @param type C++での実際の型
  * @param basic_type VM内の型
  */
-#define M_READ_INTRINSIC_PARAM(name, type, basic_type)			\
+#define M_READ_BUILTIN_PARAM(name, type, basic_type)			\
   type VMachine::name(const std::vector<uint8_t>& src, int* seek) {	\
     /* 境界チェック */							\
     if (*seek + sizeof(vaddr_t) + sizeof(type) > src.size())		\
@@ -1217,29 +1217,29 @@ TypeBased* VMachine::get_type_based(vaddr_t type) {
     return *reinterpret_cast<const vaddr_t*>(src.data() + tmp_seek);	\
   }
 
-M_READ_INTRINSIC_PARAM(read_intrinsic_param_ptr, vaddr_t, TY_POINTER);
-M_READ_INTRINSIC_PARAM(read_intrinsic_param_i8,  uint8_t,  TY_UI8);
-M_READ_INTRINSIC_PARAM(read_intrinsic_param_i16, uint16_t, TY_UI16);
-M_READ_INTRINSIC_PARAM(read_intrinsic_param_i32, uint32_t, TY_UI32);
-M_READ_INTRINSIC_PARAM(read_intrinsic_param_i64, uint64_t, TY_UI64);
+M_READ_BUILTIN_PARAM(read_builtin_param_ptr, vaddr_t, TY_POINTER);
+M_READ_BUILTIN_PARAM(read_builtin_param_i8,  uint8_t,  TY_UI8);
+M_READ_BUILTIN_PARAM(read_builtin_param_i16, uint16_t, TY_UI16);
+M_READ_BUILTIN_PARAM(read_builtin_param_i32, uint32_t, TY_UI32);
+M_READ_BUILTIN_PARAM(read_builtin_param_i64, uint64_t, TY_UI64);
 
-#undef M_READ_INTRINSIC_PARAM
+#undef M_READ_BUILTIN_PARAM
 
 // 組み込み関数をVMに登録する。
-void VMachine::regist_intrinsic_func(const std::string& name,
-				     intrinsic_func_t func, int i64) {
-  IntrinsicFuncParam param;
+void VMachine::regist_builtin_func(const std::string& name,
+				     builtin_func_t func, int i64) {
+  BuiltinFuncParam param;
   param.i64 = i64;
-  intrinsic_funcs.insert
+  builtin_funcs.insert
     (std::make_pair(name, std::make_pair(func, param)));
 }
 
 // 組み込み関数をVMに登録する。
-void VMachine::regist_intrinsic_func(const std::string& name,
-				     intrinsic_func_t func, void* ptr) {
-  IntrinsicFuncParam param;
+void VMachine::regist_builtin_func(const std::string& name,
+				     builtin_func_t func, void* ptr) {
+  BuiltinFuncParam param;
   param.ptr = ptr;
-  intrinsic_funcs.insert
+  builtin_funcs.insert
     (std::make_pair(name, std::make_pair(func, param)));
 }
 
@@ -1413,7 +1413,7 @@ void VMachine::setup() {
 
 #define M_ALLOC_BASIC_TYPE(s, a, t)		\
   vmemory.alloc_type_basic((s), (a), (t));	\
-  intrinsic_addrs.insert(t)
+  builtin_addrs.insert(t)
 
   // 基本型を登録
   M_ALLOC_BASIC_TYPE(0,  0,  BasicType::TY_VOID);
@@ -1445,14 +1445,14 @@ void VMachine::setup() {
   last_free_native_ptr = AddrType::AD_PTR + 1;
 
   // VMの組み込み関数をロード
-  IntrinsicBit::regist(*this);
-  IntrinsicGlfw3::regist(*this);
-  IntrinsicLibc::regist(*this);
-  IntrinsicMemory::regist(*this);
-  IntrinsicOverflow::regist(*this);
-  IntrinsicPosix::regist(*this);
-  IntrinsicVaArg::regist(*this);
-  IntrinsicWarp::regist(*this);
+  BuiltinBit::regist(*this);
+  BuiltinGlfw3::regist(*this);
+  BuiltinLibc::regist(*this);
+  BuiltinMemory::regist(*this);
+  BuiltinOverflow::regist(*this);
+  BuiltinPosix::regist(*this);
+  BuiltinVaArg::regist(*this);
+  BuiltinWarp::regist(*this);
 
   print_debug("finis setup.\n");
 }

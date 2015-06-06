@@ -22,7 +22,7 @@ namespace processwarp {
   /**
    * VM組み込み関数に渡すパラメタ。
    */
-  union IntrinsicFuncParam {
+  union BuiltinFuncParam {
     void* ptr;
     int64_t i64;
   };
@@ -36,7 +36,7 @@ namespace processwarp {
    * @param src 呼び出しパラメタ格納先。
    * @return スタック構造などを書き換え、execの再実行が必要な場合trueを戻す。
    */
-  typedef bool (*intrinsic_func_t)(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+  typedef bool (*builtin_func_t)(VMachine& vm, Thread& th, BuiltinFuncParam p,
 				   vaddr_t dst, std::vector<uint8_t>& src);
 
   /** システム中で扱う最長のuint */
@@ -97,7 +97,7 @@ namespace processwarp {
   /** 関数のタイプ */
   enum FuncType : uint8_t {
     FC_NORMAL       = 0x01, ///< 通常の関数(VMで解釈、実行する)
-    FC_INTRINSIC    = 0x02, ///< VM組み込み関数
+    FC_BUILTIN    = 0x02, ///< VM組み込み関数
     FC_EXTERNAL     = 0x03, ///< ライブラリなど外部の関数
   };
 

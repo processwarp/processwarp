@@ -1441,8 +1441,8 @@ void LlvmAsmLoader::load_module(llvm::Module* module) {
 	print_debug("\tk:\t%016" PRIx64 "\n", prop.k);
 	print_debug("\tret_type\t%016" PRIx64 "\n", func.ret_type);
 
-      } else if (func.type == FuncType::FC_INTRINSIC) {
-	print_debug("func(intrinsic):\t%016" PRIx64 "\n", addr);
+      } else if (func.type == FuncType::FC_BUILTIN) {
+	print_debug("func(builtin):\t%016" PRIx64 "\n", addr);
 	print_debug("\tname:\t%s\n", func.name.str().c_str());
 
       } else { // FC_EXTERNAL

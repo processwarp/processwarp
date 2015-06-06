@@ -6,7 +6,7 @@ namespace processwarp {
   /**
    * メモリ利用マーク関連のLLVM組み込み関数。
    */
-  class IntrinsicMemory {
+  class BuiltinMemory {
   public:
     /**
      * llvm.lifetime.start関数。
@@ -15,7 +15,7 @@ namespace processwarp {
      * i64 サイズ
      * i8* ポインタ
      */
-    static bool lifetime_start(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+    static bool lifetime_start(VMachine& vm, Thread& th, BuiltinFuncParam p,
 			       vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
@@ -25,7 +25,7 @@ namespace processwarp {
      * i64 サイズ
      * i8* ポインタ
      */
-    static bool lifetime_end(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+    static bool lifetime_end(VMachine& vm, Thread& th, BuiltinFuncParam p,
 			     vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
@@ -35,7 +35,7 @@ namespace processwarp {
      * i64 サイズ
      * i8* ポインタ
      */
-    static bool invariant_start(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+    static bool invariant_start(VMachine& vm, Thread& th, BuiltinFuncParam p,
 				vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
@@ -45,7 +45,7 @@ namespace processwarp {
      * i64 サイズ
      * i8* ポインタ
      */
-    static bool invariant_end(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+    static bool invariant_end(VMachine& vm, Thread& th, BuiltinFuncParam p,
 			      vaddr_t dst, std::vector<uint8_t>& src);
 
     /**

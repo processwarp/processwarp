@@ -6,14 +6,14 @@ namespace processwarp {
   /**
    *
    */
-  class IntrinsicBit {
+  class BuiltinBit {
   public:
     /**
      * byte-swap関数。
      * srcから取り出すパラメタは以下のとおり。
      * T 変換元の数値。
      */
-    static bool bswap(VMachine& vm, Thread& th, IntrinsicFuncParam p,
+    static bool bswap(VMachine& vm, Thread& th, BuiltinFuncParam p,
 		      vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
