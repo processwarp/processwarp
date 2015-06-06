@@ -1,0 +1,16 @@
+{
+    "server":  "https://prev.processwarp.org/",
+    "account": "<your account>",
+    "password":"<your password>,
+    "device-name": "<device name>",
+
+    "libs":[
+	"<full path to library for ffi>"
+    ],
+
+    "lib-filter":[
+	"<full path to library name filter file (libfilter_darwin.json)>"
+    ],
+
+    "apps":[]
+}
