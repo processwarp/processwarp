@@ -45,28 +45,30 @@ Controller::Controller(ControllerDelegate& _delegate) :
 // Main loop.
 void Controller::loop() {
   std::string pid;
+  VMachine* vm;
+
   try {
     auto it = procs.begin();
     while (it != procs.end()) {
       pid = it->first;
-      VMachine& vm = *it->second;
+      vm  = it->second.get();
 
-      if (vm.status == VMachine::ACTIVE ||
-	  vm.status == VMachine::WAIT_WARP ||
-	  vm.status == VMachine::BEFOR_WARP ||
-	  vm.status == VMachine::AFTER_WARP) {
+      if (vm->status == VMachine::ACTIVE ||
+	  vm->status == VMachine::WAIT_WARP ||
+	  vm->status == VMachine::BEFOR_WARP ||
+	  vm->status == VMachine::AFTER_WARP) {
 
 	delegate.on_switch_proccess(pid);
 	// Execute llvm cycle.
-	vm.execute(100);
+	vm->execute(100);
 
-      } else if (vm.status == VMachine::WARP) {
+      } else if (vm->status == VMachine::WARP) {
 	do_warp_process(pid);
 	
-      } else if (vm.status == VMachine::ERROR) {
+      } else if (vm->status == VMachine::ERROR) {
 	delegate.on_error(pid, "");
 	
-      } else if (vm.status == VMachine::FINISH) {
+      } else if (vm->status == VMachine::FINISH) {
 	delegate.on_finish_proccess(pid);
 	it = procs.erase(it);
 	continue;
@@ -76,12 +78,15 @@ void Controller::loop() {
     
   } catch (Error e) {
     delegate.on_error(pid, "");
+    vm->status = VMachine::FINISH;
     
   } catch (std::exception e) {
     delegate.on_error(pid, e.what());
+    vm->status = VMachine::FINISH;
     
   } catch (...) {
     delegate.on_error(pid, "unknown exception");
+    vm->status = VMachine::FINISH;
   }
   
   delegate.on_switch_proccess("");
