@@ -12,11 +12,14 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   add_definitions(${LLVM_DEFINITIONS})
 
   # GLFW
-  pkg_search_module(GLFW REQUIRED glfw3)
-  include_directories(${GLFW_INCLUDE_DIRS})
-  string(REPLACE ";" " " GLFW_CFLAGS_STR "${GLFW_CFLAGS}")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GLFW_CFLAGS_STR}")
-  list(APPEND extra_libs ${GLFW_LIBRARIES})
+  pkg_search_module(GLFW glfw3)
+  if(GLFW_FOUND)
+    include_directories(${GLFW_INCLUDE_DIRS})
+    string(REPLACE ";" " " GLFW_CFLAGS_STR "${GLFW_CFLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GLFW_CFLAGS_STR}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D ENABLE_GLFW3")
+    list(APPEND extra_libs ${GLFW_LIBRARIES})
+  endif()
 
   # libffi
   pkg_search_module(FFI libffi)
@@ -67,7 +70,7 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
 
 else()
   # Linux or other UNIX like system
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 endif()
 
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
@@ -78,7 +81,6 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     error.cpp
     func_store.cpp
     builtin_bit.cpp
-    builtin_glfw3.cpp
     builtin_libc.cpp
     builtin_memory.cpp
     builtin_overflow.cpp
@@ -96,6 +98,9 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     vmachine.cpp
     vmemory.cpp
     )
+if(GLFW_FOUND)
+  list(APPEND CORE_FILES builtin_glfw3.cpp)
+endif()
 
   add_executable(core ${CORE_FILES})
   target_link_libraries(core ${extra_libs})
@@ -108,7 +113,6 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     error.cpp
     func_store.cpp
     builtin_bit.cpp
-    builtin_glfw3.cpp
     builtin_libc.cpp
     builtin_memory.cpp
     builtin_overflow.cpp
@@ -125,7 +129,9 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     vmachine.cpp
     vmemory.cpp
     )
-
+  if(GLFW_FOUND)
+    list(APPEND LOADER_FILES builtin_glfw3.cpp)
+  endif()
   add_executable(loader ${LOADER_FILES})
   target_link_libraries(loader ${extra_libs})
 endif()

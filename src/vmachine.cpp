@@ -22,7 +22,9 @@
 #include "func_store.hpp"
 #include "instruction.hpp"
 #include "builtin_bit.hpp"
+#ifdef ENABLE_GLFW3
 #include "builtin_glfw3.hpp"
+#endif
 #include "builtin_libc.hpp"
 #include "builtin_memory.hpp"
 #include "builtin_overflow.hpp"
@@ -1446,7 +1448,9 @@ void VMachine::setup() {
 
   // VMの組み込み関数をロード
   BuiltinBit::regist(*this);
+#ifdef ENABLE_GLFW3
   BuiltinGlfw3::regist(*this);
+#endif
   BuiltinLibc::regist(*this);
   BuiltinMemory::regist(*this);
   BuiltinOverflow::regist(*this);
