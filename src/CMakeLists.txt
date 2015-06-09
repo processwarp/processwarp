@@ -71,10 +71,16 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --bind -s EXPORT_ALL=1")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -s DISABLE_EXCEPTION_CATCHING=0")
 
-else()
-  # Linux or other UNIX like system
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
+  # FreeBSD
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
   list(APPEND extra_libs pthread)
+
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+  # Linux
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+  list(APPEND extra_libs pthread)
+  list(APPEND extra_libs dl)
 endif()
 
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
