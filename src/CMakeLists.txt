@@ -2,14 +2,17 @@ find_package(PkgConfig)
 
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   # LLVM (http://llvm.org/docs/CMake.html)
-  find_package(LLVM REQUIRED CONFIG)
-  message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
-  message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
+  find_package(LLVM CONFIG)
+  if(LLVM_FOUND)
+    message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
+    message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
   
-  include_directories(${LLVM_INCLUDE_DIRS})
-  llvm_map_components_to_libnames(llvm_libs support core irreader)
-  list(APPEND extra_libs ${llvm_libs})
-  add_definitions(${LLVM_DEFINITIONS})
+    include_directories(${LLVM_INCLUDE_DIRS})
+    llvm_map_components_to_libnames(llvm_libs support core irreader)
+    list(APPEND extra_libs ${llvm_libs})
+    add_definitions(${LLVM_DEFINITIONS})
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D ENABLE_LLVM")
+  endif()
 
   # GLFW
   pkg_search_module(GLFW glfw3)
@@ -71,6 +74,7 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
 else()
   # Linux or other UNIX like system
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+  list(APPEND extra_libs pthread)
 endif()
 
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
@@ -87,7 +91,6 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     builtin_posix.cpp
     builtin_va_arg.cpp
     builtin_warp.cpp
-    llvm_asm_loader.cpp
     main_core.cpp
     socketio.cpp
     stackinfo.cpp
@@ -106,7 +109,7 @@ endif()
   target_link_libraries(core ${extra_libs})
 endif()
 
-if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
+if(LLVM_FOUND AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   set(LOADER_FILES
     convert.cpp
     data_store.cpp

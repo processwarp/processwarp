@@ -56,7 +56,7 @@ static const char* OPCODE_STR[] = {
   "VA_ARG",
 };
 
-#if !defined(NDEBUG) && !defined(EMSCRIPTEN)
+#if defined(ENABLE_LLVM) && !defined(NDEBUG) && !defined(EMSCRIPTEN)
 const llvm::Instruction* Util::llvm_instruction;
 #endif
 

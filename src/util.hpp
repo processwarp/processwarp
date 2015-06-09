@@ -5,8 +5,7 @@
 #include <iomanip>
 #include <iostream>
 
-#ifndef NDEBUG
-#ifndef EMSCRIPTEN
+#if defined(ENABLE_LLVM) && !defined(NDEBUG) && !defined(EMSCRIPTEN)
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Module.h>
@@ -17,7 +16,6 @@
 #include <llvm/AsmParser/Parser.h>
 #include <llvm/Support/ManagedStatic.h>
 #include <llvm/Support/SourceMgr.h>
-#endif
 #endif
 
 #include "definitions.hpp"
@@ -105,7 +103,7 @@ namespace processwarp {
 #endif // EMSCRIPTEN
 #endif // NDEBUG
 
-#if defined(NDEBUG) || defined(EMSCRIPTEN)
+#if !defined(ENABLE_LLVM) || defined(NDEBUG) || defined(EMSCRIPTEN)
 #define save_llvm_instruction(I) //
 #define print_llvm_instruction() //
 #else
