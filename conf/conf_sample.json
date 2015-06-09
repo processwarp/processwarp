@@ -1,7 +1,7 @@
 {
     "server":  "https://prev.processwarp.org/",
     "account": "<your account>",
-    "password":"<your password>,
+    "password":"<your password>",
     "device-name": "<device name>",
 
     "libs":[
