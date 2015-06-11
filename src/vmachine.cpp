@@ -1140,23 +1140,20 @@ external_func_t VMachine::get_external_func(const Symbols::Symbol& name) {
   }
 #ifndef EMSCRIPTEN
   const char* sym_char = lib_filter.at(name.str()).c_str();
-  char* error;
   // Search function that have the same name by dlsym.
   void* sym = dlsym(RTLD_DEFAULT, sym_char);
-  if ((error = dlerror()) != nullptr) {
-    sym = nullptr;
+  if (sym == nullptr) {
     for (auto it : libs) {
       sym = dlsym(it, sym_char);
-      if ((error = dlerror()) == nullptr) {
+      if (sym != nullptr) {
 	break;
-      } else {
-	sym = nullptr;
       }
     }
   }
   if (sym == nullptr) {
-    throw_error_message(Error::EXT_LIBRARY, error);
+    throw_error_message(Error::EXT_LIBRARY, dlerror());
   }
+
   external_func_t func = reinterpret_cast<external_func_t>(sym);
 
   return func;
