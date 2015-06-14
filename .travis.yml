@@ -24,3 +24,4 @@ script:
   - cmake -D SIO_DIR=$TRAVIS_BUILD_DIR/socket.io-client-cpp/build ..
   - make
   - ls -l src/core
+  - src/core --help
