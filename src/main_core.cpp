@@ -405,6 +405,17 @@ public:
   }
 };
 
+void show_usage(std::ostream& stream, const std::string& command) {
+  stream << "Usage : " << command << " [OPTION].. [-- application argument]..." << std::endl
+	 << "" << std::endl
+	 << "Options:" << std::endl
+	 << "  -c, --config FILENAME    read configurations from FILENAME." << std::endl
+	 << "  -d, --device DEVICENAME  set DEVICENAME to device name." << std::endl
+	 << "  -h, --help               display this help and exit." << std::endl
+	 << "  -l, --llvm FILENAME      read FILENAME as LLVM-IR file and execute it." << std::endl
+	 << std::endl;
+}
+
 /**
  * Entry point for NativeVM.
  * @return return code.
@@ -417,11 +428,12 @@ int main(int argc, char* argv[]) {
     {"config", required_argument, nullptr, 'c'},
     {"llvm",   required_argument, nullptr, 'l'},
     {"device", required_argument, nullptr, 'd'},
+    {"help",   no_argument,       nullptr, 'h'},
     {0, 0, 0, 0} // terminate
   };
   
   // Analyse command line option using getopt.
-  while((opt = getopt_long(argc, argv, "ac:l:d:", long_options, &option_index)) != -1) {
+  while((opt = getopt_long(argc, argv, "c:l:d:h", long_options, &option_index)) != -1) {
     switch(opt) {
     case 'c': {
       // Read configuration file.
@@ -469,9 +481,15 @@ int main(int argc, char* argv[]) {
       }
     } break;
 
+    case 'h': {
+      // Show help
+      show_usage(std::cout, argv[0]);
+      return EXIT_SUCCESS;
+    } break;
+      
     case ':':
     case '?': {
-      printf("Unknown or required argument option -%c\n", opt);
+      std:: cerr << "Unknown or required argument option -" << opt << std::endl;
       goto on_error;
     } break;
     }
@@ -500,6 +518,6 @@ int main(int argc, char* argv[]) {
   }
 
  on_error:
-  printf("Usage : COMMAND -c path [-l path [-d device] [-- ...]]\n");
+  show_usage(std::cerr, argv[0]);
   return EXIT_FAILURE;
 }
