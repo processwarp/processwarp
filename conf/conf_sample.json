@@ -9,7 +9,7 @@
     ],
 
     "lib-filter":[
-	"<full path to library name filter file (libfilter_darwin.json)>"
+	"<full path to library name filter file>"
     ],
 
     "apps":[]
