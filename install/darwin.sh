@@ -1,6 +1,7 @@
 #!/bin/sh
 
 _pwd=`pwd`
+_libfilter="libfilter_darwin.json"
 
 # check clang
 if ! type clang >/dev/null 2>&1; then
@@ -72,6 +73,6 @@ sed -i -e "s/<your account>/${account}/" ./conf.json
 sed -i -e "s/<your password>/${pass}/" ./conf.json
 sed -i -e "s/<device name>/${device}/" ./conf.json
 sed -i -e "s/\"<full path to library for ffi>\"//" ./conf.json
-sed -i -e "s:<full path to library name filter file>:${_pwd}/processwarp/conf/libfilter_darwin.json:" ./conf.json
+sed -i -e "s:<full path to library name filter file>:${_pwd}/processwarp/conf/${_libfilter}:" ./conf.json
 
 printf "finish setting PROCESS WARP\n"
