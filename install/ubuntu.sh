@@ -4,7 +4,7 @@ _pwd=`pwd`
 _libfilter="libfilter_ubuntu.json"
 
 # install requirements package
-if ! sudo apt-get install -y clang cmake git libssl-dev libboost-dev libboost-system-dev libboost-date-time-dev libboost-random-dev; then
+if ! sudo apt-get install -y clang cmake git libssl-dev libboost-dev libboost-system-dev libboost-date-time-dev libboost-random-dev libffi-dev; then
     echo "failure to install requirements packages"
     exit 1;
 fi
