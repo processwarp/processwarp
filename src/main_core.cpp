@@ -163,6 +163,9 @@ public:
 
   // Call when recv login message from server.
   void recv_login(int result) override {
+    if (result != 0) {
+      throw_error(Error::SERVER_APP);
+    }
     socket.send_list_device();
   }
 
