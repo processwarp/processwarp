@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-#include "../include/processwarp.h"
+#include "../include/processwarp/processwarp.h"
 
 namespace processwarp {
   class VMachine;
