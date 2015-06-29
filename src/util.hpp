@@ -24,25 +24,25 @@ namespace processwarp {
   class Util {
   public:
     /**
-     * 命令コードを人間に読みやすい文字列に変換する。
-     * @param code 命令コード
-     * @return 変換後文字列
+     * Convert instruction code to readable string.
+     * @param code Instruction code.
+     * @return Converted string.
      */
     static std::string code2str(instruction_t code);
 
     /**
-     * 数字を10進数表現で文字列に変換。
-     * @param v 変換元数値
-     * @return 変換後文字列
+     * Convert integer to decimal string.
+     * @param v Integer.
+     * @return Converted string.
      */
     template<class T> static std::string num2dec_str(T v) {
       return std::to_string(v);
     }
 
     /**
-     * 数字を16進数表現で文字列に変換。
-     * @param v 変換元数値
-     * @return 変換後文字列
+     * Convert integer to hex string.
+     * @param v Integer.
+     * @return Converted string.
      */
     template<class T> static std::string num2hex_str(T v) {
       std::ostringstream os;
@@ -51,31 +51,46 @@ namespace processwarp {
     }
 
     /**
-     * ポインタで指定されたアドレスに格納されている数値を文字列に変換。
-     * @param ptr 変換元数値の格納先アドレス
-     * @size 数値のサイズ
-     * @return 変換文字列
+     * Convert hex formated string to integer.
+     * @param str Hex formated string.
+     * @return Converted integer.
+     */
+    template<class T> static T hex_str2num(const std::string& str) {
+      std::istringstream is(str);
+      T v;
+      is >> std::hex >> v;
+      return v;
+    }
+
+    /**
+     * Convert integer to hex string.
+     * @param ptr Pointer to integer.
+     * @size Byte size of integer.
+     * @return Converted string.
      */
     static std::string numptr2str(void* ptr, int size);
 
     /**
-     * 文字列をアドレスに変換。
-     * @param str 変換元文字列
-     * @return 変換後アドレス
+     * Convert address string to vaddr_t.
+     * @param str address string.
+     * @return Converted address.
      */
-    static vaddr_t str2vaddr(const std::string& str);
+    static vaddr_t str2vaddr(const std::string& str) {
+      return hex_str2num<vaddr_t>(str);
+    }
 
     /**
-     * アドレスを16進数表現で文字列に変換。
-     * @param addr 変換元アドレス
-     * @return 変換後文字列
+     * Converted address vaddr_t to string.
+     * @param addr address vaddr_t.
+     * @return Converted address.
      */
-    static std::string vaddr2str(vaddr_t addr);
+    static std::string vaddr2str(vaddr_t addr) {
+      return num2hex_str<vaddr_t>(addr);
+    }
 
     /**
-     * 未実装機能を表すメソッド。
-     * 画面にメッセージを出力する。
-     * @param mesg 画面に出力するメッセージ
+     * Show alert to fix function when NDEBUG isn't defined.
+     * @param mesg Message to show.
      */
 #ifdef NDEBUG
 #define fixme(mesg) //
@@ -85,7 +100,8 @@ namespace processwarp {
     static void _fixme(long line, const char* file, std::string mesg);
 
     /**
-     * デバッグ情報出力用関数
+     * Show debug message when NEBUG isn't defined.
+     * @param mesg Message to show (format is the same to printf).
      */
 #ifdef NDEBUG
 #define print_debug(...) //

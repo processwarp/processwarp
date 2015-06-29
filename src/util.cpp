@@ -60,20 +60,20 @@ static const char* OPCODE_STR[] = {
 const llvm::Instruction* Util::llvm_instruction;
 #endif
 
-// 未実装機能を表すメソッド。
+// Show alert to fix function when NDEBUG isn't defined.
 void Util::_fixme(long line, const char* file, std::string mesg) {
     std::cerr.setf(std::ios::dec);
     std::cerr << "\x1b[31mfixme\x1b[39m [l" << line << "@" << file << "] " << mesg << std::endl;
 }
 
-// 命令コードを人間に読みやすい文字列に変換する。
+// Convert instruction code to readable string.
 std::string Util::code2str(instruction_t code) {
   std::string opcode  = OPCODE_STR[Instruction::get_opcode(code)];
   std::string operand = num2dec_str(Instruction::get_operand_value(code));
   return opcode + "\t" + operand;
 }
 
-// ポインタで指定されたアドレスに格納されている数値を文字列に変換。
+// Convert integer to hex string.
 std::string Util::numptr2str(void* ptr, int size) {
   char buf[128];
   switch(size) {
@@ -102,19 +102,4 @@ std::string Util::numptr2str(void* ptr, int size) {
 	     *reinterpret_cast<int64_t*>(ptr)); break;
   }
   return std::string(buf);
-}
-
-// 文字列をアドレスに変換。
-vaddr_t Util::str2vaddr(const std::string& str) {
-  std::istringstream is(str);
-  vaddr_t addr;
-  is >> std::hex >> addr;
-  return addr;
-}
-
-// アドレスを16進数表現で文字列に変換。
-std::string Util::vaddr2str(vaddr_t addr) {
-  std::ostringstream os;
-  os << std::hex << std::setfill('0') << std::setw(16) << std::uppercase << addr;
-  return os.str();
 }
