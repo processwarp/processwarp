@@ -78,7 +78,7 @@ int mbtowc (wchar_t *__restrict, const char *__restrict, size_t);
 int wctomb (char *, wchar_t);
 size_t mbstowcs (wchar_t *__restrict, const char *__restrict, size_t);
 size_t wcstombs (char *__restrict, const wchar_t *__restrict, size_t);
-
+*/
 #define EXIT_FAILURE 1
 #define EXIT_SUCCESS 0
 
@@ -86,7 +86,7 @@ size_t wcstombs (char *__restrict, const wchar_t *__restrict, size_t);
 
 #define RAND_MAX (0x7fffffff)
 
-
+/*
 #if defined(_POSIX_SOURCE) || defined(_POSIX_C_SOURCE) \
  || defined(_XOPEN_SOURCE) || defined(_GNU_SOURCE) \
  || defined(_BSD_SOURCE)
