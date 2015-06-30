@@ -30,5 +30,11 @@ namespace processwarp {
 
     /// 複合型に対する演算命令
     TypeComplex type_complex;
+
+    /// device-id for warp to
+    //std::string warp_to;
+    /// stack size when befor warp
+    vm_uint_t warp_stack_size;
+    vm_uint_t warp_call_count;
   };
 }

@@ -13,6 +13,24 @@
 
 namespace processwarp {
   /**
+   * Delegate for VMachine
+   */
+  class VMachineDelegate {
+  public:
+    /**
+     * Destructor for virtual.
+     */
+    virtual ~VMachineDelegate() {};
+
+    /**
+     * Call when create thread.
+     * @param vm caller vm.
+     * @return thread-id.
+     */
+    virtual vtid_t assign_tid(VMachine& vm) = 0;
+  };
+  
+  /**
    * 仮想マシンクラス。
    * 仮想マシンは１つのメモリ空間、複数のスレッド、コマンド実行から成り立つ。
    */
@@ -24,7 +42,7 @@ namespace processwarp {
     /** 大域変数、関数シンボル→アドレス型 */
     typedef std::map<const Symbols::Symbol*, vaddr_t> Globals;
     /** スレッド一覧型 */
-    typedef std::vector<std::unique_ptr<Thread>> Threads;
+    typedef std::map<vtid_t, std::unique_ptr<Thread>> Threads;
     /** VM組み込みアドレス一覧 */
     typedef std::set<vaddr_t> BuiltinAddrs;
     /** 終了処理時に呼び出す関数一覧 */
@@ -44,6 +62,9 @@ namespace processwarp {
       ERROR,   ///< エラー終了
       FINISH,  ///< 正常終了
     };
+    
+    /** Deleaget for vm. */
+    VMachineDelegate& delegate;
 
     std::vector<void*>& libs; ///< ロードした外部のライブラリ
     /**
@@ -63,16 +84,14 @@ namespace processwarp {
     std::map<vaddr_t, void*> native_ptr; ///< 仮想アドレスとネイティブポインタのペア
     vaddr_t last_free_native_ptr;
     
-    std::string warp_to; ///< id for warp to
-    vm_uint_t warp_stack_size; ///< stack size when befor warp
-    vm_uint_t warp_call_count;
-    
     /**
      * Constructor.
+     * @param delegate Delegate for vm.
      * @param libs List of external libraries.
      * @param lib_filter Map of API name call from and call for.
      */
-    VMachine(std::vector<void*>& libs,
+    VMachine(VMachineDelegate& delegate,
+	     std::vector<void*>& libs,
 	     const std::map<std::string, std::string>& lib_filter);
 
     /**
@@ -120,6 +139,8 @@ namespace processwarp {
      */
     vaddr_t create_native_ptr(void* ptr);
 
+    int create_thread();
+    
     /**
      * 配列型の型情報を作成する。
      * @param element 配列のメンバの型のアドレス
@@ -188,10 +209,11 @@ namespace processwarp {
     void destory_native_ptr(vaddr_t addr);
 
     /**
-     * VM命令を実行する。
-     * @param max_clock コンテキストスイッチまで最長クロック数
+     * Execute instructions.
+     * @param tid target thread-id.
+     * @param max_clock max instruction count for context switching.
      */
-    void execute(int max_clock);
+    void execute(vtid_t tid, int max_clock);
 
     /**
      * Change status to exit.
@@ -333,15 +355,17 @@ namespace processwarp {
     void setup();
 
     /**
-     * Setup of warp out
+     * Prepare to warp out.
+     * @param tid thread-id to warp out.
      */
-    void setup_warpout();
+    void setup_warpout(const vtid_t& tid);
 
     /**
-     * Setup of warp in
-     * @param address target client id
+     * Prepare to warp in.
+     * @param tid thread-id to warp in.
+     * @param dst Destination device-id.
      */
-    bool setup_warpin(const std::string& address);
+    bool setup_warpin(const vtid_t& tid, const dev_id_t& dst);
 
     /**
      * 仮想アドレスに対応づくネイティブポインタを変更する。

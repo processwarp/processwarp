@@ -8,17 +8,19 @@
 
 #include <sio_client.h>
 
+#include "definitions.hpp"
+
 namespace processwarp {
   /**
    * Structure using to recv/send_sync_proc_list.
    */
   struct SocketIoProc {
     // pid
-    std::string pid;
+    vpid_t pid;
     // Name of process
     std::string name;
     // Map of tid and device-id.
-    std::map<std::string, std::string> threads;
+    std::map<vtid_t, dev_id_t> threads;
   };
   
   /**
@@ -55,20 +57,20 @@ namespace processwarp {
      * @param devices Map of device-id and device-name.
      */
     virtual void recv_list_device(int result,
-				  const std::map<std::string, std::string>& devices) = 0;
+				  const std::map<dev_id_t, std::string>& devices) = 0;
 
     /**
      * Call when recv bind device message from server.
      * @param result Set 0 when succeed or else error code when error.
      * @param device_id Device id bound this device.
      */
-    virtual void recv_bind_device(int result, const std::string& device_id) = 0;
+    virtual void recv_bind_device(int result, const dev_id_t& device_id) = 0;
 
     /**
      * Call when recv sync proc list message from server.
      * @param procs Map of pid and SocketIoProc.
      */
-    virtual void recv_sync_proc_list(const std::map<std::string, SocketIoProc>& procs) = 0;
+    virtual void recv_sync_proc_list(const std::map<vpid_t, SocketIoProc>& procs) = 0;
     
     /**
      * Call when recv warp request from other device.
@@ -77,10 +79,10 @@ namespace processwarp {
      * @param dst_device_id Warp destination device-id .
      * @param to_device_id Command destination device-id .
      */
-    virtual void recv_warp_request_0(const std::string& pid,
-				     const std::string& tid,
-				     const std::string& dst_device_id,
-				     const std::string& to_device_id) = 0;
+    virtual void recv_warp_request_0(const vpid_t& pid,
+				     const vtid_t& tid,
+				     const dev_id_t& dst_device_id,
+				     const dev_id_t& to_device_id) = 0;
 
     /**
      * Call when recv warp request from device that having process.
@@ -91,12 +93,12 @@ namespace processwarp {
      * @param from_device_id Source device-id.
      * @param to_device_id Command destination device-id .
      */
-    virtual void recv_warp_request_1(const std::string& pid,
-				     const std::string& tid,
+    virtual void recv_warp_request_1(const vpid_t& pid,
+				     const vtid_t& tid,
 				     const std::string& name,
 				     const std::string& from_account,
-				     const std::string& from_device_id,
-				     const std::string& to_device_id) = 0;
+				     const dev_id_t& from_device_id,
+				     const dev_id_t& to_device_id) = 0;
 
     /**
      * Call when recv warp acception from warp destination device.
@@ -106,10 +108,10 @@ namespace processwarp {
      * @param to_device_id Command destination device-id .
      * @param result
      */
-    virtual void recv_warp_request_2(const std::string& pid,
-				     const std::string& tid,
-				     const std::string& from_device_id,
-				     const std::string& to_device_id,
+    virtual void recv_warp_request_2(const vpid_t& pid,
+				     const vtid_t& tid,
+				     const dev_id_t& from_device_id,
+				     const dev_id_t& to_device_id,
 				     int result) = 0;
 
     /**
@@ -120,10 +122,10 @@ namespace processwarp {
      * @param to_device_id Command destination device-id .
      * @param payload Binary data.
      */
-    virtual void recv_warp_data_1(const std::string& pid,
-				  const std::string& tid,
-				  const std::string& from_device_id,
-				  const std::string& to_device_id,
+    virtual void recv_warp_data_1(const vpid_t& pid,
+				  const vtid_t& tid,
+				  const dev_id_t& from_device_id,
+				  const dev_id_t& to_device_id,
 				  const std::string& payload) = 0;
 
     /**
@@ -133,16 +135,16 @@ namespace processwarp {
      * @param to_device_id Command destination device-id .
      * @param result Binary data.
      */
-    virtual void recv_warp_data_2(const std::string& pid,
-				  const std::string& tid,
-				  const std::string& to_device_id,
+    virtual void recv_warp_data_2(const vpid_t& pid,
+				  const vtid_t& tid,
+				  const dev_id_t& to_device_id,
 				  int result) = 0;
 
     /**
      * Call when process was killed.
      * @param pid Target pid.
      */
-    virtual void recv_exit_process(const std::string& pid) = 0;
+    virtual void recv_exit_process(const vpid_t& pid) = 0;
 
     /**
      * Recv console for test.
@@ -151,10 +153,10 @@ namespace processwarp {
      * @param payload output stream or text.
      * @param from_device_id Source deice-id.
      */
-    virtual void recv_test_console(const std::string& pid,
-				   const std::string& dev,
+    virtual void recv_test_console(const vpid_t& pid,
+				   const std::string& dev_name,
 				   const std::string& payload,
-				   const std::string& from_device_id) = 0;
+				   const dev_id_t& from_device_id) = 0;
   };
   
   /**
@@ -200,7 +202,7 @@ namespace processwarp {
     void send_load_llvm(const std::string& name,
 			const std::string& file,
 			const std::vector<std::string>& args,
-			const std::string& dst_device_id);
+			const dev_id_t& dst_device_id);
 
     /**
      * Send login command.
@@ -231,7 +233,7 @@ namespace processwarp {
      * @param id Just using device-id.
      * @param name Name of device.
      */
-    void send_bind_device(const std::string& id,
+    void send_bind_device(const dev_id_t& id,
 			  const std::string& name);
 
     /**
@@ -249,7 +251,7 @@ namespace processwarp {
      *   }, ...
      * }
      */
-    void send_sync_proc_list(const std::map<std::string, SocketIoProc>& procs);
+    void send_sync_proc_list(const std::map<vpid_t, SocketIoProc>& procs);
 
     /**
      * Send request of trigger to warp from other device.
@@ -260,10 +262,10 @@ namespace processwarp {
      *   dst_device_id: <destination device-id.>
      * }
      */
-    void send_warp_request_0(const std::string& pid,
-			     const std::string& tid,
-			     const std::string& to_device_id,
-			     const std::string& dst_device_id);
+    void send_warp_request_0(const vpid_t& pid,
+			     const vtid_t& tid,
+			     const dev_id_t& to_device_id,
+			     const dev_id_t& dst_device_id);
 
     /**
      * Send request of trigger to warp from device there running process.
@@ -273,9 +275,9 @@ namespace processwarp {
      *   to_device_id: <destination device-id.>
      * }
      */
-    void send_warp_request_1(const std::string& pid,
-			     const std::string& tid,
-			     const std::string& to_device_id);
+    void send_warp_request_1(const vpid_t& pid,
+			     const vtid_t& tid,
+			     const dev_id_t& to_device_id);
 
     /**
      * Send reply of trigger to warp to device there running process.
@@ -286,9 +288,9 @@ namespace processwarp {
      *   result: <true if accept warp.>
      * }
      */
-    void send_warp_request_2(const std::string& pid,
-			     const std::string& tid,
-			     const std::string& to_device_id,
+    void send_warp_request_2(const vpid_t& pid,
+			     const vtid_t& tid,
+			     const dev_id_t& to_device_id,
 			     int result);
 
     /**
@@ -300,9 +302,9 @@ namespace processwarp {
      *   payload: <binary data.>
      * }
      */
-    void send_warp_data_1(const std::string& pid,
-			  const std::string& tid,
-			  const std::string& to_device_id,
+    void send_warp_data_1(const vpid_t& pid,
+			  const vtid_t& tid,
+			  const dev_id_t& to_device_id,
 			  const std::string& payload);
 
     /**
@@ -314,9 +316,9 @@ namespace processwarp {
      *   result: <true if accept data1.>
      * }
      */
-    void send_warp_data_2(const std::string& pid,
-			  const std::string& tid,
-			  const std::string& to_device_id,
+    void send_warp_data_2(const vpid_t& pid,
+			  const vtid_t& tid,
+			  const dev_id_t& to_device_id,
 			  int result);
 
     /**
@@ -325,7 +327,7 @@ namespace processwarp {
      *   pid: <pid to want to warp.>
      * }
      */
-    void send_exit_process(const std::string& pid);
+    void send_exit_process(const vpid_t& pid);
 
     /**
      * Send console for test.
@@ -333,8 +335,8 @@ namespace processwarp {
      * @param dev Device name (stdout/stderr).
      * @param payload output stream or text.
      */
-    void send_test_console(const std::string& pid,
-			   const std::string& dev,
+    void send_test_console(const vpid_t& pid,
+			   const std::string& dev_name,
 			   const std::string& payload);
 
   private:

@@ -16,11 +16,86 @@ using namespace processwarp;
 
 static const std::string pool_path("/tmp/");
 
+/**
+ * Load program from LLVM-IR and write dump file.
+ */
+class Loader : public VMachineDelegate {
+public:
+  /// Assigned process-id.
+  const vpid_t pid;
+  /// Assigned thread-id.
+  const vtid_t tid;
+  
+  /**
+   * Constructor with assined id.
+   * @param _pid Assigned process-id.
+   * @param _tid Assigned thread-id.
+   */
+  Loader(const vpid_t& _pid, const vtid_t& _tid) :
+    pid(_pid),
+    tid(_tid) {
+  }
+
+  /**
+   * Return assigned thread-id as new thread-id.
+   */
+  vtid_t assign_tid(VMachine& vm) override {
+    return tid;
+  }
+  
+  /**
+   * 
+   */
+  void load(const std::vector<std::string>& args) {
+    // Setup virtual machine.
+    // Library is empty because don't use in loader.
+    std::vector<void*> libs;
+    std::map<std::string, std::string> lib_filter;
+    VMachine vm(*this, libs, lib_filter);
+    vm.setup();
+    
+    // Load program from LLVM-IR file.
+    LlvmAsmLoader loader(vm);
+    loader.load_file(pool_path + Convert::vpid2str(pid) + ".ll");
+
+    std::map<std::string, std::string> envs;
+    // Run virtual machine for bind argument and environment variables.
+    vm.run(args, envs);
+      
+    // Dump and write to file.
+    Convert convert(vm);
+    Convert::Related related;
+    picojson::object body;
+    picojson::object dump;
+    picojson::object threads;
+    body.insert(std::make_pair("cmd", picojson::value(std::string("warp"))));
+    body.insert(std::make_pair("pid", Convert::vpid2json(pid)));
+    for (auto& it : vm.threads) {
+      threads.insert(std::make_pair(Convert::vtid2str(it.first),
+				    convert.export_thread(*it.second, related)));
+    }
+    body.insert(std::make_pair("threads", picojson::value(threads)));
+    std::set<vaddr_t> all = vm.vmemory.get_alladdr();
+    for (auto it = all.begin(); it != all.end(); it ++) {
+      // Don't export NULL.
+      if (*it == VADDR_NULL || *it == VADDR_NON) continue;
+      // Don't export builtin variables.
+      if (vm.builtin_addrs.find(*it) != vm.builtin_addrs.end()) continue;
+	
+      dump.insert(std::make_pair(Util::vaddr2str(*it), convert.export_store(*it, related)));
+    }
+    body.insert(std::make_pair("dump", picojson::value(dump)));
+
+    std::ofstream ofs(pool_path + Convert::vpid2str(pid) + ".out");
+    ofs << picojson::value(body).serialize();
+  }
+};
+  
 int main(int argc, char* argv[]) {
-  // 標準入力を読み込み
+  // Read stdin and separate by '\0'.
   std::string line;
   while(std::getline(std::cin, line, '\0')) {
-    // 標準入力をJSONに変換
+    // Convert json string to picojson instance.
     picojson::value v;
     std::istringstream is(line);
     std::string err = picojson::parse(v, is);
@@ -30,62 +105,28 @@ int main(int argc, char* argv[]) {
     }
     picojson::object result = v.get<picojson::object>();
     
-    // PIDパラメタを取得
-    std::string pid = result.at("pid").get<std::string>();
-    // 起動引数を取得
-    picojson::array json_args = result.at("args").get<picojson::array>();
-    
     try {
-      // Setup virtual machine.
-      // Library is empty because don't use in loader.
-      std::vector<void*> libs;
-      std::map<std::string, std::string> lib_filter;
-      VMachine vm(libs, lib_filter);
-      vm.setup();
-    
-      // プログラムをロード
-      LlvmAsmLoader loader(vm);
-      loader.load_file(pool_path + pid + ".ll");
-      // 仮環境変数
-      std::map<std::string, std::string> envs;
-      // 仮引数
-      std::vector<std::string> args;
-      for (auto& json_arg : json_args) {
-	args.push_back(json_arg.get<std::string>());
-      }
-      // 起動状態へ
-      vm.run(args, envs);
+      // Get pid.
+      vpid_t pid = Convert::json2vpid(result.at("pid"));
+      // Get tid.
+      vtid_t tid = 1;//Convert::json2vtid(result.at("tid"));
+      // Make loader.
+      Loader loader(pid, tid);
       
-      // プログラムをダンプ&ファイルに書き込み
-      Convert convert(vm);
-      Convert::Related related;
-      picojson::object body;
-      picojson::object dump;
-      body.insert(std::make_pair("cmd",    picojson::value(std::string("warp"))));
-      body.insert(std::make_pair("pid",    picojson::value(pid)));
-      //body.insert(std::make_pair("tid",    picojson::value(tid)));
-      //body.insert(std::make_pair("to",     picojson::value(device_id)));
-      body.insert(std::make_pair("thread", convert.export_thread(*(vm.threads.back()), related)));
-      std::set<vaddr_t> all = vm.vmemory.get_alladdr();
-      for (auto it = all.begin(); it != all.end(); it ++) {
-	// NULLはexportしない
-	if (*it == VADDR_NULL || *it == VADDR_NON) continue;
-	// VM組み込みのアドレスはexportしない
-	if (vm.builtin_addrs.find(*it) != vm.builtin_addrs.end()) continue;
-	
-	dump.insert(std::make_pair(Util::vaddr2str(*it), convert.export_store(*it, related)));
+      // Convert arguments.
+      std::vector<std::string> args;
+      for (auto& it : result.at("args").get<picojson::array>()) {
+	args.push_back(it.get<std::string>());
       }
-      body.insert(std::make_pair("dump", picojson::value(dump)));
-
-      std::ofstream ofs(pool_path + pid + ".out");
-      ofs << picojson::value(body).serialize();
+      // Load.
+      loader.load(args);
     
-      // 結果を標準出力に書き込み
+      // Show result.
       result.insert(std::make_pair("result",    picojson::value(0.0)));
       std::cout << picojson::value(result).serialize() << '\0';
     
     } catch(const Error& ex) {
-      // エラー内容を標準出力に書き込み
+      // Show error information.
       picojson::object result;
       result.insert(std::make_pair("result",    picojson::value(-1.0)));
       result.insert(std::make_pair("reason",    picojson::value(std::to_string(ex.reason))));
@@ -93,7 +134,7 @@ int main(int argc, char* argv[]) {
       std::cout << picojson::value(result).serialize() << '\0';
       
     } catch(const std::exception& ex) {
-      // エラー内容を標準出力に書き込み
+      // Show error information.
       picojson::object result;
       result.insert(std::make_pair("result",    picojson::value(-1.0)));
       result.insert(std::make_pair("reason",    picojson::value(std::to_string(-1))));
@@ -102,7 +143,7 @@ int main(int argc, char* argv[]) {
       
     } catch(...) {
       int errsv = errno;
-      // エラー内容を標準出力に書き込み
+      // Show error information.
       picojson::object result;
       result.insert(std::make_pair("result",    picojson::value(-1.0)));
       result.insert(std::make_pair("reason",    picojson::value(std::to_string(-2))));

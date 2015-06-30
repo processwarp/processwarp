@@ -28,7 +28,7 @@ public:
   /** Device name. */
   std::string device_name;
   /** Device ID. */
-  std::string device_id;
+  dev_id_t device_id;
   
   /** Dynamic link libraries. */
   std::vector<void*> libs;
@@ -36,10 +36,10 @@ public:
   std::map<std::string, std::string> lib_filter;
 
   /** Map of pid and process infomation. */
-  std::map<std::string, SocketIoProc> procs;
+  std::map<vpid_t, SocketIoProc> procs;
 
   /** Map of device-id and device-name. */
-  std::map<std::string, std::string> devices;
+  std::map<dev_id_t, std::string> devices;
 
   /**
    * Constructor
@@ -102,7 +102,7 @@ public:
       }
       
       // Search device.
-      std::string dst_device_id = "";
+      dev_id_t dst_device_id;
       if (app.find("device") == app.end()) {
 	dst_device_id = device_id;
 
@@ -114,7 +114,7 @@ public:
 	    break;
 	  }
 	}
-	if (dst_device_id == "") {
+	if (dst_device_id.empty()) {
 	  throw_error_message(Error::CONFIGURE, "Unknown device name.");
 	}
       }
@@ -125,9 +125,9 @@ public:
   }
   
   // Call when send data to other device.
-  void send_warp_data(const std::string& pid,
-		      const std::string& tid,
-		      const std::string& dst_device_id,
+  void send_warp_data(const vpid_t& pid,
+		      const vtid_t& tid,
+		      const dev_id_t& dst_device_id,
 		      const std::string& data) override {
     socket.send_warp_data_1(pid, tid, dst_device_id, data);
   }
@@ -139,14 +139,14 @@ public:
   //*/
   
   // Call when process was finish.
-  void on_finish_proccess(const std::string& pid) override {
+  void on_finish_proccess(const vpid_t& pid) override {
     procs.erase(pid);
 
     socket.send_sync_proc_list(procs);
   }
 
   // Call when rise error.
-  void on_error(const std::string& pid, const std::string& message) override {
+  void on_error(const vpid_t& pid, const std::string& message) override {
     print_debug("error(%s) : %s\n", pid.c_str(), message.c_str());
     on_finish_proccess(pid);
   }
@@ -171,7 +171,7 @@ public:
 
   // Call when recv list device message from server.
   void recv_list_device(int result,
-			const std::map<std::string, std::string>& devices) override {
+			const std::map<dev_id_t, std::string>& devices) override {
     if (result != 0) {
       throw_error(Error::SERVER_APP);
     }
@@ -194,7 +194,7 @@ public:
   }
 
   // Call when recv bind device message from server.
-  void recv_bind_device(int result, const std::string& device_id) override {
+  void recv_bind_device(int result, const dev_id_t& device_id) override {
     if (result != 0) {
       throw_error(Error::SERVER_APP);
     }
@@ -202,14 +202,14 @@ public:
     this->device_id = device_id;
 
     // Syncronize processes empty because processes not running just run program.
-    socket.send_sync_proc_list(std::map<std::string, SocketIoProc>());
+    socket.send_sync_proc_list(std::map<vpid_t, SocketIoProc>());
 
     // Execute applications.
     load_apps();
   }
 
   // Call when recv sync proc list message from server.
-  void recv_sync_proc_list(const std::map<std::string, SocketIoProc>& new_procs) override {
+  void recv_sync_proc_list(const std::map<vpid_t, SocketIoProc>& new_procs) override {
     // Check finished process.
     auto it = procs.begin();
     while (it != procs.end()) {
@@ -228,10 +228,10 @@ public:
   }
 
   // Call when recv warp request from other device.
-  void recv_warp_request_0(const std::string& pid,
-			   const std::string& tid,
-			   const std::string& dst_device_id,
-			   const std::string& to_device_id) override {
+  void recv_warp_request_0(const vpid_t& pid,
+			   const vtid_t& tid,
+			   const dev_id_t& dst_device_id,
+			   const dev_id_t& to_device_id) override {
     // Not to me.
     if (to_device_id != device_id) return;
 
@@ -241,12 +241,12 @@ public:
   }
 
   // Call when recv warp request from device that having process.
-  void recv_warp_request_1(const std::string& pid,
-			   const std::string& tid,
+  void recv_warp_request_1(const vpid_t& pid,
+			   const vtid_t& tid,
 			   const std::string& name,
 			   const std::string& from_account,
-			   const std::string& from_device_id,
-			   const std::string& to_device_id) override {
+			   const dev_id_t& from_device_id,
+			   const dev_id_t& to_device_id) override {
     // Not to me.
     if (to_device_id != device_id) return;
 
@@ -280,16 +280,16 @@ public:
   }
 
   // Call when recv warp acception from warp destination device.
-  void recv_warp_request_2(const std::string& pid,
-			   const std::string& tid,
-			   const std::string& from_device_id,
-			   const std::string& to_device_id,
+  void recv_warp_request_2(const vpid_t& pid,
+			   const vtid_t& tid,
+			   const dev_id_t& from_device_id,
+			   const dev_id_t& to_device_id,
 			   int result) override {
     // Not to me.
     if (to_device_id != device_id) return;
     
     if (result == 0) {
-      controller.warp_process(pid, from_device_id);
+      controller.warp_process(pid, tid, from_device_id);
 
     } else {
       fixme("Ouutput log & ignore?");
@@ -297,10 +297,10 @@ public:
   }
 
   // Call when recv warp data from warp source device.
-  void recv_warp_data_1(const std::string& pid,
-			const std::string& tid,
-			const std::string& from_device_id,
-			const std::string& to_device_id,
+  void recv_warp_data_1(const vpid_t& pid,
+			const vtid_t& tid,
+			const dev_id_t& from_device_id,
+			const dev_id_t& to_device_id,
 			const std::string& payload) override {
     // Not to me.
     if (to_device_id != device_id) return;
@@ -312,23 +312,23 @@ public:
   }
 
   // Call when recv warp data from warp destination device.
-  void recv_warp_data_2(const std::string& pid,
-			const std::string& tid,
-			const std::string& to_device_id,
+  void recv_warp_data_2(const vpid_t& pid,
+			const vtid_t& tid,
+			const dev_id_t& to_device_id,
 			int result) override {
     // Do nothing.
   }
 
   // Call when process was killed.
-  void recv_exit_process(const std::string& pid) override {
+  void recv_exit_process(const vpid_t& pid) override {
     controller.exit_process(pid);
   }
 
   // Recv console for test.
-  void recv_test_console(const std::string& pid,
+  void recv_test_console(const vpid_t& pid,
 			 const std::string& dev,
 			 const std::string& payload,
-			 const std::string& from_device_id) {
+			 const dev_id_t& from_device_id) {
 #ifndef NDEBUG
     if (dev == "stdout") {
       std::cout << payload;

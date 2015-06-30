@@ -5,6 +5,7 @@
 #include "lib/picojson.h"
 
 #include "definitions.hpp"
+#include "util.hpp"
 
 namespace processwarp {
   class Thread;
@@ -44,16 +45,35 @@ namespace processwarp {
     picojson::value export_store(vaddr_t src, Related& related);
 
     /**
-     * JSONからスレッドを復元する。
-     * @param src 復元元JSON
+     * Import thread from JSON.
+     * @param tid thread-id
+     * @param src JSON
      */
-    void import_thread(const picojson::value& src);
+    void import_thread(const vtid_t& tid, const picojson::value& src);
 
     /**
      * JSONから変数を復元する。
      * @param src 復元元JSON
      */
     void import_store(vaddr_t addr, const picojson::value& src);
+
+    /**
+     * Convert process-id from JSON.
+     * @param json JSON.
+     * @return process-id.
+     */
+    static vpid_t json2vpid(const picojson::value& json) {
+      return json.get<vpid_t>();
+    }
+
+    /**
+     * Convert thread-id from JSON.
+     * @param json JSON.
+     * @return thread-id.
+     */
+    static vtid_t json2vtid(const picojson::value& json) {
+      return Util::hex_str2num<vtid_t>(json.get<std::string>());
+    }
 
     /**
      * JSONから仮想アドレスを復元する。
@@ -63,11 +83,47 @@ namespace processwarp {
     vaddr_t json2vaddr(const picojson::value& src);
 
     /**
+     * Convert process-id to JSON.
+     * @param pid process-id.
+     * @return process-id as JSON.
+     */
+    static picojson::value vpid2json(const vpid_t& pid) {
+      return picojson::value(pid);
+    }
+
+    /**
      * 仮想アドレスからJSON文字列に変換する。
      * @param 仮想アドレス
      * @return JSON
      */
     picojson::value vaddr2json(vaddr_t src);
+
+    /**
+     * Convert process-id to string.
+     * @param pid process-id.
+     * @return process-id as string.
+     */
+    static const std::string& vpid2str(const vpid_t& pid) {
+      return pid;
+    }
+    
+    /**
+     * Convert thread-id to string.
+     * @param tid thread-id.
+     * @return thread-id as string.
+     */
+    static std::string vtid2str(const vtid_t& tid) {
+      return Util::num2hex_str<vtid_t>(tid);
+    }
+
+    /**
+     * Convert thread-id from string.
+     * @param str string.
+     * @param thread-id.
+     */
+    static vtid_t str2vtid(const std::string& str) {
+      return Util::hex_str2num<vtid_t>(str);
+    }
 
   private:
     /// 対象仮想マシン

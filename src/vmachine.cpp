@@ -152,8 +152,10 @@ inline TypeStore& get_type(instruction_t code, OperandParam& param) {
 }
 
 // Constructor.
-VMachine::VMachine(std::vector<void*>& _libs,
+VMachine::VMachine(VMachineDelegate& _delegate,
+		   std::vector<void*>& _libs,
 		   const std::map<std::string, std::string>& _lib_filter) :
+  delegate(_delegate),
   libs(_libs),
   lib_filter(_lib_filter),
   status(SETUP) {
@@ -169,8 +171,8 @@ void VMachine::destory_native_ptr(vaddr_t addr) {
 }
 
 // VM命令を実行する。
-void VMachine::execute(int max_clock) {
-  Thread& thread = *(threads.front().get());
+void VMachine::execute(vtid_t tid, int max_clock) {
+  Thread& thread = *(threads.at(tid));
  re_entry: {
     if (thread.stackinfos.size() == 1) {
       // calls_at_exitに関数が登録されている場合、順番に実行する
@@ -188,20 +190,20 @@ void VMachine::execute(int max_clock) {
 	return;
       }
     }
-    if (status == BEFOR_WARP && thread.stackinfos.size() == warp_stack_size) {
-      if (thread.funcs_at_befor_warp.size() > warp_call_count) {
-	call_setup_voidfunc(thread, thread.funcs_at_befor_warp.at(warp_call_count));
-	warp_call_count ++;
+    if (status == BEFOR_WARP && thread.stackinfos.size() == thread.warp_stack_size) {
+      if (thread.funcs_at_befor_warp.size() > thread.warp_call_count) {
+	call_setup_voidfunc(thread, thread.funcs_at_befor_warp.at(thread.warp_call_count));
+	thread.warp_call_count ++;
 	goto re_entry;
 	
       } else {
 	status = WARP;
       }
     }
-    if (status == AFTER_WARP && thread.stackinfos.size() == warp_stack_size) {
-      if (thread.funcs_at_befor_warp.size() > warp_call_count) {
-	call_setup_voidfunc(thread, thread.funcs_at_befor_warp.at(warp_call_count));
-	warp_call_count ++;
+    if (status == AFTER_WARP && thread.stackinfos.size() == thread.warp_stack_size) {
+      if (thread.funcs_at_befor_warp.size() > thread.warp_call_count) {
+	call_setup_voidfunc(thread, thread.funcs_at_befor_warp.at(thread.warp_call_count));
+	thread.warp_call_count ++;
 	goto re_entry;
 	
       } else {
@@ -1122,7 +1124,8 @@ void VMachine::exit() {
 	     status == BEFOR_WARP || status == WARP ||
 	     status == AFTER_WARP) {
     status = ACTIVE;
-    threads.front().get()->stackinfos.resize(1);
+    fixme("exit thread");
+    threads.at(1).get()->stackinfos.resize(1);
     
   } else if (status ==  EXITING) {
     // Do noting.
@@ -1302,7 +1305,8 @@ void VMachine::run(const std::vector<std::string>& args,
 		   const std::map<std::string, std::string>& envs) {
   // 最初のスレッドを作成
   Thread* init_thread;
-  threads.push_back(std::unique_ptr<Thread>(init_thread = new Thread()));
+  threads.insert(std::make_pair(delegate.assign_tid(*this),
+				std::unique_ptr<Thread>(init_thread = new Thread())));
   
   // スレッドを初期化
 
@@ -1458,25 +1462,30 @@ void VMachine::setup() {
   print_debug("finis setup.\n");
 }
 
-// Setup of warp out
-void VMachine::setup_warpout() {
-  warp_stack_size = threads.back()->stackinfos.size();
-  warp_call_count = 0;
+// Prepare to warp out.
+void VMachine::setup_warpout(const vtid_t& tid) {
+  Thread& thread = *threads.at(tid);
+
+  thread.warp_stack_size = thread.stackinfos.size();
+  thread.warp_call_count = 0;
+
   status = AFTER_WARP;
 }
 
-// Setup of warp in
-bool VMachine::setup_warpin(const std::string& address) {
+// Prepare to warp in.
+bool VMachine::setup_warpin(const vtid_t& tid, const dev_id_t& dst) {
   // Status must be normal when warp
   if (status != ACTIVE) {
     return false;
   }
 
-  warp_to = address;
+  Thread& thread = *threads.at(tid);
+
+  //thread.warp_to = dst;
   
-  if (threads.back()->warp_parameter[PW_KEY_WARP_TIMING] == PW_VAL_ON_ANYTIME) {
-    warp_stack_size = threads.back()->stackinfos.size();
-    warp_call_count = 0;
+  if (thread.warp_parameter[PW_KEY_WARP_TIMING] == PW_VAL_ON_ANYTIME) {
+    thread.warp_stack_size = thread.stackinfos.size();
+    thread.warp_call_count = 0;
     status = BEFOR_WARP;
 
   } else { // On polling

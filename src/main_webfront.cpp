@@ -9,6 +9,7 @@
 #include <emscripten/bind.h>
 
 #include "controller.hpp"
+#include "convert.hpp"
 
 using namespace processwarp;
 using namespace emscripten;
@@ -18,9 +19,9 @@ using namespace emscripten;
  */
 class WebfrontDelegate : public ControllerDelegate {
   // Call when send data to other device.
-  void send_warp_data(const std::string& pid,
-		      const std::string& tid,
-		      const std::string& dst_device_id,
+  void send_warp_data(const vpid_t& pid,
+		      const vtid_t& tid,
+		      const dev_id_t& dst_device_id,
 		      const std::string& data) override {
     std::stringstream asm_code;
     asm_code << "send_warp_data('" << pid << "',"
@@ -32,7 +33,7 @@ class WebfrontDelegate : public ControllerDelegate {
   }
 
   // Call when context switch of process.
-  void on_switch_proccess(const std::string& pid) override {
+  void on_switch_proccess(const vpid_t& pid) override {
     std::stringstream asm_code;
 
     if (pid.empty()) {
@@ -45,14 +46,14 @@ class WebfrontDelegate : public ControllerDelegate {
   }
 
   // Call when process was finish.
-  void on_finish_proccess(const std::string& pid) override {
+  void on_finish_proccess(const vpid_t& pid) override {
     std::stringstream asm_code;
     asm_code << "finish_process('" << pid << "');";
     emscripten_run_script(asm_code.str().c_str());
   }
 
   // Call when rise error.
-  void on_error(const std::string& pid, const std::string& message) override {
+  void on_error(const vpid_t& pid, const std::string& message) override {
     std::stringstream asm_code;
     asm_code << "error_process('" << pid << "');";
     emscripten_run_script(asm_code.str().c_str());
@@ -83,28 +84,29 @@ void init_lib_filter() {
   }
 }
 
-bool recv_warp_data(const std::string& pid, const std::string& tid, const std::string& data) {
-  return controller.recv_warp_data(pid, tid, data);
+bool recv_warp_data(const vpid_t& pid, std::string tid, const std::string& data) {
+  return controller.recv_warp_data(pid, Convert::str2vtid(tid), data);
 }
 
-void set_device_id(std::string device_id) {
+void set_device_id(const dev_id_t& device_id) {
   controller.device_id = device_id;
 }
 
-void create_process(std::string pid) {
+void create_process(const vpid_t& pid) {
   controller.create_process(pid, LIBS, lib_filter);
 }
 
-void delete_process(std::string pid) {
+void delete_process(const vpid_t& pid) {
   controller.delete_process(pid);
 }
 
-void exit_process(std::string pid) {
+void exit_process(const vpid_t& pid) {
   controller.exit_process(pid);
 }
 
-void warp_process(std::string pid, std::string device_id) {
-  controller.warp_process(pid, device_id);
+void warp_process(const vpid_t& pid, const dev_id_t& device_id) {
+  vtid_t tmp = 1; ///< TODO
+  controller.warp_process(pid, tmp, device_id);
 }
 
 /**

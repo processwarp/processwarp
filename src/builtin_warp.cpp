@@ -40,10 +40,10 @@ bool BuiltinWarp::poll_warp_request(VMachine& vm, Thread& thread, BuiltinFuncPar
   assert(static_cast<signed>(src.size()) == 0);
 
   if (vm.status == VMachine::WAIT_WARP) {
-    vm.warp_stack_size = th.stackinfos.size();
-    vm.warp_call_count = 0;
+    thread.warp_stack_size = thread.stackinfos.size();
+    thread.warp_call_count = 0;
     vm.status = VMachine::BEFOR_WARP;
-    th.stackinfos.back()->pc ++;
+    thread.stackinfos.back()->pc ++;
     return true;
     
   } else {

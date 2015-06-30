@@ -144,7 +144,7 @@ picojson::value Convert::export_store(vaddr_t src, Related& related) {
 }
 
 // JSONからスレッドを復元する。
-void Convert::import_thread(const picojson::value& src) {
+void Convert::import_thread(const vtid_t& tid, const picojson::value& src) {
   const picojson::object& obj_src = src.get<picojson::object>();
   std::unique_ptr<Thread> thread(new Thread());
 
@@ -203,7 +203,7 @@ void Convert::import_thread(const picojson::value& src) {
 						 json2num<vm_uint_t>(it.second)));
   }
 
-  vm.threads.push_back(std::move(thread));
+  vm.threads.insert(make_pair(tid, std::move(thread)));
 }
 
 // JSONから変数を復元する。

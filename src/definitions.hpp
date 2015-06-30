@@ -86,8 +86,15 @@ namespace processwarp {
     AD_PTR      = 0x4000000100000000,
   };
 
-  /** プロセスID */
-  typedef std::string pid_t;
+  /** process-id */
+  typedef std::string vpid_t;
+  /** thread-id */
+  typedef uint32_t vtid_t;
+  /** all thread */
+  static const vtid_t ALL_THREAD = 0;
+
+  /** device-id */
+  typedef std::string dev_id_t;
 
   /** trueを表す値 */
   static const uint8_t I8_TRUE = 0x1;
