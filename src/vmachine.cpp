@@ -1322,7 +1322,7 @@ void VMachine::run(const std::vector<std::string>& args,
     main_stack = &vmemory.alloc_data(main_func.normal_prop.stack_size, false);
   }
 
-  // maink関数の内容に応じて、init_stackを作成する
+  // main関数の内容に応じて、init_stackを作成する
   DataStore* init_stack;
   if (main_func.arg_num == 2 || main_func.arg_num == 3) {
     // main関数の戻り値と引数を格納するのに必要な領域サイズを計算
