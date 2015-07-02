@@ -1459,7 +1459,7 @@ void VMachine::setup() {
   BuiltinVaArg::regist(*this);
   BuiltinWarp::regist(*this);
 
-  print_debug("finis setup.\n");
+  print_debug("finish setup.\n");
 }
 
 // Prepare to warp out.
