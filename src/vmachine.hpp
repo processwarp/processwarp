@@ -139,7 +139,23 @@ namespace processwarp {
      */
     vaddr_t create_native_ptr(void* ptr);
 
-    int create_thread();
+    /**
+     * Create a new thread.
+     * @param func_addr Entry point for new thread.
+     * @param arg_addr Argument for entry point.
+     * @return Assigned thread-id for new thread.
+     */
+    vtid_t create_thread(vaddr_t func_addr, vaddr_t arg_addr);
+
+    /**
+     *
+     */
+    void detach_thread(vtid_t tid);
+
+    /**
+     *
+     */
+    void exit_thread(vaddr_t retval);
     
     /**
      * 配列型の型情報を作成する。

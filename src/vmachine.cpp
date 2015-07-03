@@ -1053,6 +1053,39 @@ vaddr_t VMachine::create_native_ptr(void* ptr) {
   return (last_free_native_ptr ++);
 }
 
+// Create a new thread.
+vtid_t VMachine::create_thread(vaddr_t func_addr, vaddr_t arg_addr) {
+  FuncStore& func = vmemory.get_func(func_addr);
+  Thread* thread;
+  vtid_t  tid = delegate.assign_tid(*this);
+
+  assert(threads.find(tid) == threads.end());
+
+  // check function type
+  if (func.type != FC_NORMAL) {
+    throw_error_message(Error::SPEC_VIOLATION, func.name.str());
+  }
+
+  threads.insert(std::make_pair(tid, std::unique_ptr<Thread>(thread = new Thread())));
+
+  DataStore* root_stack = &vmemory.alloc_data(sizeof(vaddr_t), false);
+  StackInfo* root_stackinfo = new StackInfo(VADDR_NON, VADDR_NON, 0, 0, root_stack->addr);
+  root_stackinfo->output = root_stack->addr;
+  root_stackinfo->output_cache = root_stack->head.get();
+  thread->stackinfos.push_back(std::unique_ptr<StackInfo>(root_stackinfo));
+
+  DataStore* func_stack = nullptr;
+  StackInfo* func_stackinfo = nullptr;
+  if (func.normal_prop.stack_size != 0) {
+    func_stack = &vmemory.alloc_data(func.normal_prop.stack_size, false);
+    func_stackinfo = new StackInfo(func.addr, root_stack->addr, 0, 0, func_stack->addr);
+
+  } else {
+    func_stackinfo = new StackInfo(func.addr, root_stack->addr, 0, 0, VADDR_NON);
+  }
+  thread->stackinfos.push_back(std::unique_ptr<StackInfo>(func_stackinfo));
+}
+
 // 配列型の型情報を作成する。
 TypeStore& VMachine::create_type_array(vaddr_t element, unsigned int num) {
   // サイズ、アライメントを計算

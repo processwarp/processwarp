@@ -20,6 +20,34 @@ namespace processwarp {
 			      vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
+     * Implement for pthread_create.
+     * parameter:
+     * vaddr_t thread
+     * vaddr_t attr
+     * vaddr_t start
+     * vaddr_t arg
+     */
+    static bool pthread_create(VMachine& vm, Thread& th, BuiltinFuncParam p,
+			       vaddr_t dst, std::vector<uint8_t>& src);
+
+    /**
+     * Implement for pthread_exit.
+     * parameter:
+     * vaddr_t retval
+     */
+    static bool pthread_exit(VMachine& vm, Thread& th, BuiltinFuncParam p,
+			     vaddr_t dst, std::vector<uint8_t>& src);
+
+    /**
+     * Implement for pthread_join.
+     * parameter:
+     * i32 thread
+     * vaddr_t ret_addr
+     */
+    static bool pthread_join(VMachine& vm, Thread& th, BuiltinFuncParam p,
+			     vaddr_t dst, std::vector<uint8_t>& src);
+
+    /**
      * VMにライブラリを登録する。
      * @param vm 登録対象のVM
      */

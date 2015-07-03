@@ -182,7 +182,7 @@ void Controller::warp_process(const vpid_t& pid,
 // @inheritDoc
 vtid_t Controller::assign_tid(VMachine& vm) {
   fixme("assign_tid\n");
-  return 1;
+  return 2;
 }
 
 // Dump and send data to warp process. 

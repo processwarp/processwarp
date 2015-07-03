@@ -29,7 +29,55 @@ bool BuiltinPosix::__assert_fail(VMachine& vm, Thread& th, BuiltinFuncParam p,
   return true;
 }
 
+// Implement for pthread_create.
+bool BuiltinPosix::pthread_create(VMachine& vm, Thread& th, BuiltinFuncParam p,
+				vaddr_t dst, std::vector<uint8_t>& src) {
+  int seek = 0;
+  vaddr_t p_thread = VMachine::read_builtin_param_ptr(src, &seek);
+  // TODO: apply attr
+  /*vaddr_t p_attr   =*/VMachine::read_builtin_param_ptr(src, &seek);
+  vaddr_t p_start  = VMachine::read_builtin_param_ptr(src, &seek);
+  vaddr_t p_arg    = VMachine::read_builtin_param_ptr(src, &seek);
+  assert(static_cast<signed>(src.size()) == seek);
+  
+  *reinterpret_cast<vtid_t*>(vm.get_raw_addr(p_thread)) = 
+    vm.create_thread(p_start, p_arg);
+
+  *reinterpret_cast<vm_int_t*>(vm.get_raw_addr(dst)) = 0;
+  
+  return false;
+}
+
+// Implement for pthread_exit.
+bool BuiltinPosix::pthread_exit(VMachine& vm, Thread& th, BuiltinFuncParam p,
+				vaddr_t dst, std::vector<uint8_t>& src) {
+  int seek = 0;
+  vaddr_t p_retval = VMachine::read_builtin_param_ptr(src, &seek);
+  assert(static_cast<signed>(src.size()) == seek);
+ 
+  // TODO: vm.exit_thread(p_retval);
+
+  return true; // stack changed
+}
+
+// Implement for pthread_join.
+bool BuiltinPosix::pthread_join(VMachine& vm, Thread& th, BuiltinFuncParam p,
+				vaddr_t dst, std::vector<uint8_t>& src) {
+  int seek = 0;
+  vm_int_t p_thread = VMachine::read_builtin_param_i32(src, &seek);
+  vaddr_t  p_retval = VMachine::read_builtin_param_ptr(src, &seek);
+  assert(static_cast<signed>(src.size()) == seek);
+
+  // TODO: fixme
+  
+  return false;
+}
+
 // VMにライブラリを登録する。
 void BuiltinPosix::regist(VMachine& vm) {
   vm.regist_builtin_func("__assert_fail", BuiltinPosix::__assert_fail, 0);
+  vm.regist_builtin_func("pthread_create", BuiltinPosix::pthread_create, 0);
+  vm.regist_builtin_func("pthread_exit", BuiltinPosix::pthread_exit, 0);
+  vm.regist_builtin_func("pthread_join", BuiltinPosix::pthread_join, 0);
 }
+
