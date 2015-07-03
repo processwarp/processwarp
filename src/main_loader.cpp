@@ -94,6 +94,8 @@ public:
 int main(int argc, char* argv[]) {
   // Read stdin and separate by '\0'.
   std::string line;
+  picojson::object result;
+
   while(std::getline(std::cin, line, '\0')) {
     // Convert json string to picojson instance.
     picojson::value v;
@@ -103,7 +105,7 @@ int main(int argc, char* argv[]) {
       std::cerr << err << std::endl;
       exit(EXIT_FAILURE);
     }
-    picojson::object result = v.get<picojson::object>();
+    result = v.get<picojson::object>();
     
     try {
       // Get pid.
@@ -127,7 +129,6 @@ int main(int argc, char* argv[]) {
     
     } catch(const Error& ex) {
       // Show error information.
-      picojson::object result;
       result.insert(std::make_pair("result",    picojson::value(-1.0)));
       result.insert(std::make_pair("reason",    picojson::value(std::to_string(ex.reason))));
       result.insert(std::make_pair("message",   picojson::value(ex.mesg)));
@@ -135,7 +136,6 @@ int main(int argc, char* argv[]) {
       
     } catch(const std::exception& ex) {
       // Show error information.
-      picojson::object result;
       result.insert(std::make_pair("result",    picojson::value(-1.0)));
       result.insert(std::make_pair("reason",    picojson::value(std::to_string(-1))));
       result.insert(std::make_pair("message",   picojson::value(std::string(ex.what()))));
@@ -144,7 +144,6 @@ int main(int argc, char* argv[]) {
     } catch(...) {
       int errsv = errno;
       // Show error information.
-      picojson::object result;
       result.insert(std::make_pair("result",    picojson::value(-1.0)));
       result.insert(std::make_pair("reason",    picojson::value(std::to_string(-2))));
       result.insert(std::make_pair("message",   picojson::value(std::string(std::strerror(errsv)))));
