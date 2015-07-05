@@ -100,6 +100,7 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     main_core.cpp
     socketio.cpp
     stackinfo.cpp
+    std_error.cpp
     symbols.cpp
     type_based.cpp
     type_store.cpp
@@ -131,6 +132,7 @@ if(LLVM_FOUND AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     llvm_asm_loader.cpp
     main_loader.cpp
     stackinfo.cpp
+    std_error.cpp
     symbols.cpp
     type_based.cpp
     type_store.cpp
@@ -162,6 +164,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     builtin_warp.cpp
     main_webfront.cpp
     stackinfo.cpp
+    std_error.cpp
     symbols.cpp
     type_based.cpp
     type_store.cpp
