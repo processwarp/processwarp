@@ -47,21 +47,6 @@ namespace processwarp {
     typedef std::set<vaddr_t> BuiltinAddrs;
     /** 終了処理時に呼び出す関数一覧 */
     typedef std::stack<vaddr_t> CallsAtExit;
-    /** VM実行状態一覧 */
-    enum Status {
-      SETUP,   ///< 起動中
-      ACTIVE,  ///< 実行中(実行中スレッドあり)
-      PASSIVE, ///< 実行中(実行中スレッドなし)
-      EXITING, ///< 終了処理中
-
-      WAIT_WARP,  ///<
-      BEFOR_WARP, ///< befor warp
-      WARP,       ///< 
-      AFTER_WARP, ///< after warp
-
-      ERROR,   ///< エラー終了
-      FINISH,  ///< 正常終了
-    };
     
     /** Deleaget for vm. */
     VMachineDelegate& delegate;
@@ -77,7 +62,6 @@ namespace processwarp {
     BuiltinAddrs builtin_addrs; //< VM組み込みアドレス一覧(他VMにコピーしない)
     CallsAtExit calls_at_exit; //< 終了処理時に呼び出す関数一覧
     Globals globals;    ///< 大域変数、関数シンボル→アドレス
-    Status  status;     ///< VM実行状態
     Symbols symbols;    ///< シンボル
     Threads threads;    ///< スレッド一覧
     VMemory vmemory;    ///< 仮想メモリ空間

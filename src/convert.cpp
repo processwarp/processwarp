@@ -146,7 +146,7 @@ picojson::value Convert::export_store(vaddr_t src, Related& related) {
 // JSONからスレッドを復元する。
 void Convert::import_thread(const vtid_t& tid, const picojson::value& src) {
   const picojson::object& obj_src = src.get<picojson::object>();
-  std::unique_ptr<Thread> thread(new Thread());
+  std::unique_ptr<Thread> thread(new Thread(tid));
 
   // Stackinfo
   const picojson::array& stackinfos = obj_src.at("stackinfos").get<picojson::array>();

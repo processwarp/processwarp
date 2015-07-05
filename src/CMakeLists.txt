@@ -102,6 +102,7 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     stackinfo.cpp
     std_error.cpp
     symbols.cpp
+    thread.cpp
     type_based.cpp
     type_store.cpp
     util.cpp
@@ -134,6 +135,7 @@ if(LLVM_FOUND AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     stackinfo.cpp
     std_error.cpp
     symbols.cpp
+    thread.cpp
     type_based.cpp
     type_store.cpp
     util.cpp
@@ -166,6 +168,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     stackinfo.cpp
     std_error.cpp
     symbols.cpp
+    thread.cpp
     type_based.cpp
     type_store.cpp
     util.cpp

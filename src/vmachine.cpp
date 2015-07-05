@@ -157,8 +157,7 @@ VMachine::VMachine(VMachineDelegate& _delegate,
 		   const std::map<std::string, std::string>& _lib_filter) :
   delegate(_delegate),
   libs(_libs),
-  lib_filter(_lib_filter),
-  status(SETUP) {
+  lib_filter(_lib_filter) {
 }
 
 // 仮想アドレスとネイティブポインタのペアを解消する。
@@ -176,7 +175,8 @@ void VMachine::execute(vtid_t tid, int max_clock) {
  re_entry: {
     if (thread.stackinfos.size() == 1) {
       // calls_at_exitに関数が登録されている場合、順番に実行する
-      if (!calls_at_exit.empty() && status != ERROR && status != FINISH) {
+      if (!calls_at_exit.empty() &&
+	  thread.status != Thread::ERROR && thread.status != Thread::FINISH) {
 	vaddr_t func_addr = calls_at_exit.top();
 	// 関数中でatexitを呼ばれる可能性があるので、先頭の関数を呼び出し前に除去する
 	calls_at_exit.pop();
@@ -186,28 +186,30 @@ void VMachine::execute(vtid_t tid, int max_clock) {
 
       } else {
 	// エラーまたは正常終了に設定。
-	if (status != ERROR) status = FINISH;
+	if (thread.status != Thread::ERROR) thread.status = Thread::FINISH;
 	return;
       }
     }
-    if (status == BEFOR_WARP && thread.stackinfos.size() == thread.warp_stack_size) {
+    if (thread.status == Thread::BEFOR_WARP &&
+	thread.stackinfos.size() == thread.warp_stack_size) {
       if (thread.funcs_at_befor_warp.size() > thread.warp_call_count) {
 	call_setup_voidfunc(thread, thread.funcs_at_befor_warp.at(thread.warp_call_count));
 	thread.warp_call_count ++;
 	goto re_entry;
 	
       } else {
-	status = WARP;
+	thread.status = Thread::WARP;
       }
     }
-    if (status == AFTER_WARP && thread.stackinfos.size() == thread.warp_stack_size) {
+    if (thread.status == Thread::AFTER_WARP &&
+	thread.stackinfos.size() == thread.warp_stack_size) {
       if (thread.funcs_at_befor_warp.size() > thread.warp_call_count) {
 	call_setup_voidfunc(thread, thread.funcs_at_befor_warp.at(thread.warp_call_count));
 	thread.warp_call_count ++;
 	goto re_entry;
 	
       } else {
-	status = ACTIVE;
+	thread.status = Thread::NORMAL;
       }
     }
 
@@ -219,8 +221,11 @@ void VMachine::execute(vtid_t tid, int max_clock) {
     DataStore& k = vmemory.get_data(func.normal_prop.k);
     OperandParam op_param = {*stackinfo.stack_cache, k, vmemory};
 
-    for (; (status == ACTIVE || status == EXITING || status == WAIT_WARP ||
-	    status == BEFOR_WARP || status == AFTER_WARP) &&
+    for (; (thread.status == Thread::NORMAL ||
+	    thread.status == Thread::EXITING ||
+	    thread.status == Thread::WAIT_WARP ||
+	    thread.status == Thread::BEFOR_WARP ||
+	    thread.status == Thread::AFTER_WARP) &&
 	   max_clock > 0; max_clock --) {
       instruction_t code = insts.at(stackinfo.pc);
       print_debug("pc:%d, k:%ld, insts:%ld, code:%08x %s\n",
@@ -1066,7 +1071,7 @@ vtid_t VMachine::create_thread(vaddr_t func_addr, vaddr_t arg_addr) {
     throw_error_message(Error::SPEC_VIOLATION, func.name.str());
   }
 
-  threads.insert(std::make_pair(tid, std::unique_ptr<Thread>(thread = new Thread())));
+  threads.insert(std::make_pair(tid, std::unique_ptr<Thread>(thread = new Thread(tid))));
 
   DataStore* root_stack = &vmemory.alloc_data(sizeof(vaddr_t), false);
   StackInfo* root_stackinfo = new StackInfo(VADDR_NON, VADDR_NON, 0, 0, root_stack->addr);
@@ -1149,22 +1154,28 @@ void VMachine::deploy_function_normal(const std::string& name,
 // Change status to exit.
 void VMachine::exit() {
   print_debug("Exit process");
+  
+  for (auto& it_thread : threads) {
+    Thread& thread = *(it_thread.second.get());
 
-  if (status == SETUP || status == PASSIVE) {
-    status = FINISH;
+    if (thread.status == Thread::PASSIVE) {
+      thread.status = Thread::FINISH;
     
-  } else if (status == ACTIVE || status == WAIT_WARP ||
-	     status == BEFOR_WARP || status == WARP ||
-	     status == AFTER_WARP) {
-    status = ACTIVE;
-    fixme("exit thread");
-    threads.at(1).get()->stackinfos.resize(1);
-    
-  } else if (status ==  EXITING) {
-    // Do noting.
-    
-  } else {
-    assert(false);
+    } else if (thread.status == Thread::NORMAL ||
+	       thread.status == Thread::WAIT_WARP ||
+	       thread.status == Thread::BEFOR_WARP ||
+	       thread.status == Thread::WARP ||
+	       thread.status == Thread::AFTER_WARP) {
+      thread.status = Thread::NORMAL;
+      fixme("exit thread");
+      threads.at(1).get()->stackinfos.resize(1);
+      
+    } else if (thread.status == Thread::EXITING) {
+      // Do noting.
+      
+    } else {
+      assert(false);
+    }
   }
 }
 
@@ -1338,8 +1349,9 @@ void VMachine::run(const std::vector<std::string>& args,
 		   const std::map<std::string, std::string>& envs) {
   // 最初のスレッドを作成
   Thread* init_thread;
-  threads.insert(std::make_pair(delegate.assign_tid(*this),
-				std::unique_ptr<Thread>(init_thread = new Thread())));
+  vtid_t tid = delegate.assign_tid(*this);
+  threads.insert(std::make_pair(tid,
+				std::unique_ptr<Thread>(init_thread = new Thread(tid))));
   
   // スレッドを初期化
 
@@ -1435,7 +1447,7 @@ void VMachine::run(const std::vector<std::string>& args,
 
   init_thread->stackinfos.push_back(std::unique_ptr<StackInfo>(main_stackinfo));
 
-  status = ACTIVE;
+  init_thread->status = Thread::NORMAL;
 }
 
 // 大域変数のアドレスを設定する。
@@ -1502,27 +1514,27 @@ void VMachine::setup_warpout(const vtid_t& tid) {
   thread.warp_stack_size = thread.stackinfos.size();
   thread.warp_call_count = 0;
 
-  status = AFTER_WARP;
+  thread.status = Thread::AFTER_WARP;
 }
 
 // Prepare to warp in.
 bool VMachine::setup_warpin(const vtid_t& tid, const dev_id_t& dst) {
+  Thread& thread = *threads.at(tid);
+
   // Status must be normal when warp
-  if (status != ACTIVE) {
+  if (thread.status != Thread::NORMAL) {
     return false;
   }
-
-  Thread& thread = *threads.at(tid);
 
   //thread.warp_to = dst;
   
   if (thread.warp_parameter[PW_KEY_WARP_TIMING] == PW_VAL_ON_ANYTIME) {
     thread.warp_stack_size = thread.stackinfos.size();
     thread.warp_call_count = 0;
-    status = BEFOR_WARP;
+    thread.status = Thread::BEFOR_WARP;
 
   } else { // On polling
-    status = WAIT_WARP;
+    thread.status = Thread::WAIT_WARP;
   }
 
   return true;

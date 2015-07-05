@@ -39,10 +39,10 @@ bool BuiltinWarp::poll_warp_request(VMachine& vm, Thread& thread, BuiltinFuncPar
   // Size of src must be same as parameter read.
   assert(static_cast<signed>(src.size()) == 0);
 
-  if (vm.status == VMachine::WAIT_WARP) {
+  if (thread.status == Thread::WAIT_WARP) {
     thread.warp_stack_size = thread.stackinfos.size();
     thread.warp_call_count = 0;
-    vm.status = VMachine::BEFOR_WARP;
+    thread.status = Thread::BEFOR_WARP;
     thread.stackinfos.back()->pc ++;
     return true;
     

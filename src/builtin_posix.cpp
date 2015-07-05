@@ -25,7 +25,7 @@ bool BuiltinPosix::__assert_fail(VMachine& vm, Thread& th, BuiltinFuncParam p,
 	    << ", line " << p_line << "." << std::endl;
   
   // VMを異常終了させる
-  vm.status = VMachine::ERROR;
+  th.status = Thread::ERROR;
   return true;
 }
 

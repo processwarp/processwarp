@@ -45,7 +45,9 @@ Controller::Controller(ControllerDelegate& _delegate) :
 // Main loop.
 void Controller::loop() {
   vpid_t pid;
+  vtid_t tid;
   VMachine* vm;
+  Thread*   thread;
 
   try {
     auto it = procs.begin();
@@ -54,27 +56,28 @@ void Controller::loop() {
       vm  = it->second.get();
 
       for (auto& it_thread : vm->threads) {
-	vtid_t tid = it_thread.first;
+	tid    = it_thread.first;
+	thread = it_thread.second.get();
 
-	if (vm->status == VMachine::ACTIVE ||
-	    vm->status == VMachine::WAIT_WARP ||
-	    vm->status == VMachine::BEFOR_WARP ||
-	    vm->status == VMachine::AFTER_WARP) {
+	if (thread->status == Thread::NORMAL ||
+	    thread->status == Thread::WAIT_WARP ||
+	    thread->status == Thread::BEFOR_WARP ||
+	    thread->status == Thread::AFTER_WARP) {
 	  
 	  delegate.on_switch_proccess(pid);
-	  // Execute llvm cycle.
+	  // run thread
 	  vm->execute(tid, 100);
 
-	} else if (vm->status == VMachine::WARP) {
+	} else if (thread->status == Thread::WARP) {
 	  do_warp_process(pid);
 	  
-	} else if (vm->status == VMachine::ERROR) {
+	} else if (thread->status == Thread::ERROR) {
 	  delegate.on_error(pid, "");
 	
-	} else if (vm->status == VMachine::FINISH) {
+	} else if (thread->status == Thread::FINISH) {
 	  delegate.on_finish_proccess(pid);
 	  it = procs.erase(it);
-	  // continue double loop.
+	  // continue double loop
 	  goto next_proc;
 	}
       }
@@ -85,15 +88,15 @@ void Controller::loop() {
     
   } catch (Error e) {
     delegate.on_error(pid, "");
-    vm->status = VMachine::FINISH;
+    thread->status = Thread::FINISH;
     
   } catch (std::exception e) {
     delegate.on_error(pid, e.what());
-    vm->status = VMachine::FINISH;
+    thread->status = Thread::FINISH;
     
   } catch (...) {
     delegate.on_error(pid, "unknown exception");
-    vm->status = VMachine::FINISH;
+    thread->status = Thread::FINISH;
   }
   
   delegate.on_switch_proccess("");
@@ -224,7 +227,9 @@ void Controller::do_warp_process(const vpid_t& pid) {
   delegate.send_warp_data(pid, 1, warp_dest.at(pid), data);
 
   warp_dest.erase(pid);
-  vm.status = VMachine::PASSIVE;
+  for (auto& it_thread : vm.threads) {
+    it_thread.second->status = Thread::PASSIVE;
+  }
 }
 
 void Controller::recv_process_warp(const vpid_t& pid, picojson::object& json) {
@@ -248,5 +253,7 @@ void Controller::recv_process_warp(const vpid_t& pid, picojson::object& json) {
   vm.setup_warpout(1);
   
   // Turn on vm.
-  vm.status = VMachine::ACTIVE;
+  for (auto& it_thread : vm.threads) {
+    it_thread.second->status = Thread::NORMAL;
+  }
 }
