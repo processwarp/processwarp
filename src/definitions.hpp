@@ -27,8 +27,15 @@ namespace processwarp {
     int64_t i64;
   };
 
+  /** Post process type of builtin function. */
+  enum BuiltinPost {
+    BP_NORMAL, ///< Normally run next instruction.
+    BP_RE_ENTRY, ///< Re-entry by stack deciding.
+    BP_RETRY_LATER, ///< Retry the same instruction later other thread.
+  };
+
   /**
-   * VM組み込み関数の型
+   * Type definition of builtin function.
    * @param vm 実行中の仮想マシン。
    * @param th 実行中のスレッド。
    * @param p 固定パラメータ。
@@ -36,8 +43,8 @@ namespace processwarp {
    * @param src 呼び出しパラメタ格納先。
    * @return スタック構造などを書き換え、execの再実行が必要な場合trueを戻す。
    */
-  typedef bool (*builtin_func_t)(VMachine& vm, Thread& th, BuiltinFuncParam p,
-				   vaddr_t dst, std::vector<uint8_t>& src);
+  typedef BuiltinPost (*builtin_func_t)(VMachine& vm, Thread& th, BuiltinFuncParam p,
+					vaddr_t dst, std::vector<uint8_t>& src);
 
   /** システム中で扱う最長のuint */
   typedef std::uint64_t longest_uint_t;

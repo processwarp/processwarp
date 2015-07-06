@@ -16,8 +16,8 @@ namespace processwarp {
      * dstへ書き込む値は以下のとおり。
      * i32 成功時0 失敗時-1
      */
-    static bool atexit(VMachine& vm, Thread& th, BuiltinFuncParam p,
-		       vaddr_t dst, std::vector<uint8_t>& src);
+    static BuiltinPost atexit(VMachine& vm, Thread& th, BuiltinFuncParam p,
+			      vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
      * calloc関数。データ領域の確保とクリアを行う。
@@ -27,24 +27,24 @@ namespace processwarp {
      * 戻り値は以下のとおり。
      * void* 確保した領域のアドレス
      */
-    static bool calloc(VMachine& vm, Thread& th, BuiltinFuncParam p,
-		       vaddr_t dst, std::vector<uint8_t>& src);
+    static BuiltinPost calloc(VMachine& vm, Thread& th, BuiltinFuncParam p,
+			      vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
      * exit関数。
      * srcから取り出すパラメタは以下のとおり。
      * i32 終了コード。
      */
-    static bool exit(VMachine& vm, Thread& th, BuiltinFuncParam p,
-		     vaddr_t dst, std::vector<uint8_t>& src);
+    static BuiltinPost exit(VMachine& vm, Thread& th, BuiltinFuncParam p,
+			    vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
      * free関数。指定データ領域を開放する。
      * srcから取り出すパラメタは以下のとおり。
      * vaddr_t ptr 開放するデータ領域。
      */
-    static bool free(VMachine& vm, Thread& th, BuiltinFuncParam p,
-		     vaddr_t dst, std::vector<uint8_t>& src);
+    static BuiltinPost free(VMachine& vm, Thread& th, BuiltinFuncParam p,
+			    vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
      * longjmp関数。保存されたスタックコンテキストへの非局所的なジャンプ。
@@ -52,8 +52,8 @@ namespace processwarp {
      * jmp_buf env
      * int val setjmpの返り値として戻す値。
      */
-    static bool longjmp(VMachine& vm, Thread& th, BuiltinFuncParam p,
-			vaddr_t dst, std::vector<uint8_t>& src);
+    static BuiltinPost longjmp(VMachine& vm, Thread& th, BuiltinFuncParam p,
+			       vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
      * malloc関数。データ領域の確保を行う。
@@ -62,8 +62,8 @@ namespace processwarp {
      * 戻り値は以下のとおり。
      * void* 確保した領域のアドレス
      */
-    static bool malloc(VMachine& vm, Thread& th, BuiltinFuncParam p,
-		       vaddr_t dst, std::vector<uint8_t>& src);
+    static BuiltinPost malloc(VMachine& vm, Thread& th, BuiltinFuncParam p,
+			      vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
      * memcpy関数。
@@ -74,8 +74,8 @@ namespace processwarp {
      * int32_t align アライメント。
      * int8_t isvolation 実行順番の制約(VMでは実行順番を入れ替えないので無視する)。
      */
-    static bool memcpy(VMachine& vm, Thread& th, BuiltinFuncParam p,
-		       vaddr_t dst, std::vector<uint8_t>& src);
+    static BuiltinPost memcpy(VMachine& vm, Thread& th, BuiltinFuncParam p,
+			      vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
      * memmove関数。
@@ -86,8 +86,8 @@ namespace processwarp {
      * int32_t align アライメント。
      * int8_t isvolation 実行順番の制約(VMでは実行順番を入れ替えないので無視する)。
      */
-    static bool memmove(VMachine& vm, Thread& th, BuiltinFuncParam p,
-			vaddr_t dst, std::vector<uint8_t>& src);
+    static BuiltinPost memmove(VMachine& vm, Thread& th, BuiltinFuncParam p,
+			       vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
      * memset関数。
@@ -98,8 +98,8 @@ namespace processwarp {
      * int32_t align アライメント。
      * int8_t isvolation 実行順番の制約(VMでは実行順番を入れ替えないので無視する)。
      */
-    static bool memset(VMachine& vm, Thread& th, BuiltinFuncParam p,
-		       vaddr_t dst, std::vector<uint8_t>& src);
+    static BuiltinPost memset(VMachine& vm, Thread& th, BuiltinFuncParam p,
+			      vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
      * realloc関数。データ領域の再確保を行う。
@@ -109,8 +109,8 @@ namespace processwarp {
      * 戻り値は以下のとおり。
      * void* 確保した領域のアドレス
      */
-    static bool realloc(VMachine& vm, Thread& th, BuiltinFuncParam p,
-			vaddr_t dst, std::vector<uint8_t>& src);
+    static BuiltinPost realloc(VMachine& vm, Thread& th, BuiltinFuncParam p,
+			       vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
      * VMにライブラリを登録する。
@@ -125,8 +125,8 @@ namespace processwarp {
      * 戻り値は以下のとおり
      * int 直接の戻り値は0、longjmpが呼び出された場合はlongjmpの引数に渡した値。
      */
-    static bool setjmp(VMachine& vm, Thread& th, BuiltinFuncParam p,
-		       vaddr_t dst, std::vector<uint8_t>& src);
+    static BuiltinPost setjmp(VMachine& vm, Thread& th, BuiltinFuncParam p,
+			      vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
      * strtol関数。文字列を数値に変換する。
@@ -137,7 +137,7 @@ namespace processwarp {
      * 戻り値は以下のとおり
      * i64
      */
-    static bool strtol(VMachine& vm, Thread& th, BuiltinFuncParam p,
-		       vaddr_t dst, std::vector<uint8_t>& src);
+    static BuiltinPost strtol(VMachine& vm, Thread& th, BuiltinFuncParam p,
+			      vaddr_t dst, std::vector<uint8_t>& src);
   };
 }

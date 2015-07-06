@@ -5,31 +5,31 @@
 using namespace processwarp;
 
 // llvm.lifetime.start関数。
-bool BuiltinMemory::lifetime_start(VMachine& vm, Thread& th, BuiltinFuncParam p,
-				     vaddr_t dst, std::vector<uint8_t>& src) {
+BuiltinPost BuiltinMemory::lifetime_start(VMachine& vm, Thread& th, BuiltinFuncParam p,
+					  vaddr_t dst, std::vector<uint8_t>& src) {
   // 何もしない
-  return false;
+  return BP_NORMAL;
 }
 
 // llvm.lifetime.end関数。
-bool BuiltinMemory::lifetime_end(VMachine& vm, Thread& th, BuiltinFuncParam p,
-				   vaddr_t dst, std::vector<uint8_t>& src) {
+BuiltinPost BuiltinMemory::lifetime_end(VMachine& vm, Thread& th, BuiltinFuncParam p,
+					vaddr_t dst, std::vector<uint8_t>& src) {
   // 何もしない
-  return false;
+  return BP_NORMAL;
 }
 
 // llvm.invariant.start関数。
-bool BuiltinMemory::invariant_start(VMachine& vm, Thread& th, BuiltinFuncParam p,
-				      vaddr_t dst, std::vector<uint8_t>& src) {
+BuiltinPost BuiltinMemory::invariant_start(VMachine& vm, Thread& th, BuiltinFuncParam p,
+					   vaddr_t dst, std::vector<uint8_t>& src) {
   // 何もしない
-  return false;
+  return BP_NORMAL;
 }
 
 // llvm.invariant.end関数。
-bool BuiltinMemory::invariant_end(VMachine& vm, Thread& th, BuiltinFuncParam p,
-				    vaddr_t dst, std::vector<uint8_t>& src) {
+BuiltinPost BuiltinMemory::invariant_end(VMachine& vm, Thread& th, BuiltinFuncParam p,
+					 vaddr_t dst, std::vector<uint8_t>& src) {
   // 何もしない
-  return false;
+  return BP_NORMAL;
 }
 
 // VMにライブラリを登録する。

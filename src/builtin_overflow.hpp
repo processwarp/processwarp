@@ -20,8 +20,8 @@ namespace processwarp {
      * T 計算結果
      * i1 overflowを検出した場合1が設定される
      */
-    static bool sadd(VMachine& vm, Thread& th, BuiltinFuncParam p,
-		     vaddr_t dst, std::vector<uint8_t>& src);
+    static BuiltinPost sadd(VMachine& vm, Thread& th, BuiltinFuncParam p,
+			    vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
      * overflowが検出可能な符号あり乗算関数。
@@ -32,8 +32,8 @@ namespace processwarp {
      * T 計算結果
      * i1 overflowを検出した場合1が設定される
      */
-    static bool smul(VMachine& vm, Thread& th, BuiltinFuncParam p,
-		     vaddr_t dst, std::vector<uint8_t>& src);
+    static BuiltinPost smul(VMachine& vm, Thread& th, BuiltinFuncParam p,
+			    vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
      * overflowが検出可能な符号あり減算関数。
@@ -44,8 +44,8 @@ namespace processwarp {
      * T 計算結果
      * i1 overflowを検出した場合1が設定される
      */
-    static bool ssub(VMachine& vm, Thread& th, BuiltinFuncParam p,
-		     vaddr_t dst, std::vector<uint8_t>& src);
+    static BuiltinPost ssub(VMachine& vm, Thread& th, BuiltinFuncParam p,
+			    vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
      * overflowが検出可能な符号なし加算関数。
@@ -56,8 +56,8 @@ namespace processwarp {
      * T 計算結果
      * i1 overflowを検出した場合1が設定される
      */
-    static bool uadd(VMachine& vm, Thread& th, BuiltinFuncParam p,
-		     vaddr_t dst, std::vector<uint8_t>& src);
+    static BuiltinPost uadd(VMachine& vm, Thread& th, BuiltinFuncParam p,
+			    vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
      * overflowが検出可能な符号なし乗算関数。
@@ -68,8 +68,8 @@ namespace processwarp {
      * T 計算結果
      * i1 overflowを検出した場合1が設定される
      */
-    static bool umul(VMachine& vm, Thread& th, BuiltinFuncParam p,
-		     vaddr_t dst, std::vector<uint8_t>& src);
+    static BuiltinPost umul(VMachine& vm, Thread& th, BuiltinFuncParam p,
+			    vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
      * overflowが検出可能な符号なし減算関数。
@@ -80,7 +80,7 @@ namespace processwarp {
      * T 計算結果
      * i1 overflowを検出した場合1が設定される
      */
-    static bool usub(VMachine& vm, Thread& th, BuiltinFuncParam p,
-		     vaddr_t dst, std::vector<uint8_t>& src);
+    static BuiltinPost usub(VMachine& vm, Thread& th, BuiltinFuncParam p,
+			    vaddr_t dst, std::vector<uint8_t>& src);
   };
 }

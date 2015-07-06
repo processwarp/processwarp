@@ -4,8 +4,8 @@
 using namespace processwarp;
 
 // byte-swap関数。
-bool BuiltinBit::bswap(VMachine& vm, Thread& th, BuiltinFuncParam p,
-			 vaddr_t dst, std::vector<uint8_t>& src) {
+BuiltinPost BuiltinBit::bswap(VMachine& vm, Thread& th, BuiltinFuncParam p,
+			      vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
   switch(p.i64) {
   case 16: {
@@ -31,7 +31,8 @@ bool BuiltinBit::bswap(VMachine& vm, Thread& th, BuiltinFuncParam p,
 
   default: assert(false);
   }
-  return false;
+
+  return BP_NORMAL;
 }
 
 // VMにライブラリを登録する。

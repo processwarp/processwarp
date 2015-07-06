@@ -13,8 +13,8 @@ void BuiltinVaArg::regist(VMachine& vm) {
 }
 
 // __builtin_va_arg関数。
-bool BuiltinVaArg::arg(VMachine& vm, Thread& th, BuiltinFuncParam p,
-			 vaddr_t dst, std::vector<uint8_t>& src) {
+BuiltinPost BuiltinVaArg::arg(VMachine& vm, Thread& th, BuiltinFuncParam p,
+			      vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
   // i8* arglistを取り出す。
   vaddr_t arglist = VMachine::read_builtin_param_ptr(src, &seek);
@@ -44,12 +44,12 @@ bool BuiltinVaArg::arg(VMachine& vm, Thread& th, BuiltinFuncParam p,
   *reinterpret_cast<vaddr_t*>(vm.get_raw_addr(arglist)) =
     va_arg + sizeof(vaddr_t) + type_store.size;
 
-  return false;
+  return BP_NORMAL;
 }
 
 // llvm.va_copy関数。
-bool BuiltinVaArg::copy(VMachine& vm, Thread& th, BuiltinFuncParam p,
-			  vaddr_t dst, std::vector<uint8_t>& src) {
+BuiltinPost BuiltinVaArg::copy(VMachine& vm, Thread& th, BuiltinFuncParam p,
+			       vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
   // i8* destarglistを取り出す。
   vaddr_t destarglist = VMachine::read_builtin_param_ptr(src, &seek);
@@ -60,19 +60,19 @@ bool BuiltinVaArg::copy(VMachine& vm, Thread& th, BuiltinFuncParam p,
   *reinterpret_cast<vaddr_t*>(vm.get_raw_addr(destarglist)) =
     *reinterpret_cast<vaddr_t*>(vm.get_raw_addr(srcarglist));
   
-  return false;
+  return BP_NORMAL;
 }
 
 // llvm.va_end関数。
-bool BuiltinVaArg::end(VMachine& vm, Thread& th, BuiltinFuncParam p,
-			 vaddr_t dst, std::vector<uint8_t>& src) {
+BuiltinPost BuiltinVaArg::end(VMachine& vm, Thread& th, BuiltinFuncParam p,
+			      vaddr_t dst, std::vector<uint8_t>& src) {
   // 資源の解放などは無いので、何もしなくて良い。
-  return false;
+  return BP_NORMAL;
 }
 
 // llvm.va_start関数。
-bool BuiltinVaArg::start(VMachine& vm, Thread& th, BuiltinFuncParam p,
-			   vaddr_t dst, std::vector<uint8_t>& src) {
+BuiltinPost BuiltinVaArg::start(VMachine& vm, Thread& th, BuiltinFuncParam p,
+				vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
   // i8* arglistを取り出す
   vaddr_t arglist = VMachine::read_builtin_param_ptr(src, &seek);
@@ -80,15 +80,5 @@ bool BuiltinVaArg::start(VMachine& vm, Thread& th, BuiltinFuncParam p,
   // arglistで指定したアドレスに可変長引数の先頭アドレスを格納しておく
   *reinterpret_cast<vaddr_t*>(vm.get_raw_addr(arglist)) = th.stackinfos.back()->var_arg;
 
-  return false;
+  return BP_NORMAL;
 }
-
-
-
-
-
-
-
-
-
-

@@ -19,16 +19,16 @@ namespace processwarp {
      * return into dst;
      * vaddr_t
      */
-    static bool createWindow(VMachine& vm, Thread& th, BuiltinFuncParam p,
-				 vaddr_t dst, std::vector<uint8_t>& src);
+    static BuiltinPost createWindow(VMachine& vm, Thread& th, BuiltinFuncParam p,
+				    vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
      * This function destroys the specified window and its context.
      * paramter from src;
      * vaddr_t window
      */
-    static bool destroyWindow(VMachine& vm, Thread& th, BuiltinFuncParam p,
-				  vaddr_t dst, std::vector<uint8_t>& src);
+    static BuiltinPost destroyWindow(VMachine& vm, Thread& th, BuiltinFuncParam p,
+				     vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
      * VMにライブラリを登録する。

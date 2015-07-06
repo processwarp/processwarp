@@ -15,8 +15,8 @@ namespace processwarp {
      * i64 サイズ
      * i8* ポインタ
      */
-    static bool lifetime_start(VMachine& vm, Thread& th, BuiltinFuncParam p,
-			       vaddr_t dst, std::vector<uint8_t>& src);
+    static BuiltinPost lifetime_start(VMachine& vm, Thread& th, BuiltinFuncParam p,
+				      vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
      * llvm.lifetime.end関数。
@@ -25,8 +25,8 @@ namespace processwarp {
      * i64 サイズ
      * i8* ポインタ
      */
-    static bool lifetime_end(VMachine& vm, Thread& th, BuiltinFuncParam p,
-			     vaddr_t dst, std::vector<uint8_t>& src);
+    static BuiltinPost lifetime_end(VMachine& vm, Thread& th, BuiltinFuncParam p,
+				    vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
      * llvm.invariant.start関数。
@@ -35,8 +35,8 @@ namespace processwarp {
      * i64 サイズ
      * i8* ポインタ
      */
-    static bool invariant_start(VMachine& vm, Thread& th, BuiltinFuncParam p,
-				vaddr_t dst, std::vector<uint8_t>& src);
+    static BuiltinPost invariant_start(VMachine& vm, Thread& th, BuiltinFuncParam p,
+				       vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
      * llvm.invariant.end関数。
@@ -45,8 +45,8 @@ namespace processwarp {
      * i64 サイズ
      * i8* ポインタ
      */
-    static bool invariant_end(VMachine& vm, Thread& th, BuiltinFuncParam p,
-			      vaddr_t dst, std::vector<uint8_t>& src);
+    static BuiltinPost invariant_end(VMachine& vm, Thread& th, BuiltinFuncParam p,
+				     vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
      * VMにライブラリを登録する。

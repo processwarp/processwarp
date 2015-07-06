@@ -10,7 +10,7 @@
 using namespace processwarp;
 
 // __assert_fail(assertの内部実装)関数。
-bool BuiltinPosix::__assert_fail(VMachine& vm, Thread& th, BuiltinFuncParam p,
+BuiltinPost BuiltinPosix::__assert_fail(VMachine& vm, Thread& th, BuiltinFuncParam p,
 				 vaddr_t dst, std::vector<uint8_t>& src) {
   // パタメタを読み取り
   int seek = 0;
@@ -27,11 +27,12 @@ bool BuiltinPosix::__assert_fail(VMachine& vm, Thread& th, BuiltinFuncParam p,
   
   // VMを異常終了させる
   th.status = Thread::ERROR;
-  return true;
+
+  return BP_RE_ENTRY;
 }
 
 // Implement for pthread_create.
-bool BuiltinPosix::pthread_create(VMachine& vm, Thread& th, BuiltinFuncParam p,
+BuiltinPost BuiltinPosix::pthread_create(VMachine& vm, Thread& th, BuiltinFuncParam p,
 				vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
   vaddr_t p_thread = VMachine::read_builtin_param_ptr(src, &seek);
@@ -46,23 +47,23 @@ bool BuiltinPosix::pthread_create(VMachine& vm, Thread& th, BuiltinFuncParam p,
 
   *reinterpret_cast<vm_int_t*>(vm.get_raw_addr(dst)) = 0;
   
-  return false;
+  return BP_NORMAL;
 }
 
 // Implement for pthread_exit.
-bool BuiltinPosix::pthread_exit(VMachine& vm, Thread& th, BuiltinFuncParam p,
+BuiltinPost BuiltinPosix::pthread_exit(VMachine& vm, Thread& th, BuiltinFuncParam p,
 				vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
   vaddr_t p_retval = VMachine::read_builtin_param_ptr(src, &seek);
   assert(static_cast<signed>(src.size()) == seek);
  
-  // TODO: vm.exit_thread(p_retval);
+  // vm.exit_thread(th.tid, p_retval);
 
-  return true; // stack changed
+  return BP_RE_ENTRY;
 }
 
 // Implement for pthread_join.
-bool BuiltinPosix::pthread_join(VMachine& vm, Thread& th, BuiltinFuncParam p,
+BuiltinPost BuiltinPosix::pthread_join(VMachine& vm, Thread& th, BuiltinFuncParam p,
 				vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
   vtid_t  p_thread = VMachine::read_builtin_param_i32(src, &seek);
@@ -72,11 +73,16 @@ bool BuiltinPosix::pthread_join(VMachine& vm, Thread& th, BuiltinFuncParam p,
   
   try {
     ret = 0;
-    return !vm.join_thread(th.tid, p_thread, p_retval);
+    if (vm.join_thread(th.tid, p_thread, p_retval)) {
+      return BP_NORMAL;
+
+    } else {
+      return BP_RETRY_LATER;
+    }
 
   } catch(StdError& e) {
     ret = e.std_errno;
-    return false;
+    return BP_NORMAL;
   }
 }
 

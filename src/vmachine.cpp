@@ -359,8 +359,13 @@ void VMachine::execute(vtid_t tid, int max_clock) {
 	} else if (new_func.type == FuncType::FC_BUILTIN) {
 	  // VM組み込み関数の呼び出し
 	  assert(new_func.builtin != nullptr);
-	  if (new_func.builtin(*this, thread, new_func.builtin_param, stackinfo.output, work)) {
-	    goto re_entry;
+	  BuiltinPost bp = new_func.builtin(*this, thread, new_func.builtin_param,
+					    stackinfo.output, work);
+	  switch(bp) {
+	  case BP_NORMAL: break;
+	  case BP_RE_ENTRY: goto re_entry;
+	  case BP_RETRY_LATER: stackinfo.pc -= args * 2 + 2; return;
+	  default: assert(false);
 	  }
 
 	} else { // func.type == FuncType::EXTERNAL

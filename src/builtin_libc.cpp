@@ -14,19 +14,20 @@
 using namespace processwarp;
 
 // atexit関数。
-bool BuiltinLibc::atexit(VMachine& vm, Thread& th, BuiltinFuncParam p,
-			   vaddr_t dst, std::vector<uint8_t>& src) {
+BuiltinPost BuiltinLibc::atexit(VMachine& vm, Thread& th, BuiltinFuncParam p,
+				vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
   // コピー先アドレスを取得
   vaddr_t func = VMachine::read_builtin_param_ptr(src, &seek);
   // 終了処理時に呼び出す関数一覧
   vm.calls_at_exit.push(func);
-  return false;
+
+  return BP_NORMAL;
 }
 
 // calloc関数。データ領域の確保とクリアを行う。
-bool BuiltinLibc::calloc(VMachine& vm, Thread& th, BuiltinFuncParam p,
-			   vaddr_t dst, std::vector<uint8_t>& src) {
+BuiltinPost BuiltinLibc::calloc(VMachine& vm, Thread& th, BuiltinFuncParam p,
+				vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
   uint64_t count = VMachine::read_builtin_param_i64(src, &seek);
   uint64_t size = VMachine::read_builtin_param_i64(src, &seek);
@@ -34,12 +35,13 @@ bool BuiltinLibc::calloc(VMachine& vm, Thread& th, BuiltinFuncParam p,
   // 領域のクリア
   std::memset(vm.get_raw_addr(allocated), 0, count * size);
   *reinterpret_cast<vaddr_t*>(vm.get_raw_addr(dst)) = allocated;
-  return false;
+
+  return BP_NORMAL;
 }
 
 // exit関数。
-bool BuiltinLibc::exit(VMachine& vm, Thread& th, BuiltinFuncParam p,
-			 vaddr_t dst, std::vector<uint8_t>& src) {
+BuiltinPost BuiltinLibc::exit(VMachine& vm, Thread& th, BuiltinFuncParam p,
+			      vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
   // コピー先アドレスを取得
   uint32_t ret = VMachine::read_builtin_param_i32(src, &seek);
@@ -55,21 +57,22 @@ bool BuiltinLibc::exit(VMachine& vm, Thread& th, BuiltinFuncParam p,
     th.stackinfos.pop_back();
   }
 
-  return true;
+  return BP_RE_ENTRY;
 }
 
 // free関数。指定データ領域を開放する。
-bool BuiltinLibc::free(VMachine& vm, Thread& th, BuiltinFuncParam p,
-			 vaddr_t dst, std::vector<uint8_t>& src) {
+BuiltinPost BuiltinLibc::free(VMachine& vm, Thread& th, BuiltinFuncParam p,
+			      vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
   vaddr_t ptr = VMachine::read_builtin_param_ptr(src, &seek);
   vm.vmemory.free(ptr);
-  return false;
+
+  return BP_NORMAL;
 }
 
 // longjmp関数。保存されたスタックコンテキストへの非局所的なジャンプ。
-bool BuiltinLibc::longjmp(VMachine& vm, Thread& th, BuiltinFuncParam p,
-			    vaddr_t dst, std::vector<uint8_t>& src) {
+BuiltinPost BuiltinLibc::longjmp(VMachine& vm, Thread& th, BuiltinFuncParam p,
+				 vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
   // 引数を開く。
   uint8_t* env = vm.get_raw_addr(VMachine::read_builtin_param_ptr(src, &seek));
@@ -129,21 +132,22 @@ bool BuiltinLibc::longjmp(VMachine& vm, Thread& th, BuiltinFuncParam p,
   seek2 += sizeof(vaddr_t);
   si.address_cache = nullptr;
 
-  return true;
+  return BP_RE_ENTRY;
 }
 
 // malloc関数。データ領域の確保を行う。
-bool BuiltinLibc::malloc(VMachine& vm, Thread& th, BuiltinFuncParam p,
-			   vaddr_t dst, std::vector<uint8_t>& src) {
+BuiltinPost BuiltinLibc::malloc(VMachine& vm, Thread& th, BuiltinFuncParam p,
+				vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
   uint64_t size = VMachine::read_builtin_param_i64(src, &seek);
   *reinterpret_cast<vaddr_t*>(vm.get_raw_addr(dst)) = vm.v_malloc(size, false);
-  return false;
+
+  return BP_NORMAL;
 }
 
 // memcpy関数。
-bool BuiltinLibc::memcpy(VMachine& vm, Thread& th, BuiltinFuncParam p,
-			   vaddr_t dst, std::vector<uint8_t>& src) {
+BuiltinPost BuiltinLibc::memcpy(VMachine& vm, Thread& th, BuiltinFuncParam p,
+				vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
   // コピー先アドレスを取得
   vaddr_t p_dst = VMachine::read_builtin_param_ptr(src, &seek);
@@ -172,12 +176,13 @@ bool BuiltinLibc::memcpy(VMachine& vm, Thread& th, BuiltinFuncParam p,
   std::memcpy(vm.get_raw_addr(p_dst),
 	      vm.get_raw_addr(p_src),
 	      static_cast<size_t>(p_size));
-  return false;
+
+  return BP_NORMAL;
 }
 
 // memmove関数。
-bool BuiltinLibc::memmove(VMachine& vm, Thread& th, BuiltinFuncParam p,
-			    vaddr_t dst, std::vector<uint8_t>& src) {
+BuiltinPost BuiltinLibc::memmove(VMachine& vm, Thread& th, BuiltinFuncParam p,
+				 vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
   // コピー先アドレスを取得
   vaddr_t p_dst = VMachine::read_builtin_param_ptr(src, &seek);
@@ -206,12 +211,13 @@ bool BuiltinLibc::memmove(VMachine& vm, Thread& th, BuiltinFuncParam p,
   std::memmove(vm.get_raw_addr(p_dst),
 	       vm.get_raw_addr(p_src),
 	       static_cast<size_t>(p_size));
-  return false;
+
+  return BP_NORMAL;
 }
 
 // memset関数。
-bool BuiltinLibc::memset(VMachine& vm, Thread& th, BuiltinFuncParam p,
-			   vaddr_t dst, std::vector<uint8_t>& src) {
+BuiltinPost BuiltinLibc::memset(VMachine& vm, Thread& th, BuiltinFuncParam p,
+				vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
   // 設定先先アドレスを取得
   vaddr_t p_dst = VMachine::read_builtin_param_ptr(src, &seek);
@@ -238,12 +244,13 @@ bool BuiltinLibc::memset(VMachine& vm, Thread& th, BuiltinFuncParam p,
   // 読み込んだパラメタ長と渡されたパラメタ長は同じはず
   assert(static_cast<signed>(src.size()) == seek);
   std::memset(vm.get_raw_addr(p_dst), p_val, static_cast<size_t>(p_len));
-  return false;
+
+  return BP_NORMAL;
 }
 
 // realloc関数。データ領域の再確保を行う。
-bool BuiltinLibc::realloc(VMachine& vm, Thread& th, BuiltinFuncParam p,
-			    vaddr_t dst, std::vector<uint8_t>& src) {
+BuiltinPost BuiltinLibc::realloc(VMachine& vm, Thread& th, BuiltinFuncParam p,
+				 vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
   vaddr_t ptr = VMachine::read_builtin_param_ptr(src, &seek);
   uint64_t size = VMachine::read_builtin_param_i64(src, &seek);
@@ -262,7 +269,8 @@ bool BuiltinLibc::realloc(VMachine& vm, Thread& th, BuiltinFuncParam p,
   }
 
   *reinterpret_cast<vaddr_t*>(vm.get_raw_addr(dst)) = new_store.addr;
-  return false;
+
+  return BP_NORMAL;
 }
 
 // VMにライブラリを登録する。
@@ -298,8 +306,8 @@ void BuiltinLibc::regist(VMachine& vm) {
 }
 
 // setjmp関数。非局所的なジャンプのために、スタックコンテキストを保存する。
-bool BuiltinLibc::setjmp(VMachine& vm, Thread& th, BuiltinFuncParam p,
-			   vaddr_t dst, std::vector<uint8_t>& src) {
+BuiltinPost BuiltinLibc::setjmp(VMachine& vm, Thread& th, BuiltinFuncParam p,
+				vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
   // 引数を開く。
   uint8_t* env = vm.get_raw_addr(VMachine::read_builtin_param_ptr(src, &seek));
@@ -340,12 +348,13 @@ bool BuiltinLibc::setjmp(VMachine& vm, Thread& th, BuiltinFuncParam p,
   
   // setjmp自体の戻り値は0
   *reinterpret_cast<int32_t*>(vm.get_raw_addr(dst)) = 0;
-  return false;
+
+  return BP_RE_ENTRY;
 }
 
 // strtol関数。文字列を数値に変換する。
-bool BuiltinLibc::strtol(VMachine& vm, Thread& th, BuiltinFuncParam p,
-			   vaddr_t dst, std::vector<uint8_t>& src) {
+BuiltinPost BuiltinLibc::strtol(VMachine& vm, Thread& th, BuiltinFuncParam p,
+				vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
   // 引数の読み込み
   vaddr_t nptr = VMachine::read_builtin_param_ptr(src, &seek);
@@ -373,5 +382,5 @@ bool BuiltinLibc::strtol(VMachine& vm, Thread& th, BuiltinFuncParam p,
 	nptr + (reinterpret_cast<uint8_t*>(work_ptr) - vm.get_raw_addr(nptr));
     }
   }
-  return false;
+  return BP_NORMAL;
 }

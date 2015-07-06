@@ -7,8 +7,8 @@
 using namespace processwarp;
 
 // This function creates a window and its associated OpenGL or OpenGL ES context.
-bool BuiltinGlfw3::createWindow(VMachine& vm, Thread& th, BuiltinFuncParam p,
-				      vaddr_t dst, std::vector<uint8_t>& src) {
+BuiltinPost BuiltinGlfw3::createWindow(VMachine& vm, Thread& th, BuiltinFuncParam p,
+				       vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
   uint32_t width = VMachine::read_builtin_param_i32(src, &seek);
   uint32_t height = VMachine::read_builtin_param_i32(src, &seek);
@@ -26,12 +26,12 @@ bool BuiltinGlfw3::createWindow(VMachine& vm, Thread& th, BuiltinFuncParam p,
   // ネイティブのアドレスとのペアを作成。
   *reinterpret_cast<vaddr_t*>(vm.get_raw_addr(dst)) = vm.create_native_ptr(window);
   
-  return false;
+  return BP_NORMAL;
 }
 
 // This function destroys the specified window and its context.
-bool BuiltinGlfw3::destroyWindow(VMachine& vm, Thread& th, BuiltinFuncParam p,
-				       vaddr_t dst, std::vector<uint8_t>& src) {
+BuiltinPost BuiltinGlfw3::destroyWindow(VMachine& vm, Thread& th, BuiltinFuncParam p,
+					vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
   vaddr_t window = VMachine::read_builtin_param_ptr(src, &seek);
   // 読み込んだパラメタ長と渡されたパラメタ長は同じはず
@@ -42,7 +42,7 @@ bool BuiltinGlfw3::destroyWindow(VMachine& vm, Thread& th, BuiltinFuncParam p,
   // ネイティブのアドレスとのペアを解消。
   vm.destory_native_ptr(window);
 
-  return false;
+  return BP_NORMAL;
 }
 
 void BuiltinGlfw3::regist(VMachine& vm) {

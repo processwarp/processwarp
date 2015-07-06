@@ -4,7 +4,8 @@
 
 namespace processwarp {
   /**
-   *
+   * LLVM built-in bit manipulation operations.
+   * @see <a href="http://llvm.org/docs/LangRef.html#bit-manipulation-intrinsics">LLVM Language Reference Manual</a>
    */
   class BuiltinBit {
   public:
@@ -13,8 +14,8 @@ namespace processwarp {
      * srcから取り出すパラメタは以下のとおり。
      * T 変換元の数値。
      */
-    static bool bswap(VMachine& vm, Thread& th, BuiltinFuncParam p,
-		      vaddr_t dst, std::vector<uint8_t>& src);
+    static BuiltinPost bswap(VMachine& vm, Thread& th, BuiltinFuncParam p,
+			     vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
      * VMにライブラリを登録する。

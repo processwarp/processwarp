@@ -54,9 +54,9 @@ void BuiltinOverflow::regist(VMachine& vm) {
  * @param I32 32bit幅の計算のベースになる整数型
  * @param I64 64bit幅の計算のベースになる整数型
  */
-#define M_FUNC_PER_METHOD(FNAME, SFUNC, I16, I32, I64) \
-  bool BuiltinOverflow::FNAME(VMachine& vm, Thread& th, BuiltinFuncParam p, \
-				vaddr_t dst, std::vector<uint8_t>& src) { \
+#define M_FUNC_PER_METHOD(FNAME, SFUNC, I16, I32, I64)			\
+  BuiltinPost BuiltinOverflow::FNAME(VMachine& vm, Thread& th, BuiltinFuncParam p, \
+				     vaddr_t dst, std::vector<uint8_t>& src) { \
     int seek = 0;							\
     switch (p.i64) {							\
       M_CASE_PER_WIDTH(SFUNC, I16, 16);					\
@@ -64,7 +64,7 @@ void BuiltinOverflow::regist(VMachine& vm) {
       M_CASE_PER_WIDTH(SFUNC, I64, 64);					\
     default: assert(false); break;					\
     }									\
-    return false;							\
+    return BP_NORMAL;							\
   }
 
 M_FUNC_PER_METHOD(sadd, SafeAdd,      int16_t, int32_t, int64_t)

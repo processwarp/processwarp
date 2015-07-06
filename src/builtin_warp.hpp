@@ -11,22 +11,22 @@ namespace processwarp {
      * parameter from src;
      * vaddr_t function
      */
-    static bool at_after_warp(VMachine& vm, Thread& thread, BuiltinFuncParam p,
-			      vaddr_t dst, std::vector<uint8_t>& src);
+    static BuiltinPost at_after_warp(VMachine& vm, Thread& thread, BuiltinFuncParam p,
+				     vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
      * This function register function that will be called at befor warp.
      * parameter from src;
      * vaddr_t function
      */
-    static bool at_befor_warp(VMachine& vm, Thread& thread, BuiltinFuncParam p,
-			      vaddr_t dst, std::vector<uint8_t>& src);
+    static BuiltinPost at_befor_warp(VMachine& vm, Thread& thread, BuiltinFuncParam p,
+				     vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
      * This function check to warp is requested.
      */
-    static bool poll_warp_request(VMachine& vm, Thread& thread, BuiltinFuncParam p,
-				  vaddr_t dst, std::vector<uint8_t>& src);
+    static BuiltinPost poll_warp_request(VMachine& vm, Thread& thread, BuiltinFuncParam p,
+					 vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
      * This function register library functions in virtual machine.
@@ -40,7 +40,7 @@ namespace processwarp {
      * i32 key
      * i32 value
      */
-    static bool set_processwarp_param(VMachine& vm, Thread& thread, BuiltinFuncParam p,
-				      vaddr_t dst, std::vector<uint8_t>& src);
+    static BuiltinPost set_processwarp_param(VMachine& vm, Thread& thread, BuiltinFuncParam p,
+					     vaddr_t dst, std::vector<uint8_t>& src);
   };
 }
