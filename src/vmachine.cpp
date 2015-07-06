@@ -1110,7 +1110,7 @@ vtid_t VMachine::create_thread(vaddr_t func_addr, vaddr_t arg_addr) {
   }
   thread->stackinfos.push_back(std::unique_ptr<StackInfo>(func_stackinfo));
 
-  return false;
+  return tid;
 }
 
 // Join a thread.
