@@ -67,6 +67,11 @@ namespace processwarp {
     VMemory vmemory;    ///< 仮想メモリ空間
     std::map<vaddr_t, void*> native_ptr; ///< 仮想アドレスとネイティブポインタのペア
     vaddr_t last_free_native_ptr;
+    /**
+     * Root thread-id.
+     * Root thread is the origin thread in process.
+     */
+    const vtid_t root_tid;
     
     /**
      * Constructor.
@@ -140,6 +145,15 @@ namespace processwarp {
      *
      */
     void exit_thread(vaddr_t retval);
+
+    /**
+     * Join a thread.
+     * @param current Current thread (join from).
+     * @param target Join target thread.
+     * @param retval Saved addr.
+     * @return True if joined. False if waiting.
+     */
+    bool join_thread(vtid_t current, vtid_t target, vaddr_t retval);
     
     /**
      * 配列型の型情報を作成する。

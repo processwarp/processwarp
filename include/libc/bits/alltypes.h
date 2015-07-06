@@ -287,17 +287,9 @@ typedef unsigned useconds_t;
 #endif
 
 
-#ifdef __cplusplus
 #if defined(__NEED_pthread_t) && !defined(__DEFINED_pthread_t)
-typedef unsigned long pthread_t;
+typedef unsigned int pthread_t;
 #define __DEFINED_pthread_t
-#endif
-
-#else
-#if defined(__NEED_pthread_t) && !defined(__DEFINED_pthread_t)
-typedef struct __pthread * pthread_t;
-#define __DEFINED_pthread_t
-#endif
 
 #endif
 #if defined(__NEED_pthread_once_t) && !defined(__DEFINED_pthread_once_t)

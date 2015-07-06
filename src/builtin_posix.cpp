@@ -4,6 +4,7 @@
 #include <cstring>
 
 #include "builtin_posix.hpp"
+#include "std_error.hpp"
 #include "vmachine.hpp"
 
 using namespace processwarp;
@@ -64,13 +65,19 @@ bool BuiltinPosix::pthread_exit(VMachine& vm, Thread& th, BuiltinFuncParam p,
 bool BuiltinPosix::pthread_join(VMachine& vm, Thread& th, BuiltinFuncParam p,
 				vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
-  vm_int_t p_thread = VMachine::read_builtin_param_i32(src, &seek);
-  vaddr_t  p_retval = VMachine::read_builtin_param_ptr(src, &seek);
+  vtid_t  p_thread = VMachine::read_builtin_param_i32(src, &seek);
+  vaddr_t p_retval = VMachine::read_builtin_param_ptr(src, &seek);
   assert(static_cast<signed>(src.size()) == seek);
-
-  // TODO: fixme
+  vm_int_t& ret = *reinterpret_cast<vm_int_t*>(vm.get_raw_addr(dst));
   
-  return false;
+  try {
+    ret = 0;
+    return !vm.join_thread(th.tid, p_thread, p_retval);
+
+  } catch(StdError& e) {
+    ret = e.std_errno;
+    return false;
+  }
 }
 
 // VMにライブラリを登録する。

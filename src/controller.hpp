@@ -45,6 +45,13 @@ namespace processwarp {
     virtual void on_finish_proccess(const vpid_t& pid);
 
     /**
+     * Call when a thread was finish.
+     * @param pid Target pid.
+     * @param tid Target tid.
+     */
+    virtual void on_finish_thread(const vpid_t& pid, const vtid_t& tid);
+
+    /**
      * Call when rise error.
      * @param pid Target pid.
      * @param message Error message.

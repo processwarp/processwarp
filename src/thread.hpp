@@ -24,13 +24,13 @@ namespace processwarp {
     enum Status {
       NORMAL,
       PASSIVE,
-      EXITING,
 
       WAIT_WARP,
       BEFOR_WARP,
       WARP,
       AFTER_WARP,
 
+      JOIN_WAIT,
       ERROR,
       FINISH,
     };

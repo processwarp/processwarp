@@ -30,6 +30,11 @@ void ControllerDelegate::on_finish_proccess(const vpid_t& pid) {
   // Do nothing.
 }
 
+// Call when a thread was finish.
+void ControllerDelegate::on_finish_thread(const vpid_t& pid, const vtid_t& tid) {
+  // Do nothing.
+}
+
 // Call when rise error.
 void ControllerDelegate::on_error(const vpid_t& pid,
 				  const std::string& message) {
@@ -50,14 +55,15 @@ void Controller::loop() {
   Thread*   thread;
 
   try {
-    auto it = procs.begin();
-    while (it != procs.end()) {
-      pid = it->first;
-      vm  = it->second.get();
+    auto it_proc = procs.begin();
+    while (it_proc != procs.end()) {
+      pid = it_proc->first;
+      vm  = it_proc->second.get();
 
-      for (auto& it_thread : vm->threads) {
-	tid    = it_thread.first;
-	thread = it_thread.second.get();
+      auto it_thread = vm->threads.begin();
+      while(it_thread != vm->threads.end()) {
+	tid    = it_thread->first;
+	thread = it_thread->second.get();
 
 	if (thread->status == Thread::NORMAL ||
 	    thread->status == Thread::WAIT_WARP ||
@@ -75,13 +81,23 @@ void Controller::loop() {
 	  delegate.on_error(pid, "");
 	
 	} else if (thread->status == Thread::FINISH) {
-	  delegate.on_finish_proccess(pid);
-	  it = procs.erase(it);
-	  // continue double loop
-	  goto next_proc;
+	  delegate.on_finish_thread(pid, tid);
+
+	  if (tid == vm->root_tid) {
+	    delegate.on_finish_proccess(pid);
+	    it_proc = procs.erase(it_proc);
+	    // continue double loop
+	    goto next_proc;
+
+	  } else {
+	    it_thread = vm->threads.erase(it_thread);
+	    continue;
+	  }
 	}
+	it_thread ++;
       }
-      it ++;
+
+      it_proc ++;
     next_proc:
       ;
     }

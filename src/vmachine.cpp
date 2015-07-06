@@ -34,6 +34,7 @@
 #include "stackinfo.hpp"
 #include "type_based.hpp"
 #include "util.hpp"
+#include "std_error.hpp"
 #include "vmachine.hpp"
 
 using namespace processwarp;
@@ -157,7 +158,8 @@ VMachine::VMachine(VMachineDelegate& _delegate,
 		   const std::map<std::string, std::string>& _lib_filter) :
   delegate(_delegate),
   libs(_libs),
-  lib_filter(_lib_filter) {
+  lib_filter(_lib_filter),
+  root_tid(delegate.assign_tid(*this)) {
 }
 
 // 仮想アドレスとネイティブポインタのペアを解消する。
@@ -174,22 +176,36 @@ void VMachine::execute(vtid_t tid, int max_clock) {
   Thread& thread = *(threads.at(tid));
  re_entry: {
     if (thread.stackinfos.size() == 1) {
-      // calls_at_exitに関数が登録されている場合、順番に実行する
-      if (!calls_at_exit.empty() &&
-	  thread.status != Thread::ERROR && thread.status != Thread::FINISH) {
-	vaddr_t func_addr = calls_at_exit.top();
-	// 関数中でatexitを呼ばれる可能性があるので、先頭の関数を呼び出し前に除去する
-	calls_at_exit.pop();
-	// calls_at_exitの先頭の関数を呼び出し状態にセット
-	call_setup_voidfunc(thread, func_addr);
-	goto re_entry;
+      if (thread.tid == root_tid) {
+	// calls_at_exitに関数が登録されている場合、順番に実行する
+	if (!calls_at_exit.empty() &&
+	    thread.status != Thread::ERROR && thread.status != Thread::FINISH) {
+	  vaddr_t func_addr = calls_at_exit.top();
+	  // 関数中でatexitを呼ばれる可能性があるので、先頭の関数を呼び出し前に除去する
+	  calls_at_exit.pop();
+	  // calls_at_exitの先頭の関数を呼び出し状態にセット
+	  call_setup_voidfunc(thread, func_addr);
+	  goto re_entry;
 
-      } else {
-	// エラーまたは正常終了に設定。
-	if (thread.status != Thread::ERROR) thread.status = Thread::FINISH;
+	} else {
+	  // エラーまたは正常終了に設定。
+	  if (thread.status != Thread::ERROR) thread.status = Thread::FINISH;
+	  return;
+	}
+
+      } else { // Non root thread.
+	if (thread.status != Thread::ERROR) {
+	  if (thread.join_waiting == Thread::DETACHED_THREAD) {
+	    thread.status = Thread::FINISH;
+
+	  } else {
+	    thread.status = Thread::JOIN_WAIT;
+	  }
+	}
 	return;
       }
     }
+
     if (thread.status == Thread::BEFOR_WARP &&
 	thread.stackinfos.size() == thread.warp_stack_size) {
       if (thread.funcs_at_befor_warp.size() > thread.warp_call_count) {
@@ -222,7 +238,6 @@ void VMachine::execute(vtid_t tid, int max_clock) {
     OperandParam op_param = {*stackinfo.stack_cache, k, vmemory};
 
     for (; (thread.status == Thread::NORMAL ||
-	    thread.status == Thread::EXITING ||
 	    thread.status == Thread::WAIT_WARP ||
 	    thread.status == Thread::BEFOR_WARP ||
 	    thread.status == Thread::AFTER_WARP) &&
@@ -1089,6 +1104,40 @@ vtid_t VMachine::create_thread(vaddr_t func_addr, vaddr_t arg_addr) {
     func_stackinfo = new StackInfo(func.addr, root_stack->addr, 0, 0, VADDR_NON);
   }
   thread->stackinfos.push_back(std::unique_ptr<StackInfo>(func_stackinfo));
+
+  return false;
+}
+
+// Join a thread.
+bool VMachine::join_thread(vtid_t current, vtid_t target, vaddr_t retval) {
+  if (threads.find(target) == threads.end()) {
+    throw_std_error(StdError::SRCH);
+  }
+
+  Thread& target_thread  = *threads.at(target).get();
+  if (target_thread.join_waiting != current) {
+    if (target_thread.join_waiting != Thread::JOIN_NONE) {
+      throw_std_error(StdError::INVAL);
+      
+    } else if (target == current) {
+      throw_std_error(StdError::DEADLK);
+    }
+    
+    target_thread.join_waiting = current;
+  }
+
+  if (target_thread.status == Thread::JOIN_WAIT) {
+    // copy retval
+    *reinterpret_cast<vaddr_t*>(get_raw_addr(retval)) =
+      *reinterpret_cast<vaddr_t*>(get_raw_addr(target_thread.stackinfos.at(0)->stack));
+
+    target_thread.status = Thread::FINISH;
+    return true;
+
+  } else {
+    // waiting
+    return false;
+  }
 }
 
 // 配列型の型情報を作成する。
@@ -1169,9 +1218,6 @@ void VMachine::exit() {
       thread.status = Thread::NORMAL;
       fixme("exit thread");
       threads.at(1).get()->stackinfos.resize(1);
-      
-    } else if (thread.status == Thread::EXITING) {
-      // Do noting.
       
     } else {
       assert(false);
@@ -1347,14 +1393,14 @@ vaddr_t VMachine::reserve_func_addr() {
 // VMの初期設定をする。
 void VMachine::run(const std::vector<std::string>& args,
 		   const std::map<std::string, std::string>& envs) {
-  // 最初のスレッドを作成
-  Thread* init_thread;
-  vtid_t tid = delegate.assign_tid(*this);
-  threads.insert(std::make_pair(tid,
-				std::unique_ptr<Thread>(init_thread = new Thread(tid))));
+  // make root thread
+  Thread* root_thread;
+  threads.insert(std::make_pair(root_tid,
+				std::unique_ptr<Thread>(root_thread = new Thread(root_tid))));
   
   // スレッドを初期化
-
+  root_thread->join_waiting = Thread::ROOT_THREAD;
+  
   // main関数の取得
   auto it_main_func = globals.find(&symbols.get("main"));
   if (it_main_func == globals.end())
@@ -1436,7 +1482,7 @@ void VMachine::run(const std::vector<std::string>& args,
   StackInfo* init_stackinfo = new StackInfo(VADDR_NON, VADDR_NON, 0, 0, init_stack->addr);
   init_stackinfo->output = init_stack->addr;
   init_stackinfo->output_cache = init_stack->head.get();
-  init_thread->stackinfos.push_back(std::unique_ptr<StackInfo>(init_stackinfo));
+  root_thread->stackinfos.push_back(std::unique_ptr<StackInfo>(init_stackinfo));
   
   StackInfo* main_stackinfo;
   if (main_stack != nullptr) {
@@ -1445,9 +1491,7 @@ void VMachine::run(const std::vector<std::string>& args,
     main_stackinfo = new StackInfo(main_func.addr, init_stack->addr, 0, 0, VADDR_NON);
   }
 
-  init_thread->stackinfos.push_back(std::unique_ptr<StackInfo>(main_stackinfo));
-
-  init_thread->status = Thread::NORMAL;
+  root_thread->stackinfos.push_back(std::unique_ptr<StackInfo>(main_stackinfo));
 }
 
 // 大域変数のアドレスを設定する。
