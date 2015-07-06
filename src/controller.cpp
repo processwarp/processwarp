@@ -1,4 +1,6 @@
 
+#include <random>
+
 #include "controller.hpp"
 #include "convert.hpp"
 #include "definitions.hpp"
@@ -212,7 +214,8 @@ void Controller::warp_process(const vpid_t& pid,
 // @inheritDoc
 vtid_t Controller::assign_tid(VMachine& vm) {
   fixme("assign_tid\n");
-  return 2;
+  std::random_device rnd;
+  return rnd();
 }
 
 // Dump and send data to warp process. 

@@ -37,10 +37,12 @@ public:
   }
 
   /**
-   * Return assigned thread-id as new thread-id.
+   * Must not return thread-id.
+   * Because only root thread need for loading.
    */
   vtid_t assign_tid(VMachine& vm) override {
-    return tid;
+    assert(false);
+    return 0;
   }
   
   /**
@@ -111,7 +113,7 @@ int main(int argc, char* argv[]) {
       // Get pid.
       vpid_t pid = Convert::json2vpid(result.at("pid"));
       // Get tid.
-      vtid_t tid = 1;//Convert::json2vtid(result.at("tid"));
+      vtid_t tid = Convert::json2vtid(result.at("tid"));
       // Make loader.
       Loader loader(pid, tid);
       
