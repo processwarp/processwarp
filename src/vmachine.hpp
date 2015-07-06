@@ -50,8 +50,12 @@ namespace processwarp {
     
     /** Deleaget for vm. */
     VMachineDelegate& delegate;
-
-    std::vector<void*>& libs; ///< ロードした外部のライブラリ
+    /** My process-id. */
+    const vpid_t pid;
+    /** Root thread-id. */
+    const vtid_t root_tid;
+    /** Loaded external libraries for ffi. */
+    std::vector<void*>& libs;
     /**
      * Map of API name call from and call for that can access.
      * Key:API nam call from application.
@@ -67,19 +71,18 @@ namespace processwarp {
     VMemory vmemory;    ///< 仮想メモリ空間
     std::map<vaddr_t, void*> native_ptr; ///< 仮想アドレスとネイティブポインタのペア
     vaddr_t last_free_native_ptr;
-    /**
-     * Root thread-id.
-     * Root thread is the origin thread in process.
-     */
-    const vtid_t root_tid;
     
     /**
      * Constructor.
      * @param delegate Delegate for vm.
+     * @param pid Assigned process-id.
+     * @param root_tid Root thread-id.
      * @param libs List of external libraries.
      * @param lib_filter Map of API name call from and call for.
      */
     VMachine(VMachineDelegate& delegate,
+	     const vpid_t& pid,
+	     const vtid_t& root_tid,
 	     std::vector<void*>& libs,
 	     const std::map<std::string, std::string>& lib_filter);
 
@@ -142,9 +145,11 @@ namespace processwarp {
     void detach_thread(vtid_t tid);
 
     /**
-     *
+     * Prepare to exit a thread.
+     * @param tid Target thread.
+     * @param retval Thread's return value.
      */
-    void exit_thread(vaddr_t retval);
+    void exit_thread(vtid_t tid, vaddr_t retval);
 
     /**
      * Join a thread.

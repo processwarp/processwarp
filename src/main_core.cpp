@@ -235,14 +235,15 @@ public:
     // Not to me.
     if (to_device_id != device_id) return;
 
-    if (procs.find(pid) == procs.end()) return;
+    if (controller.have_process(pid)) return;
 
-    socket.send_warp_request_1(pid, tid, dst_device_id);
+    socket.send_warp_request_1(pid, tid, controller.get_root_tid(pid), dst_device_id);
   }
 
   // Call when recv warp request from device that having process.
   void recv_warp_request_1(const vpid_t& pid,
 			   const vtid_t& tid,
+			   const vtid_t& root_tid,
 			   const std::string& name,
 			   const std::string& from_account,
 			   const dev_id_t& from_device_id,
@@ -271,7 +272,7 @@ public:
 	proc_info.threads.insert(std::make_pair(tid, device_id));
       }
       
-      controller.create_process(pid, libs, lib_filter);
+      controller.create_process(pid, root_tid, libs, lib_filter);
 
     } else {
       // Deny from other account.

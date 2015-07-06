@@ -72,7 +72,7 @@ namespace processwarp {
      * @return thread-id.
      */
     static vtid_t json2vtid(const picojson::value& json) {
-      return Util::hex_str2num<vtid_t>(json.get<std::string>());
+      return str2vtid(json.get<std::string>());
     }
 
     /**
@@ -89,6 +89,15 @@ namespace processwarp {
      */
     static picojson::value vpid2json(const vpid_t& pid) {
       return picojson::value(pid);
+    }
+
+    /**
+     * Convert thread-id to JSON.
+     * @param tid thread-id.
+     * @return thread-id as JSON.
+     */
+    static picojson::value vtid2json(const vtid_t& tid) {
+      return picojson::value(vtid2str(tid));
     }
 
     /**

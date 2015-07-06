@@ -17,6 +17,8 @@ namespace processwarp {
   struct SocketIoProc {
     // pid
     vpid_t pid;
+    // Root thread-id.
+    vtid_t root_tid;
     // Name of process
     std::string name;
     // Map of tid and device-id.
@@ -95,6 +97,7 @@ namespace processwarp {
      */
     virtual void recv_warp_request_1(const vpid_t& pid,
 				     const vtid_t& tid,
+				     const vtid_t& root_tid,
 				     const std::string& name,
 				     const std::string& from_account,
 				     const dev_id_t& from_device_id,
@@ -272,11 +275,13 @@ namespace processwarp {
      * Packet format: {
      *   pid: <pid to want to warp.>
      *   tid: <tid to want to warp.>
+     *   root_tid: <root tid of process.>
      *   to_device_id: <destination device-id.>
      * }
      */
     void send_warp_request_1(const vpid_t& pid,
 			     const vtid_t& tid,
+			     const vtid_t& root_tid,
 			     const dev_id_t& to_device_id);
 
     /**

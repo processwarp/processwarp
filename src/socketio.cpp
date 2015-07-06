@@ -228,6 +228,7 @@ void SocketIo::pool() {
     } else if (name == "warp_request_1") {
       delegate.recv_warp_request_1(get_pid_by_map(data, "pid"),
 				   get_tid_by_map(data, "tid"),
+				   get_tid_by_map(data, "root_tid"),
 				   get_str_by_map(data, "name"),
 				   get_str_by_map(data, "from_account", false),
 				   get_dev_id_by_map(data, "from_device_id"),
@@ -377,12 +378,14 @@ void SocketIo::send_warp_request_0(const vpid_t& pid,
 // Send request of trigger to warp from device there running process.
 void SocketIo::send_warp_request_1(const vpid_t& pid,
 				   const vtid_t& tid,
+				   const vtid_t& root_tid,
 				   const dev_id_t& to_device_id) {
   sio::message::ptr data(sio::object_message::create());
   std::map<std::string, sio::message::ptr>& map = data->get_map();
 
   map.insert(std::make_pair("pid", get_sio_by_pid(pid)));
   map.insert(std::make_pair("tid", get_sio_by_tid(tid)));
+  map.insert(std::make_pair("root_tid", get_sio_by_tid(root_tid)));
   map.insert(std::make_pair("to_device_id", get_sio_by_dev_id(to_device_id)));
 
   socket->emit("warp_request_1", data);

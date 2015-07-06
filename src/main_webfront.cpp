@@ -92,12 +92,16 @@ void set_device_id(const dev_id_t& device_id) {
   controller.device_id = device_id;
 }
 
-void create_process(const vpid_t& pid) {
-  controller.create_process(pid, LIBS, lib_filter);
+void create_process(const vpid_t& pid, std::string root_tid) {
+  controller.create_process(pid, Convert::str2vtid(root_tid), LIBS, lib_filter);
 }
 
 void delete_process(const vpid_t& pid) {
   controller.delete_process(pid);
+}
+
+std::string get_root_tid(const vpid_t& pid) {
+  return Convert::vtid2str(controller.get_root_tid(pid));
 }
 
 void exit_process(const vpid_t& pid) {
@@ -129,4 +133,5 @@ EMSCRIPTEN_BINDINGS(mod) {
   function("delete_process", &delete_process);
   function("exit_process",   &exit_process);
   function("warp_process",   &warp_process);
+  function("get_root_tid",   &get_root_tid);
 }

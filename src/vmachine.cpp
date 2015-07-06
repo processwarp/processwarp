@@ -154,12 +154,15 @@ inline TypeStore& get_type(instruction_t code, OperandParam& param) {
 
 // Constructor.
 VMachine::VMachine(VMachineDelegate& _delegate,
+		   const vpid_t& _pid,
+		   const vtid_t& _root_tid,
 		   std::vector<void*>& _libs,
 		   const std::map<std::string, std::string>& _lib_filter) :
   delegate(_delegate),
+  pid(_pid),
+  root_tid(_root_tid),
   libs(_libs),
-  lib_filter(_lib_filter),
-  root_tid(delegate.assign_tid(*this)) {
+  lib_filter(_lib_filter) {
 }
 
 // 仮想アドレスとネイティブポインタのペアを解消する。

@@ -92,11 +92,13 @@ namespace processwarp {
     
     /**
      * Create empty process.
-     * @param pid New process's pid.
+     * @param pid New process's process-id.
+     * @param root_tid Root thread-id.
      * @param libs List of external libraries.
      * @param lib_filter Map of API name call from and call for.
      */
     void create_process(const vpid_t& pid,
+			const vtid_t& root_tid,
 			std::vector<void*> libs,
 			const std::map<std::string, std::string>& lib_filter);
 
@@ -112,6 +114,20 @@ namespace processwarp {
      * @param pid Target pid.
      */
     void exit_process(const vpid_t& pid);
+
+    /**
+     * Get root thread-id of process.
+     * @param pid Target process's id.
+     * @return Root thread-id of process.
+     */
+    const vtid_t& get_root_tid(const vpid_t& pid);
+
+    /**
+     * Check whether process has contain in this device.
+     * @param pid Target process-id.
+     * @return True if process has contain.
+     */
+    bool have_process(const vpid_t& pid);
 
     /**
      * Start warp process.

@@ -161,11 +161,12 @@ bool Controller::recv_warp_data(const vpid_t& pid,
 
 // Create empty process.
 void Controller::create_process(const vpid_t& pid,
+				const vtid_t& root_tid,
 				std::vector<void*> libs,
 				const std::map<std::string, std::string>& lib_filter) {
   assert(procs.find(pid) == procs.end());
   procs.insert(std::make_pair(pid, std::shared_ptr<VMachine>
-			      (new VMachine(*this, libs, lib_filter))));
+			      (new VMachine(*this, pid, root_tid, libs, lib_filter))));
   procs.at(pid)->setup();
 }
 
@@ -180,6 +181,16 @@ void Controller::delete_process(const vpid_t& pid) {
 void Controller::exit_process(const vpid_t& pid) {
   if (procs.find(pid) == procs.end()) return;
   procs.at(pid)->exit();
+}
+
+// Get root thread-id of process.
+const vtid_t& Controller::get_root_tid(const vpid_t& pid) {
+  return procs.at(pid)->root_tid;
+}
+
+// Check whether process has contain in this device.
+bool Controller::have_process(const vpid_t& pid) {
+  return (procs.find(pid) != procs.end());
 }
 
 // Start warp process.
@@ -217,7 +228,7 @@ void Controller::do_warp_process(const vpid_t& pid) {
   picojson::object threads;
   body.insert(std::make_pair("cmd", picojson::value(std::string("warp"))));
   body.insert(std::make_pair("pid", Convert::vpid2json(pid)));
-  // body.insert(std::make_pair("to", picojson::value(device_id)));
+  body.insert(std::make_pair("root_tid", Convert::vtid2json(vm.root_tid)));
   for (auto& it : vm.threads) {
     threads.insert(std::make_pair(Convert::vtid2str(it.first),
 				  convert.export_thread(*it.second, related)));

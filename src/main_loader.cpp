@@ -51,7 +51,7 @@ public:
     // Library is empty because don't use in loader.
     std::vector<void*> libs;
     std::map<std::string, std::string> lib_filter;
-    VMachine vm(*this, libs, lib_filter);
+    VMachine vm(*this, pid, tid, libs, lib_filter);
     vm.setup();
     
     // Load program from LLVM-IR file.
