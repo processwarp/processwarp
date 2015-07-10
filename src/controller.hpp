@@ -7,7 +7,7 @@
 
 #include "lib/picojson.h"
 
-#include "vmachine.hpp"
+#include "process.hpp"
 
 namespace processwarp {
   /**
@@ -63,7 +63,7 @@ namespace processwarp {
   /**
    * Controller for set of processes.
    */
-  class Controller : protected VMachineDelegate {
+  class Controller : protected ProcessDelegate {
   public:
     /// device_id to controller.
     std::string device_id;
@@ -144,13 +144,13 @@ namespace processwarp {
     /**
      * @inheritDoc
      */
-    vtid_t assign_tid(VMachine& vm) override;
+    vtid_t assign_tid(Process& proc) override;
 
   private:
     /** Event assignee */
     ControllerDelegate& delegate;
-    /** Map of pid and VMachine. */
-    std::map<vpid_t, std::shared_ptr<VMachine>> procs;
+    /** Map of pid and process. */
+    std::map<vpid_t, std::shared_ptr<Process>> procs;
     /** Map of pid and warp destination device-ids. */
     std::map<vpid_t, dev_id_t> warp_dest;
 

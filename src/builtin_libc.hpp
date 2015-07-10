@@ -16,7 +16,7 @@ namespace processwarp {
      * dstへ書き込む値は以下のとおり。
      * i32 成功時0 失敗時-1
      */
-    static BuiltinPost atexit(VMachine& vm, Thread& th, BuiltinFuncParam p,
+    static BuiltinPost atexit(Process& proc, Thread& thread, BuiltinFuncParam p,
 			      vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
@@ -27,7 +27,7 @@ namespace processwarp {
      * 戻り値は以下のとおり。
      * void* 確保した領域のアドレス
      */
-    static BuiltinPost calloc(VMachine& vm, Thread& th, BuiltinFuncParam p,
+    static BuiltinPost calloc(Process& proc, Thread& thread, BuiltinFuncParam p,
 			      vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
@@ -35,7 +35,7 @@ namespace processwarp {
      * srcから取り出すパラメタは以下のとおり。
      * i32 終了コード。
      */
-    static BuiltinPost exit(VMachine& vm, Thread& th, BuiltinFuncParam p,
+    static BuiltinPost exit(Process& proc, Thread& thread, BuiltinFuncParam p,
 			    vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
@@ -43,7 +43,7 @@ namespace processwarp {
      * srcから取り出すパラメタは以下のとおり。
      * vaddr_t ptr 開放するデータ領域。
      */
-    static BuiltinPost free(VMachine& vm, Thread& th, BuiltinFuncParam p,
+    static BuiltinPost free(Process& proc, Thread& thread, BuiltinFuncParam p,
 			    vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
@@ -52,7 +52,7 @@ namespace processwarp {
      * jmp_buf env
      * int val setjmpの返り値として戻す値。
      */
-    static BuiltinPost longjmp(VMachine& vm, Thread& th, BuiltinFuncParam p,
+    static BuiltinPost longjmp(Process& proc, Thread& thread, BuiltinFuncParam p,
 			       vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
@@ -62,7 +62,7 @@ namespace processwarp {
      * 戻り値は以下のとおり。
      * void* 確保した領域のアドレス
      */
-    static BuiltinPost malloc(VMachine& vm, Thread& th, BuiltinFuncParam p,
+    static BuiltinPost malloc(Process& proc, Thread& thread, BuiltinFuncParam p,
 			      vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
@@ -74,7 +74,7 @@ namespace processwarp {
      * int32_t align アライメント。
      * int8_t isvolation 実行順番の制約(VMでは実行順番を入れ替えないので無視する)。
      */
-    static BuiltinPost memcpy(VMachine& vm, Thread& th, BuiltinFuncParam p,
+    static BuiltinPost memcpy(Process& proc, Thread& thread, BuiltinFuncParam p,
 			      vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
@@ -86,7 +86,7 @@ namespace processwarp {
      * int32_t align アライメント。
      * int8_t isvolation 実行順番の制約(VMでは実行順番を入れ替えないので無視する)。
      */
-    static BuiltinPost memmove(VMachine& vm, Thread& th, BuiltinFuncParam p,
+    static BuiltinPost memmove(Process& proc, Thread& thread, BuiltinFuncParam p,
 			       vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
@@ -98,7 +98,7 @@ namespace processwarp {
      * int32_t align アライメント。
      * int8_t isvolation 実行順番の制約(VMでは実行順番を入れ替えないので無視する)。
      */
-    static BuiltinPost memset(VMachine& vm, Thread& th, BuiltinFuncParam p,
+    static BuiltinPost memset(Process& proc, Thread& thread, BuiltinFuncParam p,
 			      vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
@@ -109,14 +109,14 @@ namespace processwarp {
      * 戻り値は以下のとおり。
      * void* 確保した領域のアドレス
      */
-    static BuiltinPost realloc(VMachine& vm, Thread& th, BuiltinFuncParam p,
+    static BuiltinPost realloc(Process& proc, Thread& thread, BuiltinFuncParam p,
 			       vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
      * VMにライブラリを登録する。
      * @param vm 登録対象のVM
      */
-    static void regist(VMachine& vm);
+    static void regist(Process& vm);
 
     /**
      * setjmp関数。非局所的なジャンプのために、スタックコンテキストを保存する。
@@ -125,7 +125,7 @@ namespace processwarp {
      * 戻り値は以下のとおり
      * int 直接の戻り値は0、longjmpが呼び出された場合はlongjmpの引数に渡した値。
      */
-    static BuiltinPost setjmp(VMachine& vm, Thread& th, BuiltinFuncParam p,
+    static BuiltinPost setjmp(Process& proc, Thread& thread, BuiltinFuncParam p,
 			      vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
@@ -137,7 +137,7 @@ namespace processwarp {
      * 戻り値は以下のとおり
      * i64
      */
-    static BuiltinPost strtol(VMachine& vm, Thread& th, BuiltinFuncParam p,
+    static BuiltinPost strtol(Process& proc, Thread& thread, BuiltinFuncParam p,
 			      vaddr_t dst, std::vector<uint8_t>& src);
   };
 }

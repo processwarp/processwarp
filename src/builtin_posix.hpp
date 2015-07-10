@@ -16,7 +16,7 @@ namespace processwarp {
      * i32 line
      * vaddr_t(const) function
      */
-    static BuiltinPost __assert_fail(VMachine& vm, Thread& th, BuiltinFuncParam p,
+    static BuiltinPost __assert_fail(Process& proc, Thread& thread, BuiltinFuncParam p,
 				     vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
@@ -27,7 +27,7 @@ namespace processwarp {
      * vaddr_t start
      * vaddr_t arg
      */
-    static BuiltinPost pthread_create(VMachine& vm, Thread& th, BuiltinFuncParam p,
+    static BuiltinPost pthread_create(Process& proc, Thread& thread, BuiltinFuncParam p,
 				      vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
@@ -35,7 +35,7 @@ namespace processwarp {
      * parameter:
      * vaddr_t retval
      */
-    static BuiltinPost pthread_exit(VMachine& vm, Thread& th, BuiltinFuncParam p,
+    static BuiltinPost pthread_exit(Process& proc, Thread& thread, BuiltinFuncParam p,
 				    vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
@@ -44,13 +44,13 @@ namespace processwarp {
      * i32 thread
      * vaddr_t ret_addr
      */
-    static BuiltinPost pthread_join(VMachine& vm, Thread& th, BuiltinFuncParam p,
+    static BuiltinPost pthread_join(Process& proc, Thread& thread, BuiltinFuncParam p,
 				    vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
      * VMにライブラリを登録する。
      * @param vm 登録対象のVM
      */
-    static void regist(VMachine& vm);
+    static void regist(Process& vm);
   };
 }

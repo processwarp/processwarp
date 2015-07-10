@@ -20,8 +20,6 @@ namespace llvm {
 }
 
 namespace processwarp {
-  class VMachine;
-
   /**
    * LLVMのアセンブリ言語を解析し仮想マシンにロードするクラス。
    * アプリケーションが複数のファイル(LLVMのモジュール)で構成される場合、
@@ -38,9 +36,9 @@ namespace processwarp {
     /**
      * コンストラクタ。
      * LLVMのコンテキストを生成する。
-     * @param vm ロード先仮想マシン
+     * @param proc ロード先プロセス
      */
-    LlvmAsmLoader(VMachine& vm_);
+    LlvmAsmLoader(Process& proc);
 
     /**
      * デストラクタ。
@@ -90,7 +88,7 @@ namespace processwarp {
     /// LLVMのコンテキスト(複数ファイルを読み込むときに使い回す)
     llvm::LLVMContext& context;
     /// ロード先仮想マシン
-    VMachine& vm;
+    Process& proc;
     /// ロード済みの型とアドレスの対応関係
     std::map<std::pair<const llvm::Type*, bool>, vaddr_t> loaded_type;
 

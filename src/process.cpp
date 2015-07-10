@@ -31,11 +31,11 @@
 #include "builtin_posix.hpp"
 #include "builtin_va_arg.hpp"
 #include "builtin_warp.hpp"
+#include "process.hpp"
 #include "stackinfo.hpp"
 #include "type_based.hpp"
 #include "util.hpp"
 #include "std_error.hpp"
-#include "vmachine.hpp"
 
 using namespace processwarp;
 
@@ -153,7 +153,7 @@ inline TypeStore& get_type(instruction_t code, OperandParam& param) {
 }
 
 // Constructor.
-VMachine::VMachine(VMachineDelegate& _delegate,
+Process::Process(ProcessDelegate& _delegate,
 		   const vpid_t& _pid,
 		   const vtid_t& _root_tid,
 		   std::vector<void*>& _libs,
@@ -166,7 +166,7 @@ VMachine::VMachine(VMachineDelegate& _delegate,
 }
 
 // 仮想アドレスとネイティブポインタのペアを解消する。
-void VMachine::destory_native_ptr(vaddr_t addr) {
+void Process::destory_native_ptr(vaddr_t addr) {
   assert(addr != VADDR_NULL);
   assert(native_ptr.find(addr) != native_ptr.end());
 
@@ -175,7 +175,7 @@ void VMachine::destory_native_ptr(vaddr_t addr) {
 }
 
 // VM命令を実行する。
-void VMachine::execute(vtid_t tid, int max_clock) {
+void Process::execute(vtid_t tid, int max_clock) {
   Thread& thread = *(threads.at(tid));
  re_entry: {
     if (thread.stackinfos.size() == 1) {
@@ -696,7 +696,7 @@ void VMachine::execute(vtid_t tid, int max_clock) {
 }
 
 // 外部の関数を呼び出す。
-void VMachine::call_external(const FuncStore& func,
+void Process::call_external(const FuncStore& func,
 			     uint8_t* ret_addr,
 			     std::vector<uint8_t>& args) {
 #ifndef EMSCRIPTEN
@@ -1007,7 +1007,7 @@ void VMachine::call_external(const FuncStore& func,
 
 
 // Setup to call function that type : void (*)(void).
-void VMachine::call_setup_voidfunc(Thread& thread, vaddr_t func_addr) {
+void Process::call_setup_voidfunc(Thread& thread, vaddr_t func_addr) {
   FuncStore& func = vmemory.get_func(func_addr);
   std::unique_ptr<StackInfo> stackinfo
     (new StackInfo(func.addr,
@@ -1038,7 +1038,7 @@ void VMachine::call_setup_voidfunc(Thread& thread, vaddr_t func_addr) {
 }
 
 // 型のサイズと最大アライメントを計算する。
-std::pair<size_t, unsigned int> VMachine::calc_type_size(const std::vector<vaddr_t>& member) {
+std::pair<size_t, unsigned int> Process::calc_type_size(const std::vector<vaddr_t>& member) {
   size_t size = 0;
   unsigned int max_alignment = 0;
   unsigned int odd;
@@ -1059,18 +1059,18 @@ std::pair<size_t, unsigned int> VMachine::calc_type_size(const std::vector<vaddr
 }
 
 // 型のサイズと最大アライメントを計算する。
-std::pair<size_t, unsigned int> VMachine::calc_type_size(vaddr_t type) {
+std::pair<size_t, unsigned int> Process::calc_type_size(vaddr_t type) {
   TypeStore& t = vmemory.get_type(type);
   
   return std::make_pair(t.size, t.alignment);
 }
 
 // VMの終了処理を行う。
-void VMachine::close() {
+void Process::close() {
 }
 
 // ネイティブポインタに仮想アドレス対応付ける。
-vaddr_t VMachine::create_native_ptr(void* ptr) {
+vaddr_t Process::create_native_ptr(void* ptr) {
   while(native_ptr.find(last_free_native_ptr) != native_ptr.end()) {
     last_free_native_ptr ++;
   }
@@ -1082,7 +1082,7 @@ vaddr_t VMachine::create_native_ptr(void* ptr) {
 }
 
 // Create a new thread.
-vtid_t VMachine::create_thread(vaddr_t func_addr, vaddr_t arg_addr) {
+vtid_t Process::create_thread(vaddr_t func_addr, vaddr_t arg_addr) {
   FuncStore& func = vmemory.get_func(func_addr);
   Thread* thread;
   vtid_t  tid = delegate.assign_tid(*this);
@@ -1117,7 +1117,7 @@ vtid_t VMachine::create_thread(vaddr_t func_addr, vaddr_t arg_addr) {
 }
 
 // Join a thread.
-bool VMachine::join_thread(vtid_t current, vtid_t target, vaddr_t retval) {
+bool Process::join_thread(vtid_t current, vtid_t target, vaddr_t retval) {
   if (threads.find(target) == threads.end()) {
     throw_std_error(StdError::SRCH);
   }
@@ -1149,7 +1149,7 @@ bool VMachine::join_thread(vtid_t current, vtid_t target, vaddr_t retval) {
 }
 
 // 配列型の型情報を作成する。
-TypeStore& VMachine::create_type_array(vaddr_t element, unsigned int num) {
+TypeStore& Process::create_type_array(vaddr_t element, unsigned int num) {
   // サイズ、アライメントを計算
   std::vector<vaddr_t> member(num, element);
   std::pair<size_t, unsigned int> info = calc_type_size(member);
@@ -1159,20 +1159,20 @@ TypeStore& VMachine::create_type_array(vaddr_t element, unsigned int num) {
 }
 
 // 基本型の型情報を作成する。
-TypeStore& VMachine::create_type_basic(BasicType type) {
+TypeStore& Process::create_type_basic(BasicType type) {
   // 基本型はVMにより登録してあるものだけなので、ソレを戻す。
   return vmemory.get_type(type);
 }
 
 // 構造体の型情報を作成する。
-TypeStore& VMachine::create_type_struct(const std::vector<vaddr_t>& member) {
+TypeStore& Process::create_type_struct(const std::vector<vaddr_t>& member) {
   // 領域を確保
   std::pair<size_t, unsigned int> info = calc_type_size(member);
   return vmemory.alloc_type_struct(info.first, info.second, member);
 }
 
 // vectorの型情報を作成する。
-TypeStore& VMachine::create_type_vector(vaddr_t element, unsigned int num) {
+TypeStore& Process::create_type_vector(vaddr_t element, unsigned int num) {
   std::vector<vaddr_t> member(num, element);
   std::pair<size_t, unsigned int> info = calc_type_size(member);
   // 領域を確保
@@ -1180,7 +1180,7 @@ TypeStore& VMachine::create_type_vector(vaddr_t element, unsigned int num) {
 }
 
 // ネイティブ関数を指定アドレスに展開する。
-void VMachine::deploy_function(const std::string& name,
+void Process::deploy_function(const std::string& name,
 			       vaddr_t ret_type,
 			       unsigned int arg_num,
 			       bool is_var_arg,
@@ -1198,7 +1198,7 @@ void VMachine::deploy_function(const std::string& name,
 }
 
 // 通常の関数(VMで解釈、実行する)を指定アドレスに展開する。
-void VMachine::deploy_function_normal(const std::string& name,
+void Process::deploy_function_normal(const std::string& name,
 				      vaddr_t ret_type,
 				      unsigned int arg_num,
 				      bool is_var_arg,
@@ -1209,7 +1209,7 @@ void VMachine::deploy_function_normal(const std::string& name,
 }
 
 // Change status to exit.
-void VMachine::exit() {
+void Process::exit() {
   print_debug("Exit process");
   
   for (auto& it_thread : threads) {
@@ -1234,7 +1234,7 @@ void VMachine::exit() {
 }
 
 // ライブラリなど、外部の関数へのポインタを取得する。
-external_func_t VMachine::get_external_func(const Symbols::Symbol& name) {
+external_func_t Process::get_external_func(const Symbols::Symbol& name) {
   print_debug("get external func:%s\n", name.str().c_str());
   if (lib_filter.find(name.str()) == lib_filter.end()) {
     throw_error_message(Error::SYM_NOT_FOUND, name.str());
@@ -1266,7 +1266,7 @@ external_func_t VMachine::get_external_func(const Symbols::Symbol& name) {
 }
 
 // 仮想アドレスに相当する実アドレスを取得する。
-uint8_t* VMachine::get_raw_addr(vaddr_t addr) {
+uint8_t* Process::get_raw_addr(vaddr_t addr) {
   auto native = native_ptr.find(addr);
   if (native != native_ptr.end()) {
     return reinterpret_cast<uint8_t*>(native->second);
@@ -1282,7 +1282,7 @@ uint8_t* VMachine::get_raw_addr(vaddr_t addr) {
 }
 
 // 型依存の演算インスタンスを取得する。
-TypeBased* VMachine::get_type_based(vaddr_t type) {
+TypeBased* Process::get_type_based(vaddr_t type) {
   // 複合型に対する演算命令
   static TypeComplex type_complex;
   if (type < sizeof(TYPE_BASES) / sizeof(TYPE_BASES[0])) {
@@ -1304,7 +1304,7 @@ TypeBased* VMachine::get_type_based(vaddr_t type) {
  * @param basic_type VM内の型
  */
 #define M_READ_BUILTIN_PARAM(name, type, basic_type)			\
-  type VMachine::name(const std::vector<uint8_t>& src, int* seek) {	\
+  type Process::name(const std::vector<uint8_t>& src, int* seek) {	\
     /* 境界チェック */							\
     if (*seek + sizeof(vaddr_t) + sizeof(type) > src.size())		\
       throw_error(Error::SEGMENT_FAULT);				\
@@ -1326,7 +1326,7 @@ M_READ_BUILTIN_PARAM(read_builtin_param_i64, uint64_t, TY_UI64);
 #undef M_READ_BUILTIN_PARAM
 
 // 組み込み関数をVMに登録する。
-void VMachine::regist_builtin_func(const std::string& name,
+void Process::regist_builtin_func(const std::string& name,
 				     builtin_func_t func, int i64) {
   BuiltinFuncParam param;
   param.i64 = i64;
@@ -1335,7 +1335,7 @@ void VMachine::regist_builtin_func(const std::string& name,
 }
 
 // 組み込み関数をVMに登録する。
-void VMachine::regist_builtin_func(const std::string& name,
+void Process::regist_builtin_func(const std::string& name,
 				     builtin_func_t func, void* ptr) {
   BuiltinFuncParam param;
   param.ptr = ptr;
@@ -1344,7 +1344,7 @@ void VMachine::regist_builtin_func(const std::string& name,
 }
 
 // StackInfoのキャッシュを解決し、実行前の状態にする。
-void VMachine::resolve_stackinfo_cache(Thread* thread, StackInfo* stackinfo) {
+void Process::resolve_stackinfo_cache(Thread* thread, StackInfo* stackinfo) {
   // 関数
   if (stackinfo->func != VADDR_NON) {
     stackinfo->func_cache = &vmemory.get_func(stackinfo->func);
@@ -1394,12 +1394,12 @@ void VMachine::resolve_stackinfo_cache(Thread* thread, StackInfo* stackinfo) {
 }
 
 // 関数のアドレスを予約する。
-vaddr_t VMachine::reserve_func_addr() {
+vaddr_t Process::reserve_func_addr() {
   return vmemory.reserve_func_addr();
 }
 
 // VMの初期設定をする。
-void VMachine::run(const std::vector<std::string>& args,
+void Process::run(const std::vector<std::string>& args,
 		   const std::map<std::string, std::string>& envs) {
   // make root thread
   Thread* root_thread;
@@ -1503,13 +1503,13 @@ void VMachine::run(const std::vector<std::string>& args,
 }
 
 // 大域変数のアドレスを設定する。
-void VMachine::set_global_value(const std::string& name, vaddr_t addr) {
+void Process::set_global_value(const std::string& name, vaddr_t addr) {
   /// @todo 同一の名前が再利用されないことの確認
   globals.insert(std::make_pair(&symbols.get(name), addr));
 }
 
 // VMの初期設定をする。
-void VMachine::setup() {
+void Process::setup() {
 
 #define M_ALLOC_BASIC_TYPE(s, a, t)		\
   vmemory.alloc_type_basic((s), (a), (t));	\
@@ -1560,7 +1560,7 @@ void VMachine::setup() {
 }
 
 // Prepare to warp out.
-void VMachine::setup_warpout(const vtid_t& tid) {
+void Process::setup_warpout(const vtid_t& tid) {
   Thread& thread = *threads.at(tid);
 
   thread.warp_stack_size = thread.stackinfos.size();
@@ -1570,7 +1570,7 @@ void VMachine::setup_warpout(const vtid_t& tid) {
 }
 
 // Prepare to warp in.
-bool VMachine::setup_warpin(const vtid_t& tid, const dev_id_t& dst) {
+bool Process::setup_warpin(const vtid_t& tid, const dev_id_t& dst) {
   Thread& thread = *threads.at(tid);
 
   // Status must be normal when warp
@@ -1593,19 +1593,19 @@ bool VMachine::setup_warpin(const vtid_t& tid, const dev_id_t& dst) {
 }
 
 // 仮想アドレスに対応づくネイティブポインタを変更する。
-void VMachine::update_native_ptr(vaddr_t addr, void* ptr) {
+void Process::update_native_ptr(vaddr_t addr, void* ptr) {
   assert(addr != VADDR_NULL && ptr != nullptr);
   assert(native_ptr.find(addr) != native_ptr.end());
   native_ptr[addr] = ptr;
 }
 
 // データ領域を確保する。
-vaddr_t VMachine::v_malloc(size_t size, bool is_const) {
+vaddr_t Process::v_malloc(size_t size, bool is_const) {
   return vmemory.alloc_data(size, is_const).addr;
 }
 
 // データ領域へ実データをコピーする。
-void VMachine::v_memcpy(vaddr_t dst, void* src, size_t n) {
+void Process::v_memcpy(vaddr_t dst, void* src, size_t n) {
   DataStore& store = vmemory.get_data(dst);
   // アクセス違反をチェック
   if (VMemory::get_addr_lower(dst) + n > store.size) {
@@ -1615,7 +1615,7 @@ void VMachine::v_memcpy(vaddr_t dst, void* src, size_t n) {
 }
 
 // データ領域を指定の数値で埋める。
-void VMachine::v_memset(vaddr_t dst, int c, size_t len) {
+void Process::v_memset(vaddr_t dst, int c, size_t len) {
   DataStore& store = vmemory.get_data(dst);
   // アクセス違反をチェック
   if (VMemory::get_addr_lower(dst) + len > store.size) {

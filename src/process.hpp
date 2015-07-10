@@ -12,44 +12,46 @@
 #include "vmemory.hpp"
 
 namespace processwarp {
+  class Process;
+  
   /**
-   * Delegate for VMachine
+   * Delegate for Process
    */
-  class VMachineDelegate {
+  class ProcessDelegate {
   public:
     /**
      * Destructor for virtual.
      */
-    virtual ~VMachineDelegate() {};
+    virtual ~ProcessDelegate() {};
 
     /**
      * Call when create thread.
-     * @param vm caller vm.
-     * @return thread-id.
+     * @param proc Caller process.
+     * @return A new thread-id.
      */
-    virtual vtid_t assign_tid(VMachine& vm) = 0;
+    virtual vtid_t assign_tid(Process& proc) = 0;
   };
   
   /**
    * 仮想マシンクラス。
    * 仮想マシンは１つのメモリ空間、複数のスレッド、コマンド実行から成り立つ。
    */
-  class VMachine {
+  class Process {
   public:
-    /** VM組み込み関数一覧 */
+    /** 組み込み関数一覧 */
     typedef std::map<const std::string, std::pair<builtin_func_t, BuiltinFuncParam>>
       BuiltinFuncs;
     /** 大域変数、関数シンボル→アドレス型 */
     typedef std::map<const Symbols::Symbol*, vaddr_t> Globals;
     /** スレッド一覧型 */
     typedef std::map<vtid_t, std::unique_ptr<Thread>> Threads;
-    /** VM組み込みアドレス一覧 */
+    /** 組み込みアドレス一覧 */
     typedef std::set<vaddr_t> BuiltinAddrs;
     /** 終了処理時に呼び出す関数一覧 */
     typedef std::stack<vaddr_t> CallsAtExit;
     
-    /** Deleaget for vm. */
-    VMachineDelegate& delegate;
+    /** Deleagetr. */
+    ProcessDelegate& delegate;
     /** My process-id. */
     const vpid_t pid;
     /** Root thread-id. */
@@ -62,8 +64,8 @@ namespace processwarp {
      * Value:API name call for OS.
      */
     std::map<std::string, std::string> lib_filter;
-    BuiltinFuncs builtin_funcs; //< VM組み込み関数一覧
-    BuiltinAddrs builtin_addrs; //< VM組み込みアドレス一覧(他VMにコピーしない)
+    BuiltinFuncs builtin_funcs; //< 組み込み関数一覧
+    BuiltinAddrs builtin_addrs; //< 組み込みアドレス一覧(他にコピーしない)
     CallsAtExit calls_at_exit; //< 終了処理時に呼び出す関数一覧
     Globals globals;    ///< 大域変数、関数シンボル→アドレス
     Symbols symbols;    ///< シンボル
@@ -74,13 +76,13 @@ namespace processwarp {
     
     /**
      * Constructor.
-     * @param delegate Delegate for vm.
+     * @param delegate Delegater.
      * @param pid Assigned process-id.
      * @param root_tid Root thread-id.
      * @param libs List of external libraries.
      * @param lib_filter Map of API name call from and call for.
      */
-    VMachine(VMachineDelegate& delegate,
+    Process(ProcessDelegate& delegate,
 	     const vpid_t& pid,
 	     const vtid_t& root_tid,
 	     std::vector<void*>& libs,
@@ -118,7 +120,7 @@ namespace processwarp {
     std::pair<size_t, unsigned int> calc_type_size(vaddr_t type);
 
     /**
-     * VMの終了処理を行う。
+     * 終了処理を行う。
      */
     void close();
 
@@ -192,7 +194,7 @@ namespace processwarp {
 
     /**
      * ネイティブ関数を指定アドレスに展開する。
-     * 関数名を元にVM組み込み関数かライブラリ関数として分岐する。
+     * 関数名を元に組み込み関数かライブラリ関数として分岐する。
      * @param name 関数名
      * @param ret_type 戻り値の型
      * @param arg_num 引数の数
@@ -322,7 +324,7 @@ namespace processwarp {
     static uint64_t read_builtin_param_i64(const std::vector<uint8_t>& src, int* seek);
 
     /**
-     * 組み込み関数をVMに登録する。
+     * 組み込み関数を登録する。
      * @param name 関数名(C)。
      * @param func 組み込み関数へのポインタ。
      * @param i64 組み込み関数へ渡す固定パラメタ。
@@ -331,7 +333,7 @@ namespace processwarp {
 			       builtin_func_t func, int i64);
 
     /**
-     * 組み込み関数をVMに登録する。
+     * 組み込み関数を登録する。
      * @param name 関数名(C)。
      * @param func 組み込み関数へのポインタ。
      * @param i64 組み込み関数へ渡す固定パラメタ。
@@ -369,7 +371,7 @@ namespace processwarp {
     void set_global_value(const std::string& name, vaddr_t addr);
 
     /**
-     * VMの初期設定をする。
+     * 初期設定をする。
      */
     void setup();
 

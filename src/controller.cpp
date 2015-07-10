@@ -53,17 +53,17 @@ Controller::Controller(ControllerDelegate& _delegate) :
 void Controller::loop() {
   vpid_t pid;
   vtid_t tid;
-  VMachine* vm;
-  Thread*   thread;
+  Process* proc;
+  Thread*  thread;
 
   try {
     auto it_proc = procs.begin();
     while (it_proc != procs.end()) {
-      pid = it_proc->first;
-      vm  = it_proc->second.get();
+      pid  = it_proc->first;
+      proc = it_proc->second.get();
 
-      auto it_thread = vm->threads.begin();
-      while(it_thread != vm->threads.end()) {
+      auto it_thread = proc->threads.begin();
+      while(it_thread != proc->threads.end()) {
 	tid    = it_thread->first;
 	thread = it_thread->second.get();
 
@@ -74,7 +74,7 @@ void Controller::loop() {
 	  
 	  delegate.on_switch_proccess(pid);
 	  // run thread
-	  vm->execute(tid, 100);
+	  proc->execute(tid, 100);
 
 	} else if (thread->status == Thread::WARP) {
 	  do_warp_process(pid);
@@ -85,14 +85,14 @@ void Controller::loop() {
 	} else if (thread->status == Thread::FINISH) {
 	  delegate.on_finish_thread(pid, tid);
 
-	  if (tid == vm->root_tid) {
+	  if (tid == proc->root_tid) {
 	    delegate.on_finish_proccess(pid);
 	    it_proc = procs.erase(it_proc);
 	    // continue double loop
 	    goto next_proc;
 
 	  } else {
-	    it_thread = vm->threads.erase(it_thread);
+	    it_thread = proc->threads.erase(it_thread);
 	    continue;
 	  }
 	}
@@ -167,8 +167,8 @@ void Controller::create_process(const vpid_t& pid,
 				std::vector<void*> libs,
 				const std::map<std::string, std::string>& lib_filter) {
   assert(procs.find(pid) == procs.end());
-  procs.insert(std::make_pair(pid, std::shared_ptr<VMachine>
-			      (new VMachine(*this, pid, root_tid, libs, lib_filter))));
+  procs.insert(std::make_pair(pid, std::shared_ptr<Process>
+			      (new Process(*this, pid, root_tid, libs, lib_filter))));
   procs.at(pid)->setup();
 }
 
@@ -212,7 +212,7 @@ void Controller::warp_process(const vpid_t& pid,
 }
 
 // @inheritDoc
-vtid_t Controller::assign_tid(VMachine& vm) {
+vtid_t Controller::assign_tid(Process& vm) {
   fixme("assign_tid\n");
   std::random_device rnd;
   return rnd();
@@ -220,30 +220,30 @@ vtid_t Controller::assign_tid(VMachine& vm) {
 
 // Dump and send data to warp process. 
 void Controller::do_warp_process(const vpid_t& pid) {
-  VMachine& vm      = *procs.at(pid);
-  VMemory&  vmemory = vm.vmemory;
+  Process& proc    = *procs.at(pid);
+  VMemory& vmemory = proc.vmemory;
   
   // Dump process.
-  Convert convert(vm);
+  Convert convert(proc);
   Convert::Related related;
   picojson::object body;
   picojson::object dump;
   picojson::object threads;
   body.insert(std::make_pair("cmd", picojson::value(std::string("warp"))));
   body.insert(std::make_pair("pid", Convert::vpid2json(pid)));
-  body.insert(std::make_pair("root_tid", Convert::vtid2json(vm.root_tid)));
-  for (auto& it : vm.threads) {
+  body.insert(std::make_pair("root_tid", Convert::vtid2json(proc.root_tid)));
+  for (auto& it : proc.threads) {
     threads.insert(std::make_pair(Convert::vtid2str(it.first),
 				  convert.export_thread(*it.second, related)));
   }
   body.insert(std::make_pair("threads", picojson::value(threads)));
 
-  std::set<vaddr_t> all = vm.vmemory.get_alladdr();
+  std::set<vaddr_t> all = proc.vmemory.get_alladdr();
   for (auto it : all) {
     // Don't export null instance.
     if (it == VADDR_NULL || it == VADDR_NON) continue;
     // Don't export build in instance.
-    if (vm.builtin_addrs.find(it) != vm.builtin_addrs.end()) continue;
+    if (proc.builtin_addrs.find(it) != proc.builtin_addrs.end()) continue;
     
     dump.insert(std::make_pair(Util::vaddr2str(it), convert.export_store(it, related)));
     // Free allocated data.
@@ -257,15 +257,15 @@ void Controller::do_warp_process(const vpid_t& pid) {
   delegate.send_warp_data(pid, 1, warp_dest.at(pid), data);
 
   warp_dest.erase(pid);
-  for (auto& it_thread : vm.threads) {
+  for (auto& it_thread : proc.threads) {
     it_thread.second->status = Thread::PASSIVE;
   }
 }
 
 void Controller::recv_process_warp(const vpid_t& pid, picojson::object& json) {
-  VMachine& vm      = *procs.at(pid);
-  VMemory&  vmemory = vm.vmemory;
-  Convert convert(vm);
+  Process& proc = *procs.at(pid);
+  VMemory& vmemory = proc.vmemory;
+  Convert convert(proc);
   
   // Expand transported instance data.
   picojson::object dump = json.at("dump").get<picojson::object>();
@@ -280,10 +280,10 @@ void Controller::recv_process_warp(const vpid_t& pid, picojson::object& json) {
     convert.import_thread(Util::hex_str2num<vtid_t>(it.first), it.second);
   }
   
-  vm.setup_warpout(1);
+  proc.setup_warpout(1);
   
-  // Turn on vm.
-  for (auto& it_thread : vm.threads) {
+  // Turn on proc.
+  for (auto& it_thread : proc.threads) {
     it_thread.second->status = Thread::NORMAL;
   }
 }

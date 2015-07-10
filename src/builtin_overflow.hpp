@@ -9,7 +9,7 @@ namespace processwarp {
      * VMにライブラリを登録する。
      * @param vm 登録対象のVM
      */
-    static void regist(VMachine& vm);
+    static void regist(Process& vm);
 
     /**
      * overflowが検出可能な符号あり加算関数。
@@ -20,7 +20,7 @@ namespace processwarp {
      * T 計算結果
      * i1 overflowを検出した場合1が設定される
      */
-    static BuiltinPost sadd(VMachine& vm, Thread& th, BuiltinFuncParam p,
+    static BuiltinPost sadd(Process& proc, Thread& thread, BuiltinFuncParam p,
 			    vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
@@ -32,7 +32,7 @@ namespace processwarp {
      * T 計算結果
      * i1 overflowを検出した場合1が設定される
      */
-    static BuiltinPost smul(VMachine& vm, Thread& th, BuiltinFuncParam p,
+    static BuiltinPost smul(Process& proc, Thread& thread, BuiltinFuncParam p,
 			    vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
@@ -44,7 +44,7 @@ namespace processwarp {
      * T 計算結果
      * i1 overflowを検出した場合1が設定される
      */
-    static BuiltinPost ssub(VMachine& vm, Thread& th, BuiltinFuncParam p,
+    static BuiltinPost ssub(Process& proc, Thread& thread, BuiltinFuncParam p,
 			    vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
@@ -56,7 +56,7 @@ namespace processwarp {
      * T 計算結果
      * i1 overflowを検出した場合1が設定される
      */
-    static BuiltinPost uadd(VMachine& vm, Thread& th, BuiltinFuncParam p,
+    static BuiltinPost uadd(Process& proc, Thread& thread, BuiltinFuncParam p,
 			    vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
@@ -68,7 +68,7 @@ namespace processwarp {
      * T 計算結果
      * i1 overflowを検出した場合1が設定される
      */
-    static BuiltinPost umul(VMachine& vm, Thread& th, BuiltinFuncParam p,
+    static BuiltinPost umul(Process& proc, Thread& thread, BuiltinFuncParam p,
 			    vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
@@ -80,7 +80,7 @@ namespace processwarp {
      * T 計算結果
      * i1 overflowを検出した場合1が設定される
      */
-    static BuiltinPost usub(VMachine& vm, Thread& th, BuiltinFuncParam p,
+    static BuiltinPost usub(Process& proc, Thread& thread, BuiltinFuncParam p,
 			    vaddr_t dst, std::vector<uint8_t>& src);
   };
 }

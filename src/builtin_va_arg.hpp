@@ -9,7 +9,7 @@ namespace processwarp {
      * VMにライブラリを登録する。
      * @param vm 登録対象のVM
      */
-    static void regist(VMachine& vm);
+    static void regist(Process& vm);
 
     /**
      * __builtin_va_arg関数。
@@ -19,7 +19,7 @@ namespace processwarp {
      * 戻り値は以下のとおり
      * void* 取り出した値へのポインタ
      */
-    static BuiltinPost arg(VMachine& vm, Thread& th, BuiltinFuncParam p,
+    static BuiltinPost arg(Process& proc, Thread& thread, BuiltinFuncParam p,
 			   vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
@@ -28,7 +28,7 @@ namespace processwarp {
      * i8* destarglist
      * i8* srcarglist
      */
-    static BuiltinPost copy(VMachine& vm, Thread& th, BuiltinFuncParam p,
+    static BuiltinPost copy(Process& proc, Thread& thread, BuiltinFuncParam p,
 			    vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
@@ -36,7 +36,7 @@ namespace processwarp {
      * srcから取り出すパラメタは以下のとおり。
      * i8* arglist
      */
-    static BuiltinPost end(VMachine& vm, Thread& th, BuiltinFuncParam p,
+    static BuiltinPost end(Process& proc, Thread& thread, BuiltinFuncParam p,
 			   vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
@@ -44,7 +44,7 @@ namespace processwarp {
      * srcから取り出すパラメタは以下のとおり。
      * i8* arglist
      */
-    static BuiltinPost start(VMachine& vm, Thread& th, BuiltinFuncParam p,
+    static BuiltinPost start(Process& proc, Thread& thread, BuiltinFuncParam p,
 			     vaddr_t dst, std::vector<uint8_t>& src);
   };
 }

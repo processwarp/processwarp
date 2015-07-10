@@ -98,6 +98,7 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     builtin_va_arg.cpp
     builtin_warp.cpp
     main_core.cpp
+    process.cpp
     socketio.cpp
     stackinfo.cpp
     std_error.cpp
@@ -106,7 +107,6 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     type_based.cpp
     type_store.cpp
     util.cpp
-    vmachine.cpp
     vmemory.cpp
     )
 if(GLFW_FOUND)
@@ -132,6 +132,7 @@ if(LLVM_FOUND AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     builtin_warp.cpp
     llvm_asm_loader.cpp
     main_loader.cpp
+    process.cpp
     stackinfo.cpp
     std_error.cpp
     symbols.cpp
@@ -139,7 +140,6 @@ if(LLVM_FOUND AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     type_based.cpp
     type_store.cpp
     util.cpp
-    vmachine.cpp
     vmemory.cpp
     )
   if(GLFW_FOUND)
@@ -165,6 +165,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     builtin_va_arg.cpp
     builtin_warp.cpp
     main_webfront.cpp
+    process.cpp
     stackinfo.cpp
     std_error.cpp
     symbols.cpp
@@ -172,7 +173,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     type_based.cpp
     type_store.cpp
     util.cpp
-    vmachine.cpp
     vmemory.cpp
     )
 

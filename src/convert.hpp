@@ -12,7 +12,7 @@ namespace processwarp {
   class DataStore;
   class FuncStore;
   class TypeStore;
-  class VMachine;
+  class Process;
   class VMemory;
 
   class Convert {
@@ -22,9 +22,9 @@ namespace processwarp {
     /**
      * コンストラクタ。
      * 仮想メモリ空間を指定してインスタンスを作成。
-     * @param vm 仮想メモリ空間
+     * @param proc 仮想メモリ空間
      */
-    Convert(VMachine& vm_);
+    Convert(Process& proc);
 
     /**
      * スレッドをJSON形式に変換する。
@@ -135,8 +135,8 @@ namespace processwarp {
     }
 
   private:
-    /// 対象仮想マシン
-    VMachine& vm;
+    /// 対象プロセス
+    Process& proc;
     /// 対象仮想メモリ
     VMemory& vmemory;
 

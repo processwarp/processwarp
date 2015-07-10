@@ -10,7 +10,7 @@
 #include "definitions.hpp"
 #include "error.hpp"
 #include "llvm_asm_loader.hpp"
-#include "vmachine.hpp"
+#include "process.hpp"
 
 using namespace processwarp;
 
@@ -19,7 +19,7 @@ static const std::string pool_path("/tmp/");
 /**
  * Load program from LLVM-IR and write dump file.
  */
-class Loader : public VMachineDelegate {
+class Loader : public ProcessDelegate {
 public:
   /// Assigned process-id.
   const vpid_t pid;
@@ -40,7 +40,7 @@ public:
    * Must not return thread-id.
    * Because only root thread need for loading.
    */
-  vtid_t assign_tid(VMachine& vm) override {
+  vtid_t assign_tid(Process& vm) override {
     assert(false);
     return 0;
   }
@@ -53,36 +53,36 @@ public:
     // Library is empty because don't use in loader.
     std::vector<void*> libs;
     std::map<std::string, std::string> lib_filter;
-    VMachine vm(*this, pid, tid, libs, lib_filter);
-    vm.setup();
+    Process proc(*this, pid, tid, libs, lib_filter);
+    proc.setup();
     
     // Load program from LLVM-IR file.
-    LlvmAsmLoader loader(vm);
+    LlvmAsmLoader loader(proc);
     loader.load_file(pool_path + Convert::vpid2str(pid) + ".ll");
 
     std::map<std::string, std::string> envs;
     // Run virtual machine for bind argument and environment variables.
-    vm.run(args, envs);
+    proc.run(args, envs);
       
     // Dump and write to file.
-    Convert convert(vm);
+    Convert convert(proc);
     Convert::Related related;
     picojson::object body;
     picojson::object dump;
     picojson::object threads;
     body.insert(std::make_pair("cmd", picojson::value(std::string("warp"))));
     body.insert(std::make_pair("pid", Convert::vpid2json(pid)));
-    for (auto& it : vm.threads) {
+    for (auto& it : proc.threads) {
       threads.insert(std::make_pair(Convert::vtid2str(it.first),
 				    convert.export_thread(*it.second, related)));
     }
     body.insert(std::make_pair("threads", picojson::value(threads)));
-    std::set<vaddr_t> all = vm.vmemory.get_alladdr();
+    std::set<vaddr_t> all = proc.vmemory.get_alladdr();
     for (auto it = all.begin(); it != all.end(); it ++) {
       // Don't export NULL.
       if (*it == VADDR_NULL || *it == VADDR_NON) continue;
       // Don't export builtin variables.
-      if (vm.builtin_addrs.find(*it) != vm.builtin_addrs.end()) continue;
+      if (proc.builtin_addrs.find(*it) != proc.builtin_addrs.end()) continue;
 	
       dump.insert(std::make_pair(Util::vaddr2str(*it), convert.export_store(*it, related)));
     }

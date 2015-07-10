@@ -19,7 +19,7 @@ namespace processwarp {
      * return into dst;
      * vaddr_t
      */
-    static BuiltinPost createWindow(VMachine& vm, Thread& th, BuiltinFuncParam p,
+    static BuiltinPost createWindow(Process& proc, Thread& thread, BuiltinFuncParam p,
 				    vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
@@ -27,13 +27,13 @@ namespace processwarp {
      * paramter from src;
      * vaddr_t window
      */
-    static BuiltinPost destroyWindow(VMachine& vm, Thread& th, BuiltinFuncParam p,
+    static BuiltinPost destroyWindow(Process& proc, Thread& thread, BuiltinFuncParam p,
 				     vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
      * VMにライブラリを登録する。
      * @param vm 登録対象のVM
      */	  
-    static void regist(VMachine& vm);
+    static void regist(Process& vm);
   };
 }

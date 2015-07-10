@@ -8,7 +8,7 @@
 #include "../include/processwarp/processwarp.h"
 
 namespace processwarp {
-  class VMachine;
+  class Process;
   class Thread;
 
   /** 通信プロトコルのメジャーバージョン */
@@ -36,14 +36,14 @@ namespace processwarp {
 
   /**
    * Type definition of builtin function.
-   * @param vm 実行中の仮想マシン。
-   * @param th 実行中のスレッド。
+   * @param process 実行中のプロセス。
+   * @param thread 実行中のスレッド。
    * @param p 固定パラメータ。
    * @param dst 戻り値格納先。
    * @param src 呼び出しパラメタ格納先。
    * @return スタック構造などを書き換え、execの再実行が必要な場合trueを戻す。
    */
-  typedef BuiltinPost (*builtin_func_t)(VMachine& vm, Thread& th, BuiltinFuncParam p,
+  typedef BuiltinPost (*builtin_func_t)(Process& proc, Thread& thread, BuiltinFuncParam p,
 					vaddr_t dst, std::vector<uint8_t>& src);
 
   /** システム中で扱う最長のuint */

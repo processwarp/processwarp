@@ -15,7 +15,7 @@ namespace processwarp {
      * i64 サイズ
      * i8* ポインタ
      */
-    static BuiltinPost lifetime_start(VMachine& vm, Thread& th, BuiltinFuncParam p,
+    static BuiltinPost lifetime_start(Process& proc, Thread& thread, BuiltinFuncParam p,
 				      vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
@@ -25,7 +25,7 @@ namespace processwarp {
      * i64 サイズ
      * i8* ポインタ
      */
-    static BuiltinPost lifetime_end(VMachine& vm, Thread& th, BuiltinFuncParam p,
+    static BuiltinPost lifetime_end(Process& proc, Thread& thread, BuiltinFuncParam p,
 				    vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
@@ -35,7 +35,7 @@ namespace processwarp {
      * i64 サイズ
      * i8* ポインタ
      */
-    static BuiltinPost invariant_start(VMachine& vm, Thread& th, BuiltinFuncParam p,
+    static BuiltinPost invariant_start(Process& proc, Thread& thread, BuiltinFuncParam p,
 				       vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
@@ -45,13 +45,13 @@ namespace processwarp {
      * i64 サイズ
      * i8* ポインタ
      */
-    static BuiltinPost invariant_end(VMachine& vm, Thread& th, BuiltinFuncParam p,
+    static BuiltinPost invariant_end(Process& proc, Thread& thread, BuiltinFuncParam p,
 				     vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
      * VMにライブラリを登録する。
      * @param vm 登録対象のVM
      */
-    static void regist(VMachine& vm);
+    static void regist(Process& vm);
   };
 }

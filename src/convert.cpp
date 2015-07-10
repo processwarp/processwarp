@@ -1,7 +1,7 @@
 
 #include "convert.hpp"
+#include "process.hpp"
 #include "util.hpp"
-#include "vmachine.hpp"
 
 using namespace processwarp;
 
@@ -47,9 +47,9 @@ template<> uint8_t json2num<uint8_t>(const picojson::value& src) {
 }
 
 // コンストラクタ。
-Convert::Convert(VMachine& vm_) :
-  vm(vm_),
-  vmemory(vm_.vmemory) {
+Convert::Convert(Process& proc_) :
+  proc(proc_),
+  vmemory(proc_.vmemory) {
 }
 
 // スレッドをJSON形式に変換する。
@@ -203,7 +203,7 @@ void Convert::import_thread(const vtid_t& tid, const picojson::value& src) {
 						 json2num<vm_uint_t>(it.second)));
   }
 
-  vm.threads.insert(make_pair(tid, std::move(thread)));
+  proc.threads.insert(make_pair(tid, std::move(thread)));
 }
 
 // JSONから変数を復元する。
@@ -355,15 +355,15 @@ void Convert::import_func(vaddr_t addr, const picojson::object& src) {
     // 定数領域
     prop.k = json2vaddr(src.at("k"));
 
-    vm.deploy_function_normal(name, ret_type, arg_num, is_var_arg, prop, addr);
+    proc.deploy_function_normal(name, ret_type, arg_num, is_var_arg, prop, addr);
   } break;
 
   case FuncType::FC_BUILTIN: {
-    vm.deploy_function(name, ret_type, arg_num, is_var_arg, addr);
+    proc.deploy_function(name, ret_type, arg_num, is_var_arg, addr);
   } break;
 
   case FuncType::FC_EXTERNAL: {
-    vm.deploy_function(name, ret_type, arg_num, is_var_arg, addr);
+    proc.deploy_function(name, ret_type, arg_num, is_var_arg, addr);
   } break;
 
   default: {

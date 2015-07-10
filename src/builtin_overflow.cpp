@@ -1,12 +1,12 @@
 
 #include "builtin_overflow.hpp"
-#include "vmachine.hpp"
+#include "process.hpp"
 #include "lib/safeint3.hpp"
 
 using namespace processwarp;
 
 // VMにライブラリを登録する。
-void BuiltinOverflow::regist(VMachine& vm) {
+void BuiltinOverflow::regist(Process& vm) {
   vm.regist_builtin_func("llvm.sadd.with.overflow.i16", BuiltinOverflow::sadd, 16);
   vm.regist_builtin_func("llvm.sadd.with.overflow.i32", BuiltinOverflow::sadd, 32);
   vm.regist_builtin_func("llvm.sadd.with.overflow.i64", BuiltinOverflow::sadd, 64);
@@ -39,12 +39,12 @@ void BuiltinOverflow::regist(VMachine& vm) {
  */
 #define M_CASE_PER_WIDTH(SFUNC, INT_T, WIDTH)				\
   case WIDTH: {								\
-  INT_T a = static_cast<INT_T>(VMachine::read_builtin_param_i##WIDTH(src, &seek)); \
-  INT_T b = static_cast<INT_T>(VMachine::read_builtin_param_i##WIDTH(src, &seek)); \
+  INT_T a = static_cast<INT_T>(Process::read_builtin_param_i##WIDTH(src, &seek)); \
+  INT_T b = static_cast<INT_T>(Process::read_builtin_param_i##WIDTH(src, &seek)); \
   INT_T res;								\
   bool flg = SFUNC<INT_T, INT_T>(a, b, res);				\
-  *reinterpret_cast<INT_T*>(vm.get_raw_addr(dst)) = res;		\
-  *reinterpret_cast<uint8_t*>(vm.get_raw_addr(dst) + sizeof(INT_T)) = (flg ? 0x00 : 0xff); \
+  *reinterpret_cast<INT_T*>(proc.get_raw_addr(dst)) = res;		\
+  *reinterpret_cast<uint8_t*>(proc.get_raw_addr(dst) + sizeof(INT_T)) = (flg ? 0x00 : 0xff); \
   } break
 
 /**
@@ -55,7 +55,7 @@ void BuiltinOverflow::regist(VMachine& vm) {
  * @param I64 64bit幅の計算のベースになる整数型
  */
 #define M_FUNC_PER_METHOD(FNAME, SFUNC, I16, I32, I64)			\
-  BuiltinPost BuiltinOverflow::FNAME(VMachine& vm, Thread& th, BuiltinFuncParam p, \
+  BuiltinPost BuiltinOverflow::FNAME(Process& proc, Thread& thread, BuiltinFuncParam p, \
 				     vaddr_t dst, std::vector<uint8_t>& src) { \
     int seek = 0;							\
     switch (p.i64) {							\
