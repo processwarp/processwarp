@@ -11,15 +11,15 @@
 
 #include "lib/picojson.h"
 
-#include "controller.hpp"
 #include "socketio.hpp"
 #include "error.hpp"
+#include "vmachine.hpp"
 
 using namespace processwarp;
 
-class NativeVm : public ControllerDelegate, public SocketIoDelegate {
+class NativeVm : public VMachineDelegate, public SocketIoDelegate {
 public:
-  Controller controller;
+  VMachine vm;
   SocketIo socket;
 
   /** Configuration */
@@ -46,7 +46,7 @@ public:
    * @param _conf Configuration.
    */
   NativeVm(const picojson::object& _conf) :
-    controller(*this),
+    vm(*this),
     socket(*this),
     conf(_conf) {
   }
@@ -215,7 +215,7 @@ public:
     while (it != procs.end()) {
       if (new_procs.find(it->first) == new_procs.end()) {
 	// Delete proccess if not exit in server's proccess list.
-	controller.delete_process(it->first);
+	vm.delete_process(it->first);
 	it = procs.erase(it);
 
       } else {
@@ -235,9 +235,9 @@ public:
     // Not to me.
     if (to_device_id != device_id) return;
 
-    if (controller.have_process(pid)) return;
+    if (vm.have_process(pid)) return;
 
-    socket.send_warp_request_1(pid, tid, controller.get_root_tid(pid), dst_device_id);
+    socket.send_warp_request_1(pid, tid, vm.get_root_tid(pid), dst_device_id);
   }
 
   // Call when recv warp request from device that having process.
@@ -272,7 +272,7 @@ public:
 	proc_info.threads.insert(std::make_pair(tid, device_id));
       }
       
-      controller.create_process(pid, root_tid, libs, lib_filter);
+      vm.create_process(pid, root_tid, libs, lib_filter);
 
     } else {
       // Deny from other account.
@@ -290,7 +290,7 @@ public:
     if (to_device_id != device_id) return;
     
     if (result == 0) {
-      controller.warp_process(pid, tid, from_device_id);
+      vm.warp_process(pid, tid, from_device_id);
 
     } else {
       fixme("Ouutput log & ignore?");
@@ -309,7 +309,7 @@ public:
     socket.send_warp_data_2(pid,
 			    tid,
 			    from_device_id,
-			    controller.recv_warp_data(pid, tid, payload) ? 0 : -111);
+			    vm.recv_warp_data(pid, tid, payload) ? 0 : -111);
   }
 
   // Call when recv warp data from warp destination device.
@@ -322,7 +322,7 @@ public:
 
   // Call when process was killed.
   void recv_exit_process(const vpid_t& pid) override {
-    controller.exit_process(pid);
+    vm.exit_process(pid);
   }
 
   // Recv console for test.
@@ -404,7 +404,7 @@ public:
       }
 #endif
       socket.pool();
-      controller.loop();
+      vm.loop();
     }
   }
 };

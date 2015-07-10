@@ -8,16 +8,16 @@
 #include <emscripten.h>
 #include <emscripten/bind.h>
 
-#include "controller.hpp"
 #include "convert.hpp"
+#include "vmachine.hpp"
 
 using namespace processwarp;
 using namespace emscripten;
 
 /**
- * ControllerDelegate implement using Emscripten.
+ * VMachineDelegate implement using Emscripten.
  */
-class WebfrontDelegate : public ControllerDelegate {
+class WebfrontDelegate : public VMachineDelegate {
   // Call when send data to other device.
   void send_warp_data(const vpid_t& pid,
 		      const vtid_t& tid,
@@ -66,12 +66,12 @@ static std::map<std::string, std::string> lib_filter;
 
 /** Instance of delegate. */
 WebfrontDelegate delegate;
-/** Instance of controller. */
-Controller controller(delegate);
+/** Instance of virtual machine. */
+VMachine vm(delegate);
 
 /** Main loop for Emscripten. */
 static void ems_loop() {
-  controller.loop();
+  vm.loop();
 }
 
 void init_lib_filter() {
@@ -85,32 +85,32 @@ void init_lib_filter() {
 }
 
 bool recv_warp_data(const vpid_t& pid, std::string tid, const std::string& data) {
-  return controller.recv_warp_data(pid, Convert::str2vtid(tid), data);
+  return vm.recv_warp_data(pid, Convert::str2vtid(tid), data);
 }
 
 void set_device_id(const dev_id_t& device_id) {
-  controller.device_id = device_id;
+  vm.device_id = device_id;
 }
 
 void create_process(const vpid_t& pid, std::string root_tid) {
-  controller.create_process(pid, Convert::str2vtid(root_tid), LIBS, lib_filter);
+  vm.create_process(pid, Convert::str2vtid(root_tid), LIBS, lib_filter);
 }
 
 void delete_process(const vpid_t& pid) {
-  controller.delete_process(pid);
+  vm.delete_process(pid);
 }
 
 std::string get_root_tid(const vpid_t& pid) {
-  return Convert::vtid2str(controller.get_root_tid(pid));
+  return Convert::vtid2str(vm.get_root_tid(pid));
 }
 
 void exit_process(const vpid_t& pid) {
-  controller.exit_process(pid);
+  vm.exit_process(pid);
 }
 
 void warp_process(const vpid_t& pid, const dev_id_t& device_id) {
   vtid_t tmp = 1; ///< TODO
-  controller.warp_process(pid, tmp, device_id);
+  vm.warp_process(pid, tmp, device_id);
 }
 
 /**

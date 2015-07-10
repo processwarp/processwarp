@@ -85,7 +85,6 @@ endif()
 
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   set(CORE_FILES
-    controller.cpp
     convert.cpp
     data_store.cpp
     error.cpp
@@ -107,6 +106,7 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     type_based.cpp
     type_store.cpp
     util.cpp
+    vmachine.cpp
     vmemory.cpp
     )
 if(GLFW_FOUND)
@@ -151,7 +151,6 @@ endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   set(WEBFRONT_FILES
-    controller.cpp
     convert.cpp
     data_store.cpp
     error.cpp
@@ -173,6 +172,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     type_based.cpp
     type_store.cpp
     util.cpp
+    vmachine.cpp
     vmemory.cpp
     )
 

@@ -11,14 +11,14 @@
 
 namespace processwarp {
   /**
-   * Delegate for Controller-class.
+   * Delegate for VMachine-class.
    */
-  class ControllerDelegate {
+  class VMachineDelegate {
   public:
     /**
      * Destructor for virtual.
      */
-    virtual ~ControllerDelegate();
+    virtual ~VMachineDelegate();
     
     /**
      * Call when send data to other device.
@@ -61,9 +61,9 @@ namespace processwarp {
   };
   
   /**
-   * Controller for set of processes.
+   * VMachine for set of processes.
    */
-  class Controller : protected ProcessDelegate {
+  class VMachine : protected ProcessDelegate {
   public:
     /// device_id to controller.
     std::string device_id;
@@ -72,7 +72,7 @@ namespace processwarp {
      * Constractor with delegate
      * @param delegate Events assignee.
      */
-    Controller(ControllerDelegate& delegate);
+    VMachine(VMachineDelegate& delegate);
 
     /**
      * Main loop.
@@ -148,7 +148,7 @@ namespace processwarp {
 
   private:
     /** Event assignee */
-    ControllerDelegate& delegate;
+    VMachineDelegate& delegate;
     /** Map of pid and process. */
     std::map<vpid_t, std::shared_ptr<Process>> procs;
     /** Map of pid and warp destination device-ids. */

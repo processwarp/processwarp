@@ -1,56 +1,56 @@
 
 #include <random>
 
-#include "controller.hpp"
 #include "convert.hpp"
 #include "definitions.hpp"
 #include "error.hpp"
+#include "vmachine.hpp"
 #include "vmemory.hpp"
 
 using namespace processwarp;
 
 // Destructor for virtual.
-ControllerDelegate::~ControllerDelegate() {
+VMachineDelegate::~VMachineDelegate() {
   // Do nothing.
 }
     
 // Call when send data to other device.
-void ControllerDelegate:: send_warp_data(const vpid_t& pid,
-					 const vtid_t& tid,
-					 const dev_id_t& dst_device_id,
-					 const std::string& data) {
+void VMachineDelegate:: send_warp_data(const vpid_t& pid,
+				       const vtid_t& tid,
+				       const dev_id_t& dst_device_id,
+				       const std::string& data) {
   // Do nothing.
 }
     
 // Call when context switch of process.
-void ControllerDelegate::on_switch_proccess(const vpid_t& pid) {
+void VMachineDelegate::on_switch_proccess(const vpid_t& pid) {
   // Do nothing.
 }
 
 // Call when process was finish.
-void ControllerDelegate::on_finish_proccess(const vpid_t& pid) {
+void VMachineDelegate::on_finish_proccess(const vpid_t& pid) {
   // Do nothing.
 }
 
 // Call when a thread was finish.
-void ControllerDelegate::on_finish_thread(const vpid_t& pid, const vtid_t& tid) {
+void VMachineDelegate::on_finish_thread(const vpid_t& pid, const vtid_t& tid) {
   // Do nothing.
 }
 
 // Call when rise error.
-void ControllerDelegate::on_error(const vpid_t& pid,
-				  const std::string& message) {
+void VMachineDelegate::on_error(const vpid_t& pid,
+				const std::string& message) {
   // Do nothing.
 }
 
 // Constractor with delegate.
-Controller::Controller(ControllerDelegate& _delegate) :
+VMachine::VMachine(VMachineDelegate& _delegate) :
   delegate(_delegate) {
   // Do nothing.
 }
 
 // Main loop.
-void Controller::loop() {
+void VMachine::loop() {
   vpid_t pid;
   vtid_t tid;
   Process* proc;
@@ -121,9 +121,9 @@ void Controller::loop() {
 }
     
 // Pass data from other device.
-bool Controller::recv_warp_data(const vpid_t& pid,
-				const vtid_t& tid,
-				const std::string& data) {
+bool VMachine::recv_warp_data(const vpid_t& pid,
+			      const vtid_t& tid,
+			      const std::string& data) {
   try {
     picojson::value v;
     std::istringstream is(data);
@@ -162,10 +162,10 @@ bool Controller::recv_warp_data(const vpid_t& pid,
 }
 
 // Create empty process.
-void Controller::create_process(const vpid_t& pid,
-				const vtid_t& root_tid,
-				std::vector<void*> libs,
-				const std::map<std::string, std::string>& lib_filter) {
+void VMachine::create_process(const vpid_t& pid,
+			      const vtid_t& root_tid,
+			      std::vector<void*> libs,
+			      const std::map<std::string, std::string>& lib_filter) {
   assert(procs.find(pid) == procs.end());
   procs.insert(std::make_pair(pid, std::shared_ptr<Process>
 			      (new Process(*this, pid, root_tid, libs, lib_filter))));
@@ -173,32 +173,32 @@ void Controller::create_process(const vpid_t& pid,
 }
 
 // Delete process.
-void Controller::delete_process(const vpid_t& pid) {
+void VMachine::delete_process(const vpid_t& pid) {
   if (procs.find(pid) == procs.end()) return;
   procs.erase(pid);
   warp_dest.erase(pid);
 }
 
 // Start exiting process.
-void Controller::exit_process(const vpid_t& pid) {
+void VMachine::exit_process(const vpid_t& pid) {
   if (procs.find(pid) == procs.end()) return;
   procs.at(pid)->exit();
 }
 
 // Get root thread-id of process.
-const vtid_t& Controller::get_root_tid(const vpid_t& pid) {
+const vtid_t& VMachine::get_root_tid(const vpid_t& pid) {
   return procs.at(pid)->root_tid;
 }
 
 // Check whether process has contain in this device.
-bool Controller::have_process(const vpid_t& pid) {
+bool VMachine::have_process(const vpid_t& pid) {
   return (procs.find(pid) != procs.end());
 }
 
 // Start warp process.
-void Controller::warp_process(const vpid_t& pid,
-			      const vtid_t& tid,
-			      const dev_id_t& dst_device_id) {
+void VMachine::warp_process(const vpid_t& pid,
+			    const vtid_t& tid,
+			    const dev_id_t& dst_device_id) {
   warp_dest[pid] = dst_device_id;
   // Change vm's status for setup to warp.
   if (tid == ALL_THREAD) {
@@ -212,14 +212,14 @@ void Controller::warp_process(const vpid_t& pid,
 }
 
 // @inheritDoc
-vtid_t Controller::assign_tid(Process& vm) {
+vtid_t VMachine::assign_tid(Process& vm) {
   fixme("assign_tid\n");
   std::random_device rnd;
   return rnd();
 }
 
 // Dump and send data to warp process. 
-void Controller::do_warp_process(const vpid_t& pid) {
+void VMachine::do_warp_process(const vpid_t& pid) {
   Process& proc    = *procs.at(pid);
   VMemory& vmemory = proc.vmemory;
   
@@ -262,7 +262,7 @@ void Controller::do_warp_process(const vpid_t& pid) {
   }
 }
 
-void Controller::recv_process_warp(const vpid_t& pid, picojson::object& json) {
+void VMachine::recv_process_warp(const vpid_t& pid, picojson::object& json) {
   Process& proc = *procs.at(pid);
   VMemory& vmemory = proc.vmemory;
   Convert convert(proc);
