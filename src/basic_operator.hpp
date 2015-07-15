@@ -30,12 +30,6 @@ namespace processwarp {
     virtual void copy(uint8_t* dst, uint8_t* src);
 
     /**
-     * 値を読み込む
-     * @param src 読み込み元
-     */
-    //virtual vm_int_t get(uint8_t* src);
-    
-    /**
      * 比較命令(isnan(a) || isnan(b))に対応した演算を行う。
      * @param dst 出力先
      * @param a
@@ -191,12 +185,6 @@ namespace processwarp {
      * @param src コピー元
      */
     void copy(uint8_t* dst, uint8_t* src) override;
-
-    /**
-     * 値を読み込む
-     * @param src 読み込み元
-     */
-    //vm_int_t get(uint8_t* src) override;
 
     /**
      * 比較命令(isnan(a) || isnan(b))に対応した演算を行う。
@@ -395,21 +383,4 @@ namespace processwarp {
      */
     void type_cast(uint8_t* dst, vaddr_t type, uint8_t* src) override;
   };
-
-  /**
-   * 複合型に対する演算命令。
-   */
-  /*
-  class OperatorForComplex : public BasicOperator {
-  public:
-    /// 複合型の型情報
-    TypeStore* type_store;
-
-    
-     * 値をコピーする。
-     * @param dst コピー先
-     * @param src コピー元
-     */
-  /*void copy(uint8_t* dst, uint8_t* src) override;
-    };*/
 }

@@ -26,12 +26,6 @@ void BasicOperator::copy(uint8_t* dst, uint8_t* src) {
   throw_error(Error::INST_VIOLATION);
 }
 
-// 値を読み込む
-/*
-vm_int_t BasicOperator::get(uint8_t* src) {
-  throw_error(Error::INST_VIOLATION);
-  }*/
-
 // 比較命令(isnan(a) || isnan(b))に対応した演算を行う。
 bool BasicOperator::is_or_nans(uint8_t* a, uint8_t* b) {
   throw_error(Error::INST_VIOLATION);
@@ -85,12 +79,6 @@ template <typename T> void PrimitiveOperator<T>::copy(uint8_t* dst, uint8_t* src
   *reinterpret_cast<T*>(dst) = *reinterpret_cast<T*>(src);
   print_debug("copy %s (%p <- %p)\n", Util::numptr2str(dst, sizeof(T)).c_str(), dst, src);
 }
-
-// 値を読み込む
-/*
-template <typename T> vm_int_t PrimitiveOperator<T>::get(uint8_t* src) {
-  return static_cast<vm_int_t>(*reinterpret_cast<T*>(src));
-  }*/
 
 // 比較命令(isnan(a) || isnan(b))に対応した演算を行う。
 template <typename T> bool PrimitiveOperator<T>::is_or_nans(uint8_t* a, uint8_t* b) {
@@ -398,12 +386,6 @@ void PointerOperator::type_cast(uint8_t* dst, vaddr_t type, uint8_t* src) {
 	      Util::numptr2str(dst, 8).c_str(),
 	      Util::numptr2str(src, sizeof(vaddr_t)).c_str());
 }
-
-// 値をコピーする。
-/*
-void OperatorForComplex::copy(uint8_t* dst, uint8_t* src) {
-  memcpy(dst, src, type_store->size);
-  }//*/
 
 // 明示的テンプレートのインスタンス化
 template class processwarp::PrimitiveOperator<int8_t>;
