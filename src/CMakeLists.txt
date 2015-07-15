@@ -87,6 +87,7 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   set(CORE_FILES
     error.cpp
     func_store.cpp
+    finally.cpp
     basic_operator.cpp
     builtin_bit.cpp
     builtin_libc.cpp
@@ -120,6 +121,7 @@ if(LLVM_FOUND AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   set(LOADER_FILES
     error.cpp
     func_store.cpp
+    finally.cpp
     basic_operator.cpp
     builtin_bit.cpp
     builtin_libc.cpp
@@ -151,6 +153,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   set(WEBFRONT_FILES
     error.cpp
     func_store.cpp
+    finally.cpp
     basic_operator.cpp
     builtin_bit.cpp
     builtin_glfw3.cpp
