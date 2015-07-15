@@ -972,16 +972,16 @@ vtid_t Process::create_thread(vaddr_t func_addr, vaddr_t arg_addr) {
 // Join a thread.
 bool Process::join_thread(vtid_t current, vtid_t target, vaddr_t retval) {
   if (threads.find(target) == threads.end()) {
-    throw_std_error(StdError::SRCH);
+    throw_std_error(StdError::PW_SRCH);
   }
 
   Thread& target_thread  = *threads.at(target).get();
   if (target_thread.join_waiting != current) {
     if (target_thread.join_waiting != Thread::JOIN_NONE) {
-      throw_std_error(StdError::INVAL);
+      throw_std_error(StdError::PW_INVAL);
       
     } else if (target == current) {
-      throw_std_error(StdError::DEADLK);
+      throw_std_error(StdError::PW_DEADLK);
     }
     
     target_thread.join_waiting = current;
