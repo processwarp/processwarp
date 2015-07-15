@@ -17,18 +17,18 @@
 
 using namespace processwarp;
 
-class NativeVm : public VMachineDelegate, public SocketIoDelegate {
+class Main : public VMachineDelegate, public SocketIoDelegate {
 public:
-  VMachine vm;
-  SocketIo socket;
-
   /** Configuration */
   const picojson::object conf;
-
+  /** Connection by SocketIO. */
+  SocketIo socket;
   /** Device name. */
   std::string device_name;
   /** Device ID. */
   dev_id_t device_id;
+  /** Virtual machine. */
+  std::unique_ptr<VMachine> vm;
   
   /** Dynamic link libraries. */
   std::vector<void*> libs;
@@ -42,13 +42,12 @@ public:
   std::map<dev_id_t, std::string> devices;
 
   /**
-   * Constructor
-   * @param _conf Configuration.
+   * Constructor.
+   * @param conf_ Configuration.
    */
-  NativeVm(const picojson::object& _conf) :
-    vm(*this),
-    socket(*this),
-    conf(_conf) {
+  Main(const picojson::object& conf_) :
+    conf(conf_),
+    socket(*this) {
   }
 
   /**
@@ -200,6 +199,7 @@ public:
     }
 
     this->device_id = device_id;
+    this->vm.reset(new VMachine(*this, device_id));
 
     // Syncronize processes empty because processes not running just run program.
     socket.send_sync_proc_list(std::map<vpid_t, SocketIoProc>());
@@ -215,7 +215,7 @@ public:
     while (it != procs.end()) {
       if (new_procs.find(it->first) == new_procs.end()) {
 	// Delete proccess if not exit in server's proccess list.
-	vm.delete_process(it->first);
+	vm->delete_process(it->first);
 	it = procs.erase(it);
 
       } else {
@@ -235,9 +235,9 @@ public:
     // Not to me.
     if (to_device_id != device_id) return;
 
-    if (vm.have_process(pid)) return;
+    if (vm->have_process(pid)) return;
 
-    socket.send_warp_request_1(pid, tid, vm.get_root_tid(pid), dst_device_id);
+    socket.send_warp_request_1(pid, tid, vm->get_root_tid(pid), dst_device_id);
   }
 
   // Call when recv warp request from device that having process.
@@ -272,7 +272,7 @@ public:
 	proc_info.threads.insert(std::make_pair(tid, device_id));
       }
       
-      vm.create_process(pid, root_tid, libs, lib_filter);
+      vm->create_process(pid, root_tid, libs, lib_filter);
 
     } else {
       // Deny from other account.
@@ -290,7 +290,7 @@ public:
     if (to_device_id != device_id) return;
     
     if (result == 0) {
-      vm.warp_process(pid, tid, from_device_id);
+      vm->warp_process(pid, tid, from_device_id);
 
     } else {
       fixme("Ouutput log & ignore?");
@@ -309,7 +309,7 @@ public:
     socket.send_warp_data_2(pid,
 			    tid,
 			    from_device_id,
-			    vm.recv_warp_data(pid, tid, payload) ? 0 : -111);
+			    vm->recv_warp_data(pid, tid, payload) ? 0 : -111);
   }
 
   // Call when recv warp data from warp destination device.
@@ -322,7 +322,7 @@ public:
 
   // Call when process was killed.
   void recv_exit_process(const vpid_t& pid) override {
-    vm.exit_process(pid);
+    vm->exit_process(pid);
   }
 
   // Recv console for test.
@@ -389,8 +389,13 @@ public:
 #ifndef NDEBUG
     bool is_run_app = false;
 #endif
-    
-    // Main loop
+
+    // Loop befor login.
+    while(vm.get() == nullptr) {
+      socket.pool();
+    }
+
+    // Main loop.
     while(true) {
 #ifndef NDEBUG
       // Stop program when application is not running on test.
@@ -404,7 +409,7 @@ public:
       }
 #endif
       socket.pool();
-      vm.loop();
+      vm->loop();
     }
   }
 };
@@ -514,8 +519,8 @@ int main(int argc, char* argv[]) {
   }
 
   { // Run.
-    NativeVm native_vm(conf);
-    native_vm.run();
+    Main THIS(conf);
+    THIS.run();
 
     // Finish
     return EXIT_SUCCESS;

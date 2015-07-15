@@ -1,8 +1,10 @@
 #pragma once
 
+#include <memory>
 #include <vector>
 
 #include "definitions.hpp"
+#include "vmemory.hpp"
 
 namespace processwarp {
   /**
@@ -27,40 +29,61 @@ namespace processwarp {
   
     /**
      * コンストラクタ(基本型)。
-     * @param addr_ 割り当てアドレス
-     * @param size_ 構造のサイズ(Byte)
-     * @param alignment_ アライメント(Byte)
+     * @param memory 
+     * @param size 構造のサイズ(Byte)
+     * @param alignment アライメント(Byte)
+     * @param addr
      */
-    TypeStore(vaddr_t addr_,
-	      size_t size_,
-	      unsigned int alignment_);
+    static std::unique_ptr<TypeStore> alloc_basic(VMemory::Accessor& memory,
+						  unsigned int size,
+						  unsigned int alignment,
+						  vaddr_t addr);
 
     /**
      * コンストラクタ(構造体)。
-     * @param addr_ 割り当てアドレス
-     * @param size_ 構造のサイズ(Byte)
-     * @param alignment_ アライメント(Byte)
-     * @param member_ 構造のメンバの配列
+     * @param memory 
+     * @param size 構造のサイズ(Byte)
+     * @param alignment アライメント(Byte)
+     * @param member 構造のメンバの配列
      */
-    TypeStore(vaddr_t addr_,
-	      size_t size_,
-	      unsigned int alignment_,
-	      const std::vector<vaddr_t>& member_);
-
+    static std::unique_ptr<TypeStore> alloc_struct(VMemory::Accessor& memory,
+						   const std::vector<vaddr_t>& member);
     /**
      * コンストラクタ(配列/vector)。
-     * @param addr_ 割り当てアドレス
-     * @param kind_ 型の種類(配列/vectorのみ)
-     * @param size_ サイズ(Byte)
-     * @param alignment_ アライメント(Byte)
-     * @param element_ 要素の型
-     * @param num_ 要素数
+     * @param memory 
+     * @param kind 型の種類(配列/vectorのみ)
+     * @param size サイズ(Byte)
+     * @param alignment アライメント(Byte)
+     * @param element 要素の型
+     * @param num 要素数
      */
-    TypeStore(vaddr_t addr_,
-	      TypeKind kind_,
-	      size_t size_,
-	      unsigned int alignment_,
-	      vaddr_t element_,
-	      unsigned int num_);
+    static std::unique_ptr<TypeStore> alloc_array(VMemory::Accessor& memory,
+						  vaddr_t element,
+						  unsigned int num);
+
+    static std::unique_ptr<TypeStore> alloc_vector(VMemory::Accessor& memory,
+						   vaddr_t element,
+						   unsigned int num);
+
+    /**
+     * 型のサイズと最大アライメントを計算する。
+     * @param member 複合型のメンバ
+     * @return <型のサイズ, 最大アライメント>
+     */
+    static std::pair<size_t, unsigned int> calc_type_size(VMemory::Accessor& memory,
+							  const std::vector<vaddr_t>& member);
+
+    /**
+     * 型のサイズと最大アライメントを計算する。
+     * @param type 型
+     * @return <型のサイズ, 最大アライメント>
+     */
+    static std::pair<size_t, unsigned int> calc_type_size(VMemory::Accessor& memory,
+							  vaddr_t type);
+
+    /**
+     *
+     */
+    static std::unique_ptr<TypeStore> read(VMemory::Accessor& memory, vaddr_t addr);
   };
 }

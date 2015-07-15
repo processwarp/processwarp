@@ -6,6 +6,8 @@
 
 #include "definitions.hpp"
 #include "stackinfo.hpp"
+#include "type_store.hpp"
+#include "wrapped_operator.hpp"
 
 namespace processwarp {
   /**
@@ -39,6 +41,8 @@ namespace processwarp {
     vtid_t tid;
     /// status of vm
     Status status;
+    /** Accessor to binded memory */
+    VMemory::Accessor memory;
     /// information of call stack
     StackInfos stackinfos;
     /// Functions that will be called at befor warp.
@@ -48,11 +52,6 @@ namespace processwarp {
     /// Warp parameter
     WarpParameter warp_parameter;
 
-    /// 複合型に対する演算命令
-    TypeComplex type_complex;
-
-    /// device-id for warp to
-    //std::string warp_to;
     /// stack size when befor warp
     vm_uint_t warp_stack_size;
     vm_uint_t warp_call_count;
@@ -64,10 +63,22 @@ namespace processwarp {
     /// thread-id to join(0:none, 1:detached)
     vtid_t join_waiting;
 
+    WrappedComplexOperator complex_operator;
+
+    WrappedOperator* const OPERATORS[0x36];
+
     /**
      * Constructor with thread-id.
      * @param tid Thread-id of this thread.
+     * @param memory 
      */
-    Thread(vtid_t tid);
+    Thread(vtid_t tid, VMemory::Accessor memory);
+
+    /**
+     * 型依存の演算インスタンスを取得する。
+     * @param type 方に割り当てたアドレス。
+     * @return 型依存の演算インスタンス。
+     */
+    WrappedOperator* get_operator(vaddr_t type);
   };
 }

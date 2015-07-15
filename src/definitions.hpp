@@ -80,17 +80,26 @@ namespace processwarp {
 
   /** メモリの内容ごとに割り当てるアドレスの判定フラグ */
   enum AddrType : vaddr_t {
-    AD_TYPE     = 0x0000000000000000, ///< 型 or スタックの相対アドレス
+    //AD_TYPE     = 0x0000000000000000, ///< スタックの相対アドレス
     AD_VALUE_08 = 0x1000000000000000, ///< 0〜255Byte空間
     AD_VALUE_16 = 0x2000000000000000, ///< 256〜65KByte空間
     AD_VALUE_24 = 0x3000000000000000, ///< 65K〜16MByte空間
     AD_VALUE_32 = 0x4000000000000000, ///< 16M〜4GByte空間
     AD_VALUE_40 = 0x5000000000000000, ///< 4G〜1TByte空間
     AD_VALUE_48 = 0x6000000000000000, ///< 1T〜256TByte空間
-    AD_CONSTANT = 0x8000000000000000, ///< 定数判定フラグ
-    AD_FUNCTION = 0xF000000000000000, ///< 関数
+    AD_PROGRAM  = 0xF000000000000000, ///< 関数、型領域
     AD_MASK     = 0xF000000000000000,
     AD_PTR      = 0x4000000100000000,
+  };
+
+  /** ID of data allocated in program area. */
+  enum ProgramType : uint8_t {
+    /** Normal function data. */
+    PT_NORMAL   = 0x01,
+    /** Built-in/Native function data. */
+    PT_EXTERNAL = 0x02,
+    /** Type data. */
+    PT_TYPE     = 0xFF,
   };
 
   /** process-id */
@@ -108,11 +117,14 @@ namespace processwarp {
   /** falseを表す値 */
   static const uint8_t I8_FALSE = 0x0;
 
-  /** 関数のタイプ */
+  /** Function type. */
   enum FuncType : uint8_t {
-    FC_NORMAL       = 0x01, ///< 通常の関数(VMで解釈、実行する)
-    FC_BUILTIN    = 0x02, ///< VM組み込み関数
-    FC_EXTERNAL     = 0x03, ///< ライブラリなど外部の関数
+    /** Normal function type. */
+    FC_NORMAL       = 0x01,
+    /** Built-in function type. */
+    FC_BUILTIN      = 0x02,
+    /** Native funcion type. */
+    FC_NATIVE       = 0x03,
   };
 
   /** 型の種類 */

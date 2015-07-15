@@ -85,10 +85,9 @@ endif()
 
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   set(CORE_FILES
-    convert.cpp
-    data_store.cpp
     error.cpp
     func_store.cpp
+    basic_operator.cpp
     builtin_bit.cpp
     builtin_libc.cpp
     builtin_memory.cpp
@@ -103,11 +102,11 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     std_error.cpp
     symbols.cpp
     thread.cpp
-    type_based.cpp
     type_store.cpp
     util.cpp
     vmachine.cpp
     vmemory.cpp
+    wrapped_operator.cpp
     )
 if(GLFW_FOUND)
   list(APPEND CORE_FILES builtin_glfw3.cpp)
@@ -119,10 +118,9 @@ endif()
 
 if(LLVM_FOUND AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   set(LOADER_FILES
-    convert.cpp
-    data_store.cpp
     error.cpp
     func_store.cpp
+    basic_operator.cpp
     builtin_bit.cpp
     builtin_libc.cpp
     builtin_memory.cpp
@@ -137,10 +135,10 @@ if(LLVM_FOUND AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     std_error.cpp
     symbols.cpp
     thread.cpp
-    type_based.cpp
     type_store.cpp
     util.cpp
     vmemory.cpp
+    wrapped_operator.cpp
     )
   if(GLFW_FOUND)
     list(APPEND LOADER_FILES builtin_glfw3.cpp)
@@ -151,10 +149,9 @@ endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   set(WEBFRONT_FILES
-    convert.cpp
-    data_store.cpp
     error.cpp
     func_store.cpp
+    basic_operator.cpp
     builtin_bit.cpp
     builtin_glfw3.cpp
     builtin_libc.cpp
@@ -169,11 +166,11 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     std_error.cpp
     symbols.cpp
     thread.cpp
-    type_based.cpp
     type_store.cpp
     util.cpp
     vmachine.cpp
     vmemory.cpp
+    wrapped_operator.cpp
     )
 
   add_executable(webfront ${WEBFRONT_FILES})

@@ -1,4 +1,6 @@
 
+#include <cassert>
+
 #include "builtin_warp.hpp"
 #include "process.hpp"
 
@@ -14,7 +16,7 @@ BuiltinPost BuiltinWarp::at_after_warp(Process& proc, Thread& thread, BuiltinFun
 
   thread.funcs_at_after_warp.push_back(func);
 
-  *reinterpret_cast<vm_int_t*>(proc.get_raw_addr(dst)) = 0;
+  thread.memory.set<vm_int_t>(dst, 0);
 
   return BP_NORMAL;
 }
@@ -29,7 +31,7 @@ BuiltinPost BuiltinWarp::at_befor_warp(Process& proc, Thread& thread, BuiltinFun
 
   thread.funcs_at_befor_warp.push_back(func);
 
-  *reinterpret_cast<vm_int_t*>(proc.get_raw_addr(dst)) = 0;
+  thread.memory.set<vm_int_t>(dst, 0);
 
   return BP_NORMAL;
 }
@@ -74,7 +76,7 @@ BuiltinPost BuiltinWarp::set_processwarp_param(Process& proc, Thread& thread, Bu
   // TODO validate key & val.
   thread.warp_parameter[key] = val;
   
-  *reinterpret_cast<vm_int_t*>(proc.get_raw_addr(dst)) = 0;
+  thread.memory.set<vm_int_t>(dst, 0);
 
   return BP_NORMAL;
 }

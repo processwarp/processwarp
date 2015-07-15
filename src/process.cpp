@@ -33,150 +33,68 @@
 #include "builtin_warp.hpp"
 #include "process.hpp"
 #include "stackinfo.hpp"
-#include "type_based.hpp"
+#include "type_store.hpp"
 #include "util.hpp"
 #include "std_error.hpp"
+#include "wrapped_operator.hpp"
 
 using namespace processwarp;
 
-static TypeBased* TYPE_BASES[] = {
-  nullptr, // 0
-  nullptr, // 1 void
-  new TypePointer(), // 2 pointer
-  nullptr, // 3 function
-  nullptr,
-  nullptr,
-  nullptr,
-  nullptr,
-  nullptr,
-  nullptr,
-  nullptr,
-  nullptr,
-  nullptr,
-  nullptr,
-  nullptr,
-  nullptr,
-  nullptr, // 10
-  new TypeExtended<uint8_t>(), // 11 8bit整数型
-  new TypeExtended<uint16_t>(), // 12 16bit整数型
-  new TypeExtended<uint32_t>(), // 13 32bit整数型
-  new TypeExtended<uint64_t>(), // 14 64bit整数型
-  nullptr,
-  nullptr,
-  nullptr,
-  nullptr,
-  nullptr,
-  nullptr,
-  nullptr,
-  nullptr,
-  nullptr,
-  nullptr,
-  nullptr,
-  nullptr, // 20
-  new TypeExtended<int8_t>(), // 21 8bit整数型
-  new TypeExtended<int16_t>(), // 22 16bit整数型
-  new TypeExtended<int32_t>(), // 23 32bit整数型
-  new TypeExtended<int64_t>(), // 24 64bit整数型
-  nullptr,
-  nullptr,
-  nullptr,
-  nullptr,
-  nullptr,
-  nullptr,
-  nullptr,
-  nullptr,
-  nullptr,
-  nullptr,
-  nullptr,
-  nullptr, // 30
-  nullptr, // 31
-  new TypeExtended<float>(), // 32 float
-  new TypeExtended<double>(), // 33 double
-  nullptr, // 34
-  nullptr, // 35 quad
-};
-
-struct OperandRet {
-  DataStore& data;
-  vaddr_t addr;
-  uint8_t* cache;
-};
-
 struct OperandParam {
-  DataStore& stack;
-  DataStore& k;
-  VMemory& vmemory;
+  vaddr_t stack;
+  vaddr_t k;
+  VMemory::Accessor& memory;
 };
 
-inline uint8_t* get_cache(vaddr_t addr, VMemory& vmemory) {
-  DataStore& store = vmemory.get_data(addr);
-  return store.head.get() + VMemory::get_addr_lower(addr);
-}
-
-inline FuncStore& get_function(instruction_t code, OperandParam& param) {
+inline std::unique_ptr<FuncStore> get_function(instruction_t code, OperandParam& param) {
   int operand = Instruction::get_operand(code);
   if ((operand & HEAD_OPERAND) != 0) {
-    assert((FILL_OPERAND - operand) < param.k.size);
     // 定数の場合1の補数表現からの復元
-    vaddr_t addr =
-      *reinterpret_cast<vaddr_t*>(param.k.head.get() + (FILL_OPERAND - operand));
-    return param.vmemory.get_func(addr);
+    vaddr_t addr = param.memory.get<vaddr_t>(param.k + (FILL_OPERAND - operand));
+    return std::move(FuncStore::read(param.memory, addr));
     
   } else {
-    assert(operand < static_cast<signed>(param.stack.size));
-    vaddr_t addr = *reinterpret_cast<vaddr_t*>(param.stack.head.get() + operand);
-    return param.vmemory.get_func(addr);
+    vaddr_t addr = param.memory.get<vaddr_t>(param.stack + operand);
+    return std::move(FuncStore::read(param.memory, addr));
   }
 }
 
-inline OperandRet get_operand(instruction_t code, OperandParam& param) {
+inline vaddr_t get_operand(instruction_t code, OperandParam& param) {
   int operand = Instruction::get_operand(code);
   if ((operand & HEAD_OPERAND) != 0) {
-    vaddr_t position = (FILL_OPERAND - operand);
-    assert(position < param.k.size);
     // 定数の場合1の補数表現からの復元
-    return {param.k, param.k.addr + position, param.k.head.get() + position};
+    return param.k + (FILL_OPERAND - operand);
     
   } else {
-    assert(operand < static_cast<signed>(param.stack.size));
-    return {param.stack, param.stack.addr + operand, param.stack.head.get() + operand};
+    return param.stack + operand;
   }
 }
 
-inline TypeStore& get_type(instruction_t code, OperandParam& param) {
+inline std::unique_ptr<TypeStore> get_type(instruction_t code, OperandParam& param) {
   int operand = Instruction::get_operand(code);
-  // 型は定数領域に置かれているはず
-  assert((operand & HEAD_OPERAND) != 0);
-
-  vaddr_t addr = *reinterpret_cast<vaddr_t*>(param.k.head.get() + (FILL_OPERAND - operand));
-  return param.vmemory.get_type(addr);
+  vaddr_t addr = param.memory.get<vaddr_t>(param.k + (FILL_OPERAND - operand));
+  return std::move(TypeStore::read(param.memory, addr));
 }
 
 // Constructor.
-Process::Process(ProcessDelegate& _delegate,
-		   const vpid_t& _pid,
-		   const vtid_t& _root_tid,
-		   std::vector<void*>& _libs,
-		   const std::map<std::string, std::string>& _lib_filter) :
-  delegate(_delegate),
-  pid(_pid),
-  root_tid(_root_tid),
-  libs(_libs),
-  lib_filter(_lib_filter) {
-}
-
-// 仮想アドレスとネイティブポインタのペアを解消する。
-void Process::destory_native_ptr(vaddr_t addr) {
-  assert(addr != VADDR_NULL);
-  assert(native_ptr.find(addr) != native_ptr.end());
-
-  native_ptr.erase(addr);
-  if (addr < last_free_native_ptr) last_free_native_ptr = addr;
+Process::Process(ProcessDelegate& delegate_,
+		 const vpid_t& pid_,
+		 const vtid_t& root_tid_,
+		 std::vector<void*>& libs_,
+		 const std::map<std::string, std::string>& lib_filter_) :
+  delegate(delegate_),
+  proc_memory(delegate.assign_accessor()),
+  pid(pid_),
+  root_tid(root_tid_),
+  libs(libs_),
+  lib_filter(lib_filter_) {
 }
 
 // VM命令を実行する。
 void Process::execute(vtid_t tid, int max_clock) {
   Thread& thread = *(threads.at(tid));
+  VMemory::Accessor& memory = thread.memory;
+
  re_entry: {
     if (thread.stackinfos.size() == 1) {
       if (thread.tid == root_tid) {
@@ -233,12 +151,11 @@ void Process::execute(vtid_t tid, int max_clock) {
     }
 
     StackInfo& stackinfo = *(thread.stackinfos.back().get());
-    resolve_stackinfo_cache(&thread, &stackinfo);
+    resolve_stackinfo_cache(thread, &stackinfo);
 
-    const FuncStore& func = *stackinfo.func_cache;
+    const FuncStore& func = *stackinfo.func_store;
     const std::vector<instruction_t>& insts = func.normal_prop.code;
-    DataStore& k = vmemory.get_data(func.normal_prop.k);
-    OperandParam op_param = {*stackinfo.stack_cache, k, vmemory};
+    OperandParam op_param = {stackinfo.stack, func.normal_prop.k, memory};
 
     for (; (thread.status == Thread::NORMAL ||
 	    thread.status == Thread::WAIT_WARP ||
@@ -255,12 +172,11 @@ void Process::execute(vtid_t tid, int max_clock) {
 
       switch (static_cast<uint8_t>(Instruction::get_opcode(code))) {
 
-#define M_BINARY_OPERATOR(name, op)				\
-	case Opcode::name: {					\
-	  OperandRet operand = get_operand(code, op_param);	\
-	  stackinfo.type_cache1->op(stackinfo.output_cache,	\
-				    stackinfo.value_cache,	\
-				    operand.cache);		\
+#define M_BINARY_OPERATOR(name, op)					\
+	case Opcode::name: {						\
+	  stackinfo.type_operator->op(stackinfo.output,			\
+				      stackinfo.value,			\
+				      get_operand(code, op_param));	\
 	} break;
 
       case Opcode::NOP: {
@@ -272,7 +188,7 @@ void Process::execute(vtid_t tid, int max_clock) {
 	
       case Opcode::TAILCALL: {
 	std::unique_ptr<StackInfo> new_stackinfo;
-	FuncStore& new_func = get_function(code, op_param);
+	std::unique_ptr<FuncStore> new_func(std::move(get_function(code, op_param)));
 
 	assert(!is_tailcall); // TODO 動きを確認する。
 
@@ -286,15 +202,15 @@ void Process::execute(vtid_t tid, int max_clock) {
 	
 	// スタックのサイズの有無により作りを変える
 	new_stackinfo.reset
-	  (new StackInfo(new_func.addr,
+	  (new StackInfo(new_func->addr,
 			 // tailcallの場合、戻り値の格納先を現行のものから引き継ぐ
 			 is_tailcall ? stackinfo.ret_addr : stackinfo.output,
 			 (normal_pc != FILL_OPERAND ? normal_pc : stackinfo.pc + next_pc),
 			 (unwind_pc != FILL_OPERAND ? unwind_pc : stackinfo.pc + next_pc),
-			 (new_func.normal_prop.stack_size != 0 ?
-			  vmemory.alloc_data(new_func.normal_prop.stack_size, false).addr :
+			 (new_func->normal_prop.stack_size != 0 ?
+			  memory.alloc(new_func->normal_prop.stack_size) :
 			  VADDR_NON)));
-	resolve_stackinfo_cache(&thread, new_stackinfo.get());
+	resolve_stackinfo_cache(thread, new_stackinfo.get());
 
 	// 引数を集める
 	unsigned int args = 0;
@@ -308,21 +224,20 @@ void Process::execute(vtid_t tid, int max_clock) {
 	       Instruction::get_opcode(value_inst = insts.at(stackinfo.pc + 4 + args * 2))
 	       == Opcode::EXTRA) {
 
-	  const TypeStore& type  = get_type(type_inst, op_param);
-	  OperandRet value = get_operand(value_inst, op_param);
+	  std::unique_ptr<TypeStore> type(std::move(get_type(type_inst, op_param)));
+	  vaddr_t value = get_operand(value_inst, op_param);
 
-	  if (new_func.type == FuncType::FC_NORMAL &&
-	      args < new_func.arg_num) {
+	  if (new_func->type == FuncType::FC_NORMAL && args < new_func->arg_num) {
 	    // 通常の引数はスタックの先頭にコピー
-	    memcpy(new_stackinfo->stack_cache->head.get() + written_size, value.cache, type.size);
-	    written_size += type.size;
+	    memory.set_copy(new_stackinfo->stack + written_size, value, type->size);
+	    written_size += type->size;
 
 	  } else {
 	    // 可変長引数、ネイティブメソッド用引数は一時領域に格納
 	    std::size_t dest = work.size();
-	    work.resize(dest + sizeof(vaddr_t) + type.size);
-	    memcpy(work.data() + dest,                   &type.addr,  sizeof(vaddr_t));
-	    memcpy(work.data() + dest + sizeof(vaddr_t), value.cache, type.size);
+	    work.resize(dest + sizeof(vaddr_t) + type->size);
+	    memcpy(work.data() + dest,                   &(type->addr),         sizeof(vaddr_t));
+	    memcpy(work.data() + dest + sizeof(vaddr_t), memory.get_raw(value), type->size);
 	  }
 	  
 	  args += 1;
@@ -331,17 +246,17 @@ void Process::execute(vtid_t tid, int max_clock) {
 	// pcの書き換え
 	stackinfo.pc += args * 2 + 2;
 	print_debug("call %s\n", new_func.name.str().c_str());
-	if (new_func.type == FuncType::FC_NORMAL) {
+	if (new_func->type == FuncType::FC_NORMAL) {
 	  // 可変長引数でない場合、引数の数をチェック
-	  if (args < new_func.arg_num ||
-	      (!new_func.is_var_arg && args != new_func.arg_num))
+	  if (args < new_func->arg_num ||
+	      (!new_func->is_var_arg && args != new_func->arg_num))
 	    throw_error(Error::TYPE_VIOLATION);
 
 	  // 可変長引数分がある場合、別領域を作成
 	  if (work.size() != 0) {
-	    new_stackinfo->var_arg = v_malloc(work.size(), false);
+	    new_stackinfo->var_arg = memory.alloc(work.size());
 	    new_stackinfo->alloca_addrs.push_back(new_stackinfo->var_arg);
-	    v_memcpy(new_stackinfo->var_arg, work.data(), work.size());
+	    memory.set_copy(new_stackinfo->var_arg, work.data(), work.size());
 	  } else {
 	    new_stackinfo->var_arg = VADDR_NON;
 	  }
@@ -359,11 +274,11 @@ void Process::execute(vtid_t tid, int max_clock) {
 	  thread.stackinfos.push_back(std::unique_ptr<StackInfo>(new_stackinfo.release()));
 	  goto re_entry;
 	  
-	} else if (new_func.type == FuncType::FC_BUILTIN) {
+	} else if (new_func->type == FuncType::FC_BUILTIN) {
 	  // VM組み込み関数の呼び出し
 	  assert(new_func.builtin != nullptr);
-	  BuiltinPost bp = new_func.builtin(*this, thread, new_func.builtin_param,
-					    stackinfo.output, work);
+	  BuiltinPost bp = new_func->builtin(*this, thread, new_func->builtin_param,
+					     stackinfo.output, work);
 	  switch(bp) {
 	  case BP_NORMAL: break;
 	  case BP_RE_ENTRY: goto re_entry;
@@ -372,35 +287,35 @@ void Process::execute(vtid_t tid, int max_clock) {
 	  }
 
 	} else { // func.type == FuncType::EXTERNAL
-	  if (new_func.external == nullptr) {
-	    new_func.external = get_external_func(new_func.name);
+	  if (new_func->external == nullptr) {
+	    new_func->external = get_external_func(new_func->name);
 	  }
 
 	  // 関数の呼び出し
-	  call_external(new_func, stackinfo.output_cache, work);
+	  call_external(thread, *new_func, stackinfo.output, work);
 	}
 	
       } break;
 
       case Opcode::RETURN: {
 	StackInfo& upperinfo = *(thread.stackinfos.at(thread.stackinfos.size() - 2).get());
-	resolve_stackinfo_cache(&thread, &upperinfo);
+	resolve_stackinfo_cache(thread, &upperinfo);
 
 	if (Instruction::get_operand(code) == FILL_OPERAND) {
 	  // 戻り値がないので何もしない
 
 	} else {
 	  // 戻り値を設定する
-	  OperandRet operand = get_operand(code, op_param);
+	  vaddr_t operand = get_operand(code, op_param);
 	  
-	  stackinfo.type_cache1->copy(upperinfo.output_cache, operand.cache);
+	  stackinfo.type_operator->copy(upperinfo.output, operand);
 	}
 	// スタック領域を開放
-	vmemory.free(stackinfo.stack);
+	memory.free(stackinfo.stack);
 
 	// alloca領域を開放
 	for (vaddr_t addr : stackinfo.alloca_addrs) {
-	  vmemory.free(addr);
+	  memory.free(addr);
 	}
 	
 	// 1段上のスタックのpcを設定(normal_pc)
@@ -412,34 +327,23 @@ void Process::execute(vtid_t tid, int max_clock) {
       } break;
 
       case Opcode::SET_TYPE: {
-	TypeStore& store = get_type(code, op_param);
-	stackinfo.type = store.addr;
-	if (store.addr < sizeof(TYPE_BASES) / sizeof(TYPE_BASES[0])) {
-	  stackinfo.type_cache1 = TYPE_BASES[store.addr];
-	  if (stackinfo.type_cache1 == nullptr) {
-	    assert(false); // TODO 未対応の型
-	  }
-
-	} else {
-	  stackinfo.type_cache1 = &thread.type_complex;
-	  thread.type_complex.type_store = &store;
-	}
-	stackinfo.type_cache2 = &store;
+	std::unique_ptr<TypeStore> store(std::move(get_type(code, op_param)));
+	stackinfo.type_operator = thread.get_operator(store->addr);
+	/// TODO:未対応の型
+	assert(stackinfo.type_operator != nullptr);
+	stackinfo.type = store->addr;
+	stackinfo.type_store.swap(store);
 	print_debug("set_type = %016" PRIx64 "\n", stackinfo.type);
       } break;
 
       case Opcode::SET_OUTPUT: {
-	OperandRet operand = get_operand(code, op_param);
-	stackinfo.output       = operand.addr;
-	stackinfo.output_cache = operand.cache;
-	print_debug("output = %016" PRIx64 "(%p)\n", stackinfo.output, stackinfo.output_cache);
+	stackinfo.output = get_operand(code, op_param);
+	print_debug("output = %016" PRIx64 "\n", stackinfo.output);
       } break;
 
       case Opcode::SET_VALUE: {
-	OperandRet operand = get_operand(code, op_param);
-	stackinfo.value       = operand.addr;
-	stackinfo.value_cache = operand.cache;
-	print_debug("value = %016" PRIx64 "(%p)\n", stackinfo.value, stackinfo.value_cache);
+	stackinfo.value = get_operand(code, op_param);
+	print_debug("value = %016" PRIx64 "\n", stackinfo.value);
       } break;
 
 	M_BINARY_OPERATOR(ADD, op_add); // 加算
@@ -454,33 +358,27 @@ void Process::execute(vtid_t tid, int max_clock) {
 	M_BINARY_OPERATOR(XOR, op_xor); // xor
 
       case SET_OV_PTR: {
-	OperandRet operand = get_operand(code, op_param);
-	stackinfo.value        = *reinterpret_cast<vaddr_t*>(operand.cache);
-	stackinfo.value_cache  = get_cache(stackinfo.value, vmemory);
-	stackinfo.type_cache1->copy(stackinfo.output_cache, stackinfo.value_cache);
+	stackinfo.value        = memory.get<vaddr_t>(get_operand(code, op_param));
+	stackinfo.type_operator->copy(stackinfo.output, stackinfo.value);
 	stackinfo.output       = stackinfo.value;
-	stackinfo.output_cache = stackinfo.value_cache;
 	print_debug("output = %016" PRIx64 "\n", stackinfo.output);
 	print_debug("value = %016" PRIx64 "\n", stackinfo.value);
       } break;
 
       case Opcode::SET: {
-	OperandRet operand = get_operand(code, op_param);
-	memcpy(stackinfo.output_cache, operand.cache, stackinfo.type_cache2->size);
+	memory.set_copy(stackinfo.output,
+			get_operand(code, op_param),
+			stackinfo.type_store->size);
       } break;
 
       case Opcode::SET_PTR: {
-	OperandRet operand = get_operand(code, op_param);
-	stackinfo.address = *reinterpret_cast<vaddr_t*>(operand.cache);
-	stackinfo.address_cache = get_cache(stackinfo.address, vmemory);
-	print_debug("address = %016" PRIx64 "(%p)\n", stackinfo.address, stackinfo.address_cache);
+	stackinfo.address = memory.get<vaddr_t>(get_operand(code, op_param));
+	print_debug("address = %016" PRIx64 "\n", stackinfo.address);
       } break;
 
       case Opcode::SET_ADR: {
-	OperandRet operand = get_operand(code, op_param);
-	stackinfo.address = operand.addr;
-	stackinfo.address_cache = operand.cache;
-	print_debug("address = %016" PRIx64 "(%p)\n", stackinfo.address, stackinfo.address_cache);
+	stackinfo.address = get_operand(code, op_param);
+	print_debug("address = %016" PRIx64 "\n", stackinfo.address);
       } break;
 
       case Opcode::SET_ALIGN: {
@@ -491,74 +389,71 @@ void Process::execute(vtid_t tid, int max_clock) {
       case Opcode::ADD_ADR: {
 	int operand = Instruction::get_operand_value(code);
 	stackinfo.address += operand;
-	stackinfo.address_cache += operand;
 	print_debug("+%d address = %016" PRIx64 "\n", operand, stackinfo.address);
       } break;
 
       case Opcode::MUL_ADR: {
 	int operand = Instruction::get_operand_value(code);
-	const vm_int_t diff = operand * stackinfo.type_cache1->get(stackinfo.value_cache);
+	const vm_int_t diff = operand * stackinfo.type_operator->get(stackinfo.value);
 	stackinfo.address += diff;
-	stackinfo.address_cache += diff;
 	print_debug("+%d * %" PRIu64 " address = %16" PRIx64 "\n",
-		    operand, stackinfo.type_cache1->get(stackinfo.value_cache), stackinfo.address);
+		    operand, stackinfo.type_based->get(stackinfo.value), stackinfo.address);
       } break;
 
       case Opcode::GET_ADR: {
-	OperandRet operand = get_operand(code, op_param);
-	*reinterpret_cast<vaddr_t*>(operand.cache) = stackinfo.address;
-	print_debug("*%016" PRIx64 " = %016" PRIx64 "\n", operand.addr, stackinfo.address);
+	memory.set<vaddr_t>(get_operand(code, op_param), stackinfo.address);
+	print_debug("*%016" PRIx64 " = %016" PRIx64 "\n",
+		    get_operand(code, op_param), stackinfo.address);
       } break;
 
       case Opcode::LOAD: {
-	OperandRet operand = get_operand(code, op_param);
-	stackinfo.type_cache1->copy(operand.cache, stackinfo.address_cache);
+	stackinfo.type_operator->copy(get_operand(code, op_param), stackinfo.address);
 	print_debug("*%016" PRIx64 " = *%016" PRIx64 "(size = %ld)\n",
-		    operand.addr, stackinfo.address, stackinfo.type_cache2->size);
+		    get_operand(code, op_param), stackinfo.address, stackinfo.type_store->size);
       } break;
 
       case Opcode::STORE: {
-	OperandRet operand = get_operand(code, op_param);
+	stackinfo.type_operator->copy(stackinfo.address, get_operand(code, op_param));
 	print_debug("store %016" PRIx64 "\n", stackinfo.address);
-	stackinfo.type_cache1->copy(stackinfo.address_cache, operand.cache);
       } break;
 
       case Opcode::CMPXCHG: {
-	OperandRet operand = get_operand(code, op_param);
-	int is_eq = 0;
-	stackinfo.type_cache1->op_equal(reinterpret_cast<uint8_t*>(&is_eq),
-					stackinfo.address_cache, stackinfo.value_cache);
+	memory.lock_master(stackinfo.output);
+	memory.lock_master(stackinfo.address);
+	
+	bool is_eq = stackinfo.type_operator->is_equal(stackinfo.address, stackinfo.value);
+
 	if (is_eq) {
 	  // *a == vを満たす場合、値を書き換え＆書き換え成功フラグを設定
-	  stackinfo.type_cache1->copy(stackinfo.output_cache, stackinfo.address_cache);
-	  *(stackinfo.output_cache + stackinfo.type_cache2->size) = 1;
-	  stackinfo.type_cache1->copy(stackinfo.address_cache, operand.cache);
+	  stackinfo.type_operator->copy(stackinfo.output, stackinfo.address);
+	  memory.set<uint8_t>(stackinfo.output + stackinfo.type_store->size, 1);
+	  stackinfo.type_operator->copy(stackinfo.address, get_operand(code, op_param));
+
 	} else {
-	  // *a != v出会った場合、書き換え成功フラグをリセット
-	  stackinfo.type_cache1->copy(stackinfo.output_cache, stackinfo.address_cache);
-	  *(stackinfo.output_cache + stackinfo.type_cache2->size) = 0;
+	  // *a != vの場合、書き換え成功フラグをリセット
+	  stackinfo.type_operator->copy(stackinfo.output, stackinfo.address);
+	  memory.set<uint8_t>(stackinfo.output + stackinfo.type_store->size, 0);
 	}
       } break;
 
       case Opcode::ALLOCA: {
-	OperandRet operand = get_operand(code, op_param);
 	// サイズを計算
-	size_t size = *reinterpret_cast<uint32_t*>(operand.cache) * stackinfo.type_cache2->size;
+	size_t size = memory.get<uint32_t>(get_operand(code, op_param)) *
+	  stackinfo.type_store->size;
 	// 領域を確保
-	DataStore& data = vmemory.alloc_data(size, false);
+	vaddr_t addr = memory.alloc(size);
 	// 確保領域のアドレスを設定
-	*reinterpret_cast<vaddr_t*>(stackinfo.output_cache) = data.addr;
+	memory.set<vaddr_t>(stackinfo.output, addr);
 	// allocaで確保した領域はスタック終了時に開放できるように記録しておく
-	stackinfo.alloca_addrs.push_back(data.addr);
+	stackinfo.alloca_addrs.push_back(addr);
 	print_debug("alloca *%016" PRIx64 " = %016" PRIx64 "(%ld byte)\n",
-		    stackinfo.output, data.addr, data.size);
+		    stackinfo.output, data, size);
       } break;
 
       case Opcode::TEST: {
-	OperandRet operand = get_operand(code, op_param);
 	instruction_t code2 = insts.at(stackinfo.pc + 1);
 	// operandの指し先がtrueかどうか判定。
-	if (*operand.cache) {
+	if (memory.get<uint8_t>(get_operand(code, op_param))) {
 	  stackinfo.phi0 = stackinfo.phi1;
 	  stackinfo.phi1 = stackinfo.pc = Instruction::get_operand(code2);
 	  print_debug("pc = %d\n", stackinfo.pc);
@@ -571,11 +466,10 @@ void Process::execute(vtid_t tid, int max_clock) {
 
       case Opcode::TEST_EQ: {
 	// vector未対応な点に注意
-	OperandRet operand = get_operand(code, op_param);
 	instruction_t code2 = insts.at(stackinfo.pc + 1);
 	// 値を比較
-	uint8_t res;
-	stackinfo.type_cache1->op_equal(&res, stackinfo.value_cache, operand.cache);
+	uint8_t res = stackinfo.type_operator->is_equal(stackinfo.value,
+							get_operand(code, op_param));
 	if (res) {
 	  stackinfo.phi0 = stackinfo.phi1;
 	  stackinfo.phi1 = stackinfo.pc = Instruction::get_operand(code2);
@@ -595,10 +489,9 @@ void Process::execute(vtid_t tid, int max_clock) {
       } break;
 
       case Opcode::INDIRECT_JUMP: {
-	OperandRet operand = get_operand(code, op_param);
 	stackinfo.phi0 = stackinfo.phi1;
 	stackinfo.phi1 = stackinfo.pc =
-	  static_cast<unsigned int>(*reinterpret_cast<vaddr_t*>(operand.cache));
+	  static_cast<unsigned int>(memory.get<vaddr_t>(get_operand(code, op_param)));
 	print_debug("pc = %d\n", stackinfo.pc);
 	continue;
       } break;
@@ -614,8 +507,7 @@ void Process::execute(vtid_t tid, int max_clock) {
 	  }
 
 	  if (stackinfo.phi0 == Instruction::get_operand(code2)) {
-	    OperandRet operand = get_operand(code, op_param);
-	    stackinfo.type_cache1->copy(stackinfo.output_cache, operand.cache);
+	    stackinfo.type_operator->copy(stackinfo.output, get_operand(code, op_param));
 	  }
 	  count += 2;
 	  if (insts.size() <= stackinfo.pc + count + 1) break;
@@ -627,17 +519,17 @@ void Process::execute(vtid_t tid, int max_clock) {
       } break;
 
       case Opcode::TYPE_CAST: {
-	TypeStore& type = get_type(code, op_param);
-	stackinfo.type_cache1->type_cast(stackinfo.output_cache,
-					 type.addr,
-					 stackinfo.value_cache);
+	std::unique_ptr<TypeStore> type(std::move(get_type(code, op_param)));
+	stackinfo.type_operator->type_cast(stackinfo.output,
+					   type->addr,
+					   stackinfo.value);
       } break;
 
       case Opcode::BIT_CAST: {
-	TypeStore& type = get_type(code, op_param);
-	stackinfo.type_cache1->bit_cast(stackinfo.output_cache,
-					type.size,
-					stackinfo.value_cache);
+	std::unique_ptr<TypeStore> type(std::move(get_type(code, op_param)));
+	stackinfo.type_operator->bit_cast(stackinfo.output,
+					  type->size,
+					  stackinfo.value);
       } break;
 
 	M_BINARY_OPERATOR(EQUAL,         op_equal);         // o = v == A
@@ -647,37 +539,36 @@ void Process::execute(vtid_t tid, int max_clock) {
 	M_BINARY_OPERATOR(NOT_NANS,      op_not_nans);      // o = !isnan(v) && !isnan(A)
 
       case Opcode::OR_NANS: {
-	OperandRet operand = get_operand(code, op_param);
-	if (stackinfo.type_cache1->is_or_nans(stackinfo.value_cache, operand.cache)) {
-	  *stackinfo.output_cache = I8_TRUE;
+	if (stackinfo.type_operator->is_or_nans(stackinfo.value, get_operand(code, op_param))) {
+	  memory.set<uint8_t>(stackinfo.output, I8_TRUE);
 	  stackinfo.pc += 1; // 次の命令をスキップ
 	}
       } break;
 
       case Opcode::SELECT: {
-	OperandRet operand1 = get_operand(code, op_param);
-	OperandRet operand2 = get_operand(insts.at(stackinfo.pc + 1), op_param);
-	if (*stackinfo.value_cache) {
-	  stackinfo.type_cache1->copy(stackinfo.output_cache, operand1.cache);
+	if (memory.get<uint8_t>(stackinfo.value)) {
+	  stackinfo.type_operator->copy(stackinfo.output, get_operand(code, op_param));
 	} else {
-	  stackinfo.type_cache1->copy(stackinfo.output_cache, operand2.cache);
+	  stackinfo.type_operator->copy(stackinfo.output,
+				     get_operand(insts.at(stackinfo.pc + 1), op_param));
 	}
 	stackinfo.pc += 1; // EXTRA分pcを進める
       } break;
 
       case Opcode::SHUFFLE: {
 	int m = Instruction::get_operand_value(code);
-	OperandRet operand_mask = get_operand(insts.at(stackinfo.pc + 1), op_param);
-	OperandRet operand_v2 = get_operand(insts.at(stackinfo.pc + 2), op_param);
-	TypeStore& element_store = vmemory.get_type(stackinfo.type_cache2->element);
-	TypeBased* element_based = get_type_based(stackinfo.type_cache2->element);
-	uint32_t len = stackinfo.type_cache2->num;
+	vaddr_t operand_mask = get_operand(insts.at(stackinfo.pc + 1), op_param);
+	vaddr_t operand_v2 = get_operand(insts.at(stackinfo.pc + 2), op_param);
+	std::unique_ptr<TypeStore> element_store =
+	  TypeStore::read(memory, stackinfo.type_store->element);
+	WrappedOperator* element_based = thread.get_operator(stackinfo.type_store->element);
+	uint32_t len = stackinfo.type_store->num;
 	for (int i = 0; i < m; i ++) {
-	  uint32_t mask = reinterpret_cast<uint32_t*>(operand_mask.cache)[i];
-	  element_based->copy(stackinfo.output_cache + i * stackinfo.type_cache2->size,
+	  uint32_t mask = memory.get<uint32_t>(operand_mask + sizeof(uint32_t) * i);
+	  element_based->copy(stackinfo.output + i * stackinfo.type_store->size,
 			      (mask < len ?
-			       stackinfo.value_cache + element_store.size * mask :
-			       operand_v2.cache + element_store.size * (mask - len)));
+			       stackinfo.value + element_store->size * mask :
+			       operand_v2 + element_store->size * (mask - len)));
 	}
 	stackinfo.pc += 2; // EXTRA分pcを進める
       } break;
@@ -696,10 +587,12 @@ void Process::execute(vtid_t tid, int max_clock) {
 }
 
 // 外部の関数を呼び出す。
-void Process::call_external(const FuncStore& func,
-			     uint8_t* ret_addr,
-			     std::vector<uint8_t>& args) {
+void Process::call_external(Thread& thread,
+			    const FuncStore& func,
+			    vaddr_t ret_addr,
+			    std::vector<uint8_t>& args) {
 #ifndef EMSCRIPTEN
+  VMemory::Accessor& memory = thread.memory;
   // 戻り値の型変換
   ffi_type* ffi_ret_type = nullptr;
   switch(func.ret_type) {
@@ -728,9 +621,10 @@ void Process::call_external(const FuncStore& func,
 
   unsigned int seek = 0;
   while(seek < args.size()) {
-    TypeStore& type = vmemory.get_type(*reinterpret_cast<vaddr_t*>(args.data() + seek));
+    std::unique_ptr<TypeStore> type =
+      TypeStore::read(memory, *reinterpret_cast<vaddr_t*>(args.data() + seek));
 
-    switch(type.addr) {
+    switch(type->addr) {
     case BasicType::TY_POINTER: {
       ffi_arg_types.push_back(&ffi_type_pointer);
       vaddr_t addr = *reinterpret_cast<vaddr_t*>(args.data() + seek + sizeof(vaddr_t));
@@ -739,9 +633,8 @@ void Process::call_external(const FuncStore& func,
 	*reinterpret_cast<void**>(args.data() + seek + sizeof(vaddr_t)) = native->second;
 	
       } else {
-	DataStore& pointed = vmemory.get_data(addr);
 	*reinterpret_cast<void**>(args.data() + seek + sizeof(vaddr_t)) =
-	  pointed.head.get() + VMemory::get_addr_lower(addr);
+	  memory.get_raw_writable(addr);
       }
       ffi_args.push_back(args.data() + seek + sizeof(vaddr_t));
     } break;
@@ -802,7 +695,7 @@ void Process::call_external(const FuncStore& func,
     } break;
     }
     
-    seek += sizeof(vaddr_t) + type.size;
+    seek += sizeof(vaddr_t) + type->size;
   }
 
   // libffiの準備
@@ -815,14 +708,16 @@ void Process::call_external(const FuncStore& func,
   }
   
   // 戻り値格納用の領域を作成
-  size_t ret_size = vmemory.get_type(func.ret_type).size;
+  size_t ret_size = TypeStore::read(memory, func.ret_type)->size;
   // sizeof(void*)の倍数領域を確保する。
   std::vector<void*> ret_buf(ret_size / sizeof(void*) +
 			     (ret_size % sizeof(void*) == 0 ? 0 : 1));
   // メソッド呼び出し
   ffi_call(&cif, func.external, ret_buf.data(), ffi_args.data());
   // 戻り値格納用領域から戻り値を取り出し。
-  memcpy(ret_addr, ret_buf.data(), ret_size);
+  if (ret_addr != VADDR_NULL) {
+    memory.set_copy(ret_addr, reinterpret_cast<uint8_t*>(ret_buf.data()), ret_size);
+  }
   
 #else // !defined(EMSCRIPTEN)
   // 戻り値格納用の領域を作成
@@ -1008,108 +903,66 @@ void Process::call_external(const FuncStore& func,
 
 // Setup to call function that type : void (*)(void).
 void Process::call_setup_voidfunc(Thread& thread, vaddr_t func_addr) {
-  FuncStore& func = vmemory.get_func(func_addr);
+  std::unique_ptr<FuncStore> func(FuncStore::read(thread.memory, func_addr));
   std::unique_ptr<StackInfo> stackinfo
-    (new StackInfo(func.addr,
+    (new StackInfo(func->addr,
 		   VADDR_NON, // 戻り値なし
 		   0, 0, // 正常、異常終了時のpc設定もなし
-		   (func.normal_prop.stack_size != 0 ?
-		    vmemory.alloc_data(func.normal_prop.stack_size, false).addr :
+		   (func->normal_prop.stack_size != 0 ?
+		    thread.memory.alloc(func->normal_prop.stack_size) :
 		    VADDR_NON)));  
   // 関数の型に合わせて呼び出す。
-  if (func.type == FuncType::FC_NORMAL) {
+  if (func->type == FuncType::FC_NORMAL) {
     thread.stackinfos.push_back(std::unique_ptr<StackInfo>(stackinfo.release()));
     
-  } else if (func.type == FuncType::FC_BUILTIN) {
+  } else if (func->type == FuncType::FC_BUILTIN) {
     // VM組み込み関数の呼び出し
-    assert(func.builtin != nullptr);
+    assert(func->builtin != nullptr);
     std::vector<uint8_t> work;
-    func.builtin(*this, thread, func.builtin_param, VADDR_NON, work);
+    func->builtin(*this, thread, func->builtin_param, VADDR_NON, work);
     
   } else {
-    if (func.external == nullptr) {
-      func.external = get_external_func(func.name);
+    if (func->external == nullptr) {
+      func->external = get_external_func(func->name);
     }
     
     // 関数の呼び出し
     std::vector<uint8_t> work;
-    call_external(func, nullptr, work);
+    call_external(thread, *func, VADDR_NULL, work);
   }
-}
-
-// 型のサイズと最大アライメントを計算する。
-std::pair<size_t, unsigned int> Process::calc_type_size(const std::vector<vaddr_t>& member) {
-  size_t size = 0;
-  unsigned int max_alignment = 0;
-  unsigned int odd;
-
-  for (int i = 0, member_size = member.size(); i < member_size; i ++) {
-    TypeStore& type = vmemory.get_type(member.at(i));
-    // メンバ中で一番大きなアライメントを保持
-    if (type.alignment > max_alignment) max_alignment = type.alignment;
-    // パディングを計算する
-    if ((odd = size % type.alignment) != 0) size = size - odd + type.alignment;
-    // サイズ分を追加
-    size += type.size;
-  }
-  // 一番大きなアライメントで最後に調整
-  if ((odd = size % max_alignment) != 0) size = size - odd + max_alignment;
-
-  return std::make_pair(size, max_alignment);
-}
-
-// 型のサイズと最大アライメントを計算する。
-std::pair<size_t, unsigned int> Process::calc_type_size(vaddr_t type) {
-  TypeStore& t = vmemory.get_type(type);
-  
-  return std::make_pair(t.size, t.alignment);
 }
 
 // VMの終了処理を行う。
 void Process::close() {
 }
 
-// ネイティブポインタに仮想アドレス対応付ける。
-vaddr_t Process::create_native_ptr(void* ptr) {
-  while(native_ptr.find(last_free_native_ptr) != native_ptr.end()) {
-    last_free_native_ptr ++;
-  }
-  native_ptr.insert(std::make_pair(last_free_native_ptr, ptr));
-  
-  print_debug("create native pair:%s %p\n",
-	      Util::numptr2str(&last_free_native_ptr, sizeof(vaddr_t)).c_str(), ptr);
-  return (last_free_native_ptr ++);
-}
-
 // Create a new thread.
 vtid_t Process::create_thread(vaddr_t func_addr, vaddr_t arg_addr) {
-  FuncStore& func = vmemory.get_func(func_addr);
-  Thread* thread;
+  std::unique_ptr<FuncStore> func(std::move(FuncStore::read(proc_memory, func_addr)));
   vtid_t  tid = delegate.assign_tid(*this);
 
   assert(threads.find(tid) == threads.end());
 
   // check function type
-  if (func.type != FC_NORMAL) {
-    throw_error_message(Error::SPEC_VIOLATION, func.name.str());
+  if (func->type != FC_NORMAL) {
+    throw_error_message(Error::SPEC_VIOLATION, func->name.str());
   }
 
-  threads.insert(std::make_pair(tid, std::unique_ptr<Thread>(thread = new Thread(tid))));
+  Thread* thread = new Thread(tid, delegate.assign_accessor());
+  threads.insert(std::make_pair(tid, std::unique_ptr<Thread>(thread)));
 
-  DataStore* root_stack = &vmemory.alloc_data(sizeof(vaddr_t), false);
-  StackInfo* root_stackinfo = new StackInfo(VADDR_NON, VADDR_NON, 0, 0, root_stack->addr);
-  root_stackinfo->output = root_stack->addr;
-  root_stackinfo->output_cache = root_stack->head.get();
+  vaddr_t root_stack = proc_memory.alloc(sizeof(vaddr_t));
+  StackInfo* root_stackinfo = new StackInfo(VADDR_NON, VADDR_NON, 0, 0, root_stack);
+  root_stackinfo->output = root_stack;
   thread->stackinfos.push_back(std::unique_ptr<StackInfo>(root_stackinfo));
 
-  DataStore* func_stack = nullptr;
   StackInfo* func_stackinfo = nullptr;
-  if (func.normal_prop.stack_size != 0) {
-    func_stack = &vmemory.alloc_data(func.normal_prop.stack_size, false);
-    func_stackinfo = new StackInfo(func.addr, root_stack->addr, 0, 0, func_stack->addr);
+  if (func->normal_prop.stack_size != 0) {
+    vaddr_t func_stack = proc_memory.alloc(func->normal_prop.stack_size);
+    func_stackinfo = new StackInfo(func->addr, root_stack, 0, 0, func_stack);
 
   } else {
-    func_stackinfo = new StackInfo(func.addr, root_stack->addr, 0, 0, VADDR_NON);
+    func_stackinfo = new StackInfo(func->addr, root_stack, 0, 0, VADDR_NON);
   }
   thread->stackinfos.push_back(std::unique_ptr<StackInfo>(func_stackinfo));
 
@@ -1136,8 +989,8 @@ bool Process::join_thread(vtid_t current, vtid_t target, vaddr_t retval) {
 
   if (target_thread.status == Thread::JOIN_WAIT) {
     // copy retval
-    *reinterpret_cast<vaddr_t*>(get_raw_addr(retval)) =
-      *reinterpret_cast<vaddr_t*>(get_raw_addr(target_thread.stackinfos.at(0)->stack));
+    proc_memory.set<vaddr_t>(retval, proc_memory.get<vaddr_t>
+			     (target_thread.stackinfos.at(0)->stack));
 
     target_thread.status = Thread::FINISH;
     return true;
@@ -1146,66 +999,6 @@ bool Process::join_thread(vtid_t current, vtid_t target, vaddr_t retval) {
     // waiting
     return false;
   }
-}
-
-// 配列型の型情報を作成する。
-TypeStore& Process::create_type_array(vaddr_t element, unsigned int num) {
-  // サイズ、アライメントを計算
-  std::vector<vaddr_t> member(num, element);
-  std::pair<size_t, unsigned int> info = calc_type_size(member);
-  
-  // 領域を確保
-  return vmemory.alloc_type_array(info.first, info.second, element, num);
-}
-
-// 基本型の型情報を作成する。
-TypeStore& Process::create_type_basic(BasicType type) {
-  // 基本型はVMにより登録してあるものだけなので、ソレを戻す。
-  return vmemory.get_type(type);
-}
-
-// 構造体の型情報を作成する。
-TypeStore& Process::create_type_struct(const std::vector<vaddr_t>& member) {
-  // 領域を確保
-  std::pair<size_t, unsigned int> info = calc_type_size(member);
-  return vmemory.alloc_type_struct(info.first, info.second, member);
-}
-
-// vectorの型情報を作成する。
-TypeStore& Process::create_type_vector(vaddr_t element, unsigned int num) {
-  std::vector<vaddr_t> member(num, element);
-  std::pair<size_t, unsigned int> info = calc_type_size(member);
-  // 領域を確保
-  return vmemory.alloc_type_vector(info.first, info.second, element, num);
-}
-
-// ネイティブ関数を指定アドレスに展開する。
-void Process::deploy_function(const std::string& name,
-			       vaddr_t ret_type,
-			       unsigned int arg_num,
-			       bool is_var_arg,
-			       vaddr_t addr) {
-  auto ifunc = builtin_funcs.find(name);
-  if (ifunc == builtin_funcs.end()) {
-    // 組み込み関数に名前がなかった場合、ライブラリ関数として展開。
-    vmemory.alloc_func(symbols.get(name), ret_type, arg_num, is_var_arg, addr);
-
-  } else {
-    // 組み込み関数に名前があった場合組み込み関数として展開。
-    vmemory.alloc_func(symbols.get(name), ret_type,
-		       arg_num, is_var_arg, ifunc->second.first, ifunc->second.second, addr);
-  }
-}
-
-// 通常の関数(VMで解釈、実行する)を指定アドレスに展開する。
-void Process::deploy_function_normal(const std::string& name,
-				      vaddr_t ret_type,
-				      unsigned int arg_num,
-				      bool is_var_arg,
-				      const FuncStore::NormalProp& prop,
-				      vaddr_t addr) {
-  // 関数領域を確保
-  vmemory.alloc_func(symbols.get(name), ret_type, arg_num, is_var_arg, prop, addr);
 }
 
 // Change status to exit.
@@ -1265,38 +1058,6 @@ external_func_t Process::get_external_func(const Symbols::Symbol& name) {
 #endif
 }
 
-// 仮想アドレスに相当する実アドレスを取得する。
-uint8_t* Process::get_raw_addr(vaddr_t addr) {
-  auto native = native_ptr.find(addr);
-  if (native != native_ptr.end()) {
-    return reinterpret_cast<uint8_t*>(native->second);
-    
-  } else {
-    DataStore& store = vmemory.get_data(addr);
-    // アクセス違反を確認する
-    if (VMemory::get_addr_lower(addr) > store.size) {
-      throw_error_message(Error::SEGMENT_FAULT, Util::vaddr2str(addr));
-    }
-    return reinterpret_cast<uint8_t*>(store.head.get() + VMemory::get_addr_lower(addr));
-  }
-}
-
-// 型依存の演算インスタンスを取得する。
-TypeBased* Process::get_type_based(vaddr_t type) {
-  // 複合型に対する演算命令
-  static TypeComplex type_complex;
-  if (type < sizeof(TYPE_BASES) / sizeof(TYPE_BASES[0])) {
-    // 存在する基本型の場合、TYPE_BASESからインスタンスを取得
-    assert(TYPE_BASES[type] != nullptr);
-    return TYPE_BASES[type];
-    
-  } else {
-    // 複合型の場合、type_complexを使う。
-    type_complex.type_store = &vmemory.get_type(type);
-    return &type_complex;
-  }
-}
-
 /**
  * 組み込み関数用に引数を取り出すメソッドを作成するマクロ。
  * @param name メソッド名
@@ -1344,67 +1105,32 @@ void Process::regist_builtin_func(const std::string& name,
 }
 
 // StackInfoのキャッシュを解決し、実行前の状態にする。
-void Process::resolve_stackinfo_cache(Thread* thread, StackInfo* stackinfo) {
+void Process::resolve_stackinfo_cache(Thread& thread, StackInfo* stackinfo) {
   // 関数
   if (stackinfo->func != VADDR_NON) {
-    stackinfo->func_cache = &vmemory.get_func(stackinfo->func);
+    stackinfo->func_store = std::move(FuncStore::read(thread.memory, stackinfo->func));
   } else {
-    stackinfo->func_cache = nullptr;
-  }
-  // スタック領域
-  if (stackinfo->stack != VADDR_NON) {
-    stackinfo->stack_cache = &vmemory.get_data(stackinfo->stack);
-  } else {
-    stackinfo->stack_cache = nullptr;
+    stackinfo->func_store.reset(nullptr);
   }
   // 操作対象の型
   if (stackinfo->type != VADDR_NON) {
-    stackinfo->type_cache2 = &vmemory.get_type(stackinfo->type);
-    if (stackinfo->type < sizeof(TYPE_BASES) / sizeof(TYPE_BASES[0])) {
-      stackinfo->type_cache1 = TYPE_BASES[stackinfo->type];
-      if (stackinfo->type_cache1 == nullptr) {
-	assert(false); // TODO 未対応の型
-      }
-    } else {
-      stackinfo->type_cache1 = &(thread->type_complex);
-      thread->type_complex.type_store = stackinfo->type_cache2;
-    }
-  } else {
-    stackinfo->type_cache1 = nullptr;
-    stackinfo->type_cache2 = nullptr;
-  }
-  // 格納先アドレス
-  if (stackinfo->output != VADDR_NON) {
-    stackinfo->output_cache = get_cache(stackinfo->output, vmemory);
-  } else {
-    stackinfo->output_cache = nullptr;
-  }
-  // 値レジスタ
-  if (stackinfo->value != VADDR_NON) {
-    stackinfo->value_cache = get_cache(stackinfo->value, vmemory);
-  } else {
-    stackinfo->value_cache = nullptr;
-  }
-  // アドレスレジスタ
-  if (stackinfo->address != VADDR_NON) {
-    stackinfo->address_cache = get_cache(stackinfo->address, vmemory);
-  } else {
-    stackinfo->address_cache = nullptr;
-  }
-}
+    stackinfo->type_operator = thread.get_operator(stackinfo->type);
+    stackinfo->type_store = std::move(TypeStore::read(thread.memory, stackinfo->type));
 
-// 関数のアドレスを予約する。
-vaddr_t Process::reserve_func_addr() {
-  return vmemory.reserve_func_addr();
+  } else {
+    stackinfo->type_operator = nullptr;
+    stackinfo->type_store = nullptr;
+  }
 }
 
 // VMの初期設定をする。
 void Process::run(const std::vector<std::string>& args,
 		   const std::map<std::string, std::string>& envs) {
   // make root thread
-  Thread* root_thread;
-  threads.insert(std::make_pair(root_tid,
-				std::unique_ptr<Thread>(root_thread = new Thread(root_tid))));
+  Thread* root_thread = new Thread(root_tid, delegate.assign_accessor());
+  threads.insert(std::make_pair(root_tid, std::unique_ptr<Thread>(root_thread)));
+
+  VMemory::Accessor& memory = root_thread->memory;
   
   // スレッドを初期化
   root_thread->join_waiting = Thread::ROOT_THREAD;
@@ -1413,90 +1139,89 @@ void Process::run(const std::vector<std::string>& args,
   auto it_main_func = globals.find(&symbols.get("main"));
   if (it_main_func == globals.end())
     throw_error_message(Error::SYM_NOT_FOUND, "main");
-  FuncStore& main_func = vmemory.get_func(it_main_func->second);
+  std::unique_ptr<FuncStore> main_func(std::move(FuncStore::read(memory, it_main_func->second)));
 
   // main関数用のスタックを確保する
-  DataStore* main_stack = nullptr;
-  if (main_func.normal_prop.stack_size != 0) {
-    main_stack = &vmemory.alloc_data(main_func.normal_prop.stack_size, false);
+  vaddr_t main_stack = VADDR_NULL;
+  if (main_func->normal_prop.stack_size != 0) {
+    main_stack = memory.alloc(main_func->normal_prop.stack_size);
   }
 
-  // main関数の内容に応じて、init_stackを作成する
-  DataStore* init_stack;
-  if (main_func.arg_num == 2 || main_func.arg_num == 3) {
+  // main関数の内容に応じて、root_stackを作成する
+  vaddr_t root_stack = VADDR_NULL;
+  if (main_func->arg_num == 2 || main_func->arg_num == 3) {
     // main関数の戻り値と引数を格納するのに必要な領域サイズを計算
-    const size_t ret_size = calc_type_size(main_func.ret_type).first;
-    size_t init_stack_size = ret_size + sizeof(vaddr_t) * args.size();
+    const size_t ret_size = TypeStore::calc_type_size(memory, main_func->ret_type).first;
+    size_t root_stack_size = ret_size + sizeof(vaddr_t) * args.size();
     for (unsigned int i = 0, arg_size = args.size(); i < arg_size; i ++) {
-      init_stack_size += args.at(i).length() + 1;
+      root_stack_size += args.at(i).length() + 1;
     }
     // 第3引数まである場合はenvpに必要な領域サイズも計算
-    if (main_func.arg_num == 3) {
-      init_stack_size += sizeof(vaddr_t) * (envs.size() + 1);
+    if (main_func->arg_num == 3) {
+      root_stack_size += sizeof(vaddr_t) * (envs.size() + 1);
       for (auto pair : envs) {
 	// +2 は'='と'\0'用
-	init_stack_size += pair.first.length() + pair.second.length() + 2;
+	root_stack_size += pair.first.length() + pair.second.length() + 2;
       }
     }
     // 領域を確保
-    init_stack = &vmemory.alloc_data(init_stack_size, false);
+    root_stack = memory.alloc(root_stack_size);
 
     // main関数のスタックの先頭にargc, argvを格納する
     vm_int_t argc = args.size();
-    vaddr_t  argv = init_stack->addr + ret_size;
-    memcpy(main_stack->head.get(), &argc, sizeof(argc));
-    memcpy(main_stack->head.get() + 4, &argv, sizeof(argv));
+    vaddr_t  argv = root_stack + ret_size;
+    memory.set<vm_int_t>(main_stack, argc);
+    memory.set<vaddr_t>(main_stack + sizeof(vm_int_t), argv);
 
-    // init_stack_dataにmain関数の戻り値、argvとして渡すポインタの配列、引数文字列、、を格納する
+    // root_stack_dataにmain関数の戻り値、argvとして渡すポインタの配列、引数文字列、、を格納する
     vaddr_t sum = ret_size + sizeof(vaddr_t) * args.size();
     for (unsigned int i = 0, arg_size = args.size(); i < arg_size; i ++) {
-      vaddr_t addr = init_stack->addr + sum;
-      memcpy(init_stack->head.get() + ret_size + sizeof(vaddr_t) * i,
-	     &addr, sizeof(vaddr_t));
-      memcpy(init_stack->head.get() + sum,
-	     args.at(i).c_str(), args.at(i).length() + 1);
+      vaddr_t addr = root_stack + sum;
+      memory.set<vaddr_t>(root_stack + ret_size + sizeof(vaddr_t) * i, addr);
+      memory.set_copy(root_stack + sum,
+		      reinterpret_cast<const uint8_t*>(args.at(i).c_str()),
+		      args.at(i).length() + 1);
       sum += args.at(i).length() + 1;
     }
 
     // 第3引数まである場合はenvpとして渡すポインタの配列、環境変数文字列をを格納する
-    if (main_func.arg_num == 3) {
+    if (main_func->arg_num == 3) {
       // main関数のスタックにenvpを格納する。
       unsigned int arg_size = sum;
-      vaddr_t envp = init_stack->addr + sum;
-      memcpy(main_stack->head.get() + 4 + sizeof(vaddr_t), &envp, sizeof(envp));
+      vaddr_t envp = root_stack + sum;
+      memory.set<vaddr_t>(main_stack + 4 + sizeof(vaddr_t), envp);
       sum += sizeof(vaddr_t) * (envs.size() + 1);
       int i = 0;
       for (auto pair : envs) {
-	vaddr_t addr = init_stack->addr + sum;
-	memcpy(init_stack->head.get() + arg_size + sizeof(vaddr_t) * i, &addr, sizeof(vaddr_t));
-	sum += sprintf(reinterpret_cast<char*>(init_stack->head.get() + sum),
+	vaddr_t addr = root_stack + sum;
+	memory.set<vaddr_t>(root_stack + arg_size + sizeof(vaddr_t) * i, addr);
+	sum += sprintf(reinterpret_cast<char*>(memory.get_raw_writable(root_stack + sum)),
 		       "%s=%s", pair.first.c_str(), pair.second.c_str()) + 1;
 	i ++;
       }
-      memcpy(init_stack->head.get() + arg_size + sizeof(vaddr_t) * i, &VADDR_NULL, sizeof(vaddr_t));
+      memory.set<vaddr_t>(root_stack + arg_size + sizeof(vaddr_t) * i, VADDR_NULL);
     }
 
-  } else if (main_func.arg_num != 0) {
+  } else if (main_func->arg_num != 0) {
     // int main()でもint main(int, char**)でもないようだ
     throw_error(Error::SPEC_VIOLATION);
 
   } else {
     // int main()の場合は引数を設定しない
     // main関数の戻り値格納先を確保する
-    init_stack = &vmemory.alloc_data(calc_type_size(main_func.ret_type).first, false);
+    root_stack = memory.alloc(TypeStore::calc_type_size(memory, main_func->ret_type).first);
   }
 
   // mainのreturnを受け取るためのスタックを1段確保する
-  StackInfo* init_stackinfo = new StackInfo(VADDR_NON, VADDR_NON, 0, 0, init_stack->addr);
-  init_stackinfo->output = init_stack->addr;
-  init_stackinfo->output_cache = init_stack->head.get();
-  root_thread->stackinfos.push_back(std::unique_ptr<StackInfo>(init_stackinfo));
+  StackInfo* root_stackinfo = new StackInfo(VADDR_NON, VADDR_NON, 0, 0, root_stack);
+  root_stackinfo->output = root_stack;
+  root_thread->stackinfos.push_back(std::unique_ptr<StackInfo>(root_stackinfo));
   
   StackInfo* main_stackinfo;
-  if (main_stack != nullptr) {
-    main_stackinfo = new StackInfo(main_func.addr, init_stack->addr, 0, 0, main_stack->addr);
+  if (main_stack != VADDR_NULL) {
+    main_stackinfo = new StackInfo(main_func->addr, root_stack, 0, 0, main_stack);
   } else {
-    main_stackinfo = new StackInfo(main_func.addr, init_stack->addr, 0, 0, VADDR_NON);
+    main_stackinfo = new StackInfo(main_func->addr, root_stack, 0, 0, VADDR_NON);
   }
 
   root_thread->stackinfos.push_back(std::unique_ptr<StackInfo>(main_stackinfo));
@@ -1511,8 +1236,8 @@ void Process::set_global_value(const std::string& name, vaddr_t addr) {
 // VMの初期設定をする。
 void Process::setup() {
 
-#define M_ALLOC_BASIC_TYPE(s, a, t)		\
-  vmemory.alloc_type_basic((s), (a), (t));	\
+#define M_ALLOC_BASIC_TYPE(s, a, t)			\
+  TypeStore::alloc_basic(proc_memory, (s), (a), (t));	\
   builtin_addrs.insert(t)
 
   // 基本型を登録
@@ -1540,9 +1265,7 @@ void Process::setup() {
 #undef M_ALLOC_BASIC_TYPE
 
   // ネイティブポインタペアリング用アドレスを予約
-  vmemory.reserve_data_addr(AddrType::AD_PTR);
   native_ptr.insert(std::make_pair(VADDR_NULL, nullptr));
-  last_free_native_ptr = AddrType::AD_PTR + 1;
 
   // VMの組み込み関数をロード
   BuiltinBit::regist(*this);
@@ -1590,36 +1313,4 @@ bool Process::setup_warpin(const vtid_t& tid, const dev_id_t& dst) {
   }
 
   return true;
-}
-
-// 仮想アドレスに対応づくネイティブポインタを変更する。
-void Process::update_native_ptr(vaddr_t addr, void* ptr) {
-  assert(addr != VADDR_NULL && ptr != nullptr);
-  assert(native_ptr.find(addr) != native_ptr.end());
-  native_ptr[addr] = ptr;
-}
-
-// データ領域を確保する。
-vaddr_t Process::v_malloc(size_t size, bool is_const) {
-  return vmemory.alloc_data(size, is_const).addr;
-}
-
-// データ領域へ実データをコピーする。
-void Process::v_memcpy(vaddr_t dst, void* src, size_t n) {
-  DataStore& store = vmemory.get_data(dst);
-  // アクセス違反をチェック
-  if (VMemory::get_addr_lower(dst) + n > store.size) {
-    throw_error_message(Error::SEGMENT_FAULT, Util::vaddr2str(dst));
-  }
-  memcpy(store.head.get(), src, n);
-}
-
-// データ領域を指定の数値で埋める。
-void Process::v_memset(vaddr_t dst, int c, size_t len) {
-  DataStore& store = vmemory.get_data(dst);
-  // アクセス違反をチェック
-  if (VMemory::get_addr_lower(dst) + len > store.size) {
-    throw_error_message(Error::SEGMENT_FAULT, Util::vaddr2str(dst));
-  }
-  memset(store.head.get(), c, len);
 }

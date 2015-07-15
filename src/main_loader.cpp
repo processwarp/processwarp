@@ -44,6 +44,10 @@ public:
     assert(false);
     return 0;
   }
+
+  /**
+   */
+  VMemory::Accessor assign_accessor();
   
   /**
    * 
@@ -77,6 +81,7 @@ public:
 				    convert.export_thread(*it.second, related)));
     }
     body.insert(std::make_pair("threads", picojson::value(threads)));
+    /*
     std::set<vaddr_t> all = proc.vmemory.get_alladdr();
     for (auto it = all.begin(); it != all.end(); it ++) {
       // Don't export NULL.
@@ -87,7 +92,7 @@ public:
       dump.insert(std::make_pair(Util::vaddr2str(*it), convert.export_store(*it, related)));
     }
     body.insert(std::make_pair("dump", picojson::value(dump)));
-
+    */
     std::ofstream ofs(pool_path + Convert::vpid2str(pid) + ".out");
     ofs << picojson::value(body).serialize();
   }

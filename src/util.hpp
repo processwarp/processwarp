@@ -63,14 +63,6 @@ namespace processwarp {
     }
 
     /**
-     * Convert integer to hex string.
-     * @param ptr Pointer to integer.
-     * @size Byte size of integer.
-     * @return Converted string.
-     */
-    static std::string numptr2str(void* ptr, int size);
-
-    /**
      * Convert address string to vaddr_t.
      * @param str address string.
      * @return Converted address.

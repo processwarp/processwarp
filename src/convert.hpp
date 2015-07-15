@@ -9,7 +9,6 @@
 
 namespace processwarp {
   class Thread;
-  class DataStore;
   class FuncStore;
   class TypeStore;
   class Process;
@@ -139,13 +138,6 @@ namespace processwarp {
     Process& proc;
     /// 対象仮想メモリ
     VMemory& vmemory;
-
-    // DataStoreをJSON形式に変換する。
-    picojson::value export_data(const DataStore& src, Related& related);
-    // FuncStoreをJSON形式に変換する。
-    picojson::value export_func(const FuncStore& src, Related& related);
-    // TypeStoreをJSON形式に変換する。
-    picojson::value export_type(const TypeStore& src, Related& related);
 
     // JSONからDataStoreを復元する。
     void import_data(vaddr_t addr, const picojson::array& src);

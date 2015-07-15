@@ -8,6 +8,7 @@
 #include "lib/picojson.h"
 
 #include "process.hpp"
+#include "vmemory.hpp"
 
 namespace processwarp {
   /**
@@ -63,16 +64,17 @@ namespace processwarp {
   /**
    * VMachine for set of processes.
    */
-  class VMachine : protected ProcessDelegate {
+  class VMachine : private VMemoryDelegate, ProcessDelegate {
   public:
-    /// device_id to controller.
-    std::string device_id;
+    /** This virtual machine's device-id. */
+    const dev_id_t device_id;
 
     /**
-     * Constractor with delegate
+     * Constractor with delegate.
      * @param delegate Events assignee.
+     * @param device_id This virtual machine's device-id.
      */
-    VMachine(VMachineDelegate& delegate);
+    VMachine(VMachineDelegate& delegate, const dev_id_t& device_id);
 
     /**
      * Main loop.
@@ -146,9 +148,16 @@ namespace processwarp {
      */
     vtid_t assign_tid(Process& proc) override;
 
+    /**
+     *
+     */
+    VMemory::Accessor assign_accessor() override;
+
   private:
     /** Event assignee */
     VMachineDelegate& delegate;
+    /** Virtual memory for this virtual machine. */
+    VMemory vmemory;
     /** Map of pid and process. */
     std::map<vpid_t, std::shared_ptr<Process>> procs;
     /** Map of pid and warp destination device-ids. */

@@ -33,8 +33,9 @@ bool LlvmAsmLoader::ValueDest::operator<(const ValueDest& other) const {
 // コンストラクタ。
 LlvmAsmLoader::LlvmAsmLoader(Process& proc_) :
   context(llvm::getGlobalContext()),
-  proc(proc_) {
-  }
+  proc(proc_),
+  memory(proc.proc_memory) {
+}
 
 // デストラクタ。
 LlvmAsmLoader::~LlvmAsmLoader() {
@@ -158,7 +159,7 @@ LlvmAsmLoader::ValueDest LlvmAsmLoader::get_loaded_ptr(FunctionContext& fc,
   if (map_global.find(src) != map_global.end()) {
     // グローバル変数
     dest.is_k = false;
-    dest.addr.ptr = proc.get_raw_addr(map_global.at(src));
+    dest.addr.ptr = memory.get_raw_writable(map_global.at(src));
     
   } else {
     // ローカル定数
@@ -208,7 +209,7 @@ void LlvmAsmLoader::load_constant(FunctionContext& fc, ValueDest dst, const llvm
     const llvm::Function* func = static_cast<const llvm::Function*>(src);
     // まだ確保されていない関数
     if (map_func.find(func) == map_func.end()) {
-      vaddr_t addr = proc.reserve_func_addr();
+      vaddr_t addr = memory.reserve_program_area();
       map_func.insert(std::make_pair(func, addr));
       left_func.insert(func);
     }
@@ -298,7 +299,7 @@ void LlvmAsmLoader::load_expr(FunctionContext& fc, ValueDest dst, const llvm::Co
       assert(src->getNumOperands() == 1);				\
       vaddr_t dst_type = load_type(src->getType(), DSI);		\
       vaddr_t src_type = load_type(src->getOperand(0)->getType(), SSI); \
-      TypeBased* src_op = proc.get_type_based(src_type);			\
+      BasicOperator* src_op = get_operator(src_type);			\
       src_op->type_cast(get_ptr_by_dest(fc, dst), dst_type,		\
 			get_ptr_by_dest(fc, get_loaded_ptr(fc, src)));	\
     } break;
@@ -388,7 +389,7 @@ void LlvmAsmLoader::load_expr(FunctionContext& fc, ValueDest dst, const llvm::Co
 #define M_CCMP_OPERATOR1(PRE, SI, OP, FOP, SOP)				\
       case llvm::PRE: {							\
 	vaddr_t op_type = load_type(src->getOperand(0)->getType(), SI); \
-	TypeBased* op = proc.get_type_based(op_type);			\
+	BasicOperator* op = get_operator(op_type);			\
 	op->OP(get_ptr_by_dest(fc, dst),				\
 	       get_ptr_by_dest(fc, get_loaded_ptr(fc, src->getOperand(FOP))), \
 	       get_ptr_by_dest(fc, get_loaded_ptr(fc, src->getOperand(SOP)))); \
@@ -473,11 +474,9 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
     assert(function->hasName());
     
     vaddr_t addr = map_func.at(function);
-    proc.deploy_function(function->getName(),
-		       load_type(function->getReturnType(), false),
-		       function->arg_size(),
-		       function->isVarArg(),
-		       addr);
+    FuncStore::alloc_external(memory, addr, proc.symbols.get(function->getName()),
+			      load_type(function->getReturnType(), false),
+			      function->arg_size(), function->isVarArg());
     left_func.erase(function);
 
   } else {
@@ -1282,8 +1281,8 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 
     prop.stack_size = fc.stack_sum;
     // 定数領域を作成
-    prop.k = proc.v_malloc(k.size(), true);
-    proc.v_memcpy(prop.k, k.data(), k.size());
+    prop.k = memory.alloc(k.size());
+    memory.set_copy(prop.k, k.data(), k.size());
 
     // 定数、変数の数がオペランドで表現可能な上限を超えた場合エラー
     if (stack_values.size() > ((FILL_OPERAND >> 1) - 1) ||
@@ -1292,11 +1291,9 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
     }
 
     vaddr_t addr = map_func.at(function);
-    proc.deploy_function_normal(function->getName().str(),
-			      load_type(function->getReturnType(), false),
-			      function->arg_size(),
-			      function->isVarArg(),
-			      prop, addr);
+    FuncStore::alloc_normal(memory, addr, proc.symbols.get(function->getName().str()),
+			    load_type(function->getReturnType(), false),
+			    function->arg_size(), function->isVarArg(), prop);
     left_func.erase(function);
   }
 }
@@ -1322,7 +1319,7 @@ void LlvmAsmLoader::load_globals(const llvm::Module::GlobalListType& variables) 
 
     } else {
       // 変数の場合、それぞれのアドレスを確保する
-      vaddr_t new_addr = proc.v_malloc(size, false);
+      vaddr_t new_addr = memory.alloc(size);
       map_global.insert(std::make_pair(gl, new_addr));
     }
   }
@@ -1331,7 +1328,7 @@ void LlvmAsmLoader::load_globals(const llvm::Module::GlobalListType& variables) 
   if (map_global.size() != 0) {
     vaddr_t global_addr = VADDR_NON;
     if (sum != 0) {
-      global_addr = proc.v_malloc(sum, true);
+      global_addr = memory.alloc(sum);
     }
     // 割り当てたアドレスを元に仮のアドレスから実際のアドレスに変更する
     for (auto it = map_global.begin(); it != map_global.end(); it ++) {
@@ -1356,7 +1353,7 @@ void LlvmAsmLoader::load_globals(const llvm::Module::GlobalListType& variables) 
     if (gl->hasInitializer()) {
       ValueDest dst;
       dst.is_k = false;
-      dst.addr.ptr = proc.get_raw_addr(it->second);
+      dst.addr.ptr = memory.get_raw_writable(it->second);
       load_constant(fc, dst, gl->getInitializer());
     }
   }
@@ -1386,7 +1383,7 @@ void LlvmAsmLoader::load_module(llvm::Module* module) {
 
   // 関数のアドレスを予約しておく
   for (auto fn = module->begin(); fn != module->end(); fn ++) {
-    vaddr_t addr = proc.reserve_func_addr();
+    vaddr_t addr = memory.reserve_program_area();
     map_func.insert(std::make_pair(fn, addr));
     left_func.insert(fn);
     /// todo: スレッドローカル、セクション、公開の扱い
@@ -1407,10 +1404,9 @@ void LlvmAsmLoader::load_module(llvm::Module* module) {
   for (auto it : block_addrs) {
     if (it.first.is_k) {
       vaddr_t func_addr = map_func.at(it.second.first);
-      FuncStore& func = proc.vmemory.get_func(func_addr);
-      uint8_t* k = proc.get_raw_addr(func.normal_prop.k);
-      *reinterpret_cast<vaddr_t*>(k + it.first.addr.k) =
-	static_cast<vaddr_t>(block_addrs_start.at(it.second));
+      std::unique_ptr<FuncStore> func = FuncStore::read(memory, func_addr);
+      memory.set<vaddr_t>(func->normal_prop.k + it.first.addr.k,
+			  static_cast<vaddr_t>(block_addrs_start.at(it.second)));
       
     } else {
       *reinterpret_cast<vaddr_t*>(it.first.addr.ptr) =
@@ -1418,7 +1414,7 @@ void LlvmAsmLoader::load_module(llvm::Module* module) {
     }
   }
 
-  //*
+  /*
   // デバッグ用にダンプを出力
   std::set<vaddr_t> all = proc.vmemory.get_alladdr();
   for (auto it = all.begin(); it != all.end(); it ++) {
@@ -1616,25 +1612,27 @@ vaddr_t LlvmAsmLoader::load_type(const llvm::Type* type, bool sign) {
     for (int i = 0, size = type->getStructNumElements(); i < size; i ++) {
       member.push_back(load_type(type->getStructElementType(i), false));
     }
-    TypeStore& store = proc.create_type_struct(member);
-    loaded_type.insert(std::make_pair(key, store.addr));
-    return store.addr;
+    std::unique_ptr<TypeStore> store = TypeStore::alloc_struct(memory, member);
+    loaded_type.insert(std::make_pair(key, store->addr));
+    return store->addr;
   } break;
 
   case llvm::Type::ArrayTyID: {
-    TypeStore& store =
-      proc.create_type_array(load_type(type->getArrayElementType(), false),
-			   type->getArrayNumElements());
-    loaded_type.insert(std::make_pair(key, store.addr));
-    return store.addr;
+    std::unique_ptr<TypeStore> store =
+      TypeStore::alloc_array(memory,
+			     load_type(type->getArrayElementType(), false),
+			     type->getArrayNumElements());
+    loaded_type.insert(std::make_pair(key, store->addr));
+    return store->addr;
   } break;
 
   case llvm::Type::VectorTyID: {
-    TypeStore& store =
-      proc.create_type_vector(load_type(type->getVectorElementType(), false),
-			    type->getVectorNumElements());
-    loaded_type.insert(std::make_pair(key, store.addr));
-    return store.addr;
+    std::unique_ptr<TypeStore> store =
+      TypeStore::alloc_vector(memory,
+			      load_type(type->getVectorElementType(), false),
+			      type->getVectorNumElements());
+    loaded_type.insert(std::make_pair(key, store->addr));
+    return store->addr;
 
   } break;
 
@@ -1644,10 +1642,9 @@ vaddr_t LlvmAsmLoader::load_type(const llvm::Type* type, bool sign) {
     break;
   }
   
-  // 基本型をvmachineから払い出し、キャッシュに登録
-  TypeStore& store = proc.create_type_basic(addr);
-  loaded_type.insert(std::make_pair(key, store.addr));
-  return store.addr;
+  // 基本型はアドレスが固定なのでそのまま登録
+  loaded_type.insert(std::make_pair(key, addr));
+  return addr;
 }
 
 // LLVMの定数(vector)を仮想マシンにロードする。

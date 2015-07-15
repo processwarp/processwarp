@@ -3,18 +3,16 @@
 #include "definitions.hpp"
 
 namespace processwarp {
-  class TypeStore;
-
   /**
    * 型依存の演算クラス。
    */
-  class TypeBased {
+  class BasicOperator {
   public:
     /**
      * デストラクタ。
      * 基底クラスなため、virtual宣言を行うが何もしない。
      */
-    virtual ~TypeBased();
+    virtual ~BasicOperator();
 
     /**
      * bit_cast命令に対応したキャスト演算を行う。
@@ -35,8 +33,8 @@ namespace processwarp {
      * 値を読み込む
      * @param src 読み込み元
      */
-    virtual vm_int_t get(uint8_t* src);
-
+    //virtual vm_int_t get(uint8_t* src);
+    
     /**
      * 比較命令(isnan(a) || isnan(b))に対応した演算を行う。
      * @param dst 出力先
@@ -177,7 +175,7 @@ namespace processwarp {
   /**
    * 整数型、浮動小数型に対する演算命令。
    */
-  template <typename T> class TypeExtended : public TypeBased {
+  template <typename T> class PrimitiveOperator : public BasicOperator {
   public:
     /**
      * bit_cast命令に対応したキャスト演算を行う。
@@ -198,7 +196,7 @@ namespace processwarp {
      * 値を読み込む
      * @param src 読み込み元
      */
-    vm_int_t get(uint8_t* src) override;
+    //vm_int_t get(uint8_t* src) override;
 
     /**
      * 比較命令(isnan(a) || isnan(b))に対応した演算を行う。
@@ -340,7 +338,7 @@ namespace processwarp {
   /**
    * ポインタ型に対する演算命令。
    */
-  class TypePointer : public TypeBased {
+  class PointerOperator : public BasicOperator {
   public:
     /**
      * bit_cast命令に対応したキャスト演算を行う。
@@ -401,16 +399,17 @@ namespace processwarp {
   /**
    * 複合型に対する演算命令。
    */
-  class TypeComplex : public TypeBased {
+  /*
+  class OperatorForComplex : public BasicOperator {
   public:
     /// 複合型の型情報
     TypeStore* type_store;
 
-    /**
+    
      * 値をコピーする。
      * @param dst コピー先
      * @param src コピー元
      */
-    void copy(uint8_t* dst, uint8_t* src) override;
-  };
+  /*void copy(uint8_t* dst, uint8_t* src) override;
+    };*/
 }

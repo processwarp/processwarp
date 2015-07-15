@@ -43,8 +43,8 @@ void BuiltinOverflow::regist(Process& vm) {
   INT_T b = static_cast<INT_T>(Process::read_builtin_param_i##WIDTH(src, &seek)); \
   INT_T res;								\
   bool flg = SFUNC<INT_T, INT_T>(a, b, res);				\
-  *reinterpret_cast<INT_T*>(proc.get_raw_addr(dst)) = res;		\
-  *reinterpret_cast<uint8_t*>(proc.get_raw_addr(dst) + sizeof(INT_T)) = (flg ? 0x00 : 0xff); \
+  thread.memory.set<INT_T>(dst, res);					\
+  thread.memory.set<uint8_t>(dst + sizeof(INT_T), flg ? 0x00 : 0xff);	\
   } break
 
 /**

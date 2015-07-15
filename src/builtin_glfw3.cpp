@@ -1,4 +1,5 @@
 
+#include <cassert>
 #include <GLFW/glfw3.h>
 
 #include "builtin_glfw3.hpp"
@@ -12,10 +13,9 @@ BuiltinPost BuiltinGlfw3::createWindow(Process& proc, Thread& thread, BuiltinFun
   int seek = 0;
   uint32_t width = Process::read_builtin_param_i32(src, &seek);
   uint32_t height = Process::read_builtin_param_i32(src, &seek);
-  uint8_t* title = proc.get_raw_addr(Process::read_builtin_param_ptr(src, &seek));
-  uint8_t* monitor = proc.get_raw_addr(Process::read_builtin_param_ptr(src, &seek));
-  uint8_t* share = proc.get_raw_addr(Process::read_builtin_param_ptr(src, &seek));  
-  // 読み込んだパラメタ長と渡されたパラメタ長は同じはず
+  const uint8_t* title = thread.memory.get_raw(Process::read_builtin_param_ptr(src, &seek));
+  uint8_t* monitor = thread.memory.get_raw_writable(Process::read_builtin_param_ptr(src, &seek));
+  uint8_t* share = thread.memory.get_raw_writable(Process::read_builtin_param_ptr(src, &seek));  
   assert(static_cast<signed>(src.size()) == seek);
 
   GLFWwindow* window = glfwCreateWindow(width, height,
@@ -23,8 +23,8 @@ BuiltinPost BuiltinGlfw3::createWindow(Process& proc, Thread& thread, BuiltinFun
 					reinterpret_cast<GLFWmonitor*>(monitor),
 					reinterpret_cast<GLFWwindow*>(share));
   
-  // ネイティブのアドレスとのペアを作成。
-  *reinterpret_cast<vaddr_t*>(proc.get_raw_addr(dst)) = proc.create_native_ptr(window);
+  /// TODO:ネイティブのアドレスとのペアを作成。
+  //thread.memory.set<vaddr_t>(dst, proc.create_native_ptr(window));
   
   return BP_NORMAL;
 }
@@ -34,13 +34,12 @@ BuiltinPost BuiltinGlfw3::destroyWindow(Process& proc, Thread& thread, BuiltinFu
 					vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
   vaddr_t window = Process::read_builtin_param_ptr(src, &seek);
-  // 読み込んだパラメタ長と渡されたパラメタ長は同じはず
   assert(static_cast<signed>(src.size()) == seek);
   
-  glfwDestroyWindow(reinterpret_cast<GLFWwindow*>(proc.get_raw_addr(window)));
+  glfwDestroyWindow(reinterpret_cast<GLFWwindow*>(thread.memory.get_raw_writable(window)));
 
-  // ネイティブのアドレスとのペアを解消。
-  proc.destory_native_ptr(window);
+  /// TODO:ネイティブのアドレスとのペアを解消。
+  //proc.destory_native_ptr(window);
 
   return BP_NORMAL;
 }

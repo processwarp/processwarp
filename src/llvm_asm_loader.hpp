@@ -12,7 +12,9 @@
 #include <string>
 #include <vector>
 
+#include "basic_operator.hpp"
 #include "definitions.hpp"
+#include "vmemory.hpp"
 
 namespace llvm {
   class LLVMContext;
@@ -89,6 +91,8 @@ namespace processwarp {
     llvm::LLVMContext& context;
     /// ロード先仮想マシン
     Process& proc;
+    /** */
+    VMemory::Accessor& memory;
     /// ロード済みの型とアドレスの対応関係
     std::map<std::pair<const llvm::Type*, bool>, vaddr_t> loaded_type;
 
@@ -265,5 +269,10 @@ namespace processwarp {
      * @return dstをdiff分だけずらしたValueDest
      */
     ValueDest relocate_dest(ValueDest dst, int diff);
+
+    /**
+     *
+     */
+    BasicOperator* get_operator(vaddr_t type);
   };
 }

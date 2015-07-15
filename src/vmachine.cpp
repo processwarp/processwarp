@@ -44,8 +44,10 @@ void VMachineDelegate::on_error(const vpid_t& pid,
 }
 
 // Constractor with delegate.
-VMachine::VMachine(VMachineDelegate& _delegate) :
-  delegate(_delegate) {
+VMachine::VMachine(VMachineDelegate& delegate_, const dev_id_t& device_id_) :
+  device_id(device_id_),
+  delegate(delegate_),
+  vmemory(*this, device_id_) {
   // Do nothing.
 }
 
@@ -220,8 +222,9 @@ vtid_t VMachine::assign_tid(Process& vm) {
 
 // Dump and send data to warp process. 
 void VMachine::do_warp_process(const vpid_t& pid) {
+  /*
   Process& proc    = *procs.at(pid);
-  VMemory& vmemory = proc.vmemory;
+  VMemory::Accessor& memory = proc.proc_memory;
   
   // Dump process.
   Convert convert(proc);
@@ -260,9 +263,11 @@ void VMachine::do_warp_process(const vpid_t& pid) {
   for (auto& it_thread : proc.threads) {
     it_thread.second->status = Thread::PASSIVE;
   }
+  */
 }
 
 void VMachine::recv_process_warp(const vpid_t& pid, picojson::object& json) {
+  /*
   Process& proc = *procs.at(pid);
   VMemory& vmemory = proc.vmemory;
   Convert convert(proc);
@@ -286,4 +291,5 @@ void VMachine::recv_process_warp(const vpid_t& pid, picojson::object& json) {
   for (auto& it_thread : proc.threads) {
     it_thread.second->status = Thread::NORMAL;
   }
+  */
 }

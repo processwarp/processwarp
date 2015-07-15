@@ -1,15 +1,14 @@
 #pragma once
 
+#include <memory>
 #include <vector>
 
 #include "definitions.hpp"
-#include "type_based.hpp"
+#include "func_store.hpp"
+#include "type_store.hpp"
+#include "wrapped_operator.hpp"
 
 namespace processwarp {
-  class FuncStore;
-  class DataStore;
-  class TypeStore;
-
   /**
    * 呼び出し階層クラス。
    */
@@ -18,7 +17,7 @@ namespace processwarp {
     /// 関数
     const vaddr_t func;
     /// 関数領域のキャッシュ
-    FuncStore* func_cache;
+    std::unique_ptr<FuncStore> func_store;
 
     /// return格納先
     const vaddr_t ret_addr;
@@ -30,8 +29,6 @@ namespace processwarp {
 
     /// スタック領域
     const vaddr_t stack;
-    /// スタック領域のキャッシュ(実アドレスへのポインタ)
-    DataStore* stack_cache;
 
     /// allocaで確保された領域
     std::vector<vaddr_t> alloca_addrs;
@@ -48,27 +45,21 @@ namespace processwarp {
     /// 操作対象の型
     vaddr_t type;
     /// 操作対象の型のキャッシュ
-    TypeBased* type_cache1;
+    WrappedOperator* type_operator;
     /// 操作対象の型のキャッシュ
-    TypeStore* type_cache2;
+    std::unique_ptr<TypeStore> type_store;
     
     /// アライメント
     vm_int_t alignment;
 
     /// 格納先アドレス
     vaddr_t output;
-    /// 格納先キャッシュ
-    uint8_t* output_cache;
 
     /// 値レジスタ
     vaddr_t value;
-    /// 値レジスタキャッシュ
-    uint8_t* value_cache;
 
     /// アドレスレジスタ
     vaddr_t address;
-    /// アドレスレジスタキャッシュ
-    uint8_t* address_cache;
 
     /**
      * コンストラクタ。
