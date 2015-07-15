@@ -11,7 +11,6 @@ BuiltinPost BuiltinWarp::at_after_warp(Process& proc, Thread& thread, BuiltinFun
 				       vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
   vaddr_t func = Process::read_builtin_param_ptr(src, &seek);
-  // Size of src must be same as parameter read.
   assert(static_cast<signed>(src.size()) == seek);
 
   thread.funcs_at_after_warp.push_back(func);
@@ -26,7 +25,6 @@ BuiltinPost BuiltinWarp::at_befor_warp(Process& proc, Thread& thread, BuiltinFun
 				       vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
   vaddr_t func = Process::read_builtin_param_ptr(src, &seek);
-  // Size of src must be same as parameter read.
   assert(static_cast<signed>(src.size()) == seek);
 
   thread.funcs_at_befor_warp.push_back(func);
@@ -40,7 +38,6 @@ BuiltinPost BuiltinWarp::at_befor_warp(Process& proc, Thread& thread, BuiltinFun
 BuiltinPost BuiltinWarp::poll_warp_request(Process& proc, Thread& thread, BuiltinFuncParam p,
 					   vaddr_t dst, std::vector<uint8_t>& src) {
   //int seek = 0;
-  // Size of src must be same as parameter read.
   assert(static_cast<signed>(src.size()) == 0);
 
   if (thread.status == Thread::WAIT_WARP) {
@@ -70,7 +67,6 @@ BuiltinPost BuiltinWarp::set_processwarp_param(Process& proc, Thread& thread, Bu
   int seek = 0;
   int64_t key = static_cast<int64_t>(Process::read_builtin_param_i64(src, &seek));
   int64_t val = static_cast<int64_t>(Process::read_builtin_param_i64(src, &seek));
-  // Size of src must be same as parameter read.
   assert(static_cast<signed>(src.size()) == seek);
 
   // TODO validate key & val.

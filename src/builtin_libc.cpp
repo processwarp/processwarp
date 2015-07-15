@@ -19,6 +19,8 @@ BuiltinPost BuiltinLibc::atexit(Process& proc, Thread& thread, BuiltinFuncParam 
   int seek = 0;
   // コピー先アドレスを取得
   vaddr_t func = Process::read_builtin_param_ptr(src, &seek);
+  assert(static_cast<signed>(src.size()) == seek);
+
   // 終了処理時に呼び出す関数一覧
   proc.calls_at_exit.push(func);
 
@@ -47,6 +49,7 @@ BuiltinPost BuiltinLibc::exit(Process& proc, Thread& thread, BuiltinFuncParam p,
   int seek = 0;
   // コピー先アドレスを取得
   uint32_t ret = Process::read_builtin_param_i32(src, &seek);
+  assert(static_cast<signed>(src.size()) == seek);
   
   // 終了コードを設定する
   thread.memory.set<uint32_t>(thread.stackinfos.at(0)->stack, ret);
@@ -67,6 +70,8 @@ BuiltinPost BuiltinLibc::free(Process& proc, Thread& thread, BuiltinFuncParam p,
 			      vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
   vaddr_t ptr = Process::read_builtin_param_ptr(src, &seek);
+  assert(static_cast<signed>(src.size()) == seek);
+
   thread.memory.free(ptr);
 
   return BP_NORMAL;
@@ -79,6 +84,7 @@ BuiltinPost BuiltinLibc::longjmp(Process& proc, Thread& thread, BuiltinFuncParam
   // 引数を開く。
   vaddr_t env = Process::read_builtin_param_ptr(src, &seek);
   uint32_t val = Process::read_builtin_param_i32(src, &seek);
+  assert(static_cast<signed>(src.size()) == seek);
 
   int seek2 = 0;
   // stack_count
@@ -139,6 +145,8 @@ BuiltinPost BuiltinLibc::malloc(Process& proc, Thread& thread, BuiltinFuncParam 
 				vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
   uint64_t size = Process::read_builtin_param_i64(src, &seek);
+  assert(static_cast<signed>(src.size()) == seek);
+
   thread.memory.set<vaddr_t>(dst, thread.memory.alloc(size));
 
   return BP_NORMAL;
@@ -152,6 +160,7 @@ BuiltinPost BuiltinLibc::memcpy(Process& proc, Thread& thread, BuiltinFuncParam 
   vaddr_t p_dst = Process::read_builtin_param_ptr(src, &seek);
   // コピー元アドレスを取得
   vaddr_t p_src = Process::read_builtin_param_ptr(src, &seek);
+
   // コピーサイズを取得
   uint64_t p_size = 0;
   switch(p.i64) {
@@ -185,6 +194,8 @@ BuiltinPost BuiltinLibc::memmove(Process& proc, Thread& thread, BuiltinFuncParam
   vaddr_t p_dst = Process::read_builtin_param_ptr(src, &seek);
   // コピー元アドレスを取得
   vaddr_t p_src = Process::read_builtin_param_ptr(src, &seek);
+  assert(static_cast<signed>(src.size()) == seek);
+
   // コピーサイズを取得
   uint64_t p_size = 0;
   switch(p.i64) {
@@ -218,6 +229,7 @@ BuiltinPost BuiltinLibc::memset(Process& proc, Thread& thread, BuiltinFuncParam 
   vaddr_t p_dst = Process::read_builtin_param_ptr(src, &seek);
   // 設定値を取得
   uint8_t p_val = Process::read_builtin_param_i8(src, &seek);
+
   // 設定サイズを取得
   uint64_t p_len = 0;
   switch(p.i64) {
@@ -249,6 +261,7 @@ BuiltinPost BuiltinLibc::realloc(Process& proc, Thread& thread, BuiltinFuncParam
   int seek = 0;
   vaddr_t ptr = Process::read_builtin_param_ptr(src, &seek);
   uint64_t size = Process::read_builtin_param_i64(src, &seek);
+  assert(static_cast<signed>(src.size()) == seek);
 
   thread.memory.set<vaddr_t>(dst, thread.memory.realloc(ptr, size));
 
@@ -342,8 +355,6 @@ BuiltinPost BuiltinLibc::strtol(Process& proc, Thread& thread, BuiltinFuncParam 
   vaddr_t nptr = Process::read_builtin_param_ptr(src, &seek);
   vaddr_t endptr = Process::read_builtin_param_ptr(src, &seek);
   uint32_t base = Process::read_builtin_param_i32(src, &seek);
-
-  // 読み込んだパラメタ長と渡されたパラメタ長は同じはず
   assert(static_cast<signed>(src.size()) == seek);
 
   const char* raw_ptr = reinterpret_cast<const char*>(thread.memory.get_raw(nptr));
@@ -363,5 +374,6 @@ BuiltinPost BuiltinLibc::strtol(Process& proc, Thread& thread, BuiltinFuncParam 
       thread.memory.set<vaddr_t>(endptr, nptr + (work_ptr - raw_ptr));
     }
   }
+
   return BP_NORMAL;
 }

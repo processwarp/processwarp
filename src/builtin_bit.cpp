@@ -1,3 +1,5 @@
+
+#include <cassert>
 #include "builtin_bit.hpp"
 #include "process.hpp"
 
@@ -32,6 +34,7 @@ BuiltinPost BuiltinBit::bswap(Process& proc, Thread& thread, BuiltinFuncParam p,
   default: assert(false);
   }
 
+  assert(static_cast<signed>(src.size()) == seek);
   return BP_NORMAL;
 }
 
