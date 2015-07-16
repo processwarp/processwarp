@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <memory>
 #include <set>
 #include <stack>
 #include <string>
@@ -34,7 +35,7 @@ namespace processwarp {
 
     /**
      */
-    virtual VMemory::Accessor assign_accessor() = 0;
+    virtual std::unique_ptr<VMemory::Accessor> assign_accessor(const vpid_t& pid) = 0;
   };
   
   /**
@@ -58,7 +59,7 @@ namespace processwarp {
     /** Deleagetr. */
     ProcessDelegate& delegate;
     /** Accessotr to binded memory. */
-    VMemory::Accessor proc_memory;
+    std::unique_ptr<VMemory::Accessor> proc_memory;
     /** My process-id. */
     const vpid_t pid;
     /** Root thread-id. */

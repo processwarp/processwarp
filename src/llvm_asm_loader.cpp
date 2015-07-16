@@ -98,7 +98,7 @@ bool LlvmAsmLoader::ValueDest::operator<(const ValueDest& other) const {
 LlvmAsmLoader::LlvmAsmLoader(Process& proc_) :
   context(llvm::getGlobalContext()),
   proc(proc_),
-  memory(proc.proc_memory) {
+  memory(*proc.proc_memory) {
 }
 
 // デストラクタ。

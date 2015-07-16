@@ -13,9 +13,9 @@ BuiltinPost BuiltinGlfw3::createWindow(Process& proc, Thread& thread, BuiltinFun
   int seek = 0;
   uint32_t width = Process::read_builtin_param_i32(src, &seek);
   uint32_t height = Process::read_builtin_param_i32(src, &seek);
-  const uint8_t* title = thread.memory.get_raw(Process::read_builtin_param_ptr(src, &seek));
-  uint8_t* monitor = thread.memory.get_raw_writable(Process::read_builtin_param_ptr(src, &seek));
-  uint8_t* share = thread.memory.get_raw_writable(Process::read_builtin_param_ptr(src, &seek));  
+  const uint8_t* title = thread.memory->get_raw(Process::read_builtin_param_ptr(src, &seek));
+  uint8_t* monitor = thread.memory->get_raw_writable(Process::read_builtin_param_ptr(src, &seek));
+  uint8_t* share = thread.memory->get_raw_writable(Process::read_builtin_param_ptr(src, &seek));  
   assert(static_cast<signed>(src.size()) == seek);
 
   GLFWwindow* window = glfwCreateWindow(width, height,
@@ -36,7 +36,7 @@ BuiltinPost BuiltinGlfw3::destroyWindow(Process& proc, Thread& thread, BuiltinFu
   vaddr_t window = Process::read_builtin_param_ptr(src, &seek);
   assert(static_cast<signed>(src.size()) == seek);
   
-  glfwDestroyWindow(reinterpret_cast<GLFWwindow*>(thread.memory.get_raw_writable(window)));
+  glfwDestroyWindow(reinterpret_cast<GLFWwindow*>(thread.memory->get_raw_writable(window)));
 
   /// TODO:ネイティブのアドレスとのペアを解消。
   //proc.destory_native_ptr(window);

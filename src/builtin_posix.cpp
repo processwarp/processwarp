@@ -20,9 +20,9 @@ BuiltinPost BuiltinPosix::__assert_fail(Process& proc, Thread& thread, BuiltinFu
   vaddr_t p_func = Process::read_builtin_param_ptr(src, &seek);
   
   // メッセージを出力
-  std::cerr << "Assertion failed: (" << reinterpret_cast<const char*>(thread.memory.get_raw(p_assertion))
-	    << "), function " << reinterpret_cast<const char*>(thread.memory.get_raw(p_func))
-	    << ", file " << reinterpret_cast<const char*>(thread.memory.get_raw(p_file))
+  std::cerr << "Assertion failed: (" << reinterpret_cast<const char*>(thread.memory->get_raw(p_assertion))
+	    << "), function " << reinterpret_cast<const char*>(thread.memory->get_raw(p_func))
+	    << ", file " << reinterpret_cast<const char*>(thread.memory->get_raw(p_file))
 	    << ", line " << p_line << "." << std::endl;
   
   // VMを異常終了させる
@@ -42,8 +42,8 @@ BuiltinPost BuiltinPosix::pthread_create(Process& proc, Thread& thread, BuiltinF
   vaddr_t p_arg    = Process::read_builtin_param_ptr(src, &seek);
   assert(static_cast<signed>(src.size()) == seek);
   
-  thread.memory.set<vtid_t>(p_thread, proc.create_thread(p_start, p_arg));
-  thread.memory.set<vm_int_t>(dst, 0);
+  thread.memory->set<vtid_t>(p_thread, proc.create_thread(p_start, p_arg));
+  thread.memory->set<vm_int_t>(dst, 0);
   
   return BP_NORMAL;
 }
@@ -71,7 +71,7 @@ BuiltinPost BuiltinPosix::pthread_join(Process& proc, Thread& thread, BuiltinFun
   //vm_int_t& ret = *reinterpret_cast<vm_int_t*>(proc.get_raw_addr(dst));
   
   try {
-    thread.memory.set<vm_int_t>(dst, 0);
+    thread.memory->set<vm_int_t>(dst, 0);
     if (proc.join_thread(thread.tid, p_thread, p_retval)) {
       return BP_NORMAL;
 
@@ -80,7 +80,7 @@ BuiltinPost BuiltinPosix::pthread_join(Process& proc, Thread& thread, BuiltinFun
     }
 
   } catch(StdError& e) {
-    thread.memory.set<vm_int_t>(dst, e.std_errno);
+    thread.memory->set<vm_int_t>(dst, e.std_errno);
     return BP_NORMAL;
   }
 }

@@ -151,7 +151,7 @@ namespace processwarp {
     /**
      *
      */
-    VMemory::Accessor assign_accessor() override;
+    std::unique_ptr<VMemory::Accessor> assign_accessor(const vpid_t& pid) override;
 
   private:
     /** Event assignee */

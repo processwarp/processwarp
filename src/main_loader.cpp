@@ -47,7 +47,7 @@ public:
 
   /**
    */
-  VMemory::Accessor assign_accessor();
+  std::unique_ptr<VMemory::Accessor> assign_accessor(const vpid_t& pid);
   
   /**
    * 

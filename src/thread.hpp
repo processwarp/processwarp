@@ -42,7 +42,7 @@ namespace processwarp {
     /// status of vm
     Status status;
     /** Accessor to binded memory */
-    VMemory::Accessor memory;
+    std::unique_ptr<VMemory::Accessor> memory;
     /// information of call stack
     StackInfos stackinfos;
     /// Functions that will be called at befor warp.
@@ -72,7 +72,7 @@ namespace processwarp {
      * @param tid Thread-id of this thread.
      * @param memory 
      */
-    Thread(vtid_t tid, VMemory::Accessor memory);
+    Thread(vtid_t tid, std::unique_ptr<VMemory::Accessor> memory);
 
     /**
      * 型依存の演算インスタンスを取得する。

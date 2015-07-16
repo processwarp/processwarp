@@ -83,7 +83,7 @@ Process::Process(ProcessDelegate& delegate_,
 		 std::vector<void*>& libs_,
 		 const std::map<std::string, std::string>& lib_filter_) :
   delegate(delegate_),
-  proc_memory(delegate.assign_accessor()),
+  proc_memory(delegate.assign_accessor(pid_)),
   pid(pid_),
   root_tid(root_tid_),
   libs(libs_),
@@ -93,7 +93,7 @@ Process::Process(ProcessDelegate& delegate_,
 // VM命令を実行する。
 void Process::execute(vtid_t tid, int max_clock) {
   Thread& thread = *(threads.at(tid));
-  VMemory::Accessor& memory = thread.memory;
+  VMemory::Accessor& memory = *thread.memory;
 
  re_entry: {
     if (thread.stackinfos.size() == 1) {
@@ -592,7 +592,7 @@ void Process::call_external(Thread& thread,
 			    vaddr_t ret_addr,
 			    std::vector<uint8_t>& args) {
 #ifndef EMSCRIPTEN
-  VMemory::Accessor& memory = thread.memory;
+  VMemory::Accessor& memory = *thread.memory;
   // 戻り値の型変換
   ffi_type* ffi_ret_type = nullptr;
   switch(func.ret_type) {
@@ -903,13 +903,13 @@ void Process::call_external(Thread& thread,
 
 // Setup to call function that type : void (*)(void).
 void Process::call_setup_voidfunc(Thread& thread, vaddr_t func_addr) {
-  std::unique_ptr<FuncStore> func(FuncStore::read(thread.memory, func_addr));
+  std::unique_ptr<FuncStore> func(FuncStore::read(*thread.memory, func_addr));
   std::unique_ptr<StackInfo> stackinfo
     (new StackInfo(func->addr,
 		   VADDR_NON, // 戻り値なし
 		   0, 0, // 正常、異常終了時のpc設定もなし
 		   (func->normal_prop.stack_size != 0 ?
-		    thread.memory.alloc(func->normal_prop.stack_size) :
+		    thread.memory->alloc(func->normal_prop.stack_size) :
 		    VADDR_NON)));  
   // 関数の型に合わせて呼び出す。
   if (func->type == FuncType::FC_NORMAL) {
@@ -938,7 +938,7 @@ void Process::close() {
 
 // Create a new thread.
 vtid_t Process::create_thread(vaddr_t func_addr, vaddr_t arg_addr) {
-  std::unique_ptr<FuncStore> func(std::move(FuncStore::read(proc_memory, func_addr)));
+  std::unique_ptr<FuncStore> func(std::move(FuncStore::read(*proc_memory, func_addr)));
   vtid_t  tid = delegate.assign_tid(*this);
 
   assert(threads.find(tid) == threads.end());
@@ -948,17 +948,17 @@ vtid_t Process::create_thread(vaddr_t func_addr, vaddr_t arg_addr) {
     throw_error_message(Error::SPEC_VIOLATION, func->name.str());
   }
 
-  Thread* thread = new Thread(tid, delegate.assign_accessor());
+  Thread* thread = new Thread(tid, delegate.assign_accessor(pid));
   threads.insert(std::make_pair(tid, std::unique_ptr<Thread>(thread)));
 
-  vaddr_t root_stack = proc_memory.alloc(sizeof(vaddr_t));
+  vaddr_t root_stack = proc_memory->alloc(sizeof(vaddr_t));
   StackInfo* root_stackinfo = new StackInfo(VADDR_NON, VADDR_NON, 0, 0, root_stack);
   root_stackinfo->output = root_stack;
   thread->stackinfos.push_back(std::unique_ptr<StackInfo>(root_stackinfo));
 
   StackInfo* func_stackinfo = nullptr;
   if (func->normal_prop.stack_size != 0) {
-    vaddr_t func_stack = proc_memory.alloc(func->normal_prop.stack_size);
+    vaddr_t func_stack = proc_memory->alloc(func->normal_prop.stack_size);
     func_stackinfo = new StackInfo(func->addr, root_stack, 0, 0, func_stack);
 
   } else {
@@ -989,7 +989,7 @@ bool Process::join_thread(vtid_t current, vtid_t target, vaddr_t retval) {
 
   if (target_thread.status == Thread::JOIN_WAIT) {
     // copy retval
-    proc_memory.set<vaddr_t>(retval, proc_memory.get<vaddr_t>
+    proc_memory->set<vaddr_t>(retval, proc_memory->get<vaddr_t>
 			     (target_thread.stackinfos.at(0)->stack));
 
     target_thread.status = Thread::FINISH;
@@ -1108,14 +1108,14 @@ void Process::regist_builtin_func(const std::string& name,
 void Process::resolve_stackinfo_cache(Thread& thread, StackInfo* stackinfo) {
   // 関数
   if (stackinfo->func != VADDR_NON) {
-    stackinfo->func_store = std::move(FuncStore::read(thread.memory, stackinfo->func));
+    stackinfo->func_store = std::move(FuncStore::read(*thread.memory, stackinfo->func));
   } else {
     stackinfo->func_store.reset(nullptr);
   }
   // 操作対象の型
   if (stackinfo->type != VADDR_NON) {
     stackinfo->type_operator = thread.get_operator(stackinfo->type);
-    stackinfo->type_store = std::move(TypeStore::read(thread.memory, stackinfo->type));
+    stackinfo->type_store = std::move(TypeStore::read(*thread.memory, stackinfo->type));
 
   } else {
     stackinfo->type_operator = nullptr;
@@ -1127,10 +1127,10 @@ void Process::resolve_stackinfo_cache(Thread& thread, StackInfo* stackinfo) {
 void Process::run(const std::vector<std::string>& args,
 		   const std::map<std::string, std::string>& envs) {
   // make root thread
-  Thread* root_thread = new Thread(root_tid, delegate.assign_accessor());
+  Thread* root_thread = new Thread(root_tid, delegate.assign_accessor(pid));
   threads.insert(std::make_pair(root_tid, std::unique_ptr<Thread>(root_thread)));
 
-  VMemory::Accessor& memory = root_thread->memory;
+  VMemory::Accessor& memory = *root_thread->memory;
   
   // スレッドを初期化
   root_thread->join_waiting = Thread::ROOT_THREAD;
@@ -1237,7 +1237,7 @@ void Process::set_global_value(const std::string& name, vaddr_t addr) {
 void Process::setup() {
 
 #define M_ALLOC_BASIC_TYPE(s, a, t)			\
-  TypeStore::alloc_basic(proc_memory, (s), (a), (t));	\
+  TypeStore::alloc_basic(*proc_memory, (s), (a), (t));	\
   builtin_addrs.insert(t)
 
   // 基本型を登録
