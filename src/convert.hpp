@@ -79,7 +79,9 @@ namespace processwarp {
      * @param src 復元元JSON
      * @return 仮想アドレス
      */
-    vaddr_t json2vaddr(const picojson::value& src);
+    static vaddr_t json2vaddr(const picojson::value& src) {
+      return Util::str2vaddr(src.get<std::string>());
+    }
 
     /**
      * Convert process-id to JSON.
@@ -104,7 +106,9 @@ namespace processwarp {
      * @param 仮想アドレス
      * @return JSON
      */
-    picojson::value vaddr2json(vaddr_t src);
+    static picojson::value vaddr2json(vaddr_t src) {
+      return picojson::value(Util::vaddr2str(src));
+    }
 
     /**
      * Convert process-id to string.

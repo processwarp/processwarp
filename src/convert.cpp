@@ -409,13 +409,3 @@ void Convert::import_type(vaddr_t addr, const picojson::object& src) {
     assert(false);
   }
 }
-
-// JSONから仮想アドレスを復元する。
-vaddr_t Convert::json2vaddr(const picojson::value& src) {
-  return Util::str2vaddr(src.get<std::string>());
-}
-
-// 仮想アドレスからJSON文字列に変換する。
-picojson::value Convert::vaddr2json(vaddr_t src) {
-  return picojson::value(Util::vaddr2str(src));
-}
