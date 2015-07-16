@@ -17,17 +17,17 @@ BasicOperator::~BasicOperator() {
 }
 
 // bit_cast命令に対応したキャスト演算を行う。
-void BasicOperator::bit_cast(uint8_t* dst, size_t size, uint8_t* src) {
+void BasicOperator::bit_cast(uint8_t* dst, size_t size, uint8_t* src) const {
   throw_error(Error::INST_VIOLATION);
 }
 
 // 値をコピーする。
-void BasicOperator::copy(uint8_t* dst, uint8_t* src) {
+void BasicOperator::copy(uint8_t* dst, uint8_t* src) const {
   throw_error(Error::INST_VIOLATION);
 }
 
 // 比較命令(isnan(a) || isnan(b))に対応した演算を行う。
-bool BasicOperator::is_or_nans(uint8_t* a, uint8_t* b) {
+bool BasicOperator::is_or_nans(uint8_t* a, uint8_t* b) const {
   throw_error(Error::INST_VIOLATION);
 }
 
@@ -36,7 +36,7 @@ bool BasicOperator::is_or_nans(uint8_t* a, uint8_t* b) {
  * @param op メソッド名
  */
 #define M_BINARY_OPERATOR_VIOLATION(op)				\
-  void BasicOperator::op(uint8_t* dst, uint8_t* a, uint8_t* b) {	\
+  void BasicOperator::op(uint8_t* dst, uint8_t* a, uint8_t* b) const {	\
     throw_error(Error::INST_VIOLATION);				\
   }
 
@@ -61,13 +61,13 @@ M_BINARY_OPERATOR_VIOLATION(op_not_equal);     // a!=b
 #undef M_BINARY_OPERATOR_VIOLATION
 
 // type_cast命令に対応したキャスト演算を行う。
-void BasicOperator::type_cast(uint8_t* dst, vaddr_t type, uint8_t* src) {
+void BasicOperator::type_cast(uint8_t* dst, vaddr_t type, uint8_t* src) const {
   print_llvm_instruction();
   throw_error(Error::INST_VIOLATION);
 }
 
 // bit_cast命令に対応したキャスト演算を行う。
-template <typename T> void PrimitiveOperator<T>::bit_cast(uint8_t* dst, size_t size, uint8_t* src) {
+template <typename T> void PrimitiveOperator<T>::bit_cast(uint8_t* dst, size_t size, uint8_t* src) const {
   longest_uint_t buffer = 0;
   memcpy(&buffer, src, sizeof(T));
   memcpy(dst, &buffer, size);
@@ -75,13 +75,13 @@ template <typename T> void PrimitiveOperator<T>::bit_cast(uint8_t* dst, size_t s
 }
 
 // 値をコピーする。
-template <typename T> void PrimitiveOperator<T>::copy(uint8_t* dst, uint8_t* src) {
+template <typename T> void PrimitiveOperator<T>::copy(uint8_t* dst, uint8_t* src) const {
   *reinterpret_cast<T*>(dst) = *reinterpret_cast<T*>(src);
   print_debug("copy %s (%p <- %p)\n", Util::numptr2str(dst, sizeof(T)).c_str(), dst, src);
 }
 
 // 比較命令(isnan(a) || isnan(b))に対応した演算を行う。
-template <typename T> bool PrimitiveOperator<T>::is_or_nans(uint8_t* a, uint8_t* b) {
+template <typename T> bool PrimitiveOperator<T>::is_or_nans(uint8_t* a, uint8_t* b) const {
   // 整数演算ではサポートしない機能
   throw_error(Error::INST_VIOLATION);
 }
@@ -89,7 +89,7 @@ template <typename T> bool PrimitiveOperator<T>::is_or_nans(uint8_t* a, uint8_t*
 namespace processwarp {
 
   // 比較命令(isnan(a) || isnan(b))に対応した演算を行う。
-  template<> bool PrimitiveOperator<double>::is_or_nans(uint8_t* a, uint8_t* b) {
+  template<> bool PrimitiveOperator<double>::is_or_nans(uint8_t* a, uint8_t* b) const {
     if (std::isnan(*reinterpret_cast<double*>(a)) ||
 	std::isnan(*reinterpret_cast<double*>(b))) {
       return true;
@@ -99,7 +99,7 @@ namespace processwarp {
   }
 
   // 比較命令(isnan(a) || isnan(b))に対応した演算を行う。
-  template<> bool PrimitiveOperator<float>::is_or_nans(uint8_t* a, uint8_t* b) {
+  template<> bool PrimitiveOperator<float>::is_or_nans(uint8_t* a, uint8_t* b) const {
     if (std::isnan(*reinterpret_cast<float*>(a)) ||
 	std::isnan(*reinterpret_cast<float*>(b))) {
       return true;
@@ -115,7 +115,7 @@ namespace processwarp {
  * @param infix 演算中置子
  */
 #define M_BINARY_OPERATOR_TYPE_EXTENDED(op, infix)			\
-  template <typename T> void PrimitiveOperator<T>::op(uint8_t* dst, uint8_t* a, uint8_t* b) { \
+  template <typename T> void PrimitiveOperator<T>::op(uint8_t* dst, uint8_t* a, uint8_t* b) const { \
     *reinterpret_cast<T*>(dst) = *reinterpret_cast<T*>(a) infix *reinterpret_cast<T*>(b); \
     print_debug("%p : %s = %s %s %s\n", dst, Util::numptr2str(dst, sizeof(T)).c_str(), \
 		Util::numptr2str(a, sizeof(T)).c_str(),	#infix,		\
@@ -139,7 +139,7 @@ M_BINARY_OPERATOR_TYPE_EXTENDED(op_xor, ^); // xor
  * @param infix 演算中置子
  */
 #define M_COMP_OPERATOR_TYPE_EXTENDED(op, infix)			\
-  template <typename T> void PrimitiveOperator<T>::op(uint8_t* dst, uint8_t* a, uint8_t* b) { \
+  template <typename T> void PrimitiveOperator<T>::op(uint8_t* dst, uint8_t* a, uint8_t* b) const { \
   *reinterpret_cast<uint8_t*>(dst) =					\
     (*reinterpret_cast<T*>(a) infix *reinterpret_cast<T*>(b)) ? 0x01 : 0x00; \
   print_debug("%p : %s = %s %s %s\n", dst,				\
@@ -162,7 +162,7 @@ namespace processwarp {
    * @param type 型
    */
 #define M_BINARY_OPERATOR_UNSUPPORT(op, type)				\
-  template<> void PrimitiveOperator<type>::op(uint8_t* dst, uint8_t* a, uint8_t* b) { \
+  template<> void PrimitiveOperator<type>::op(uint8_t* dst, uint8_t* a, uint8_t* b) const { \
     throw_error(Error::UNSUPPORT);					\
   }
 
@@ -192,7 +192,7 @@ namespace processwarp {
 #undef M_BINARY_OPERATOR_UNSUPPORT
 
   // 比較命令(!isnan(a) && !isnan(b))に対応した演算を行う。
-  template<> void PrimitiveOperator<double>::op_not_nans(uint8_t* dst, uint8_t* a, uint8_t* b) {
+  template<> void PrimitiveOperator<double>::op_not_nans(uint8_t* dst, uint8_t* a, uint8_t* b) const {
     if (!std::isnan(*reinterpret_cast<double*>(a)) &&
 	!std::isnan(*reinterpret_cast<double*>(b))) {
       *dst = I8_TRUE;
@@ -206,7 +206,7 @@ namespace processwarp {
   }
 
   // 比較命令(!isnan(a) && !isnan(b))に対応した演算を行う。
-  template<> void PrimitiveOperator<float>::op_not_nans(uint8_t* dst, uint8_t* a, uint8_t* b) {
+  template<> void PrimitiveOperator<float>::op_not_nans(uint8_t* dst, uint8_t* a, uint8_t* b) const {
     if (!std::isnan(*reinterpret_cast<float*>(a)) &&
 	!std::isnan(*reinterpret_cast<float*>(b))) {
       *dst = I8_TRUE;
@@ -222,7 +222,7 @@ namespace processwarp {
 } // close "namespace processwarp"
 
 // shl命令に対応した加算を行う。
-template <typename T> void PrimitiveOperator<T>::op_shl(uint8_t* dst, uint8_t* a, uint8_t* b) {
+template <typename T> void PrimitiveOperator<T>::op_shl(uint8_t* dst, uint8_t* a, uint8_t* b) const {
   *reinterpret_cast<T*>(dst) =
     *reinterpret_cast<T*>(a) << static_cast<unsigned>(*reinterpret_cast<T*>(b));
   print_debug("shl %p : %s = %s << %s\n", dst,
@@ -232,7 +232,7 @@ template <typename T> void PrimitiveOperator<T>::op_shl(uint8_t* dst, uint8_t* a
 }
 
 // shr命令に対応した加算を行う。
-template <typename T> void PrimitiveOperator<T>::op_shr(uint8_t* dst, uint8_t* a, uint8_t* b) {
+template <typename T> void PrimitiveOperator<T>::op_shr(uint8_t* dst, uint8_t* a, uint8_t* b) const {
   *reinterpret_cast<T*>(dst) =
     *reinterpret_cast<T*>(a) >> static_cast<unsigned>(*reinterpret_cast<T*>(b));
   print_debug("shr %p : %s = %s << %s\n", dst,
@@ -242,7 +242,7 @@ template <typename T> void PrimitiveOperator<T>::op_shr(uint8_t* dst, uint8_t* a
 }
 
 // type_cast命令に対応したキャスト演算を行う。
-template <typename T> void PrimitiveOperator<T>::type_cast(uint8_t* dst, vaddr_t type, uint8_t* src) {
+template <typename T> void PrimitiveOperator<T>::type_cast(uint8_t* dst, vaddr_t type, uint8_t* src)  const {
   switch(type) {
   case BasicType::TY_POINTER:
     *reinterpret_cast<vaddr_t*>(dst) = static_cast<unsigned>(*reinterpret_cast<T*>(src)); break;
@@ -288,7 +288,7 @@ template <typename T> void PrimitiveOperator<T>::type_cast(uint8_t* dst, vaddr_t
 }
 
 // bit_cast命令に対応したキャスト演算を行う。
-void PointerOperator::bit_cast(uint8_t* dst, size_t size, uint8_t* src) {
+void PointerOperator::bit_cast(uint8_t* dst, size_t size, uint8_t* src) const {
   // コピーサイズはvaddr_tのサイズと同じはず
   assert(size == sizeof(vaddr_t));
   *reinterpret_cast<vaddr_t*>(dst) = *reinterpret_cast<vaddr_t*>(src);
@@ -297,14 +297,14 @@ void PointerOperator::bit_cast(uint8_t* dst, size_t size, uint8_t* src) {
 }
 
 // 値をコピーする。
-void PointerOperator::copy(uint8_t* dst, uint8_t* src) {
+void PointerOperator::copy(uint8_t* dst, uint8_t* src) const {
   *reinterpret_cast<vaddr_t*>(dst) = *reinterpret_cast<vaddr_t*>(src);
   print_debug("copy %s (%p <- %p)\n",
 	      Util::numptr2str(dst, sizeof(vaddr_t)).c_str(), dst, src);
 }
 
 // 比較命令(a==b)に対応した演算を行う。
-void PointerOperator::op_equal(uint8_t* dst, uint8_t* a, uint8_t* b) {
+void PointerOperator::op_equal(uint8_t* dst, uint8_t* a, uint8_t* b) const {
   if (*reinterpret_cast<vaddr_t*>(a) == *reinterpret_cast<vaddr_t*>(b)) {
     *reinterpret_cast<uint8_t*>(dst) = I8_TRUE;
   } else {
@@ -317,7 +317,7 @@ void PointerOperator::op_equal(uint8_t* dst, uint8_t* a, uint8_t* b) {
 }
 
 // 比較命令(a>b)に対応した演算を行う。
-void PointerOperator::op_greater(uint8_t* dst, uint8_t* a, uint8_t* b) {
+void PointerOperator::op_greater(uint8_t* dst, uint8_t* a, uint8_t* b) const {
   if (*reinterpret_cast<vaddr_t*>(a) > *reinterpret_cast<vaddr_t*>(b)) {
     *reinterpret_cast<uint8_t*>(dst) = I8_TRUE;
   } else {
@@ -330,7 +330,7 @@ void PointerOperator::op_greater(uint8_t* dst, uint8_t* a, uint8_t* b) {
 }
 
 // 比較命令(a>=b)に対応した演算を行う。
-void PointerOperator::op_greater_equal(uint8_t* dst, uint8_t* a, uint8_t* b) {
+void PointerOperator::op_greater_equal(uint8_t* dst, uint8_t* a, uint8_t* b) const {
   if (*reinterpret_cast<vaddr_t*>(a) >= *reinterpret_cast<vaddr_t*>(b)) {
     *reinterpret_cast<uint8_t*>(dst) = I8_TRUE;
   } else {
@@ -343,7 +343,7 @@ void PointerOperator::op_greater_equal(uint8_t* dst, uint8_t* a, uint8_t* b) {
 }
 
 // 比較命令(a!=b)に対応した演算を行う。
-void PointerOperator::op_not_equal(uint8_t* dst, uint8_t* a, uint8_t* b) {
+void PointerOperator::op_not_equal(uint8_t* dst, uint8_t* a, uint8_t* b) const {
   if (*reinterpret_cast<vaddr_t*>(a) == *reinterpret_cast<vaddr_t*>(b)) {
     *reinterpret_cast<uint8_t*>(dst) = I8_FALSE;
   } else {
@@ -356,7 +356,7 @@ void PointerOperator::op_not_equal(uint8_t* dst, uint8_t* a, uint8_t* b) {
 }
 
 // type_cast命令に対応したキャスト演算を行う。
-void PointerOperator::type_cast(uint8_t* dst, vaddr_t type, uint8_t* src) {
+void PointerOperator::type_cast(uint8_t* dst, vaddr_t type, uint8_t* src) const {
   switch (type) {
   case BasicType::TY_UI8:
   case BasicType::TY_SI8:

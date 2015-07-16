@@ -13,6 +13,70 @@
 
 using namespace processwarp;
 
+static const BasicOperator* OPERATORS[] = {
+  nullptr, // 0
+  nullptr, // 1 void
+  new PointerOperator(), // 2 pointer
+  nullptr, // 3 function
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr, // 10
+  new PrimitiveOperator<uint8_t>(), // 11 8bit整数型
+  new PrimitiveOperator<uint16_t>(), // 12 16bit整数型
+  new PrimitiveOperator<uint32_t>(), // 13 32bit整数型
+  new PrimitiveOperator<uint64_t>(), // 14 64bit整数型
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr, // 20
+  new PrimitiveOperator<int8_t>(), // 21 8bit整数型
+  new PrimitiveOperator<int16_t>(), // 22 16bit整数型
+  new PrimitiveOperator<int32_t>(), // 23 32bit整数型
+  new PrimitiveOperator<int64_t>(), // 24 64bit整数型
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr,
+  nullptr, // 30
+  nullptr, // 31
+  new PrimitiveOperator<float>(), // 32 float
+  new PrimitiveOperator<double>(), // 33 double
+  nullptr, // 34
+  nullptr, // 35 quad
+};
+
+const BasicOperator* get_operator(vaddr_t type) {
+  assert(type < sizeof(OPERATORS) / sizeof(OPERATORS[0]));
+  assert(OPERATORS[type] != nullptr);
+
+  return OPERATORS[type];
+}
+
 // mapのキーとして格納するので<演算子の動作を定義する。
 bool LlvmAsmLoader::ValueDest::operator<(const ValueDest& other) const {
   if (is_k) {
@@ -299,7 +363,7 @@ void LlvmAsmLoader::load_expr(FunctionContext& fc, ValueDest dst, const llvm::Co
       assert(src->getNumOperands() == 1);				\
       vaddr_t dst_type = load_type(src->getType(), DSI);		\
       vaddr_t src_type = load_type(src->getOperand(0)->getType(), SSI); \
-      BasicOperator* src_op = get_operator(src_type);			\
+      const BasicOperator* src_op = get_operator(src_type);		\
       src_op->type_cast(get_ptr_by_dest(fc, dst), dst_type,		\
 			get_ptr_by_dest(fc, get_loaded_ptr(fc, src)));	\
     } break;
@@ -389,7 +453,7 @@ void LlvmAsmLoader::load_expr(FunctionContext& fc, ValueDest dst, const llvm::Co
 #define M_CCMP_OPERATOR1(PRE, SI, OP, FOP, SOP)				\
       case llvm::PRE: {							\
 	vaddr_t op_type = load_type(src->getOperand(0)->getType(), SI); \
-	BasicOperator* op = get_operator(op_type);			\
+	const BasicOperator* op = get_operator(op_type);		\
 	op->OP(get_ptr_by_dest(fc, dst),				\
 	       get_ptr_by_dest(fc, get_loaded_ptr(fc, src->getOperand(FOP))), \
 	       get_ptr_by_dest(fc, get_loaded_ptr(fc, src->getOperand(SOP)))); \

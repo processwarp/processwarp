@@ -269,10 +269,5 @@ namespace processwarp {
      * @return dstをdiff分だけずらしたValueDest
      */
     ValueDest relocate_dest(ValueDest dst, int diff);
-
-    /**
-     *
-     */
-    BasicOperator* get_operator(vaddr_t type);
   };
 }
