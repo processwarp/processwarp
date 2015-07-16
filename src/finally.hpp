@@ -30,6 +30,7 @@ namespace processwarp {
 
     /**
      * Remove finalize function.
+     * Do noting if key is 0.
      * @param key A assigned key for function.
      */
     void remove(int key);

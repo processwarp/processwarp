@@ -5,7 +5,7 @@ using namespace processwarp;
 
 // Constructor.
 Finally::Finally() :
-  next_key(0) {
+  next_key(1) {
 }
 
 // Kick finalize functions in destructor.
@@ -27,7 +27,9 @@ int Finally::add(std::function<void()> func) {
 
 // Remove finalize function.
 void Finally::remove(int key) {
-  funcs.erase(key);
+  if (key != 0) {
+    funcs.erase(key);
+  }
 }
 
 
