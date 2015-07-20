@@ -43,6 +43,7 @@ using namespace processwarp;
 struct OperandParam {
   vaddr_t stack;
   vaddr_t k;
+  Process& proc;
   VMemory::Accessor& memory;
 };
 
@@ -51,11 +52,11 @@ inline std::unique_ptr<FuncStore> get_function(instruction_t code, OperandParam&
   if ((operand & HEAD_OPERAND) != 0) {
     // 定数の場合1の補数表現からの復元
     vaddr_t addr = param.memory.get<vaddr_t>(param.k + (FILL_OPERAND - operand));
-    return std::move(FuncStore::read(param.memory, addr));
+    return std::move(FuncStore::read(param.proc, addr));
     
   } else {
     vaddr_t addr = param.memory.get<vaddr_t>(param.stack + operand);
-    return std::move(FuncStore::read(param.memory, addr));
+    return std::move(FuncStore::read(param.proc, addr));
   }
 }
 
@@ -155,7 +156,7 @@ void Process::execute(vtid_t tid, int max_clock) {
 
     const FuncStore& func = *stackinfo.func_store;
     const std::vector<instruction_t>& insts = func.normal_prop.code;
-    OperandParam op_param = {stackinfo.stack, func.normal_prop.k, memory};
+    OperandParam op_param = {stackinfo.stack, func.normal_prop.k, *this, memory};
 
     for (; (thread.status == Thread::NORMAL ||
 	    thread.status == Thread::WAIT_WARP ||
@@ -903,7 +904,7 @@ void Process::call_external(Thread& thread,
 
 // Setup to call function that type : void (*)(void).
 void Process::call_setup_voidfunc(Thread& thread, vaddr_t func_addr) {
-  std::unique_ptr<FuncStore> func(FuncStore::read(*thread.memory, func_addr));
+  std::unique_ptr<FuncStore> func(FuncStore::read(*this, func_addr));
   std::unique_ptr<StackInfo> stackinfo
     (new StackInfo(func->addr,
 		   VADDR_NON, // 戻り値なし
@@ -938,7 +939,7 @@ void Process::close() {
 
 // Create a new thread.
 vtid_t Process::create_thread(vaddr_t func_addr, vaddr_t arg_addr) {
-  std::unique_ptr<FuncStore> func(std::move(FuncStore::read(*proc_memory, func_addr)));
+  std::unique_ptr<FuncStore> func(std::move(FuncStore::read(*this, func_addr)));
   vtid_t  tid = delegate.assign_tid(*this);
 
   assert(threads.find(tid) == threads.end());
@@ -1108,7 +1109,7 @@ void Process::regist_builtin_func(const std::string& name,
 void Process::resolve_stackinfo_cache(Thread& thread, StackInfo* stackinfo) {
   // 関数
   if (stackinfo->func != VADDR_NON) {
-    stackinfo->func_store = std::move(FuncStore::read(*thread.memory, stackinfo->func));
+    stackinfo->func_store = std::move(FuncStore::read(*this, stackinfo->func));
   } else {
     stackinfo->func_store.reset(nullptr);
   }
@@ -1139,7 +1140,7 @@ void Process::run(const std::vector<std::string>& args,
   auto it_main_func = globals.find(&symbols.get("main"));
   if (it_main_func == globals.end())
     throw_error_message(Error::SYM_NOT_FOUND, "main");
-  std::unique_ptr<FuncStore> main_func(std::move(FuncStore::read(memory, it_main_func->second)));
+  std::unique_ptr<FuncStore> main_func(std::move(FuncStore::read(*this, it_main_func->second)));
 
   // main関数用のスタックを確保する
   vaddr_t main_stack = VADDR_NULL;

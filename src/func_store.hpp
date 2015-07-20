@@ -50,41 +50,46 @@ namespace processwarp {
     external_func_t external;
 
     /**
-     * 通常の関数のコンストラクタ。
-     * @param memory
-     * @param name 関数名称
-     * @param ret_type 戻り値の型
-     * @param arg_num 引数の数
-     * @param is_var_arg 可変長引数かどうか
-     * @param normal_prop 通常の関数のプロパティ
+     * Allocate a new normal function to memory.
+     * @param memory The memory to allocate.
+     * @param addr address to allocate.
+     * @param name Function name.
+     * @param ret_type Type of return value.
+     * @param arg_num Number of argument.
+     * @param is_var_arg True if be variable-length argument.
+     * @param normal_prop Properties of normal function.
      */
-    static vaddr_t alloc_normal(VMemory::Accessor& memory,
-				vaddr_t addr,
-				const Symbols::Symbol& name,
-				vaddr_t ret_type,
-				unsigned int arg_num,
-				bool is_var_arg,
-				const NormalProp& normal_prop);
+    static void alloc_normal(VMemory::Accessor& memory,
+			     vaddr_t addr,
+			     const Symbols::Symbol& name,
+			     vaddr_t ret_type,
+			     unsigned int arg_num,
+			     bool is_var_arg,
+			     const NormalProp& normal_prop);
 
     /**
-     * 外部の関数のコンストラクタ。
-     * @param memory
-     * @param name 関数名称
-     * @param ret_type 戻り値の型
-     * @param arg_num 引数の数
-     * @param is_var_arg 可変長引数かどうか
+     * Allocate a new external function to memory.
+     * @param memory The memory to allocate.
+     * @param addr Address to allocate.
+     * @param name Function name.
+     * @param ret_type Type of return value.
+     * @param arg_num Number of argument.
+     * @param is_var_arg True if be variable-length argument.
      */
-    static vaddr_t alloc_external(VMemory::Accessor& memory,
-				  vaddr_t addr,
-				  const Symbols::Symbol& name,
-				  vaddr_t ret_type,
-				  unsigned int arg_num,
-				  bool is_var_arg);
+    static void alloc_external(VMemory::Accessor& memory,
+			       vaddr_t addr,
+			       const Symbols::Symbol& name,
+			       vaddr_t ret_type,
+			       unsigned int arg_num,
+			       bool is_var_arg);
 
     /**
-     *
+     * Read out function information from memory.
+     * @param proc Process using function information.
+     * @param addr Address saving function infromation.
+     * @return Function information.
      */
-    static std::unique_ptr<FuncStore> read(VMemory::Accessor& memory, vaddr_t addr);
+    static std::unique_ptr<FuncStore> read(Process& proc, vaddr_t addr);
 
   private:
     /**

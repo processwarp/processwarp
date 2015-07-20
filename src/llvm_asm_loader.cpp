@@ -1468,7 +1468,7 @@ void LlvmAsmLoader::load_module(llvm::Module* module) {
   for (auto it : block_addrs) {
     if (it.first.is_k) {
       vaddr_t func_addr = map_func.at(it.second.first);
-      std::unique_ptr<FuncStore> func = FuncStore::read(memory, func_addr);
+      std::unique_ptr<FuncStore> func = FuncStore::read(proc, func_addr);
       memory.set<vaddr_t>(func->normal_prop.k + it.first.addr.k,
 			  static_cast<vaddr_t>(block_addrs_start.at(it.second)));
       
