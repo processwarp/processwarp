@@ -5,47 +5,6 @@
 
 using namespace processwarp;
 
-/**
- * 数値をJSON-object形式に変換する。
- * JSONでは数値を倍精度浮動小数点数として保持するため倍精度整数などを
- * 格納しようとすると精度が劣化する。本メソッドでは数値を一旦文字列に
- * 変換してから格納する。
- * @param src 変換前数値
- * @return JSON-object
- */
-template<class T> picojson::value num2json(T src) {
-  std::ostringstream os;
-  os << std::hex << std::setfill('0') << std::setw(sizeof(T) * 2) << src;
-  return picojson::value(os.str());
-}
-
-template<> picojson::value num2json<uint8_t>(uint8_t src) {
-  std::ostringstream os;
-  os << std::hex << std::setfill('0') <<
-    std::setw(sizeof(uint8_t) * 2) << static_cast<uint32_t>(src);
-  return picojson::value(os.str());
-}
-
-/**
- * 文字列化数値のJSON-objectを数値に変換する。
- * 数値の精度はdstで指定した格納先の型に依存する。
- * @param v 変換前JSON-object
- * @param dst 数値格納先
- */
-template<class T> T json2num(const picojson::value& src) {
-  std::istringstream is(src.get<std::string>());
-  T num;
-  is >> std::hex >> num;
-  return num;
-}
-
-template<> uint8_t json2num<uint8_t>(const picojson::value& src) {
-  std::istringstream is(src.get<std::string>());
-  uint32_t num;
-  is >> std::hex >> num;
-  return static_cast<uint8_t>(num);
-}
-
 // コンストラクタ。
 Convert::Convert(Process& proc_) :
   proc(proc_),

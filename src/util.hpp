@@ -21,21 +21,20 @@
 #include "definitions.hpp"
 
 namespace processwarp {
-  class Util {
-  public:
+  namespace Util {
     /**
      * Convert instruction code to readable string.
      * @param code Instruction code.
      * @return Converted string.
      */
-    static std::string code2str(instruction_t code);
+    std::string code2str(instruction_t code);
 
     /**
      * Convert integer to decimal string.
      * @param v Integer.
      * @return Converted string.
      */
-    template<class T> static std::string num2dec_str(T v) {
+    template<class T> std::string num2dec_str(T v) {
       return std::to_string(v);
     }
 
@@ -44,9 +43,16 @@ namespace processwarp {
      * @param v Integer.
      * @return Converted string.
      */
-    template<class T> static std::string num2hex_str(T v) {
+    template<class T> std::string num2hex_str(T v) {
       std::ostringstream os;
       os << std::hex << std::setfill('0') << std::setw(sizeof(T) * 2) << v;
+      return os.str();
+    }
+
+    template<> std::string num2hex_str<uint8_t>(uint8_t v) {
+      std::ostringstream os;
+      os << std::hex << std::setfill('0') <<
+	std::setw(sizeof(uint8_t) * 2) << static_cast<uint32_t>(v);
       return os.str();
     }
 
@@ -55,11 +61,18 @@ namespace processwarp {
      * @param str Hex formated string.
      * @return Converted integer.
      */
-    template<class T> static T hex_str2num(const std::string& str) {
+    template<class T> T hex_str2num(const std::string& str) {
       std::istringstream is(str);
       T v;
       is >> std::hex >> v;
       return v;
+    }
+
+    template<> uint8_t hex_str2num<uint8_t>(const std::string& str) {
+      std::istringstream is(str);
+      uint32_t v;
+      is >> std::hex >> v;
+      return static_cast<uint8_t>(v);
     }
 
     /**
@@ -67,7 +80,7 @@ namespace processwarp {
      * @param str address string.
      * @return Converted address.
      */
-    static vaddr_t str2vaddr(const std::string& str) {
+    vaddr_t str2vaddr(const std::string& str) {
       return hex_str2num<vaddr_t>(str);
     }
 
@@ -76,7 +89,7 @@ namespace processwarp {
      * @param addr address vaddr_t.
      * @return Converted address.
      */
-    static std::string vaddr2str(vaddr_t addr) {
+    std::string vaddr2str(vaddr_t addr) {
       return num2hex_str<vaddr_t>(addr);
     }
 
@@ -89,7 +102,7 @@ namespace processwarp {
 #else
 #define fixme(mesg) Util::_fixme(__LINE__, __FILE__, mesg);
 #endif
-    static void _fixme(long line, const char* file, std::string mesg);
+    void _fixme(long line, const char* file, std::string mesg);
 
     /**
      * Show debug message when NEBUG isn't defined.
@@ -119,5 +132,5 @@ namespace processwarp {
 #define save_llvm_instruction(I) Util::llvm_instruction = (I)
 #define print_llvm_instruction() Util::llvm_instruction->dump();
 #endif
-  };
+  }
 }

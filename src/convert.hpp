@@ -66,48 +66,97 @@ namespace processwarp {
     }
 
     /**
-     * Convert thread-id from JSON.
-     * @param json JSON.
-     * @return thread-id.
+     * Convert JSON to bool.
+     * @param json Source JSON.
+     * @return A converted integer.
      */
-    static vtid_t json2vtid(const picojson::value& json) {
-      return str2vtid(json.get<std::string>());
+    static bool json2bool(const picojson::value& json) {
+      return json.get<std::string>() == "T";
+    }
+    
+    /**
+     * Convert JSON to integer.
+     * @param json Source JSON.
+     * @return A converted integer.
+     */
+    template<class T> static T json2int(const picojson::value& json) {
+      return Util::hex_str2num<T>(json.get<std::string>());
     }
 
     /**
-     * JSONから仮想アドレスを復元する。
-     * @param src 復元元JSON
-     * @return 仮想アドレス
+     * Convert a thread-id from JSON.
+     * @param json Source JSON.
+     * @return A thread-id.
      */
-    static vaddr_t json2vaddr(const picojson::value& src) {
-      return Util::str2vaddr(src.get<std::string>());
+    static vtid_t json2vtid(const picojson::value& json) {
+      return json2int<vtid_t>(json);
+    }
+
+    /**
+     * Convert a virtual address from JSON.
+     * @param json Source JSON.
+     * @return A virtual address.
+     */
+    static vaddr_t json2vaddr(const picojson::value& json) {
+      return json2int<vaddr_t>(json);
+    }
+
+    /**
+     * Convert a instruction code from JSON.
+     * @param json Source JSON.
+     * @return A instruction code.
+     */
+    static instruction_t json2code(const picojson::value& json) {
+      return json2int<instruction_t>(json);
     }
 
     /**
      * Convert process-id to JSON.
-     * @param pid process-id.
-     * @return process-id as JSON.
+     * @param pid Source process-id.
+     * @return Process-id as JSON.
      */
     static picojson::value vpid2json(const vpid_t& pid) {
       return picojson::value(pid);
     }
 
+    static picojson::value bool2json(bool b) {
+      return picojson::value(b ? "T" : "F");
+    }
+    
     /**
-     * Convert thread-id to JSON.
-     * @param tid thread-id.
-     * @return thread-id as JSON.
+     * Convert integer to JSON.
+     * @param num Source integer.
+     * @return Integer as JSON.
      */
-    static picojson::value vtid2json(const vtid_t& tid) {
-      return picojson::value(vtid2str(tid));
+    template<class T> static picojson::value int2json(T num) {
+      return picojson::value(Util::num2hex_str<T>(num));
     }
 
     /**
-     * 仮想アドレスからJSON文字列に変換する。
-     * @param 仮想アドレス
-     * @return JSON
+     * Convert thread-id to JSON.
+     * @param tid Source thread-id.
+     * @return Thread-id as JSON.
      */
-    static picojson::value vaddr2json(vaddr_t src) {
-      return picojson::value(Util::vaddr2str(src));
+    static picojson::value vtid2json(const vtid_t& tid) {
+      return int2json<vtid_t>(tid);
+    }
+
+    /**
+     * Convert virtual address to JSON.
+     * @param addr Source virtual address.
+     * @return Virtual address as JSON.
+     */
+    static picojson::value vaddr2json(vaddr_t addr) {
+      return int2json<vaddr_t>(addr);
+    }
+
+    /**
+     * Convert instruction code to JSON.
+     * @param code Source instruction code.
+     * @return Instruction code as JSON.
+     */
+    static picojson::value code2json(instruction_t code) {
+      return int2json<instruction_t>(code);
     }
 
     /**
