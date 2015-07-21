@@ -28,62 +28,78 @@ namespace processwarp {
     const unsigned int num;
   
     /**
-     * コンストラクタ(基本型)。
+     * Allocate a new basic type to memory.
      * @param memory 
-     * @param size 構造のサイズ(Byte)
-     * @param alignment アライメント(Byte)
-     * @param addr
+     * @param size Size of target type (Byte).
+     * @param alignment Alignment for target type (Byte).
+     * @param addr A assign address for target type.
      */
-    static std::unique_ptr<TypeStore> alloc_basic(VMemory::Accessor& memory,
-						  unsigned int size,
-						  unsigned int alignment,
-						  vaddr_t addr);
+    static vaddr_t alloc_basic(VMemory::Accessor& memory,
+			       unsigned int size,
+			       unsigned int alignment,
+			       vaddr_t addr);
 
     /**
-     * コンストラクタ(構造体)。
+     * Allocate a new strut type to memory.
      * @param memory 
-     * @param size 構造のサイズ(Byte)
-     * @param alignment アライメント(Byte)
-     * @param member 構造のメンバの配列
+     * @param member A member array of target type.
      */
-    static std::unique_ptr<TypeStore> alloc_struct(VMemory::Accessor& memory,
-						   const std::vector<vaddr_t>& member);
+    static vaddr_t alloc_struct(VMemory::Accessor& memory,
+				const std::vector<vaddr_t>& member);
     /**
-     * コンストラクタ(配列/vector)。
+     * Allocate a new array type to memory.
      * @param memory 
-     * @param kind 型の種類(配列/vectorのみ)
-     * @param size サイズ(Byte)
-     * @param alignment アライメント(Byte)
-     * @param element 要素の型
-     * @param num 要素数
+     * @param element Element type of array type.
+     * @param num Element number of array type.
      */
-    static std::unique_ptr<TypeStore> alloc_array(VMemory::Accessor& memory,
-						  vaddr_t element,
-						  unsigned int num);
-
-    static std::unique_ptr<TypeStore> alloc_vector(VMemory::Accessor& memory,
-						   vaddr_t element,
-						   unsigned int num);
+    static vaddr_t alloc_array(VMemory::Accessor& memory,
+			       vaddr_t element,
+			       unsigned int num);
+        
+    /**
+     * Allocate a new vector type to memory.
+     * @param memory 
+     * @param element Element type of vector type.
+     * @param num Element number of vector type.
+     */
+    static vaddr_t alloc_vector(VMemory::Accessor& memory,
+				vaddr_t element,
+				unsigned int num);
 
     /**
-     * 型のサイズと最大アライメントを計算する。
-     * @param member 複合型のメンバ
-     * @return <型のサイズ, 最大アライメント>
+     * Calcuate a size and alignment for structure.
+     * @param member A member array of target structure type.
+     * @return <Size of structure, Alignment of structure>
      */
     static std::pair<size_t, unsigned int> calc_type_size(VMemory::Accessor& memory,
 							  const std::vector<vaddr_t>& member);
 
     /**
-     * 型のサイズと最大アライメントを計算する。
-     * @param type 型
-     * @return <型のサイズ, 最大アライメント>
+     * Calucuate a size and alignment for some type.
+     * @param type A type.
+     * @return <Size of type, Alignment of type>
      */
     static std::pair<size_t, unsigned int> calc_type_size(VMemory::Accessor& memory,
 							  vaddr_t type);
 
     /**
-     *
+     * Read out type information from memory.
+     * @param memory
+     * @param addr Address saving type information.
+     * @param Type information.
      */
     static std::unique_ptr<TypeStore> read(VMemory::Accessor& memory, vaddr_t addr);
+
+  private:
+    /**
+     *
+     */
+    TypeStore(vaddr_t addr,
+	      TypeKind kind,
+	      size_t size,
+	      unsigned int alignment,
+	      const std::vector<vaddr_t>& member,
+	      vaddr_t element,
+	      unsigned int num);
   };
 }

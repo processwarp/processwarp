@@ -128,11 +128,11 @@ namespace processwarp {
   };
 
   /** 型の種類 */
-  enum TypeKind {
-    TK_BASIC,  ///< 基本型
-    TK_STRUCT, ///< 構造体
-    TK_ARRAY,  ///< 配列
-    TK_VECTOR, ///< vector
+  enum TypeKind : uint8_t {
+    TK_BASIC        = 0x01, ///< 基本型
+    TK_STRUCT       = 0x02, ///< 構造体
+    TK_ARRAY        = 0x03, ///< 配列
+    TK_VECTOR       = 0x04, ///< vector
   };
 
   /** 基本型に予約するアドレス */

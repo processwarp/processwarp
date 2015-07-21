@@ -1676,27 +1676,28 @@ vaddr_t LlvmAsmLoader::load_type(const llvm::Type* type, bool sign) {
     for (int i = 0, size = type->getStructNumElements(); i < size; i ++) {
       member.push_back(load_type(type->getStructElementType(i), false));
     }
-    std::unique_ptr<TypeStore> store = TypeStore::alloc_struct(memory, member);
-    loaded_type.insert(std::make_pair(key, store->addr));
-    return store->addr;
+    vaddr_t addr = TypeStore::alloc_struct(memory, member);
+    std::unique_ptr<TypeStore> store = TypeStore::read(memory, addr);
+    loaded_type.insert(std::make_pair(key, addr));
+    return addr;
   } break;
 
   case llvm::Type::ArrayTyID: {
-    std::unique_ptr<TypeStore> store =
-      TypeStore::alloc_array(memory,
-			     load_type(type->getArrayElementType(), false),
-			     type->getArrayNumElements());
-    loaded_type.insert(std::make_pair(key, store->addr));
-    return store->addr;
+    vaddr_t addr = TypeStore::alloc_array(memory,
+					  load_type(type->getArrayElementType(), false),
+					  type->getArrayNumElements());
+    std::unique_ptr<TypeStore> store = TypeStore::read(memory, addr);
+    loaded_type.insert(std::make_pair(key, addr));
+    return addr;
   } break;
 
   case llvm::Type::VectorTyID: {
-    std::unique_ptr<TypeStore> store =
-      TypeStore::alloc_vector(memory,
-			      load_type(type->getVectorElementType(), false),
-			      type->getVectorNumElements());
-    loaded_type.insert(std::make_pair(key, store->addr));
-    return store->addr;
+    vaddr_t addr = TypeStore::alloc_vector(memory,
+					   load_type(type->getVectorElementType(), false),
+					   type->getVectorNumElements());
+    std::unique_ptr<TypeStore> store = TypeStore::read(memory, addr);
+    loaded_type.insert(std::make_pair(key, addr));
+    return addr;
 
   } break;
 

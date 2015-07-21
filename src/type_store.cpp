@@ -1,93 +1,162 @@
 
 #include <cassert>
 
+#include "convert.hpp"
 #include "type_store.hpp"
 
 using namespace processwarp;
 
-/*
-// 配列型の型情報を作成する。
-std::unique_ptr<TypeStore> Process::create_type_array(vaddr_t element, unsigned int num) {
-  // サイズ、アライメントを計算
-  std::vector<vaddr_t> member(num, element);
-  std::pair<size_t, unsigned int> info = calc_type_size(member);
-  
-  // 領域を確保
-  return std::move(TypeStore::alloc_array(proc_memory, TK_ARRAY, info.first, info.second, element, num));
-}
+static const std::vector<vaddr_t> DUMMY_MEMBER;
 
-// 基本型の型情報を作成する。
-std::unique_ptr<TypeStore> Process::create_type_basic(BasicType type) {
-  // 基本型はVMにより登録してあるものだけなので、ソレを戻す。
-  return std::move(TypeStore::read(proc_memory, type));
-}
-
-// 構造体の型情報を作成する。
-std::unique_ptr<TypeStore> Process::create_type_struct(const std::vector<vaddr_t>& member) {
-  // 領域を確保
-  std::pair<size_t, unsigned int> info = calc_type_size(member);
-  return std::move(TypeStore::alloc_struct(proc_memory, info.first, info.second, member));
-}
-
-// vectorの型情報を作成する。
-std::unique_ptr<TypeStore> Process::create_type_vector(vaddr_t element, unsigned int num) {
-  std::vector<vaddr_t> member(num, element);
-  std::pair<size_t, unsigned int> info = calc_type_size(member);
-  // 領域を確保
-  return std::move(TypeStore::alloc_array(proc_memory, TK_VECTOR, info.first, info.second, element, num));
-}
-
-
-// コンストラクタ(基本型)。
-TypeStore::TypeStore(vaddr_t addr_,
-		     size_t size_,
-		     unsigned int alignment_) :
-  addr(addr_),
-  kind(TypeKind::TK_BASIC),
-  size(size_),
-  alignment(alignment_),
-  member(1, BasicType::TY_VOID),
-  element(0),
-  num(0) {
-  // BasicTypeのメンバをsize0, alignment0のTY_VOIDにしておくことで、getelementptrの
-  // 計算で余計に計算しても問題が起きない
-}
-
-// コンストラクタ(構造体)。
-TypeStore::TypeStore(vaddr_t addr_,
-		     size_t size_,
-		     unsigned int alignment_,
-		     const std::vector<vaddr_t>& member_) :
-  addr(addr_),
-  kind(TypeKind::TK_STRUCT),
-  size(size_),
-  alignment(alignment_),
-  member(member_),
-  element(0),
-  num(0) {
-  //
-}
-
-// コンストラクタ(配列/vector)。
 TypeStore::TypeStore(vaddr_t addr_,
 		     TypeKind kind_,
 		     size_t size_,
 		     unsigned int alignment_,
+		     const std::vector<vaddr_t>& member_,
 		     vaddr_t element_,
 		     unsigned int num_) :
   addr(addr_),
   kind(kind_),
   size(size_),
   alignment(alignment_),
+  member(member_),
   element(element_),
   num(num_) {
-  // 型の種類は配列かvectorしか許容しない。
-  assert(kind == TypeKind::TK_ARRAY ||
-	 kind == TypeKind::TK_VECTOR);
 }
-*/
 
-// 型のサイズと最大アライメントを計算する。
+// Allocate a new basic type to memory.
+vaddr_t TypeStore::alloc_basic(VMemory::Accessor& memory, unsigned int size,
+			       unsigned int alignment, vaddr_t addr) {
+  picojson::object js_type;
+
+  js_type.insert(std::make_pair("program_type", Convert::int2json<uint8_t>(PT_TYPE)));
+  js_type.insert(std::make_pair("kind", Convert::int2json<uint8_t>(TK_BASIC)));
+  js_type.insert(std::make_pair("size", Convert::int2json<unsigned int>(size)));
+  js_type.insert(std::make_pair("alignment", Convert::int2json<unsigned int>(alignment)));
+  
+  std::string str_type = picojson::value(js_type).serialize();
+  memory.set_program_area(addr, reinterpret_cast<const uint8_t*>(str_type.data()), str_type.size());
+
+  return addr;
+}
+
+// Allocate a new strut type to memory.
+vaddr_t TypeStore::alloc_struct(VMemory::Accessor& memory, const std::vector<vaddr_t>& member) {
+  picojson::object js_type;
+  picojson::array js_member;
+  std::pair<size_t, unsigned int> type_size = TypeStore::calc_type_size(memory, member);
+
+  js_type.insert(std::make_pair("program_type", Convert::int2json<uint8_t>(PT_TYPE)));
+  js_type.insert(std::make_pair("kind", Convert::int2json<uint8_t>(TK_STRUCT)));
+  js_type.insert(std::make_pair("size", Convert::int2json<unsigned int>(type_size.first)));
+  js_type.insert(std::make_pair("alignment", Convert::int2json<unsigned int>(type_size.second)));
+
+  for (auto it : member) {
+    js_member.push_back(Convert::vaddr2json(it));
+  }
+  js_type.insert(std::make_pair("member", picojson::value(js_member)));
+
+  std::string str_type = picojson::value(js_type).serialize();
+  vaddr_t addr = memory.reserve_program_area();
+  memory.set_program_area(addr, reinterpret_cast<const uint8_t*>(str_type.data()), str_type.size());
+  
+  return addr;
+}
+
+// Allocate a new array type to memory.
+vaddr_t TypeStore::alloc_array(VMemory::Accessor& memory, vaddr_t element, unsigned int num) {
+  picojson::object js_type;
+  std::pair<size_t, unsigned int> type_size = calc_type_size(memory, element);
+
+  js_type.insert(std::make_pair("program_type", Convert::int2json<uint8_t>(PT_TYPE)));
+  js_type.insert(std::make_pair("kind", Convert::int2json<uint8_t>(TK_ARRAY)));
+  js_type.insert(std::make_pair("size", Convert::int2json<unsigned int>(type_size.first * num)));
+  js_type.insert(std::make_pair("alignment", Convert::int2json<unsigned int>(type_size.second)));
+  js_type.insert(std::make_pair("element", Convert::vaddr2json(element)));
+  js_type.insert(std::make_pair("num", Convert::int2json<unsigned int>(num)));
+
+  std::string str_type = picojson::value(js_type).serialize();
+  vaddr_t addr = memory.reserve_program_area();
+  memory.set_program_area(addr, reinterpret_cast<const uint8_t*>(str_type.data()), str_type.size());
+  
+  return addr;
+}
+
+// Allocate a new vector type to memory.
+vaddr_t TypeStore::alloc_vector(VMemory::Accessor& memory, vaddr_t element, unsigned int num) {
+  picojson::object js_type;
+  std::pair<size_t, unsigned int> type_size = calc_type_size(memory, element);
+
+  js_type.insert(std::make_pair("program_type", Convert::int2json<uint8_t>(PT_TYPE)));
+  js_type.insert(std::make_pair("kind", Convert::int2json<uint8_t>(TK_VECTOR)));
+  js_type.insert(std::make_pair("size", Convert::int2json<unsigned int>(type_size.first * num)));
+  js_type.insert(std::make_pair("alignment", Convert::int2json<unsigned int>(type_size.second)));
+  js_type.insert(std::make_pair("element", Convert::vaddr2json(element)));
+  js_type.insert(std::make_pair("num", Convert::int2json<unsigned int>(num)));
+
+  std::string str_type = picojson::value(js_type).serialize();
+  vaddr_t addr = memory.reserve_program_area();
+  memory.set_program_area(addr, reinterpret_cast<const uint8_t*>(str_type.data()), str_type.size());
+  
+  return addr;
+}
+
+// Read out type information from memory.
+std::unique_ptr<TypeStore> TypeStore::read(VMemory::Accessor& memory, vaddr_t addr) {
+  picojson::value js_tmp;
+  std::istringstream is(memory.get_program_area(addr));
+  std::string err = picojson::parse(js_tmp, is);
+  if (!err.empty()) {
+    /// TODO:error
+    assert(false);
+  }
+  picojson::object& js_type = js_tmp.get<picojson::object>();
+  
+  ProgramType pt = static_cast<ProgramType>(Convert::json2int<uint8_t>(js_type.at("program_type")));
+  if (pt != PT_TYPE) {
+    /// TODO:error
+    assert(false);
+  }
+  
+  TypeKind kind = static_cast<TypeKind>(Convert::json2int<uint8_t>(js_type.at("kind")));
+  unsigned int size = Convert::json2int<unsigned int>(js_type.at("size"));
+  unsigned int alignment = Convert::json2int<unsigned int>(js_type.at("alignment"));
+  
+  switch(kind) {
+  case TK_BASIC: {
+    return std::unique_ptr<TypeStore>
+      (new TypeStore(addr, kind, size, alignment, DUMMY_MEMBER, VADDR_NULL, 0));
+  } break;
+
+  case TK_STRUCT: {
+    picojson::array& js_member = js_type.at("member").get<picojson::array>();
+    std::vector<vaddr_t> member;
+    for (auto it : js_member) {
+      member.push_back(Convert::json2vaddr(it));
+    }
+    
+    return std::unique_ptr<TypeStore>
+      (new TypeStore(addr, kind, size, alignment, member, VADDR_NULL, 0));
+  } break;
+
+  case TK_ARRAY:
+  case TK_VECTOR: {
+    vaddr_t element = Convert::json2vaddr(js_type.at("element"));
+    unsigned int num = Convert::json2int<unsigned int>(js_type.at("num"));
+
+    return std::unique_ptr<TypeStore>
+      (new TypeStore(addr, kind, size, alignment, DUMMY_MEMBER, element, num));
+  } break;
+    
+  default: {
+    /// TODO:error
+    assert(false);
+    return std::unique_ptr<TypeStore>(nullptr);
+  } break;
+  }
+}
+
+// Calcuate a size and alignment for structure.
 std::pair<size_t, unsigned int> TypeStore::calc_type_size(VMemory::Accessor& memory,
 							  const std::vector<vaddr_t>& member) {
   size_t size = 0;
@@ -109,7 +178,7 @@ std::pair<size_t, unsigned int> TypeStore::calc_type_size(VMemory::Accessor& mem
   return std::make_pair(size, max_alignment);
 }
 
-// 型のサイズと最大アライメントを計算する。
+// Calucuate a size and alignment for some type.
 std::pair<size_t, unsigned int> TypeStore::calc_type_size(VMemory::Accessor& memory,
 							  vaddr_t type) {
   std::unique_ptr<TypeStore> t(std::move(TypeStore::read(memory, type)));
