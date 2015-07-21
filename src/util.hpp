@@ -49,12 +49,7 @@ namespace processwarp {
       return os.str();
     }
 
-    template<> std::string num2hex_str<uint8_t>(uint8_t v) {
-      std::ostringstream os;
-      os << std::hex << std::setfill('0') <<
-	std::setw(sizeof(uint8_t) * 2) << static_cast<uint32_t>(v);
-      return os.str();
-    }
+    template<> std::string num2hex_str<uint8_t>(uint8_t v);
 
     /**
      * Convert hex formated string to integer.
@@ -68,19 +63,14 @@ namespace processwarp {
       return v;
     }
 
-    template<> uint8_t hex_str2num<uint8_t>(const std::string& str) {
-      std::istringstream is(str);
-      uint32_t v;
-      is >> std::hex >> v;
-      return static_cast<uint8_t>(v);
-    }
+    template<> uint8_t hex_str2num<uint8_t>(const std::string& str);
 
     /**
      * Convert address string to vaddr_t.
      * @param str address string.
      * @return Converted address.
      */
-    vaddr_t str2vaddr(const std::string& str) {
+    inline vaddr_t str2vaddr(const std::string& str) {
       return hex_str2num<vaddr_t>(str);
     }
 
@@ -89,7 +79,7 @@ namespace processwarp {
      * @param addr address vaddr_t.
      * @return Converted address.
      */
-    std::string vaddr2str(vaddr_t addr) {
+    inline std::string vaddr2str(vaddr_t addr) {
       return num2hex_str<vaddr_t>(addr);
     }
 

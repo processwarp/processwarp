@@ -72,3 +72,17 @@ std::string Util::code2str(instruction_t code) {
   std::string operand = num2dec_str(Instruction::get_operand_value(code));
   return opcode + "\t" + operand;
 }
+
+template<> std::string Util::num2hex_str<uint8_t>(uint8_t v) {
+  std::ostringstream os;
+  os << std::hex << std::setfill('0') <<
+    std::setw(sizeof(uint8_t) * 2) << static_cast<uint32_t>(v);
+  return os.str();
+}
+
+template<> uint8_t Util::hex_str2num<uint8_t>(const std::string& str) {
+  std::istringstream is(str);
+  uint32_t v;
+  is >> std::hex >> v;
+  return static_cast<uint8_t>(v);
+}
