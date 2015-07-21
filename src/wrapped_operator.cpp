@@ -391,10 +391,10 @@ void WrappedPointerOperator::op_greater_equal(vaddr_t dst, vaddr_t a, vaddr_t b)
 
 // 比較命令(a!=b)に対応した演算を行う。
 void WrappedPointerOperator::op_not_equal(vaddr_t dst, vaddr_t a, vaddr_t b) {
-  if (*reinterpret_cast<vaddr_t*>(a) != *reinterpret_cast<vaddr_t*>(b)) {
-    *reinterpret_cast<uint8_t*>(dst) = I8_TRUE;
+  if (memory.get<vaddr_t>(a) != memory.get<vaddr_t>(b)) {
+    memory.set<uint8_t>(dst, I8_TRUE);
   } else {
-    *reinterpret_cast<uint8_t*>(dst) = I8_FALSE;
+    memory.set<uint8_t>(dst, I8_FALSE);
   }
 
   print_debug("%016" PRIx64 " : %d = %016" PRIx64 " >= %016" PRIx64 "\n", dst,
