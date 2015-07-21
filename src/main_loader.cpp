@@ -69,8 +69,6 @@ public:
     proc.run(args, envs);
       
     // Dump and write to file.
-    Convert convert(proc);
-    Convert::Related related;
     picojson::object body;
     picojson::object dump;
     picojson::object threads;
