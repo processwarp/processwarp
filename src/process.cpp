@@ -728,8 +728,9 @@ void Process::call_external(Thread& thread,
   }
   
 #else // !defined(EMSCRIPTEN)
+  VMemory::Accessor& memory = *thread.memory;
   // 戻り値格納用の領域を作成
-  size_t ret_size = vmemory.get_type(func.ret_type).size;
+  size_t ret_size = TypeStore::read(memory, func.ret_type)->size;
   // sizeof(void*)の倍数領域を確保する。
   std::vector<void*> ret_buf(ret_size / sizeof(void*) +
 			     (ret_size % sizeof(void*) == 0 ? 0 : 1));
@@ -756,8 +757,8 @@ void Process::call_external(Thread& thread,
     }
     asm_code << "'number'";
     
-    TypeStore& type = vmemory.get_type(*reinterpret_cast<vaddr_t*>(args.data() + seek));
-    switch(type.addr) {
+    std::unique_ptr<TypeStore> type(TypeStore::read(memory, *reinterpret_cast<vaddr_t*>(args.data() + seek)));
+    switch(type->addr) {
     case BasicType::TY_POINTER: {
       vaddr_t addr = *reinterpret_cast<vaddr_t*>(args.data() + seek + sizeof(vaddr_t));
       auto native = native_ptr.find(addr);
@@ -765,8 +766,7 @@ void Process::call_external(Thread& thread,
 	asm_param << static_cast<void*>(native->second);
 	
       } else {
-	DataStore& pointed = vmemory.get_data(addr);
-	asm_param << static_cast<void*>(pointed.head.get() + VMemory::get_addr_lower(addr));
+	asm_param << static_cast<void*>(memory.get_raw_writable(addr));
       }
     } break;
 
@@ -799,7 +799,7 @@ void Process::call_external(Thread& thread,
     } break;
     };
 
-    seek  += sizeof(vaddr_t) + type.size;
+    seek  += sizeof(vaddr_t) + type->size;
     count += 1;
   }
   if (!func.is_var_arg) {
@@ -809,8 +809,8 @@ void Process::call_external(Thread& thread,
     
   } else {
     while(seek < args.size()) {
-      TypeStore& type = vmemory.get_type(*reinterpret_cast<vaddr_t*>(args.data() + seek));
-      switch(type.addr) {
+      std::unique_ptr<TypeStore> type(TypeStore::read(memory, *reinterpret_cast<vaddr_t*>(args.data() + seek)));
+      switch(type->addr) {
       case BasicType::TY_POINTER: {
 	vaddr_t addr = *reinterpret_cast<vaddr_t*>(args.data() + seek + sizeof(vaddr_t));
 	auto native = native_ptr.find(addr);
@@ -819,8 +819,7 @@ void Process::call_external(Thread& thread,
 	  raw_ptr = static_cast<void*>(native->second);
 	
 	} else {
-	  DataStore& pointed = vmemory.get_data(addr);
-	  raw_ptr = static_cast<void*>(pointed.head.get() + VMemory::get_addr_lower(addr));
+	  raw_ptr = static_cast<void*>(memory.get_raw_writable(addr));
 	}
 	vararg_buf.resize(vararg_buf.size() + 1);
 	memcpy(&vararg_buf.back(), &raw_ptr, sizeof(void*));
@@ -866,7 +865,7 @@ void Process::call_external(Thread& thread,
 	memcpy(&vararg_buf.back(), &raw_val, sizeof(raw_val));
       } break;
       };
-      seek  += sizeof(vaddr_t) + type.size;
+      seek  += sizeof(vaddr_t) + type->size;
     }
     
     asm_code  << ",'number'";
@@ -901,7 +900,7 @@ void Process::call_external(Thread& thread,
 
   if (func.ret_type != BasicType::TY_VOID) {
     // 戻り値格納用領域から戻り値を取り出し。
-    memcpy(ret_addr, ret_buf.data(), ret_size);
+    memory.set_copy(ret_addr, reinterpret_cast<const uint8_t*>(ret_buf.data()), ret_size);
   }
   
 #endif

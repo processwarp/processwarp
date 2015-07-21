@@ -4,12 +4,14 @@
 #include <exception>
 #include <iostream>
 #include <map>
+#include <memory>
 
 #include <emscripten.h>
 #include <emscripten/bind.h>
 
 #include "convert.hpp"
 #include "vmachine.hpp"
+#include "vmemory.hpp"
 
 using namespace processwarp;
 using namespace emscripten;
@@ -17,7 +19,7 @@ using namespace emscripten;
 /**
  * VMachineDelegate implement using Emscripten.
  */
-class WebfrontDelegate : public VMachineDelegate {
+class WebfrontDelegate : public VMachineDelegate, public VMemoryDelegate {
   // Call when send data to other device.
   void send_warp_data(const vpid_t& pid,
 		      const vtid_t& tid,
@@ -27,6 +29,18 @@ class WebfrontDelegate : public VMachineDelegate {
     asm_code << "send_warp_data('" << pid << "',"
 	     << "'" << tid << "',"
 	     << "'" << dst_device_id << "',"
+	     << static_cast<const void*>(data.data()) << ","
+	     << data.size() << ");";
+    emscripten_run_script(asm_code.str().c_str());
+  }
+
+  // Call when send memory data to other device.
+  void send_memory_data(const std::string& name,
+			const dev_id_t& dev_id,
+			const std::string& data) override {
+    std::stringstream asm_code;
+    asm_code << "send_memory_data('" << name << "',"
+	     << "'" << dev_id << "',"
 	     << static_cast<const void*>(data.data()) << ","
 	     << data.size() << ");";
     emscripten_run_script(asm_code.str().c_str());
@@ -67,11 +81,13 @@ static std::map<std::string, std::string> lib_filter;
 /** Instance of delegate. */
 WebfrontDelegate delegate;
 /** Instance of virtual machine. */
-VMachine vm(delegate);
+std::unique_ptr<VMachine> vm;
 
 /** Main loop for Emscripten. */
 static void ems_loop() {
-  vm.loop();
+  if (vm.get() != nullptr) {
+    vm->loop();
+  }
 }
 
 void init_lib_filter() {
@@ -85,32 +101,32 @@ void init_lib_filter() {
 }
 
 bool recv_warp_data(const vpid_t& pid, std::string tid, const std::string& data) {
-  return vm.recv_warp_data(pid, Convert::str2vtid(tid), data);
+  return vm->recv_warp_data(pid, Convert::str2vtid(tid), data);
 }
 
 void set_device_id(const dev_id_t& device_id) {
-  vm.device_id = device_id;
+  vm.reset(new VMachine(delegate, delegate, device_id));
 }
 
 void create_process(const vpid_t& pid, std::string root_tid) {
-  vm.create_process(pid, Convert::str2vtid(root_tid), LIBS, lib_filter);
+  vm->create_process(pid, Convert::str2vtid(root_tid), LIBS, lib_filter);
 }
 
 void delete_process(const vpid_t& pid) {
-  vm.delete_process(pid);
+  vm->delete_process(pid);
 }
 
 std::string get_root_tid(const vpid_t& pid) {
-  return Convert::vtid2str(vm.get_root_tid(pid));
+  return Convert::vtid2str(vm->get_root_tid(pid));
 }
 
 void exit_process(const vpid_t& pid) {
-  vm.exit_process(pid);
+  vm->exit_process(pid);
 }
 
 void warp_process(const vpid_t& pid, const dev_id_t& device_id) {
   vtid_t tmp = 1; ///< TODO
-  vm.warp_process(pid, tmp, device_id);
+  vm->warp_process(pid, tmp, device_id);
 }
 
 /**
