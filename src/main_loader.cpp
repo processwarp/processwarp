@@ -47,7 +47,10 @@ public:
 
   /**
    */
-  std::unique_ptr<VMemory::Accessor> assign_accessor(const vpid_t& pid);
+  std::unique_ptr<VMemory::Accessor> assign_accessor(const vpid_t& pid) {
+    assert(false);
+    return std::unique_ptr<VMemory::Accessor>(nullptr);
+  }
   
   /**
    * 
@@ -74,10 +77,12 @@ public:
     picojson::object threads;
     body.insert(std::make_pair("cmd", picojson::value(std::string("warp"))));
     body.insert(std::make_pair("pid", Convert::vpid2json(pid)));
+    /*
     for (auto& it : proc.threads) {
       threads.insert(std::make_pair(Convert::vtid2str(it.first),
 				    convert.export_thread(*it.second, related)));
     }
+    */
     body.insert(std::make_pair("threads", picojson::value(threads)));
     /*
     std::set<vaddr_t> all = proc.vmemory.get_alladdr();
