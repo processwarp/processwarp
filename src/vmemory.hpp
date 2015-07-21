@@ -1,9 +1,13 @@
 #pragma once
 
+#include <cassert>
 #include <deque>
 #include <map>
+#include <memory>
 #include <random>
+#include <set>
 
+#include "lib/picojson.h"
 #include "definitions.hpp"
 #include "util.hpp"
 
@@ -17,6 +21,13 @@ namespace processwarp {
      * Destructor for virtual.
      */
     virtual ~VMemoryDelegate() {};
+
+    /**
+     *
+     */
+    virtual void send_memory_data(const std::string& name,
+				  const dev_id_t& dev_id,
+				  const std::string& data) = 0;
   };
   
   /**
@@ -29,7 +40,6 @@ namespace processwarp {
       PT_MASTER,
       PT_COPY,
       PT_PROGRAM,
-      PT_HINT,
     };
 
     /** */
@@ -40,18 +50,47 @@ namespace processwarp {
       bool flg_update;
       /** */
       std::string value;
+      /** */
+      std::set<dev_id_t> hint;
 
       /** Constructor with member value. */
       Page(PageType type, bool flg_update);
     };
 
     /** Bundle pages in memory space. */
-    struct Space {
-      /** Random value generator to use for generating address. */
-      std::mt19937_64& rnd;
+    class Space {
+    public:
       /** Space name. */
       const std::string name;
+      /** Random value generator to use for generating address. */
+      std::mt19937_64& rnd;
+      /** Virtual memory controller. */
+      VMemory& vmemory;
 
+      /**
+       * Constructor with name and random.
+       * @param name Space name.
+       * @param rnd Random value generator to use for generating address.
+       * @param vmemory
+       */
+      Space(const std::string& name, std::mt19937_64& rnd, VMemory& vmemory);
+
+      /** Map of page name and page space having on this device. */
+      std::map<vaddr_t, Page> pages;
+
+      /**
+       * Get a new address to allocate a new memory.
+       * @param type Address-type of memory.
+       */
+      vaddr_t assign_addr(AddrType type);
+
+      /**
+       * Release a binded address for be used memory to be unused.
+       * @param addr Address to release.
+       */
+      void release_addr(vaddr_t addr);
+
+    private:
       /**
        * Reserved addresses.
        * A higher priority address placed front of the deque.
@@ -59,10 +98,91 @@ namespace processwarp {
        */
       std::deque<vaddr_t> reserved[16];
 
-      /** Map of page name and page space having on this device. */
-      std::map<vaddr_t, Page> pages;
+      /** Block copy operator. */
+      Space& operator=(const Space&);
+
+      /** Block copy constructor. */
+      Space(const Space&);
     };
 
+  private:
+    /**
+     *
+     */
+    static AddrType get_addr_type(uint64_t size) {
+      if      (size <= 0x0000000000FF) return AD_VALUE_08;
+      else if (size <= 0x00000000FFFF) return AD_VALUE_16;
+      else if (size <= 0x000000FFFFFF) return AD_VALUE_24;
+      else if (size <= 0x0000FFFFFFFF) return AD_VALUE_32;
+      else if (size <= 0x00FFFFFFFFFF) return AD_VALUE_40;
+      else if (size <= 0xFFFFFFFFFFFF) return AD_VALUE_48;
+      else {
+	/// TODO:error
+	assert(false);
+	return AD_VALUE_08;
+      }
+    }
+
+    /**
+     * This request means to broadcast some reserve address for this device.
+     * If the same address was used yet, must reply collision request immediately.
+     * @param space
+     * @param addrs
+     */
+    void send_reserve(Space& space, std::set<vaddr_t> addrs);
+
+    /**
+     * This request means to broadcast some unused and re-use-able address.
+     * @param space
+     * @param addrs
+     */
+    void send_release(Space& space, std::set<vaddr_t> addrs);
+
+    /**
+     * This request means to need a data of copy.
+     * If device having the data of copy, should send copy packet. 
+     * @param spec
+     * @param addr
+     * @param dev-id Device-id having the master data or DEV_BROADCAST.
+     */
+    void send_require(Space& space, vaddr_t addr, const dev_id_t& dev_id);
+
+    /**
+     * This request means to update memory for copy data.
+     * @param space
+     * @param page
+     */
+    void send_copy(const dev_id_t& dev_id, Space& space, Page& page, vaddr_t addr);
+
+    /**
+     * This request means to stand as master.
+     * @param spec
+     * @param page
+     */
+    void send_stand(Space& space, Page& page, vaddr_t addr);
+
+    /**
+     * Send update packet.
+     * @param space
+     * @param addr
+     * @param data
+     * @param size
+     * @param dev_id
+     */
+    void send_update(const dev_id_t& dev_id, Space& space, vaddr_t addr,
+		     const uint8_t* data, uint64_t size);
+
+    /**
+     * This request means to selected memory isn't able to use.
+     * The devices recv this devices are release page binded address.
+     * The address is NOT released, The master device of address has right of owner.
+     * @param dev_id
+     * @param space
+     * @param addr
+     */
+    void send_free(const dev_id_t& dev_id, Space& space, vaddr_t addr);
+
+  public:
     /** This device's device-id. */
     const dev_id_t dev_id;
     /** Random value generator to use for generating address. */
@@ -74,10 +194,55 @@ namespace processwarp {
      */
     class Accessor {
     private:
+      static const vaddr_t UPPER_MASKS[];
+
+      /** Virtual memory controller. */
+      VMemory& vmemory;
       /** Accessing memory space. */
       Space& space;
 
+      static vaddr_t get_upper_addr(vaddr_t addr) {
+	return addr & UPPER_MASKS[addr >> 60];
+      }
+
+      static vaddr_t get_lower_addr(vaddr_t addr) {
+	return addr & (~UPPER_MASKS[addr >> 60]);
+      }
+
+      /**
+       * Get a memory page by a address.
+       * Raise exception of require if data is old or don't exist in this device.
+       * @param addr
+       * @param readable
+       * @return
+       */
+      Page& get_page(vaddr_t addr, bool readable) {
+	assert(get_upper_addr(addr) == AD_META ||
+	       get_upper_addr(addr) == AD_PROGRAM ||
+	       addr == get_upper_addr(addr));
+	auto page = space.pages.find(addr);
+
+	if (page == space.pages.end() || (readable && page->second.flg_update == false)) {
+	  if (page == space.pages.end()) {
+	    vmemory.send_require(space, addr, DEV_BROADCAST);
+
+	  } else {
+	    assert(page.type == PT_CLIENT && page.hint.size() == 1);
+	    vmemory.send_require(space, addr, *(page->second.hint.begin()));
+	  }
+	}
+
+	return page->second;
+      }
+
     public:
+      /**
+       * Constructor with memory space.
+       * @param controller Virtual memory.
+       * @param space Accessing memory space.
+       */
+      Accessor(VMemory& vmemory, Space& space);
+    
       /**
        * Reserve address in program area.
        * This method must use when loading program only.
@@ -94,40 +259,198 @@ namespace processwarp {
        * @param size Size of data.
        */
       void set_program_area(vaddr_t addr, const uint8_t* src, uint64_t size);
+
+      /**
+       * Get program data.
+       * @param addr Target address.
+       * @return
+       */
+      const std::string& get_program_area(vaddr_t addr);
+
+      /**
+       * Allocates selected byte of memory.
+       * @param size Size to allocate.
+       * @return A address to allocated memory.
+       */
+      vaddr_t alloc(uint64_t size);
       
-      vaddr_t alloc(unsigned int size);
-      
+      /**
+       * Frees allocations that were created via the preceding alloc or realloc.
+       * Do noting by setting VADDR_NULL to addr.
+       * @param addr Address that were allocated via the preceding alloc or realloc.
+       */
       void free(vaddr_t addr);
 
       /**
-       * The same function if addr is VADDR_NULL.
+       * Change the size of allocation pointed to by addr to size.
+       * The same behave to alloc if addr is VADDR_NULL.
+       * @param addr Address that were allocated via the preceding alloc or realloc.
+       * @param size Size to re-allocate.
+       * @return A address to re-allocated memory.
        */
       vaddr_t realloc(vaddr_t addr, uint64_t size);
 
-      void set_fill(vaddr_t dst, uint8_t c, uint64_t size);
+      /**
+       *
+       */
+      void set_fill(vaddr_t dst, uint8_t c, uint64_t size) {
+	Page& page = get_page(get_upper_addr(dst), false);
 
-      template <typename T> void set(vaddr_t dst, T val);
+	std::unique_ptr<char[]> buffer(new char[size]);
+	std::memset(buffer.get(), c, size);
+
+	switch(page.type) {
+	case PT_MASTER: {
+	  page.value.replace(get_lower_addr(dst), size, buffer.get(), size);
+	} break;
+
+	case PT_COPY: {
+	  assert(page.hint.size() == 1);
+	  page.flg_update = false;
+	  vmemory.send_update(*page.hint.begin(), space, dst,
+			      reinterpret_cast<const uint8_t*>(buffer.get()), size);
+	} break;
+
+	default: {
+	  /// TODO:error
+	  assert(false);
+	} break;
+	}
+      }
+
+      /**
+       * Set value for memory on selected address to val.
+       * @param dst Target address.
+       * @param val Value to be set.
+       */
+      template <typename T> void set(vaddr_t dst, T val) {
+	Page& page = get_page(get_upper_addr(dst), false);
+	switch(page.type) {
+	case PT_MASTER: {
+	  assert(page.value.size() <= get_lower_addr(dst) + sizeof(T));
+	  page.value.replace(get_lower_addr(dst), sizeof(T),
+			     reinterpret_cast<const char*>(&val), sizeof(T));
+	} break;
+	  
+	case PT_COPY: {
+	  assert(page.hint.size() == 1);
+	  page.flg_update = false;
+	  vmemory.send_update(*page.hint.begin(), space, dst,
+			      reinterpret_cast<const uint8_t*>(&val), sizeof(T));
+	} break;
+	  
+	default: {
+	  /// TODO:error
+	  assert(false);
+	} break;
+	}
+      }
     
-      template <typename T> T get(vaddr_t src);
+      /**
+       * Get value from memory on selected address.
+       * @param src Target address.
+       * @return Saved value.
+       */
+      template <typename T> T get(vaddr_t src) {
+	Page& page = get_page(get_upper_addr(src), true);
+	assert(page.value.size() <= get_lower_addr(src) + sizeof(T));
+	return *reinterpret_cast<const T*>(page.value.data() + get_lower_addr(src));
+      }
 
-      const uint8_t* get_raw(vaddr_t src);
+      /**
+       */
+      const uint8_t* get_raw(vaddr_t src) {
+	Page& page = get_page(get_upper_addr(src), true);
+	assert(page.value.size() <= get_lower_addr(src));
 
-      uint8_t* get_raw_writable(vaddr_t src);
+	return reinterpret_cast<const uint8_t*>(page.value.data() + get_lower_addr(src));
+      }
       
-      void set_copy(vaddr_t dst, vaddr_t src, uint64_t size);
-      void set_copy(vaddr_t dst, const uint8_t* src, uint64_t size);
+      /**
+       */
+      uint8_t* get_raw_writable(vaddr_t src) {
+	vaddr_t upper = get_upper_addr(src);
+	vaddr_t lower = get_lower_addr(src);
+
+	if (raw_writable.find(upper) == raw_writable.end()) {
+	  Page& page = get_page(upper, true);
+	  std::unique_ptr<uint8_t[]> tmp(new uint8_t[page.value.size()]);
+	  memcpy(tmp.get(), page.value.data(), page.value.size());
+	  raw_writable.insert(std::make_pair(upper, std::move(tmp)));
+	}
+
+	return raw_writable.at(upper).get() + lower;
+      }
+
+      /**
+       * Write out the data selected by get_raw_writable.
+       */
+      void write_out();
+      
+      /**
+       */
+      void set_copy(vaddr_t dst, vaddr_t src, uint64_t size) {
+	Page& src_page = get_page(get_upper_addr(src), true);
+	Page& dst_page = get_page(get_upper_addr(dst), false);
+
+	switch(dst_page.type) {
+	case PT_MASTER: {
+	  assert(dst_page.value.size() <= get_lowwer_addr(dst) + size);
+	  dst_page.value.replace(get_lower_addr(dst), size,
+				 src_page.value.data() + get_lower_addr(src), size);
+	} break;
+
+	case PT_COPY: {
+	  assert(dst_page.hint.size() == 1);
+	  dst_page.flg_update = false;
+	  vmemory.send_update(*dst_page.hint.begin(), space, dst,
+			      reinterpret_cast<const uint8_t*>(src_page.value.data() +
+							       get_lower_addr(src)), size);
+	} break;
+
+	default: {
+	  /// TODO:error
+	  assert(false);
+	} break;
+	}
+      }
+      
+      void set_copy(vaddr_t dst, const uint8_t* src, uint64_t size) {
+	Page& dst_page = get_page(get_upper_addr(dst), false);
+
+	switch(dst_page.type) {
+	case PT_MASTER: {
+	  assert(dst_page.value.size() <= get_lowwer_addr(dst) + size);
+	  dst_page.value.replace(get_lower_addr(dst), size,
+				 reinterpret_cast<const char*>(src), size);
+	} break;
+
+	case PT_COPY: {
+	  assert(dst_page.hint.size() == 1);
+	  dst_page.flg_update = false;
+	  vmemory.send_update(*dst_page.hint.begin(), space, dst,
+			      reinterpret_cast<const uint8_t*>(src), size);
+	} break;
+
+	default: {
+	  /// TODO:error
+	  assert(false);
+	} break;
+	}
+      }
 
       void lock_master(vaddr_t addr);
+      void release_master(vaddr_t addr);
 
     private:
-      /**
-       * Constructor with memory space.
-       * @param space Accessing memory space.
-       */
-      Accessor(Space& space);
-    
+      /** Map of upper address and copy of raw writable area.  */
+      std::map<vaddr_t, std::unique_ptr<uint8_t[]>> raw_writable;
+
       /** Block copy operator. */
       Accessor& operator=(const Accessor&);
+
+      /** Block copy constructor. */
+      Accessor(const Accessor&);
     };
     
     /**
@@ -135,7 +458,7 @@ namespace processwarp {
      * @param delegate Delegate for controller.
      * @param dev_id Using device-id.
      */
-    VMemory(VMemoryDelegate& delegate, dev_id_t dev_id);
+    VMemory(VMemoryDelegate& delegate, const dev_id_t& dev_id);
 
     /**
      * Create a vmemory space in this device.
@@ -146,23 +469,33 @@ namespace processwarp {
     /**
      * 
      */
-    void recv_packet(const std::string& packet);
+    void recv_packet(const std::string& name, const std::string& packet);
 
     /**
      * 
      */
-    Accessor get_accessor(const std::string& name);
+    std::unique_ptr<VMemory::Accessor> get_accessor(const std::string& name);
     
   private:      
     /** Delegate for controller. */
     VMemoryDelegate& delegate;
     /** Memory spaces. Space name and Space map. */
-    std::map<std::string, Space> spaces;
+    std::map<std::string, std::unique_ptr<Space>> spaces;
 
     /** Block copy constructor. */
     VMemory(const VMemory&);
     
     /** Block copy operator. */
     VMemory& operator=(const VMemory&);
+
+    /**
+     * Send packet.
+     * @param name Memory space name.
+     * @param dev_id Target device-id.
+     * @param cmd Command name.
+     * @param payload Packet payload.
+     */
+    void send_packet(const std::string& name, const dev_id_t& dev_id,
+		     const std::string& cmd, picojson::object& payload);
   };
 }

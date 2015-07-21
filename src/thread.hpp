@@ -80,5 +80,10 @@ namespace processwarp {
      * @return 型依存の演算インスタンス。
      */
     WrappedOperator* get_operator(vaddr_t type);
+
+    /**
+     * Write out thread data to memory.
+     */
+    void write_out();
   };
 }

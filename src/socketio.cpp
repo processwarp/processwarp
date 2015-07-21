@@ -450,6 +450,22 @@ void SocketIo::send_exit_process(const vpid_t& pid) {
   socket->emit("exit_process", data);
 }
 
+void SocketIo::send_memory_data(const std::string& name,
+				const dev_id_t& to_device_id,
+				const std::string& payload) {
+  sio::message::ptr data(sio::object_message::create());
+  std::map<std::string, sio::message::ptr>& map = data->get_map();
+  
+  map.insert(std::make_pair("name", sio::string_message::create(name)));
+  if (to_device_id != DEV_BROADCAST) {
+    map.insert(std::make_pair("to_device_id", get_sio_by_dev_id(to_device_id)));
+  }
+  map.insert(std::make_pair("payload", sio::binary_message::create
+			    (std::shared_ptr<const std::string>(new std::string(payload)))));
+
+  socket->emit("memory_data", data);
+}
+
 // Send console for test.
 void SocketIo::send_test_console(const vpid_t& pid,
 				 const std::string& dev,

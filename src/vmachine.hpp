@@ -64,7 +64,7 @@ namespace processwarp {
   /**
    * VMachine for set of processes.
    */
-  class VMachine : private VMemoryDelegate, ProcessDelegate {
+  class VMachine : private ProcessDelegate {
   public:
     /** This virtual machine's device-id. */
     const dev_id_t device_id;
@@ -72,9 +72,12 @@ namespace processwarp {
     /**
      * Constractor with delegate.
      * @param delegate Events assignee.
+     * @param memory_delegate 
      * @param device_id This virtual machine's device-id.
      */
-    VMachine(VMachineDelegate& delegate, const dev_id_t& device_id);
+    VMachine(VMachineDelegate& delegate,
+	     VMemoryDelegate& memory_delegate,
+	     const dev_id_t& device_id);
 
     /**
      * Main loop.
@@ -149,7 +152,7 @@ namespace processwarp {
     vtid_t assign_tid(Process& proc) override;
 
     /**
-     *
+     * @inheritDoc
      */
     std::unique_ptr<VMemory::Accessor> assign_accessor(const vpid_t& pid) override;
 

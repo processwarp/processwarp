@@ -19,6 +19,10 @@ namespace processwarp {
   /** 仮想アドレス */
   typedef __pw_vm_ptr_t vaddr_t;
 
+  static const unsigned int VMEMORY_RESERVE_MIN  = 8;
+  static const unsigned int VMEMORY_RESERVE_BASE = 16;
+  static const unsigned int VMEMORY_RESERVE_MAX  = 64;
+
   /**
    * VM組み込み関数に渡すパラメタ。
    */
@@ -80,14 +84,14 @@ namespace processwarp {
 
   /** メモリの内容ごとに割り当てるアドレスの判定フラグ */
   enum AddrType : vaddr_t {
-    //AD_TYPE     = 0x0000000000000000, ///< スタックの相対アドレス
+    AD_META     = 0x0000000000000000, ///< Meta data (possible changeing).
     AD_VALUE_08 = 0x1000000000000000, ///< 0〜255Byte空間
     AD_VALUE_16 = 0x2000000000000000, ///< 256〜65KByte空間
     AD_VALUE_24 = 0x3000000000000000, ///< 65K〜16MByte空間
     AD_VALUE_32 = 0x4000000000000000, ///< 16M〜4GByte空間
     AD_VALUE_40 = 0x5000000000000000, ///< 4G〜1TByte空間
     AD_VALUE_48 = 0x6000000000000000, ///< 1T〜256TByte空間
-    AD_PROGRAM  = 0xF000000000000000, ///< 関数、型領域
+    AD_PROGRAM  = 0xF000000000000000, ///< Function, Type.
     AD_MASK     = 0xF000000000000000,
     AD_PTR      = 0x4000000100000000,
   };
@@ -111,6 +115,8 @@ namespace processwarp {
 
   /** device-id */
   typedef std::string dev_id_t;
+  /** To set when broadcast. */
+  static const dev_id_t DEV_BROADCAST = "";
 
   /** trueを表す値 */
   static const uint8_t I8_TRUE = 0x1;

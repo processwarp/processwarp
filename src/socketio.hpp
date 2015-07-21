@@ -335,6 +335,17 @@ namespace processwarp {
     void send_exit_process(const vpid_t& pid);
 
     /**
+     * Packet format: {
+     *   name: <name of memory space>
+     *   to_device_id: <target device_id>
+     *   data: <payload>
+     * }
+     */
+    void send_memory_data(const std::string& name,
+			  const dev_id_t& to_device_id,
+			  const std::string& payload);
+
+    /**
      * Send console for test.
      * @param pid Source pid.
      * @param dev Device name (stdout/stderr).

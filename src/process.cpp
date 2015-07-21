@@ -19,6 +19,7 @@
 #include <unistd.h>
 
 #include "error.hpp"
+#include "finally.hpp"
 #include "func_store.hpp"
 #include "instruction.hpp"
 #include "builtin_bit.hpp"
@@ -163,6 +164,11 @@ void Process::execute(vtid_t tid, int max_clock) {
 	    thread.status == Thread::BEFOR_WARP ||
 	    thread.status == Thread::AFTER_WARP) &&
 	   max_clock > 0; max_clock --) {
+      Finally finally_loop;
+      finally_loop.add([&]{
+	  memory.write_out();
+	});
+      
       instruction_t code = insts.at(stackinfo.pc);
       print_debug("pc:%d, k:%ld, insts:%ld, code:%08x %s\n",
 		  stackinfo.pc, k.size / sizeof(vaddr_t),
@@ -419,8 +425,9 @@ void Process::execute(vtid_t tid, int max_clock) {
       } break;
 
       case Opcode::CMPXCHG: {
-	memory.lock_master(stackinfo.output);
-	memory.lock_master(stackinfo.address);
+	/// TODO:cmpxchg needs lock
+	//memory.lock_master(stackinfo.output);
+	//memory.lock_master(stackinfo.address);
 	
 	bool is_eq = stackinfo.type_operator->is_equal(stackinfo.address, stackinfo.value);
 

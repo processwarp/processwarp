@@ -14,10 +14,11 @@
 #include "socketio.hpp"
 #include "error.hpp"
 #include "vmachine.hpp"
+#include "vmemory.hpp"
 
 using namespace processwarp;
 
-class Main : public VMachineDelegate, public SocketIoDelegate {
+class Main : public VMachineDelegate, public VMemoryDelegate, public SocketIoDelegate {
 public:
   /** Configuration */
   const picojson::object conf;
@@ -130,6 +131,12 @@ public:
 		      const std::string& data) override {
     socket.send_warp_data_1(pid, tid, dst_device_id, data);
   }
+
+  void send_memory_data(const std::string& name,
+			const dev_id_t& dev_id,
+			const std::string& data) override {
+    socket.send_memory_data(name, dev_id, data);
+  }
     
   // Call when context switch of process.
   /*
@@ -199,7 +206,7 @@ public:
     }
 
     this->device_id = device_id;
-    this->vm.reset(new VMachine(*this, device_id));
+    this->vm.reset(new VMachine(*this, *this, device_id));
 
     // Syncronize processes empty because processes not running just run program.
     socket.send_sync_proc_list(std::map<vpid_t, SocketIoProc>());

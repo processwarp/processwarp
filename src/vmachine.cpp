@@ -44,10 +44,12 @@ void VMachineDelegate::on_error(const vpid_t& pid,
 }
 
 // Constractor with delegate.
-VMachine::VMachine(VMachineDelegate& delegate_, const dev_id_t& device_id_) :
+VMachine::VMachine(VMachineDelegate& delegate_,
+		   VMemoryDelegate& memory_delegate,
+		   const dev_id_t& device_id_) :
   device_id(device_id_),
   delegate(delegate_),
-  vmemory(*this, device_id_) {
+  vmemory(memory_delegate, device_id_) {
   // Do nothing.
 }
 
@@ -220,11 +222,18 @@ vtid_t VMachine::assign_tid(Process& vm) {
   return rnd();
 }
 
+// @inheritDoc
+std::unique_ptr<VMemory::Accessor> VMachine::assign_accessor(const vpid_t& pid) {
+  return std::move(vmemory.get_accessor(Convert::vpid2str(pid)));
+}
+
 // Dump and send data to warp process. 
 void VMachine::do_warp_process(const vpid_t& pid) {
+  /// TODO:
+  assert(false);
   /*
   Process& proc    = *procs.at(pid);
-  VMemory::Accessor& memory = proc.proc_memory;
+  VMemory::Accessor& memory = *proc.proc_memory;
   
   // Dump process.
   Convert convert(proc);
@@ -267,6 +276,8 @@ void VMachine::do_warp_process(const vpid_t& pid) {
 }
 
 void VMachine::recv_process_warp(const vpid_t& pid, picojson::object& json) {
+  /// TODO
+  assert(false);
   /*
   Process& proc = *procs.at(pid);
   VMemory& vmemory = proc.vmemory;
