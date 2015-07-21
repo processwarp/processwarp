@@ -51,6 +51,14 @@ namespace processwarp {
 
     template<> std::string num2hex_str<uint8_t>(uint8_t v);
 
+    inline std::string numptr2str(const void* ptr, unsigned int size) {
+      longest_uint_t buffer;
+      std::memcpy(&buffer, ptr, size);
+      std::ostringstream os;
+      os << std::hex << std::setfill('0') << std::setw(size * 2) << buffer;
+      return os.str();
+    }
+    
     /**
      * Convert hex formated string to integer.
      * @param str Hex formated string.
@@ -118,7 +126,7 @@ namespace processwarp {
 #define save_llvm_instruction(I) //
 #define print_llvm_instruction() //
 #else
-    static const llvm::Instruction* llvm_instruction;
+    extern const llvm::Instruction* llvm_instruction;
 #define save_llvm_instruction(I) Util::llvm_instruction = (I)
 #define print_llvm_instruction() Util::llvm_instruction->dump();
 #endif

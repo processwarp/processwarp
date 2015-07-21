@@ -146,7 +146,8 @@ namespace processwarp {
   template <typename T> void WrappedPrimitiveOperator<T>::op(vaddr_t dst, vaddr_t a, vaddr_t b) { \
     memory.set<T>(dst, memory.get<T>(a) infix memory.get<T>(b));	\
     print_debug("%016" PRIx64 " : %" PRId64 " = %" PRId64 " %s %" PRId64 "\n", \
-		dst, memory.get<T>(dst), static_cast<longest_int_t>(memory.get<T>(a)), \
+		dst, static_cast<longest_int_t>(memory.get<T>(dst)), \
+		static_cast<longest_int_t>(memory.get<T>(a)), \
 		#infix,	static_cast<longest_int_t>(memory.get<T>(b)));	\
   }
 
@@ -234,7 +235,7 @@ namespace processwarp {
     }
 
     print_debug("not_nans %016" PRIx64 " : %d = %" PRId64 " not_nans %" PRId64 "\n", dst,
-		memroy.get<uint8_t>(dst),
+		memory.get<uint8_t>(dst),
 		static_cast<longest_int_t>(memory.get<double>(a)),
 		static_cast<longest_int_t>(memory.get<double>(b)));
   }
@@ -395,10 +396,10 @@ void WrappedPointerOperator::op_not_equal(vaddr_t dst, vaddr_t a, vaddr_t b) {
   } else {
     *reinterpret_cast<uint8_t*>(dst) = I8_FALSE;
   }
-  print_debug("%p : %s = %s != %s\n", dst,
-	      Util::numptr2str(dst, 1).c_str(),
-	      Util::numptr2str(a, sizeof(vaddr_t)).c_str(),
-	      Util::numptr2str(b, sizeof(vaddr_t)).c_str());
+
+  print_debug("%016" PRIx64 " : %d = %016" PRIx64 " >= %016" PRIx64 "\n", dst,
+	      memory.get<uint8_t>(dst),
+	      memory.get<vaddr_t>(a), memory.get<vaddr_t>(b));
 }
 
 // type_cast命令に対応したキャスト演算を行う。

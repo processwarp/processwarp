@@ -170,9 +170,9 @@ void Process::execute(vtid_t tid, int max_clock) {
 	});
       
       instruction_t code = insts.at(stackinfo.pc);
-      print_debug("pc:%d, k:%ld, insts:%ld, code:%08x %s\n",
-		  stackinfo.pc, k.size / sizeof(vaddr_t),
-		  insts.size(), code, Util::code2str(code).c_str());
+      print_debug("pc:%d, insts:%" PRIu64 ", code:%08x %s\n",
+		  stackinfo.pc, static_cast<longest_uint_t>(insts.size()),
+		  code, Util::code2str(code).c_str());
 
       // call命令の判定(call命令の場合falseに変える)
       bool is_tailcall = true;
@@ -252,7 +252,7 @@ void Process::execute(vtid_t tid, int max_clock) {
 
 	// pcの書き換え
 	stackinfo.pc += args * 2 + 2;
-	print_debug("call %s\n", new_func.name.str().c_str());
+	print_debug("call %s\n", new_func->name.str().c_str());
 	if (new_func->type == FuncType::FC_NORMAL) {
 	  // 可変長引数でない場合、引数の数をチェック
 	  if (args < new_func->arg_num ||
@@ -283,7 +283,7 @@ void Process::execute(vtid_t tid, int max_clock) {
 	  
 	} else if (new_func->type == FuncType::FC_BUILTIN) {
 	  // VM組み込み関数の呼び出し
-	  assert(new_func.builtin != nullptr);
+	  assert(new_func->builtin != nullptr);
 	  BuiltinPost bp = new_func->builtin(*this, thread, new_func->builtin_param,
 					     stackinfo.output, work);
 	  switch(bp) {
@@ -404,7 +404,7 @@ void Process::execute(vtid_t tid, int max_clock) {
 	const vm_int_t diff = operand * stackinfo.type_operator->get(stackinfo.value);
 	stackinfo.address += diff;
 	print_debug("+%d * %" PRIu64 " address = %16" PRIx64 "\n",
-		    operand, stackinfo.type_based->get(stackinfo.value), stackinfo.address);
+		    operand, stackinfo.type_operator->get(stackinfo.value), stackinfo.address);
       } break;
 
       case Opcode::GET_ADR: {
@@ -415,8 +415,9 @@ void Process::execute(vtid_t tid, int max_clock) {
 
       case Opcode::LOAD: {
 	stackinfo.type_operator->copy(get_operand(code, op_param), stackinfo.address);
-	print_debug("*%016" PRIx64 " = *%016" PRIx64 "(size = %ld)\n",
-		    get_operand(code, op_param), stackinfo.address, stackinfo.type_store->size);
+	print_debug("*%016" PRIx64 " = *%016" PRIx64 "(size = %" PRIu64 ")\n",
+		    get_operand(code, op_param), stackinfo.address,
+		    static_cast<longest_uint_t>(stackinfo.type_store->size));
       } break;
 
       case Opcode::STORE: {
@@ -454,8 +455,8 @@ void Process::execute(vtid_t tid, int max_clock) {
 	memory.set<vaddr_t>(stackinfo.output, addr);
 	// allocaで確保した領域はスタック終了時に開放できるように記録しておく
 	stackinfo.alloca_addrs.push_back(addr);
-	print_debug("alloca *%016" PRIx64 " = %016" PRIx64 "(%ld byte)\n",
-		    stackinfo.output, data, size);
+	print_debug("alloca *%016" PRIx64 " = %016" PRIx64 "(%" PRIu64 " byte)\n",
+		    stackinfo.output, addr, static_cast<longest_uint_t>(size));
       } break;
 
       case Opcode::TEST: {
@@ -698,8 +699,8 @@ void Process::call_external(Thread& thread,
     } break;
 
     default: {
-      fixme(Util::vaddr2str(type.addr));
-      assert(false); // TODO 他の型の対応
+      /// TODO:error
+      assert(false);
     } break;
     }
     

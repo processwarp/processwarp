@@ -227,7 +227,7 @@ namespace processwarp {
 	    vmemory.send_require(space, addr, DEV_BROADCAST);
 
 	  } else {
-	    assert(page.type == PT_CLIENT && page.hint.size() == 1);
+	    assert(page->second.type == PT_COPY && page->second.hint.size() == 1);
 	    vmemory.send_require(space, addr, *(page->second.hint.begin()));
 	  }
 	}
@@ -395,7 +395,7 @@ namespace processwarp {
 
 	switch(dst_page.type) {
 	case PT_MASTER: {
-	  assert(dst_page.value.size() <= get_lowwer_addr(dst) + size);
+	  assert(dst_page.value.size() <= get_lower_addr(dst) + size);
 	  dst_page.value.replace(get_lower_addr(dst), size,
 				 src_page.value.data() + get_lower_addr(src), size);
 	} break;
@@ -420,7 +420,7 @@ namespace processwarp {
 
 	switch(dst_page.type) {
 	case PT_MASTER: {
-	  assert(dst_page.value.size() <= get_lowwer_addr(dst) + size);
+	  assert(dst_page.value.size() <= get_lower_addr(dst) + size);
 	  dst_page.value.replace(get_lower_addr(dst), size,
 				 reinterpret_cast<const char*>(src), size);
 	} break;
