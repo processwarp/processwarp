@@ -10,8 +10,8 @@
 using namespace processwarp;
 
 // __assert_fail(assertの内部実装)関数。
-BuiltinPost BuiltinPosix::__assert_fail(Process& proc, Thread& thread, BuiltinFuncParam p,
-					vaddr_t dst, std::vector<uint8_t>& src) {
+BuiltinPost BuiltinPosix::bi_assert_fail(Process& proc, Thread& thread, BuiltinFuncParam p,
+					 vaddr_t dst, std::vector<uint8_t>& src) {
   // パタメタを読み取り
   int seek = 0;
   vaddr_t p_assertion = Process::read_builtin_param_ptr(src, &seek);
@@ -32,8 +32,8 @@ BuiltinPost BuiltinPosix::__assert_fail(Process& proc, Thread& thread, BuiltinFu
 }
 
 // Implement for pthread_create.
-BuiltinPost BuiltinPosix::pthread_create(Process& proc, Thread& thread, BuiltinFuncParam p,
-					 vaddr_t dst, std::vector<uint8_t>& src) {
+BuiltinPost BuiltinPosix::bi_pthread_create(Process& proc, Thread& thread, BuiltinFuncParam p,
+					    vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
   vaddr_t p_thread = Process::read_builtin_param_ptr(src, &seek);
   // TODO: apply attr
@@ -49,8 +49,8 @@ BuiltinPost BuiltinPosix::pthread_create(Process& proc, Thread& thread, BuiltinF
 }
 
 // Implement for pthread_exit.
-BuiltinPost BuiltinPosix::pthread_exit(Process& proc, Thread& thread, BuiltinFuncParam p,
-				       vaddr_t dst, std::vector<uint8_t>& src) {
+BuiltinPost BuiltinPosix::bi_pthread_exit(Process& proc, Thread& thread, BuiltinFuncParam p,
+					  vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
   /// TODO: apply function.
   /* vaddr_t p_retval = */Process::read_builtin_param_ptr(src, &seek);
@@ -62,8 +62,8 @@ BuiltinPost BuiltinPosix::pthread_exit(Process& proc, Thread& thread, BuiltinFun
 }
 
 // Implement for pthread_join.
-BuiltinPost BuiltinPosix::pthread_join(Process& proc, Thread& thread, BuiltinFuncParam p,
-				       vaddr_t dst, std::vector<uint8_t>& src) {
+BuiltinPost BuiltinPosix::bi_pthread_join(Process& proc, Thread& thread, BuiltinFuncParam p,
+					  vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
   vtid_t  p_thread = Process::read_builtin_param_i32(src, &seek);
   vaddr_t p_retval = Process::read_builtin_param_ptr(src, &seek);
@@ -87,9 +87,9 @@ BuiltinPost BuiltinPosix::pthread_join(Process& proc, Thread& thread, BuiltinFun
 
 // VMにライブラリを登録する。
 void BuiltinPosix::regist(Process& vm) {
-  vm.regist_builtin_func("__assert_fail", BuiltinPosix::__assert_fail, 0);
-  vm.regist_builtin_func("pthread_create", BuiltinPosix::pthread_create, 0);
-  vm.regist_builtin_func("pthread_exit", BuiltinPosix::pthread_exit, 0);
-  vm.regist_builtin_func("pthread_join", BuiltinPosix::pthread_join, 0);
+  vm.regist_builtin_func("__assert_fail", BuiltinPosix::bi_assert_fail, 0);
+  vm.regist_builtin_func("pthread_create", BuiltinPosix::bi_pthread_create, 0);
+  vm.regist_builtin_func("pthread_exit", BuiltinPosix::bi_pthread_exit, 0);
+  vm.regist_builtin_func("pthread_join", BuiltinPosix::bi_pthread_join, 0);
 }
 

@@ -16,8 +16,8 @@ namespace processwarp {
      * i32 line
      * vaddr_t(const) function
      */
-    static BuiltinPost __assert_fail(Process& proc, Thread& thread, BuiltinFuncParam p,
-				     vaddr_t dst, std::vector<uint8_t>& src);
+    static BuiltinPost bi_assert_fail(Process& proc, Thread& thread, BuiltinFuncParam p,
+				      vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
      * Implement for pthread_create.
@@ -27,16 +27,16 @@ namespace processwarp {
      * vaddr_t start
      * vaddr_t arg
      */
-    static BuiltinPost pthread_create(Process& proc, Thread& thread, BuiltinFuncParam p,
-				      vaddr_t dst, std::vector<uint8_t>& src);
+    static BuiltinPost bi_pthread_create(Process& proc, Thread& thread, BuiltinFuncParam p,
+					 vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
      * Implement for pthread_exit.
      * parameter:
      * vaddr_t retval
      */
-    static BuiltinPost pthread_exit(Process& proc, Thread& thread, BuiltinFuncParam p,
-				    vaddr_t dst, std::vector<uint8_t>& src);
+    static BuiltinPost bi_pthread_exit(Process& proc, Thread& thread, BuiltinFuncParam p,
+				       vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
      * Implement for pthread_join.
@@ -44,8 +44,8 @@ namespace processwarp {
      * i32 thread
      * vaddr_t ret_addr
      */
-    static BuiltinPost pthread_join(Process& proc, Thread& thread, BuiltinFuncParam p,
-				    vaddr_t dst, std::vector<uint8_t>& src);
+    static BuiltinPost bi_pthread_join(Process& proc, Thread& thread, BuiltinFuncParam p,
+				       vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
      * VMにライブラリを登録する。
