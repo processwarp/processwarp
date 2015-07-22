@@ -142,6 +142,8 @@ int main(int argc, char* argv[]) {
       result.insert(std::make_pair("result",    picojson::value(-1.0)));
       result.insert(std::make_pair("reason",    picojson::value(std::to_string(ex.reason))));
       result.insert(std::make_pair("message",   picojson::value(ex.mesg)));
+      result.insert(std::make_pair("llvm_version",
+				   picojson::value(std::string(LLVM_VERSION_STRING))));
       std::cout << picojson::value(result).serialize() << '\0';
       
     } catch(const std::exception& ex) {
@@ -149,6 +151,8 @@ int main(int argc, char* argv[]) {
       result.insert(std::make_pair("result",    picojson::value(-1.0)));
       result.insert(std::make_pair("reason",    picojson::value(std::to_string(-1))));
       result.insert(std::make_pair("message",   picojson::value(std::string(ex.what()))));
+      result.insert(std::make_pair("llvm_version",
+				   picojson::value(std::string(LLVM_VERSION_STRING))));
       std::cout << picojson::value(result).serialize() << '\0';
       
     } catch(...) {
@@ -157,6 +161,8 @@ int main(int argc, char* argv[]) {
       result.insert(std::make_pair("result",    picojson::value(-1.0)));
       result.insert(std::make_pair("reason",    picojson::value(std::to_string(-2))));
       result.insert(std::make_pair("message",   picojson::value(std::string(std::strerror(errsv)))));
+      result.insert(std::make_pair("llvm_version",
+				   picojson::value(std::string(LLVM_VERSION_STRING))));
       std::cout << picojson::value(result).serialize() << '\0';
     }
   }
