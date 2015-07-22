@@ -1441,7 +1441,11 @@ void LlvmAsmLoader::load_module(llvm::Module* module) {
   print_debug("Triple: %s\n",     module->getTargetTriple().c_str());
   
   // データレイアウトの取得
+#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 6
   data_layout = module->getDataLayout();
+#else // llvm ver 3.7~
+  data_layout = &module->getDataLayout();
+#endif
   // 大域変数の読み込み
   load_globals(module->getGlobalList());
 
