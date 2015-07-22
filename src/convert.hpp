@@ -63,6 +63,15 @@ namespace processwarp {
     }
 
     /**
+     * Convert a device-id from JSON
+     * @param json Source JSON.
+     * @return A device-id.
+     */
+    inline dev_id_t json2devid(const picojson::value& json) {
+      return json.get<dev_id_t>();
+    }
+
+    /**
      * Convert process-id to JSON.
      * @param pid Source process-id.
      * @return Process-id as JSON.
@@ -114,6 +123,15 @@ namespace processwarp {
      */
     inline picojson::value code2json(instruction_t code) {
       return int2json<instruction_t>(code);
+    }
+
+    /**
+     * Convert device-id to JSON.
+     * @param dev_id Source device-id.
+     * @return Device-id as JSON.
+     */
+    inline picojson::value devid2json(const dev_id_t& dev_id) {
+      return picojson::value(dev_id);
     }
 
     /**
