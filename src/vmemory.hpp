@@ -23,7 +23,7 @@ namespace processwarp {
     virtual ~VMemoryDelegate() {};
 
     /**
-     *
+     * Call when send memory data to other device.
      */
     virtual void send_memory_data(const std::string& name,
 				  const dev_id_t& dev_id,
@@ -66,6 +66,8 @@ namespace processwarp {
       std::mt19937_64& rnd;
       /** Virtual memory controller. */
       VMemory& vmemory;
+      /** Switch of loading mode. */
+      bool is_loading;
 
       /**
        * Constructor with name and random.
@@ -472,9 +474,16 @@ namespace processwarp {
     void recv_packet(const std::string& name, const std::string& packet);
 
     /**
-     * 
+     * @param name Space name.
      */
     std::unique_ptr<VMemory::Accessor> get_accessor(const std::string& name);
+
+    /**
+     * Switch memory's loading mode.
+     * @param name Space name.
+     * @param flg True if enable loading mode.
+     */
+    void set_loading(const std::string& name, bool flg);
     
   private:      
     /** Delegate for controller. */
@@ -488,6 +497,13 @@ namespace processwarp {
     /** Block copy operator. */
     VMemory& operator=(const VMemory&);
 
+    /**
+     * Get space by name.
+     * @param name Space name.
+     * @return Space.
+     */
+    Space& get_space(const std::string& name);
+    
     /**
      * Send packet.
      * @param name Memory space name.

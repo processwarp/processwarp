@@ -38,11 +38,26 @@ VMemory::VMemory(VMemoryDelegate& delegate_, const dev_id_t& dev_id_) :
 }
 
 std::unique_ptr<VMemory::Accessor> VMemory::get_accessor(const std::string& name) {
-  if (spaces.find(name) == spaces.end()) {
-    spaces.insert(std::make_pair(name, std::unique_ptr<Space>(new Space(name, rnd, *this))));
-  }
+  Space& space = get_space(name);
   
-  return std::unique_ptr<VMemory::Accessor>(new Accessor(*this, *spaces.at(name)));
+  return std::unique_ptr<VMemory::Accessor>(new Accessor(*this, space));
+}
+
+// Get space by name.
+VMemory::Space& VMemory::get_space(const std::string& name) {
+  if (spaces.find(name) == spaces.end()) {
+    spaces.insert(std::make_pair(name, std::unique_ptr<Space>
+				 (new Space(name, rnd, *this))));
+  }
+
+  return *spaces.at(name);
+}
+
+// Switch memory's loading mode.
+void VMemory::set_loading(const std::string& name, bool flg) {
+  Space& space = get_space(name);
+
+  space.is_loading = flg;
 }
 
 // Send packet.
@@ -298,7 +313,8 @@ VMemory::Page::Page(PageType type_, bool flg_update_) :
 VMemory::Space::Space(const std::string& name_, std::mt19937_64& rnd_, VMemory& vmemory_) :
   name(name_),
   rnd(rnd_),
-  vmemory(vmemory_) {
+  vmemory(vmemory_),
+  is_loading(false) {
 }
 
 // Get a new address to allocate a new memory.
@@ -323,13 +339,20 @@ vaddr_t VMemory::Space::assign_addr(AddrType type) {
 	new_reserve.insert(new_addr);
       }
     }
+    
+    if (is_loading) {
+      for (auto& it : new_reserve) {
+	reserved_que.push_back(it);
+      }
 
-    vmemory.send_reserve(*this, new_reserve);
-    finally.add([&]() {
-	for (auto& it : new_reserve) {
-	  reserved_que.push_back(it);
-	}
-      });
+    } else {
+      vmemory.send_reserve(*this, new_reserve);
+      finally.add([&]() {
+	  for (auto& it : new_reserve) {
+	    reserved_que.push_back(it);
+	  }
+	});
+    }
   }
 
   if (reserved_que.size() == 0) {
