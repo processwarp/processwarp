@@ -11,7 +11,7 @@
 
 using namespace processwarp;
 
-const vaddr_t VMemory::Accessor::UPPER_MASKS[]  = {
+const vaddr_t VMemory::UPPER_MASKS[]  = {
   0xFFFFFFFFFFFFFFFF, ///< Meta data
   0xFFFFFFFFFFFFFF00,
   0xFFFFFFFFFFFF0000,

@@ -57,6 +57,16 @@ namespace processwarp {
       Page(PageType type, bool flg_update);
     };
 
+    static const vaddr_t UPPER_MASKS[];
+
+    static vaddr_t get_upper_addr(vaddr_t addr) {
+      return addr & UPPER_MASKS[addr >> 60];
+    }
+
+    static vaddr_t get_lower_addr(vaddr_t addr) {
+      return addr & (~UPPER_MASKS[addr >> 60]);
+    }
+
     /** Bundle pages in memory space. */
     class Space {
     public:
@@ -196,20 +206,10 @@ namespace processwarp {
      */
     class Accessor {
     private:
-      static const vaddr_t UPPER_MASKS[];
-
       /** Virtual memory controller. */
       VMemory& vmemory;
       /** Accessing memory space. */
       Space& space;
-
-      static vaddr_t get_upper_addr(vaddr_t addr) {
-	return addr & UPPER_MASKS[addr >> 60];
-      }
-
-      static vaddr_t get_lower_addr(vaddr_t addr) {
-	return addr & (~UPPER_MASKS[addr >> 60]);
-      }
 
       /**
        * Get a memory page by a address.
