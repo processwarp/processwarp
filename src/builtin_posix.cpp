@@ -16,7 +16,7 @@ BuiltinPost BuiltinPosix::bi_assert_fail(Process& proc, Thread& thread, BuiltinF
   int seek = 0;
   vaddr_t p_assertion = Process::read_builtin_param_ptr(src, &seek);
   vaddr_t p_file = Process::read_builtin_param_ptr(src, &seek);
-  uint32_t p_line = static_cast<unsigned>(Process::read_builtin_param_i32(src, &seek));
+  vm_int_t p_line = static_cast<vm_int_t>(Process::read_builtin_param_i(src, &seek));
   vaddr_t p_func = Process::read_builtin_param_ptr(src, &seek);
   
   // メッセージを出力
@@ -65,7 +65,7 @@ BuiltinPost BuiltinPosix::bi_pthread_exit(Process& proc, Thread& thread, Builtin
 BuiltinPost BuiltinPosix::bi_pthread_join(Process& proc, Thread& thread, BuiltinFuncParam p,
 					  vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
-  vtid_t  p_thread = Process::read_builtin_param_i32(src, &seek);
+  vtid_t  p_thread = Process::read_builtin_param_i(src, &seek);
   vaddr_t p_retval = Process::read_builtin_param_ptr(src, &seek);
   assert(static_cast<signed>(src.size()) == seek);
   //vm_int_t& ret = *reinterpret_cast<vm_int_t*>(proc.get_raw_addr(dst));

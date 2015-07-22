@@ -65,11 +65,11 @@ void BuiltinWarp::regist(Process& vm) {
 BuiltinPost BuiltinWarp::set_processwarp_param(Process& proc, Thread& thread, BuiltinFuncParam p,
 					       vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
-  int64_t key = static_cast<int64_t>(Process::read_builtin_param_i64(src, &seek));
-  int64_t val = static_cast<int64_t>(Process::read_builtin_param_i64(src, &seek));
+  vm_int_t key = static_cast<vm_int_t>(Process::read_builtin_param_i(src, &seek));
+  vm_int_t val = static_cast<vm_int_t>(Process::read_builtin_param_i(src, &seek));
   assert(static_cast<signed>(src.size()) == seek);
 
-  // TODO validate key & val.
+  /// TODO:validate key & val.
   thread.warp_parameter[key] = val;
   
   thread.memory->set<vm_int_t>(dst, 0);

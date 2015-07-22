@@ -22,7 +22,7 @@ BuiltinPost BuiltinVaArg::arg(Process& proc, Thread& thread, BuiltinFuncParam p,
   // i8* arglistを取り出す。
   vaddr_t arglist = Process::read_builtin_param_ptr(src, &seek);
   // i64 sizeof argumentを取り出す。
-  uint64_t arg_size =Process::read_builtin_param_i64(src, &seek);
+  uint64_t arg_size =Process::read_builtin_param_size(src, &seek);
   
   vaddr_t va_arg = thread.memory->get<vaddr_t>(arglist);
   // 型情報を取得

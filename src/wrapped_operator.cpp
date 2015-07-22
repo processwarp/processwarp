@@ -32,7 +32,7 @@ void WrappedOperator::copy(vaddr_t dst, vaddr_t src) {
 }
 
 // 値を読み込む
-vm_int_t WrappedOperator::get(vaddr_t src) {
+longest_int_t WrappedOperator::get(vaddr_t src) {
   throw_error(Error::INST_VIOLATION);
 }
 
@@ -102,8 +102,8 @@ template <typename T> void WrappedPrimitiveOperator<T>::copy(vaddr_t dst, vaddr_
 }
 
 // 値を読み込む
-template <typename T> vm_int_t WrappedPrimitiveOperator<T>::get(vaddr_t src) {
-  return static_cast<vm_int_t>(memory.get<T>(src));
+template <typename T> longest_int_t WrappedPrimitiveOperator<T>::get(vaddr_t src) {
+  return static_cast<longest_int_t>(memory.get<T>(src));
 }
 
 // 比較命令(isnan(a) || isnan(b))に対応した演算を行う。

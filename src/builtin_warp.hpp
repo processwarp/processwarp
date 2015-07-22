@@ -37,8 +37,8 @@ namespace processwarp {
     /**
      * This function set a parameter to warp function.
      * paramter from src;
-     * i32 key
-     * i32 value
+     * vm_int_t key
+     * vm_int_t value
      */
     static BuiltinPost set_processwarp_param(Process& proc, Thread& thread, BuiltinFuncParam p,
 					     vaddr_t dst, std::vector<uint8_t>& src);

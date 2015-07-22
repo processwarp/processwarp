@@ -43,7 +43,7 @@ namespace processwarp {
      * 値を読み込む
      * @param src 読み込み元
      */
-    virtual vm_int_t get(vaddr_t src);
+    virtual longest_int_t get(vaddr_t src);
 
     /**
      * 比較命令(isnan(a) || isnan(b))に対応した演算を行う。
@@ -217,7 +217,7 @@ namespace processwarp {
      * 値を読み込む
      * @param src 読み込み元
      */
-    vm_int_t get(vaddr_t src) override;
+    longest_int_t get(vaddr_t src) override;
 
     /**
      * 比較命令(isnan(a) || isnan(b))に対応した演算を行う。

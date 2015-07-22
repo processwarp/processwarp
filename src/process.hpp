@@ -211,6 +211,22 @@ namespace processwarp {
     static uint64_t read_builtin_param_i64(const std::vector<uint8_t>& src, int* seek);
 
     /**
+     * Get argument as vm_uint_t for built-in methods.
+     * This method is just wrapping read_builtin_param_i32.
+     */
+    static inline vm_uint_t read_builtin_param_i(const std::vector<uint8_t>& src, int* seek) {
+      return read_builtin_param_i32(src, seek);
+    }
+
+    /**
+     * Get argument as size_t for built-in methods.
+     * This method is just wrapping read_builtin_param_i64.
+     */
+    static inline uint64_t read_builtin_param_size(const std::vector<uint8_t>& src, int* seek) {
+      return read_builtin_param_i64(src, seek);
+    }
+    
+    /**
      * 組み込み関数を登録する。
      * @param name 関数名(C)。
      * @param func 組み込み関数へのポインタ。

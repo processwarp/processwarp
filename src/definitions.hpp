@@ -109,7 +109,7 @@ namespace processwarp {
   /** process-id */
   typedef std::string vpid_t;
   /** thread-id */
-  typedef uint32_t vtid_t;
+  typedef vm_uint_t vtid_t;
   /** all thread */
   static const vtid_t ALL_THREAD = 0;
 
