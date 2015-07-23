@@ -11,29 +11,35 @@
 #include "error.hpp"
 #include "llvm_asm_loader.hpp"
 #include "process.hpp"
+#include "vmemory.hpp"
 
 using namespace processwarp;
 
 static const std::string pool_path("/tmp/");
+static const dev_id_t LOADER_DEVICE_ID("LOADER");
 
 /**
  * Load program from LLVM-IR and write dump file.
  */
-class Loader : public ProcessDelegate {
+class Loader : public ProcessDelegate, public VMemoryDelegate {
 public:
   /// Assigned process-id.
   const vpid_t pid;
   /// Assigned thread-id.
   const vtid_t tid;
+  /// Virtual memory for this loader.
+  VMemory vmemory;
   
   /**
    * Constructor with assined id.
-   * @param _pid Assigned process-id.
-   * @param _tid Assigned thread-id.
+   * @param pid_ Assigned process-id.
+   * @param tid_ Assigned thread-id.
    */
-  Loader(const vpid_t& _pid, const vtid_t& _tid) :
-    pid(_pid),
-    tid(_tid) {
+  Loader(const vpid_t& pid_, const vtid_t& tid_) :
+    pid(pid_),
+    tid(tid_),
+    vmemory(*this, LOADER_DEVICE_ID) {
+    vmemory.set_loading(Convert::vpid2str(pid), true);
   }
 
   /**
@@ -48,8 +54,15 @@ public:
   /**
    */
   std::unique_ptr<VMemory::Accessor> assign_accessor(const vpid_t& pid) {
+    return std::move(vmemory.get_accessor(Convert::vpid2str(pid)));
+  }
+
+  // Call when send memory data to other device.
+  void send_memory_data(const std::string& name,
+			const dev_id_t& dev_id,
+			const std::string& data) override {
+    print_debug("send memory data (%s@%s):%s\n", name.c_str(), dev_id.c_str(), data.c_str());
     assert(false);
-    return std::unique_ptr<VMemory::Accessor>(nullptr);
   }
   
   /**
