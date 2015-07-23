@@ -336,7 +336,7 @@ vaddr_t VMemory::Space::assign_addr(AddrType type) {
     for (unsigned int retry = 0;
 	 reserved_que.size() + new_reserve.size() < VMEMORY_RESERVE_BASE &&
 	   retry < VMEMORY_RESERVE_BASE * 2; retry ++) {
-      vaddr_t new_addr = type | (AD_MASK & rnd());
+      vaddr_t new_addr = get_upper_addr(type | (~AD_MASK & rnd()));
       if (pages.find(new_addr) == pages.end() &&
 	  new_reserve.find(new_addr) == new_reserve.end() &&
 	  reserved_set.find(new_addr) == reserved_set.end()) {
