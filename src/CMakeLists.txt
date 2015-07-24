@@ -123,13 +123,6 @@ if(LLVM_FOUND AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     func_store.cpp
     finally.cpp
     basic_operator.cpp
-    builtin_bit.cpp
-    builtin_libc.cpp
-    builtin_memory.cpp
-    builtin_overflow.cpp
-    builtin_posix.cpp
-    builtin_va_arg.cpp
-    builtin_warp.cpp
     llvm_asm_loader.cpp
     main_loader.cpp
     process.cpp
@@ -142,9 +135,6 @@ if(LLVM_FOUND AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     vmemory.cpp
     wrapped_operator.cpp
     )
-  if(GLFW_FOUND)
-    list(APPEND LOADER_FILES builtin_glfw3.cpp)
-  endif()
   add_executable(loader ${LOADER_FILES})
   target_link_libraries(loader ${extra_libs})
 endif()

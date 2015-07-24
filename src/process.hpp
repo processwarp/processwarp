@@ -44,9 +44,6 @@ namespace processwarp {
    */
   class Process {
   public:
-    /** 組み込み関数一覧 */
-    typedef std::map<const std::string, std::pair<builtin_func_t, BuiltinFuncParam>>
-      BuiltinFuncs;
     /** 大域変数、関数シンボル→アドレス型 */
     typedef std::map<const Symbols::Symbol*, vaddr_t> Globals;
     /** スレッド一覧型 */
@@ -60,19 +57,20 @@ namespace processwarp {
     ProcessDelegate& delegate;
     /** Accessotr to binded memory. */
     std::unique_ptr<VMemory::Accessor> proc_memory;
+    /** Address of process information. */
+    const vaddr_t addr;
     /** My process-id. */
     const vpid_t pid;
     /** Root thread-id. */
     const vtid_t root_tid;
+
     /** Loaded external libraries for ffi. */
-    std::vector<void*>& libs;
-    /**
-     * Map of API name call from and call for that can access.
-     * Key:API nam call from application.
-     * Value:API name call for OS.
-     */
-    std::map<std::string, std::string> lib_filter;
-    BuiltinFuncs builtin_funcs; //< 組み込み関数一覧
+    const std::vector<void*>& libs;
+    /** Map of API name call from and call for that can access. */
+    const std::map<std::string, std::string>& lib_filter;
+    /** Map of API name and built-in function pointer and parameter. */
+    const std::map<std::string, std::pair<builtin_func_t, BuiltinFuncParam>>& builtin_funcs;
+
     BuiltinAddrs builtin_addrs; //< 組み込みアドレス一覧(他にコピーしない)
     CallsAtExit calls_at_exit; //< 終了処理時に呼び出す関数一覧
     Globals globals;    ///< 大域変数、関数シンボル→アドレス
@@ -81,19 +79,36 @@ namespace processwarp {
     std::map<vaddr_t, void*> native_ptr; ///< 仮想アドレスとネイティブポインタのペア
     
     /**
-     * Constructor.
-     * @param delegate Delegater.
-     * @param pid Assigned process-id.
-     * @param root_tid Root thread-id.
-     * @param libs List of external libraries.
-     * @param lib_filter Map of API name call from and call for.
+     * Allocate process on memory from delegate.
+     * @param delegate
+     * @param pid
+     * @param root_tid
+     * @param libs
+     * @param lib_filter
      */
-    Process(ProcessDelegate& delegate,
-	     const vpid_t& pid,
-	     const vtid_t& root_tid,
-	     std::vector<void*>& libs,
-	     const std::map<std::string, std::string>& lib_filter);
+    static std::unique_ptr<Process> alloc(ProcessDelegate& delegate,
+					  const vpid_t& pid,
+					  const vtid_t& root_tid,
+					  const std::vector<void*>& libs,
+					  const std::map<std::string, std::string>& lib_filter,
+					  const std::map<std::string, std::pair<builtin_func_t, BuiltinFuncParam>>& builtin_funcs);
 
+    /**
+     * Read out process information from memory.
+     * @param delegate
+     * @param memory
+     * @param addr
+     * @param libs
+     * @param lib_filter
+     * @param builtin_funcs
+     */
+    static std::unique_ptr<Process> read(ProcessDelegate& delegate,
+					 std::unique_ptr<VMemory::Accessor> memory,
+					 vaddr_t addr,
+					 const std::vector<void*>& libs,
+					 const std::map<std::string, std::string>& lib_filter,
+					 const std::map<std::string, std::pair<builtin_func_t, BuiltinFuncParam>>& builtin_funcs);
+    
     /**
      * 外部の関数を呼び出す。
      * @param func 外部の関数情報
@@ -227,24 +242,6 @@ namespace processwarp {
     }
     
     /**
-     * 組み込み関数を登録する。
-     * @param name 関数名(C)。
-     * @param func 組み込み関数へのポインタ。
-     * @param i64 組み込み関数へ渡す固定パラメタ。
-     */
-    void regist_builtin_func(const std::string& name,
-			       builtin_func_t func, int i64);
-
-    /**
-     * 組み込み関数を登録する。
-     * @param name 関数名(C)。
-     * @param func 組み込み関数へのポインタ。
-     * @param i64 組み込み関数へ渡す固定パラメタ。
-     */
-    void regist_builtin_func(const std::string& name,
-			       builtin_func_t func, void* ptr);
-
-    /**
      * StackInfoのキャッシュを解決し、実行前の状態にする。
      * @param thread stackinfoが所属するThread
      * @param stackinfo キャッシュ解決対象のStackInfo
@@ -284,5 +281,24 @@ namespace processwarp {
      * @param dst Destination device-id.
      */
     bool setup_warpin(const vtid_t& tid, const dev_id_t& dst);
+
+  private:
+    /**
+     * Constructor.
+     * @param delegate Delegater.
+     * @param pid Assigned process-id.
+     * @param root_tid Root thread-id.
+     * @param libs List of external libraries.
+     * @param lib_filter Map of API name call from and call for.
+     */
+    Process(ProcessDelegate& delegate,
+	    std::unique_ptr<VMemory::Accessor> proc_memory,
+	    const vaddr_t addr,
+	    const vpid_t& pid,
+	    const vtid_t& root_tid,
+	    const std::vector<void*>& libs,
+	    const std::map<std::string, std::string>& lib_filter,
+	    const std::map<std::string, std::pair<builtin_func_t, BuiltinFuncParam>>& builtin_funcs);
+
   };
 }

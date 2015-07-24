@@ -2,6 +2,7 @@
 
 #include "definitions.hpp"
 #include "process.hpp"
+#include "vmachine.hpp"
 
 namespace processwarp {
   /**
@@ -22,6 +23,6 @@ namespace processwarp {
      * VMにライブラリを登録する。
      * @param vm 登録対象のVM
      */
-    static void regist(Process& vm);
+    static void regist(VMachine& vm);
   };
 }

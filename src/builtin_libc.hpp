@@ -1,6 +1,8 @@
 #pragma once
 
 #include "definitions.hpp"
+#include "process.hpp"
+#include "vmachine.hpp"
 
 namespace processwarp {
   /**
@@ -113,12 +115,6 @@ namespace processwarp {
 			       vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
-     * VMにライブラリを登録する。
-     * @param vm 登録対象のVM
-     */
-    static void regist(Process& vm);
-
-    /**
      * setjmp関数。非局所的なジャンプのために、スタックコンテキストを保存する。
      * srcから取り出すパラメタは以下のとおり。
      * jmp_buf env
@@ -139,5 +135,11 @@ namespace processwarp {
      */
     static BuiltinPost strtol(Process& proc, Thread& thread, BuiltinFuncParam p,
 			      vaddr_t dst, std::vector<uint8_t>& src);
+
+    /**
+     * VMにライブラリを登録する。
+     * @param vm 登録対象のVM
+     */
+    static void regist(VMachine& vm);
   };
 }

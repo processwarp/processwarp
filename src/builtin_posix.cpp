@@ -86,7 +86,7 @@ BuiltinPost BuiltinPosix::bi_pthread_join(Process& proc, Thread& thread, Builtin
 }
 
 // VMにライブラリを登録する。
-void BuiltinPosix::regist(Process& vm) {
+void BuiltinPosix::regist(VMachine& vm) {
   vm.regist_builtin_func("__assert_fail", BuiltinPosix::bi_assert_fail, 0);
   vm.regist_builtin_func("pthread_create", BuiltinPosix::bi_pthread_create, 0);
   vm.regist_builtin_func("pthread_exit", BuiltinPosix::bi_pthread_exit, 0);

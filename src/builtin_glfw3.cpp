@@ -44,7 +44,7 @@ BuiltinPost BuiltinGlfw3::destroyWindow(Process& proc, Thread& thread, BuiltinFu
   return BP_NORMAL;
 }
 
-void BuiltinGlfw3::regist(Process& vm) {
+void BuiltinGlfw3::regist(VMachine& vm) {
   vm.regist_builtin_func("glfwCreateWindow", BuiltinGlfw3::createWindow, 0);
   vm.regist_builtin_func("glfwDestroyWindow", BuiltinGlfw3::destroyWindow, 0);
 }

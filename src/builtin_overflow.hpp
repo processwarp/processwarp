@@ -1,16 +1,12 @@
 #pragma once
 
 #include "definitions.hpp"
+#include "process.hpp"
+#include "vmachine.hpp"
 
 namespace processwarp {
   class BuiltinOverflow {
   public:
-    /**
-     * VMにライブラリを登録する。
-     * @param vm 登録対象のVM
-     */
-    static void regist(Process& vm);
-
     /**
      * overflowが検出可能な符号あり加算関数。
      * srcから取り出すパラメタは以下のとおり。
@@ -82,5 +78,11 @@ namespace processwarp {
      */
     static BuiltinPost usub(Process& proc, Thread& thread, BuiltinFuncParam p,
 			    vaddr_t dst, std::vector<uint8_t>& src);
+
+    /**
+     * VMにライブラリを登録する。
+     * @param vm 登録対象のVM
+     */
+    static void regist(VMachine& vm);
   };
 }

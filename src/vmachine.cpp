@@ -1,6 +1,17 @@
 
 #include <random>
 
+#include "builtin_bit.hpp"
+#ifdef ENABLE_GLFW3
+#include "builtin_glfw3.hpp"
+#endif
+#include "builtin_libc.hpp"
+#include "builtin_memory.hpp"
+#include "builtin_overflow.hpp"
+#include "builtin_posix.hpp"
+#include "builtin_va_arg.hpp"
+#include "builtin_warp.hpp"
+
 #include "convert.hpp"
 #include "definitions.hpp"
 #include "error.hpp"
@@ -46,10 +57,14 @@ void VMachineDelegate::on_error(const vpid_t& pid,
 // Constractor with delegate.
 VMachine::VMachine(VMachineDelegate& delegate_,
 		   VMemoryDelegate& memory_delegate,
-		   const dev_id_t& device_id_) :
+		   const dev_id_t& device_id_,
+		   const std::vector<void*>& libs_,
+		   const std::map<std::string, std::string>& lib_filter_) :
   device_id(device_id_),
   delegate(delegate_),
-  vmemory(memory_delegate, device_id_) {
+  vmemory(memory_delegate, device_id_),
+  libs(libs_),
+  lib_filter(lib_filter_) {
   // Do nothing.
 }
 
@@ -166,13 +181,10 @@ bool VMachine::recv_warp_data(const vpid_t& pid,
 }
 
 // Create empty process.
-void VMachine::create_process(const vpid_t& pid,
-			      const vtid_t& root_tid,
-			      std::vector<void*> libs,
-			      const std::map<std::string, std::string>& lib_filter) {
+void VMachine::create_process(const vpid_t& pid, const vtid_t& root_tid) {
   assert(procs.find(pid) == procs.end());
-  procs.insert(std::make_pair(pid, std::shared_ptr<Process>
-			      (new Process(*this, pid, root_tid, libs, lib_filter))));
+  procs.insert(std::make_pair(pid, std::move(Process::alloc
+					     (*this, pid, root_tid, libs, lib_filter, builtin_funcs))));
   procs.at(pid)->setup();
 }
 
@@ -303,4 +315,35 @@ void VMachine::recv_process_warp(const vpid_t& pid, picojson::object& json) {
     it_thread.second->status = Thread::NORMAL;
   }
   */
+}
+
+// Regist built-in function to virtual machine.
+void VMachine::regist_builtin_func(const std::string& name,
+				   builtin_func_t func, int i64) {
+  BuiltinFuncParam param;
+  param.i64 = i64;
+  builtin_funcs.insert(std::make_pair(name, std::make_pair(func, param)));
+}
+
+// Regist built-in function to virtual machine.
+void VMachine::regist_builtin_func(const std::string& name,
+				   builtin_func_t func, void* ptr) {
+  BuiltinFuncParam param;
+  param.ptr = ptr;
+  builtin_funcs.insert(std::make_pair(name, std::make_pair(func, param)));
+}
+
+// Setup virtual machine.
+void VMachine::setup_builtin() {
+  // VMの組み込み関数をロード
+  BuiltinBit::regist(*this);
+#ifdef ENABLE_GLFW3
+  BuiltinGlfw3::regist(*this);
+#endif
+  BuiltinLibc::regist(*this);
+  BuiltinMemory::regist(*this);
+  BuiltinOverflow::regist(*this);
+  BuiltinPosix::regist(*this);
+  BuiltinVaArg::regist(*this);
+  BuiltinWarp::regist(*this);
 }

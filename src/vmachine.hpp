@@ -74,10 +74,14 @@ namespace processwarp {
      * @param delegate Events assignee.
      * @param memory_delegate 
      * @param device_id This virtual machine's device-id.
+     * @param libs Loaded external libraries for ffi.
+     * @param lib_filter Map of API name call from and call for that can access.
      */
     VMachine(VMachineDelegate& delegate,
 	     VMemoryDelegate& memory_delegate,
-	     const dev_id_t& device_id);
+	     const dev_id_t& device_id,
+	     const std::vector<void*>& libs,
+	     const std::map<std::string, std::string>& lib_filter);
 
     /**
      * Main loop.
@@ -99,13 +103,8 @@ namespace processwarp {
      * Create empty process.
      * @param pid New process's process-id.
      * @param root_tid Root thread-id.
-     * @param libs List of external libraries.
-     * @param lib_filter Map of API name call from and call for.
      */
-    void create_process(const vpid_t& pid,
-			const vtid_t& root_tid,
-			std::vector<void*> libs,
-			const std::map<std::string, std::string>& lib_filter);
+    void create_process(const vpid_t& pid, const vtid_t& root_tid);
 
     /**
      * Delete process.
@@ -135,6 +134,28 @@ namespace processwarp {
     bool have_process(const vpid_t& pid);
 
     /**
+     * Regist built-in function to virtual machine.
+     * @param name Function name (if C++ name then demangled).
+     * @param func Point to buint-in function bound name.
+     * @param i64 Parameter to pass to builtin-function.
+     */
+    void regist_builtin_func(const std::string& name, builtin_func_t func, int i64);
+
+    /**
+     * Regist built-in function to virtual machine.
+     * @param name Function name (if C++ name then demangled).
+     * @param func Point to buint-in function bound name.
+     * @param ptr Parameter to pass to builtin-function.
+     */
+    void regist_builtin_func(const std::string& name, builtin_func_t func, void* ptr);
+
+    /**
+     * Setup virtual machine.
+     * Regist built-in function to virtual machine.
+     */
+    void setup_builtin();
+
+    /**
      * Start warp process.
      * Resource remain after warp. Need to call delete_process after all.
      * @param pid Target pid.
@@ -161,8 +182,21 @@ namespace processwarp {
     VMachineDelegate& delegate;
     /** Virtual memory for this virtual machine. */
     VMemory vmemory;
+    /** Loaded external libraries for ffi. */
+    const std::vector<void*>& libs;
+    /**
+     * Map of API name call from and call for that can access.
+     * Key:API nam call from application.
+     * Value:API name call for OS.
+     */
+    const std::map<std::string, std::string>& lib_filter;
+
     /** Map of pid and process. */
-    std::map<vpid_t, std::shared_ptr<Process>> procs;
+    std::map<vpid_t, std::unique_ptr<Process>> procs;
+
+    /** Map of API name and built-in function pointer and parameter. */
+    std::map<std::string, std::pair<builtin_func_t, BuiltinFuncParam>> builtin_funcs;
+
     /** Map of pid and warp destination device-ids. */
     std::map<vpid_t, dev_id_t> warp_dest;
 

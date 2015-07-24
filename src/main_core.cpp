@@ -206,7 +206,8 @@ public:
     }
 
     this->device_id = device_id;
-    this->vm.reset(new VMachine(*this, *this, device_id));
+    this->vm.reset(new VMachine(*this, *this, device_id, libs, lib_filter));
+    this->vm->setup_builtin();
 
     // Syncronize processes empty because processes not running just run program.
     socket.send_sync_proc_list(std::map<vpid_t, SocketIoProc>());
@@ -279,7 +280,7 @@ public:
 	proc_info.threads.insert(std::make_pair(tid, device_id));
       }
       
-      vm->create_process(pid, root_tid, libs, lib_filter);
+      vm->create_process(pid, root_tid);
 
     } else {
       // Deny from other account.

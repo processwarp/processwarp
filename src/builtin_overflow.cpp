@@ -5,33 +5,6 @@
 
 using namespace processwarp;
 
-// VMにライブラリを登録する。
-void BuiltinOverflow::regist(Process& vm) {
-  vm.regist_builtin_func("llvm.sadd.with.overflow.i16", BuiltinOverflow::sadd, 16);
-  vm.regist_builtin_func("llvm.sadd.with.overflow.i32", BuiltinOverflow::sadd, 32);
-  vm.regist_builtin_func("llvm.sadd.with.overflow.i64", BuiltinOverflow::sadd, 64);
-
-  vm.regist_builtin_func("llvm.smul.with.overflow.i16", BuiltinOverflow::smul, 16);
-  vm.regist_builtin_func("llvm.smul.with.overflow.i32", BuiltinOverflow::smul, 32);
-  vm.regist_builtin_func("llvm.smul.with.overflow.i64", BuiltinOverflow::smul, 64);
-
-  vm.regist_builtin_func("llvm.ssub.with.overflow.i16", BuiltinOverflow::ssub, 16);
-  vm.regist_builtin_func("llvm.ssub.with.overflow.i32", BuiltinOverflow::ssub, 32);
-  vm.regist_builtin_func("llvm.ssub.with.overflow.i64", BuiltinOverflow::ssub, 64);
-
-  vm.regist_builtin_func("llvm.uadd.with.overflow.i16", BuiltinOverflow::uadd, 16);
-  vm.regist_builtin_func("llvm.uadd.with.overflow.i32", BuiltinOverflow::uadd, 32);
-  vm.regist_builtin_func("llvm.uadd.with.overflow.i64", BuiltinOverflow::uadd, 64);
-
-  vm.regist_builtin_func("llvm.umul.with.overflow.i16", BuiltinOverflow::umul, 16);
-  vm.regist_builtin_func("llvm.umul.with.overflow.i32", BuiltinOverflow::umul, 32);
-  vm.regist_builtin_func("llvm.umul.with.overflow.i64", BuiltinOverflow::umul, 64);
-
-  vm.regist_builtin_func("llvm.usub.with.overflow.i16", BuiltinOverflow::usub, 16);
-  vm.regist_builtin_func("llvm.usub.with.overflow.i32", BuiltinOverflow::usub, 32);
-  vm.regist_builtin_func("llvm.usub.with.overflow.i64", BuiltinOverflow::usub, 64);
-}
-
 /**
  * @param SFUNC SafeIntの演算関数
  * @param INT_T 計算のベースになる整数型
@@ -76,3 +49,30 @@ M_FUNC_PER_METHOD(usub, SafeSubtract, uint16_t, uint32_t, uint64_t)
 
 #undef M_FUNC_PER_METHOD
 #undef M_CASE_PER_WIDTH
+
+// VMにライブラリを登録する。
+void BuiltinOverflow::regist(VMachine& vm) {
+  vm.regist_builtin_func("llvm.sadd.with.overflow.i16", BuiltinOverflow::sadd, 16);
+  vm.regist_builtin_func("llvm.sadd.with.overflow.i32", BuiltinOverflow::sadd, 32);
+  vm.regist_builtin_func("llvm.sadd.with.overflow.i64", BuiltinOverflow::sadd, 64);
+
+  vm.regist_builtin_func("llvm.smul.with.overflow.i16", BuiltinOverflow::smul, 16);
+  vm.regist_builtin_func("llvm.smul.with.overflow.i32", BuiltinOverflow::smul, 32);
+  vm.regist_builtin_func("llvm.smul.with.overflow.i64", BuiltinOverflow::smul, 64);
+
+  vm.regist_builtin_func("llvm.ssub.with.overflow.i16", BuiltinOverflow::ssub, 16);
+  vm.regist_builtin_func("llvm.ssub.with.overflow.i32", BuiltinOverflow::ssub, 32);
+  vm.regist_builtin_func("llvm.ssub.with.overflow.i64", BuiltinOverflow::ssub, 64);
+
+  vm.regist_builtin_func("llvm.uadd.with.overflow.i16", BuiltinOverflow::uadd, 16);
+  vm.regist_builtin_func("llvm.uadd.with.overflow.i32", BuiltinOverflow::uadd, 32);
+  vm.regist_builtin_func("llvm.uadd.with.overflow.i64", BuiltinOverflow::uadd, 64);
+
+  vm.regist_builtin_func("llvm.umul.with.overflow.i16", BuiltinOverflow::umul, 16);
+  vm.regist_builtin_func("llvm.umul.with.overflow.i32", BuiltinOverflow::umul, 32);
+  vm.regist_builtin_func("llvm.umul.with.overflow.i64", BuiltinOverflow::umul, 64);
+
+  vm.regist_builtin_func("llvm.usub.with.overflow.i16", BuiltinOverflow::usub, 16);
+  vm.regist_builtin_func("llvm.usub.with.overflow.i32", BuiltinOverflow::usub, 32);
+  vm.regist_builtin_func("llvm.usub.with.overflow.i64", BuiltinOverflow::usub, 64);
+}

@@ -271,7 +271,7 @@ BuiltinPost BuiltinLibc::realloc(Process& proc, Thread& thread, BuiltinFuncParam
 }
 
 // VMにライブラリを登録する。
-void BuiltinLibc::regist(Process& vm) {
+void BuiltinLibc::regist(VMachine& vm) {
   vm.regist_builtin_func("atexit", BuiltinLibc::atexit, 0);
   vm.regist_builtin_func("exit", BuiltinLibc::exit, 0);
 

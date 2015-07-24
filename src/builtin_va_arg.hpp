@@ -1,16 +1,12 @@
 #pragma once
 
 #include "definitions.hpp"
+#include "process.hpp"
+#include "vmachine.hpp"
 
 namespace processwarp {
   class BuiltinVaArg {
   public:
-    /**
-     * VMにライブラリを登録する。
-     * @param vm 登録対象のVM
-     */
-    static void regist(Process& vm);
-
     /**
      * __builtin_va_arg関数。
      * srcから取り出すパラメタは以下のとおり。
@@ -46,5 +42,11 @@ namespace processwarp {
      */
     static BuiltinPost start(Process& proc, Thread& thread, BuiltinFuncParam p,
 			     vaddr_t dst, std::vector<uint8_t>& src);
+
+    /**
+     * VMにライブラリを登録する。
+     * @param vm 登録対象のVM
+     */
+    static void regist(VMachine& vm);
   };
 }

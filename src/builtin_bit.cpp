@@ -39,7 +39,7 @@ BuiltinPost BuiltinBit::bswap(Process& proc, Thread& thread, BuiltinFuncParam p,
 }
 
 // PROCにライブラリを登録する。
-void BuiltinBit::regist(Process& vm) {
+void BuiltinBit::regist(VMachine& vm) {
   vm.regist_builtin_func("llvm.bswap.i16", BuiltinBit::bswap, 16);
   vm.regist_builtin_func("llvm.bswap.i32", BuiltinBit::bswap, 32);
   vm.regist_builtin_func("llvm.bswap.i64", BuiltinBit::bswap, 64);

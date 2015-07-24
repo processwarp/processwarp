@@ -1,6 +1,5 @@
 
 #include "builtin_memory.hpp"
-#include "process.hpp"
 
 using namespace processwarp;
 
@@ -33,7 +32,7 @@ BuiltinPost BuiltinMemory::invariant_end(Process& proc, Thread& thread, BuiltinF
 }
 
 // VMにライブラリを登録する。
-void BuiltinMemory::regist(Process& vm) {
+void BuiltinMemory::regist(VMachine& vm) {
   vm.regist_builtin_func("llvm.lifetime.start", BuiltinMemory::lifetime_start, 0);
   vm.regist_builtin_func("llvm.lifetime.end",   BuiltinMemory::lifetime_end, 0);
 

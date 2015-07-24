@@ -73,16 +73,20 @@ public:
     // Library is empty because don't use in loader.
     std::vector<void*> libs;
     std::map<std::string, std::string> lib_filter;
-    Process proc(*this, pid, tid, libs, lib_filter);
-    proc.setup();
+    std::map<std::string, std::pair<builtin_func_t, BuiltinFuncParam>> builtin_funcs;
+    std::unique_ptr<Process> proc(Process::alloc(*this, pid, tid, libs, lib_filter, builtin_funcs));
+    proc->setup();
     
     // Load program from LLVM-IR file.
-    LlvmAsmLoader loader(proc);
+    LlvmAsmLoader loader(*proc);
     loader.load_file(pool_path + Convert::vpid2str(pid) + ".ll");
 
     std::map<std::string, std::string> envs;
     // Run virtual machine for bind argument and environment variables.
-    proc.run(args, envs);
+    proc->run(args, envs);
+
+    // Write out data to memory.
+    proc->proc_memory->write_out();
       
     // Dump and write to file.
     picojson::object body;

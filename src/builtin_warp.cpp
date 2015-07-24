@@ -53,14 +53,6 @@ BuiltinPost BuiltinWarp::poll_warp_request(Process& proc, Thread& thread, Builti
   }
 }
 
-// This function register library functions in virtual machine.
-void BuiltinWarp::regist(Process& vm) {
-  vm.regist_builtin_func("at_befor_warp", BuiltinWarp::at_befor_warp, 0);
-  vm.regist_builtin_func("at_after_warp", BuiltinWarp::at_after_warp, 0);
-  vm.regist_builtin_func("poll_warp_request", BuiltinWarp::poll_warp_request, 0);
-  vm.regist_builtin_func("set_processwarp_param", BuiltinWarp::set_processwarp_param, 0);
-}
-
 // This function set a parameter to warp function.
 BuiltinPost BuiltinWarp::set_processwarp_param(Process& proc, Thread& thread, BuiltinFuncParam p,
 					       vaddr_t dst, std::vector<uint8_t>& src) {
@@ -75,4 +67,12 @@ BuiltinPost BuiltinWarp::set_processwarp_param(Process& proc, Thread& thread, Bu
   thread.memory->set<vm_int_t>(dst, 0);
 
   return BP_NORMAL;
+}
+
+// This function register library functions in virtual machine.
+void BuiltinWarp::regist(VMachine& vm) {
+  vm.regist_builtin_func("at_befor_warp", BuiltinWarp::at_befor_warp, 0);
+  vm.regist_builtin_func("at_after_warp", BuiltinWarp::at_after_warp, 0);
+  vm.regist_builtin_func("poll_warp_request", BuiltinWarp::poll_warp_request, 0);
+  vm.regist_builtin_func("set_processwarp_param", BuiltinWarp::set_processwarp_param, 0);
 }

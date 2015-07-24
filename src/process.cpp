@@ -9,7 +9,6 @@
 #include <ffi.h>
 #endif
 
-
 #ifndef EMSCRIPTEN
 #include <dlfcn.h>
 #else
@@ -18,20 +17,11 @@
 
 #include <unistd.h>
 
+#include "convert.hpp"
 #include "error.hpp"
 #include "finally.hpp"
 #include "func_store.hpp"
 #include "instruction.hpp"
-#include "builtin_bit.hpp"
-#ifdef ENABLE_GLFW3
-#include "builtin_glfw3.hpp"
-#endif
-#include "builtin_libc.hpp"
-#include "builtin_memory.hpp"
-#include "builtin_overflow.hpp"
-#include "builtin_posix.hpp"
-#include "builtin_va_arg.hpp"
-#include "builtin_warp.hpp"
 #include "process.hpp"
 #include "stackinfo.hpp"
 #include "type_store.hpp"
@@ -80,16 +70,66 @@ inline std::unique_ptr<TypeStore> get_type(instruction_t code, OperandParam& par
 
 // Constructor.
 Process::Process(ProcessDelegate& delegate_,
+		 std::unique_ptr<VMemory::Accessor> proc_memory_,
+		 const vaddr_t addr_,
 		 const vpid_t& pid_,
 		 const vtid_t& root_tid_,
-		 std::vector<void*>& libs_,
-		 const std::map<std::string, std::string>& lib_filter_) :
+		 const std::vector<void*>& libs_,
+		 const std::map<std::string, std::string>& lib_filter_,
+		 const std::map<std::string, std::pair<builtin_func_t, BuiltinFuncParam>>& builtin_funcs_) :
   delegate(delegate_),
-  proc_memory(delegate.assign_accessor(pid_)),
+  proc_memory(std::move(proc_memory_)),
+  addr(addr_),
   pid(pid_),
   root_tid(root_tid_),
   libs(libs_),
-  lib_filter(lib_filter_) {
+  lib_filter(lib_filter_),
+  builtin_funcs(builtin_funcs_) {
+}
+
+// Allocate process on memory from delegate.
+std::unique_ptr<Process> Process::alloc(ProcessDelegate& delegate,
+					const vpid_t& pid,
+					const vtid_t& root_tid,
+					const std::vector<void*>& libs,
+					const std::map<std::string, std::string>& lib_filter,
+					const std::map<std::string, std::pair<builtin_func_t, BuiltinFuncParam>>& builtin_funcs) {
+  picojson::object js_proc;
+  std::unique_ptr<VMemory::Accessor> memory(delegate.assign_accessor(pid));
+  
+  js_proc.insert(std::make_pair("pid", Convert::vpid2json(pid)));
+  js_proc.insert(std::make_pair("root_tid", Convert::vtid2json(root_tid)));
+
+  std::string str_proc = picojson::value(js_proc).serialize();
+  vaddr_t addr = memory->reserve_program_area();
+  memory->set_program_area(addr, reinterpret_cast<const uint8_t*>(str_proc.data()),
+			   str_proc.size());
+
+  return Process::read(delegate, std::move(memory), addr, libs, lib_filter, builtin_funcs);
+}
+
+// Read out process information from memory.
+std::unique_ptr<Process> Process::read(ProcessDelegate& delegate,
+				       std::unique_ptr<VMemory::Accessor> memory,
+				       vaddr_t addr,
+				       const std::vector<void*>& libs,
+				       const std::map<std::string, std::string>& lib_filter,
+				       const std::map<std::string, std::pair<builtin_func_t, BuiltinFuncParam>>& builtin_funcs) {
+  picojson::value js_tmp;
+  std::istringstream is(memory->get_program_area(addr));
+  std::string err = picojson::parse(js_tmp, is);
+  if (!err.empty()) {
+    /// TODO:error
+    assert(false);
+  }
+  picojson::object& js_proc = js_tmp.get<picojson::object>();
+  
+  vpid_t pid = Convert::json2vpid(js_proc.at("pid"));
+  vtid_t root_tid = Convert::json2vtid(js_proc.at("tid"));
+  
+  return std::unique_ptr<Process>
+    (new Process(delegate, std::move(memory), addr,
+		 pid, root_tid, libs, lib_filter, builtin_funcs));
 }
 
 // VM命令を実行する。
@@ -1094,24 +1134,6 @@ M_READ_BUILTIN_PARAM(read_builtin_param_i64, uint64_t, TY_UI64);
 
 #undef M_READ_BUILTIN_PARAM
 
-// 組み込み関数をVMに登録する。
-void Process::regist_builtin_func(const std::string& name,
-				     builtin_func_t func, int i64) {
-  BuiltinFuncParam param;
-  param.i64 = i64;
-  builtin_funcs.insert
-    (std::make_pair(name, std::make_pair(func, param)));
-}
-
-// 組み込み関数をVMに登録する。
-void Process::regist_builtin_func(const std::string& name,
-				     builtin_func_t func, void* ptr) {
-  BuiltinFuncParam param;
-  param.ptr = ptr;
-  builtin_funcs.insert
-    (std::make_pair(name, std::make_pair(func, param)));
-}
-
 // StackInfoのキャッシュを解決し、実行前の状態にする。
 void Process::resolve_stackinfo_cache(Thread& thread, StackInfo* stackinfo) {
   // 関数
@@ -1274,18 +1296,6 @@ void Process::setup() {
 
   // ネイティブポインタペアリング用アドレスを予約
   native_ptr.insert(std::make_pair(VADDR_NULL, nullptr));
-
-  // VMの組み込み関数をロード
-  BuiltinBit::regist(*this);
-#ifdef ENABLE_GLFW3
-  BuiltinGlfw3::regist(*this);
-#endif
-  BuiltinLibc::regist(*this);
-  BuiltinMemory::regist(*this);
-  BuiltinOverflow::regist(*this);
-  BuiltinPosix::regist(*this);
-  BuiltinVaArg::regist(*this);
-  BuiltinWarp::regist(*this);
 
   print_debug("finish setup.\n");
 }

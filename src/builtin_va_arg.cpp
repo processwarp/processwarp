@@ -7,14 +7,6 @@
 
 using namespace processwarp;
 
-// VMにライブラリを登録する。
-void BuiltinVaArg::regist(Process& vm) {
-  vm.regist_builtin_func("__builtin_va_arg", BuiltinVaArg::arg, 0);
-  vm.regist_builtin_func("llvm.va_start", BuiltinVaArg::start, 0);
-  vm.regist_builtin_func("llvm.va_end", BuiltinVaArg::end, 0);
-  vm.regist_builtin_func("llvm.va_copy", BuiltinVaArg::copy, 0);
-}
-
 // __builtin_va_arg関数。
 BuiltinPost BuiltinVaArg::arg(Process& proc, Thread& thread, BuiltinFuncParam p,
 			      vaddr_t dst, std::vector<uint8_t>& src) {
@@ -82,4 +74,12 @@ BuiltinPost BuiltinVaArg::start(Process& proc, Thread& thread, BuiltinFuncParam 
   thread.memory->set<vaddr_t>(arglist, thread.stackinfos.back()->var_arg);
   
   return BP_NORMAL;
+}
+
+// VMにライブラリを登録する。
+void BuiltinVaArg::regist(VMachine& vm) {
+  vm.regist_builtin_func("__builtin_va_arg", BuiltinVaArg::arg, 0);
+  vm.regist_builtin_func("llvm.va_start", BuiltinVaArg::start, 0);
+  vm.regist_builtin_func("llvm.va_end", BuiltinVaArg::end, 0);
+  vm.regist_builtin_func("llvm.va_copy", BuiltinVaArg::copy, 0);
 }

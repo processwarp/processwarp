@@ -1,6 +1,8 @@
 #pragma once
 
 #include "definitions.hpp"
+#include "process.hpp"
+#include "vmachine.hpp"
 
 namespace processwarp {
   class BuiltinWarp {
@@ -29,12 +31,6 @@ namespace processwarp {
 					 vaddr_t dst, std::vector<uint8_t>& src);
 
     /**
-     * This function register library functions in virtual machine.
-     * @param vm target virtual machine for regist on.
-     */
-    static void regist(Process& vm);
-
-    /**
      * This function set a parameter to warp function.
      * paramter from src;
      * vm_int_t key
@@ -42,5 +38,11 @@ namespace processwarp {
      */
     static BuiltinPost set_processwarp_param(Process& proc, Thread& thread, BuiltinFuncParam p,
 					     vaddr_t dst, std::vector<uint8_t>& src);
+
+    /**
+     * This function register library functions in virtual machine.
+     * @param vm target virtual machine for regist on.
+     */
+    static void regist(VMachine& vm);
   };
 }

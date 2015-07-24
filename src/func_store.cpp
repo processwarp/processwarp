@@ -121,7 +121,8 @@ std::unique_ptr<FuncStore> FuncStore::read(Process& proc, vaddr_t addr) {
     
   } else if (pt == PT_EXTERNAL) {
     if (proc.builtin_funcs.find(name) != proc.builtin_funcs.end()) {
-      std::pair<builtin_func_t, BuiltinFuncParam>& bi_info = proc.builtin_funcs.at(name);
+      const std::pair<builtin_func_t, BuiltinFuncParam>& bi_info =
+	proc.builtin_funcs.at(name);
 
       return std::unique_ptr<FuncStore>
 	(new FuncStore(addr,
