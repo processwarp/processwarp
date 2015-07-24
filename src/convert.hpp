@@ -86,7 +86,7 @@ namespace processwarp {
      * @return Boolean as JSON.
      */
     inline picojson::value bool2json(bool b) {
-      return picojson::value(b ? "T" : "F");
+      return picojson::value(std::string(b ? "T" : "F"));
     }
     
     /**
