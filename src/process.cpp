@@ -101,9 +101,7 @@ std::unique_ptr<Process> Process::alloc(ProcessDelegate& delegate,
   js_proc.insert(std::make_pair("root_tid", Convert::vtid2json(root_tid)));
 
   std::string str_proc = picojson::value(js_proc).serialize();
-  vaddr_t addr = memory->reserve_program_area();
-  memory->set_program_area(addr, reinterpret_cast<const uint8_t*>(str_proc.data()),
-			   str_proc.size());
+  vaddr_t addr = memory->set_meta_area(str_proc);
 
   return Process::read(delegate, std::move(memory), addr, libs, lib_filter, builtin_funcs);
 }
@@ -116,7 +114,7 @@ std::unique_ptr<Process> Process::read(ProcessDelegate& delegate,
 				       const std::map<std::string, std::string>& lib_filter,
 				       const std::map<std::string, std::pair<builtin_func_t, BuiltinFuncParam>>& builtin_funcs) {
   picojson::value js_tmp;
-  std::istringstream is(memory->get_program_area(addr));
+  std::istringstream is(memory->get_meta_area(addr));
   std::string err = picojson::parse(js_tmp, is);
   if (!err.empty()) {
     /// TODO:error

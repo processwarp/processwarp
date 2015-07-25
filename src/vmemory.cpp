@@ -152,6 +152,22 @@ VMemory::Accessor::Accessor(VMemory& vmemory_, Space& space_) :
   space(space_) {
 }
 
+// Set meta data.
+vaddr_t VMemory::Accessor::set_meta_area(const std::string& data) {
+  vaddr_t addr = space.assign_addr(AD_META);
+  space.pages.insert(std::make_pair(addr, Page(PT_MASTER, true)));
+  
+  return addr;
+}
+
+// Get meta data.
+const std::string& VMemory::Accessor::get_meta_area(vaddr_t addr) {
+  assert((AD_MASK & addr) == AD_META);
+  Page& page = get_page(addr, true);
+
+  return page.value;
+}
+
 // Allocates selected byte of memory.
 vaddr_t VMemory::Accessor::alloc(uint64_t size) {
   if (size == 0) size = 1;

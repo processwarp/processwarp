@@ -244,7 +244,21 @@ namespace processwarp {
        * @param space Accessing memory space.
        */
       Accessor(VMemory& vmemory, Space& space);
-    
+
+      /**
+       * Set meta data.
+       * @param data Meta data.
+       * @param assigned address.
+       */
+      vaddr_t set_meta_area(const std::string& data);
+
+      /**
+       * Get meta data.
+       * @param addr Target Address.
+       * @return
+       */
+      const std::string& get_meta_area(vaddr_t addr);
+
       /**
        * Reserve address in program area.
        * This method must use when loading program only.
