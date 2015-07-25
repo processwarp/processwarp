@@ -34,8 +34,7 @@ vaddr_t TypeStore::alloc_basic(VMemory::Accessor& memory, unsigned int size,
   js_type.insert(std::make_pair("size", Convert::int2json<unsigned int>(size)));
   js_type.insert(std::make_pair("alignment", Convert::int2json<unsigned int>(alignment)));
   
-  std::string str_type = picojson::value(js_type).serialize();
-  memory.set_program_area(addr, reinterpret_cast<const uint8_t*>(str_type.data()), str_type.size());
+  memory.set_program_area(addr, picojson::value(js_type).serialize());
 
   return addr;
 }
@@ -56,9 +55,8 @@ vaddr_t TypeStore::alloc_struct(VMemory::Accessor& memory, const std::vector<vad
   }
   js_type.insert(std::make_pair("member", picojson::value(js_member)));
 
-  std::string str_type = picojson::value(js_type).serialize();
   vaddr_t addr = memory.reserve_program_area();
-  memory.set_program_area(addr, reinterpret_cast<const uint8_t*>(str_type.data()), str_type.size());
+  memory.set_program_area(addr, picojson::value(js_type).serialize());
   
   return addr;
 }
@@ -75,9 +73,8 @@ vaddr_t TypeStore::alloc_array(VMemory::Accessor& memory, vaddr_t element, unsig
   js_type.insert(std::make_pair("element", Convert::vaddr2json(element)));
   js_type.insert(std::make_pair("num", Convert::int2json<unsigned int>(num)));
 
-  std::string str_type = picojson::value(js_type).serialize();
   vaddr_t addr = memory.reserve_program_area();
-  memory.set_program_area(addr, reinterpret_cast<const uint8_t*>(str_type.data()), str_type.size());
+  memory.set_program_area(addr, picojson::value(js_type).serialize());
   
   return addr;
 }
@@ -94,9 +91,8 @@ vaddr_t TypeStore::alloc_vector(VMemory::Accessor& memory, vaddr_t element, unsi
   js_type.insert(std::make_pair("element", Convert::vaddr2json(element)));
   js_type.insert(std::make_pair("num", Convert::int2json<unsigned int>(num)));
 
-  std::string str_type = picojson::value(js_type).serialize();
   vaddr_t addr = memory.reserve_program_area();
-  memory.set_program_area(addr, reinterpret_cast<const uint8_t*>(str_type.data()), str_type.size());
+  memory.set_program_area(addr, picojson::value(js_type).serialize());
   
   return addr;
 }

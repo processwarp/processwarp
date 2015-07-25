@@ -261,14 +261,14 @@ vaddr_t VMemory::Accessor::reserve_program_area() {
 }
 
 // Set program data to be selected address.
-void VMemory::Accessor::set_program_area(vaddr_t addr, const uint8_t* src, uint64_t size) {
+void VMemory::Accessor::set_program_area(vaddr_t addr, const std::string& data) {
   assert((AD_MASK & addr) == AD_PROGRAM);
   if (space.pages.find(addr) == space.pages.end()) {
     space.pages.insert(std::make_pair(addr, Page(PT_PROGRAM, true)));
   }
   
   assert(space.pages.at(addr).value.size() == 0);
-  space.pages.at(addr).value = std::string(reinterpret_cast<const char*>(src), size);
+  space.pages.at(addr).value = data;
 }
 
 // Get program data.

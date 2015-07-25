@@ -257,10 +257,9 @@ namespace processwarp {
        * Set program data to be selected address.
        * Raise assert when selected address is set yet.
        * @param addr Target address.
-       * @param src Set data address.
-       * @param size Size of data.
+       * @param data Program data.
        */
-      void set_program_area(vaddr_t addr, const uint8_t* src, uint64_t size);
+      void set_program_area(vaddr_t addr, const std::string& data);
 
       /**
        * Get program data.

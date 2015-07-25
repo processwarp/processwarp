@@ -54,9 +54,7 @@ void FuncStore::alloc_normal(VMemory::Accessor& memory,
   }
   js_func.insert(std::make_pair("code", picojson::value(js_code)));
 
-  std::string str_func = picojson::value(js_func).serialize();
-  memory.set_program_area(addr, reinterpret_cast<const uint8_t*>(str_func.data()),
-			  str_func.size());
+  memory.set_program_area(addr, picojson::value(js_func).serialize());
 }
 
 // Allocate a new external function to memory.
@@ -74,9 +72,7 @@ void FuncStore::alloc_external(VMemory::Accessor& memory,
   js_func.insert(std::make_pair("arg_num", Convert::int2json<unsigned int>(arg_num)));
   js_func.insert(std::make_pair("is_var_arg", Convert::bool2json(is_var_arg)));
   
-  std::string str_func = picojson::value(js_func).serialize();
-  memory.set_program_area(addr, reinterpret_cast<const uint8_t*>(str_func.data()),
-			  str_func.size());
+  memory.set_program_area(addr, picojson::value(js_func).serialize());
 }
 
 // Read out function information from memory.
