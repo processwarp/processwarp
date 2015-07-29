@@ -10,63 +10,6 @@
 using namespace processwarp;
 
 /**
- * Get process-id value by key from Socket.IO map.
- * @param data Pointer to Socket.IO map.
- * @param key Key in map.
- * @return Value as process-id in map.
- */
-vpid_t get_pid_by_map(sio::message::ptr data, std::string key) {
-  return data->get_map().at(key)->get_string();
-}
-
-/**
- * Convert process-id to Socket.IO value.
- * @param pid process-id.
- * @return Socket.IO value.
- */
-sio::message::ptr get_sio_by_pid(vpid_t pid) {
-  return sio::string_message::create(pid);
-}
-
-/**
- * Get thread-id value by key from Socket.IO map.
- * @param data Pointer to Socket.IO map.
- * @param key Key in map.
- * @return Value as thread-id in map.
- */
-vtid_t get_tid_by_map(sio::message::ptr data, std::string key) {
-  return Util::hex_str2num<vtid_t>(data->get_map().at(key)->get_string());
-}
-
-/**
- * Convert thread-id to Socket.IO value.
- * @param pid thread-id.
- * @return Socket.IO value.
- */
-sio::message::ptr get_sio_by_tid(vtid_t tid) {
-  return sio::string_message::create(Util::num2hex_str<vtid_t>(tid));
-}
-
-/**
- * Get device-id value by key from Socket.IO map.
- * @param data Pointer to Socket.IO map.
- * @param key Key in map.
- * @return Value as device-id in map.
- */
-dev_id_t get_dev_id_by_map(sio::message::ptr data, std::string key) {
-  return data->get_map().at(key)->get_string();
-}
-
-/**
- * Convert device-id to Socket.IO value.
- * @param pid device-id.
- * @return Socket.IO value.
- */
-sio::message::ptr get_sio_by_dev_id(dev_id_t dev_id) {
-  return sio::string_message::create(dev_id);
-}
-
-/**
  * Get string value by key from Socket.IO map.
  * @param data Pointer to Socket.IO map.
  * @param key Key in map.
@@ -94,6 +37,72 @@ std::string get_str_by_map(sio::message::ptr data, std::string key, bool is_must
       return data->get_map().at(key)->get_string();
     }
   }
+}
+
+/**
+ * Convert string to Socket.IO value.
+ * @param str Source string value.
+ * @return Socket.IO value.
+ */
+sio::message::ptr get_sio_by_str(const std::string& str) {
+  return sio::string_message::create(str);
+}
+
+/**
+ * Get process-id value by key from Socket.IO map.
+ * @param data Pointer to Socket.IO map.
+ * @param key Key in map.
+ * @return Value as process-id in map.
+ */
+vpid_t get_pid_by_map(sio::message::ptr data, const std::string& key) {
+  return Convert::str2vpid(get_str_by_map(data, key));
+}
+
+/**
+ * Convert process-id to Socket.IO value.
+ * @param pid process-id.
+ * @return Socket.IO value.
+ */
+sio::message::ptr get_sio_by_pid(const vpid_t& pid) {
+  return get_sio_by_str(Convert::vpid2str(pid));
+}
+
+/**
+ * Get thread-id value by key from Socket.IO map.
+ * @param data Pointer to Socket.IO map.
+ * @param key Key in map.
+ * @return Value as thread-id in map.
+ */
+vtid_t get_tid_by_map(sio::message::ptr data, const std::string& key) {
+  return Convert::str2vtid(get_str_by_map(data, key));
+}
+
+/**
+ * Convert thread-id to Socket.IO value.
+ * @param pid thread-id.
+ * @return Socket.IO value.
+ */
+sio::message::ptr get_sio_by_tid(vtid_t tid) {
+  return get_sio_by_str(Convert::vtid2str(tid));
+}
+
+/**
+ * Get device-id value by key from Socket.IO map.
+ * @param data Pointer to Socket.IO map.
+ * @param key Key in map.
+ * @return Value as device-id in map.
+ */
+dev_id_t get_dev_id_by_map(sio::message::ptr data, const std::string& key) {
+  return Convert::str2devid(get_str_by_map(data, key));
+}
+
+/**
+ * Convert device-id to Socket.IO value.
+ * @param pid device-id.
+ * @return Socket.IO value.
+ */
+sio::message::ptr get_sio_by_dev_id(dev_id_t dev_id) {
+  return get_sio_by_str(Convert::devid2str(dev_id));
 }
 
 // Constractor with delegate.

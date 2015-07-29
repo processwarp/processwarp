@@ -153,12 +153,39 @@ namespace processwarp {
     }
 
     /**
+     * Convert device-id to string.
+     * @param dev_id Source device-id.
+     * @return Converted value as string.
+     */
+    inline std::string devid2str(const dev_id_t& dev_id) {
+      return dev_id;
+    }
+
+    /**
+     * Convert process-id to string.
+     * @param str Source string value.
+     * @return Converted value as vpid_t.
+     */
+    inline vpid_t str2vpid(const std::string& str) {
+      return str;
+    }
+    
+    /**
      * Convert thread-id from string.
      * @param str string.
      * @param thread-id.
      */
     inline vtid_t str2vtid(const std::string& str) {
       return Util::hex_str2num<vtid_t>(str);
+    }
+
+    /**
+     * Convert device-id to string.
+     * @param str Source string value.
+     * @param Converted value as dev_id_t.
+     */
+    inline dev_id_t str2devid(const std::string& str) {
+      return str;
     }
   }
 }
