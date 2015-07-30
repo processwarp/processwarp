@@ -25,30 +25,17 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
 public:
   /// Assigned process-id.
   const vpid_t pid;
-  /// Assigned thread-id.
-  const vtid_t tid;
   /// Virtual memory for this loader.
   VMemory vmemory;
   
   /**
    * Constructor with assined id.
    * @param pid_ Assigned process-id.
-   * @param tid_ Assigned thread-id.
    */
-  Loader(const vpid_t& pid_, const vtid_t& tid_) :
+  Loader(const vpid_t& pid_) :
     pid(pid_),
-    tid(tid_),
     vmemory(*this, LOADER_DEVICE_ID) {
     vmemory.set_loading(Convert::vpid2str(pid), true);
-  }
-
-  /**
-   * Must not return thread-id.
-   * Because only root thread need for loading.
-   */
-  vtid_t assign_tid(Process& vm) override {
-    assert(false);
-    return 0;
   }
 
   /**
@@ -74,7 +61,7 @@ public:
     std::vector<void*> libs;
     std::map<std::string, std::string> lib_filter;
     std::map<std::string, std::pair<builtin_func_t, BuiltinFuncParam>> builtin_funcs;
-    std::unique_ptr<Process> proc(Process::alloc(*this, pid, tid, libs, lib_filter, builtin_funcs));
+    std::unique_ptr<Process> proc(Process::alloc(*this, pid, JOIN_WAIT_ROOT, libs, lib_filter, builtin_funcs, VADDR_NULL));
     proc->setup();
     
     // Load program from LLVM-IR file.
@@ -91,28 +78,21 @@ public:
     // Dump and write to file.
     picojson::object body;
     picojson::object dump;
-    picojson::object threads;
-    body.insert(std::make_pair("cmd", picojson::value(std::string("warp"))));
     body.insert(std::make_pair("pid", Convert::vpid2json(pid)));
-    /*
-    for (auto& it : proc.threads) {
-      threads.insert(std::make_pair(Convert::vtid2str(it.first),
-				    convert.export_thread(*it.second, related)));
-    }
-    */
-    body.insert(std::make_pair("threads", picojson::value(threads)));
-    /*
-    std::set<vaddr_t> all = proc.vmemory.get_alladdr();
-    for (auto it = all.begin(); it != all.end(); it ++) {
-      // Don't export NULL.
-      if (*it == VADDR_NULL || *it == VADDR_NON) continue;
+    body.insert(std::make_pair("proc_addr", Convert::vaddr2json(proc->addr)));
+    body.insert(std::make_pair("root_tid", Convert::vtid2json(proc->root_tid)));
+
+    std::map<vaddr_t, VMemory::Page> pages =
+      vmemory.get_space(Convert::vpid2str(pid)).pages;
+    for (auto& it : pages) {
       // Don't export builtin variables.
-      if (proc.builtin_addrs.find(*it) != proc.builtin_addrs.end()) continue;
-	
-      dump.insert(std::make_pair(Util::vaddr2str(*it), convert.export_store(*it, related)));
+      if (proc->builtin_addrs.find(it.first) != proc->builtin_addrs.end()) continue;
+      
+      dump.insert(std::make_pair(Util::vaddr2str(it.first),
+				 picojson::value(it.second.value)));
     }
     body.insert(std::make_pair("dump", picojson::value(dump)));
-    */
+
     std::ofstream ofs(pool_path + Convert::vpid2str(pid) + ".out");
     ofs << picojson::value(body).serialize();
   }
@@ -137,10 +117,8 @@ int main(int argc, char* argv[]) {
     try {
       // Get pid.
       vpid_t pid = Convert::json2vpid(result.at("pid"));
-      // Get tid.
-      vtid_t tid = Convert::json2vtid(result.at("tid"));
       // Make loader.
-      Loader loader(pid, tid);
+      Loader loader(pid);
       
       // Convert arguments.
       std::vector<std::string> args;

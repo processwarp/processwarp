@@ -28,10 +28,10 @@ namespace processwarp {
      * @param dst_device_id Destination device-id.
      * @param data Send data (Binary).
      */
-    virtual void send_warp_data(const vpid_t& pid,
-				const vtid_t& tid,
-				const dev_id_t& dst_device_id,
-				const std::string& data);
+    virtual void send_vm_data(const vpid_t& pid,
+			      const vtid_t& tid,
+			      const dev_id_t& dst_device_id,
+			      const std::string& data);
     
     /**
      * Call when context switch of process.
@@ -93,18 +93,18 @@ namespace processwarp {
      * @param pid Target pid.
      * @param tid Target tid.
      * @param data Received data (Binary).
-     * @return True if accept data.
      */
-    bool recv_warp_data(const vpid_t& pid,
-			const vtid_t& tid,
-			const std::string& data);
+    void recv_packet(const vpid_t& pid,
+		     const vtid_t& tid,
+		     const std::string& data);
     
     /**
      * Create empty process.
      * @param pid New process's process-id.
      * @param root_tid Root thread-id.
+     * @param addr 
      */
-    void create_process(const vpid_t& pid, const vtid_t& root_tid);
+    void create_process(const vpid_t& pid, const vtid_t& root_tid, vaddr_t proc_addr);
 
     /**
      * Delete process.
@@ -120,11 +120,11 @@ namespace processwarp {
     void exit_process(const vpid_t& pid);
 
     /**
-     * Get root thread-id of process.
+     * Get process instance by process-id.
      * @param pid Target process's id.
-     * @return Root thread-id of process.
+     * @return Process instance.
      */
-    const vtid_t& get_root_tid(const vpid_t& pid);
+    Process& get_process(const vpid_t& pid);
 
     /**
      * Check whether process has contain in this device.
@@ -170,18 +170,17 @@ namespace processwarp {
     /**
      * @inheritDoc
      */
-    vtid_t assign_tid(Process& proc) override;
-
-    /**
-     * @inheritDoc
-     */
     std::unique_ptr<VMemory::Accessor> assign_accessor(const vpid_t& pid) override;
 
   private:
     /** Event assignee */
     VMachineDelegate& delegate;
+
+  public:
     /** Virtual memory for this virtual machine. */
     VMemory vmemory;
+
+  private:
     /** Loaded external libraries for ffi. */
     const std::vector<void*>& libs;
     /**

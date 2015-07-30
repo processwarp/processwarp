@@ -27,13 +27,6 @@ namespace processwarp {
     virtual ~ProcessDelegate() {};
 
     /**
-     * Call when create thread.
-     * @param proc Caller process.
-     * @return A new thread-id.
-     */
-    virtual vtid_t assign_tid(Process& proc) = 0;
-
-    /**
      */
     virtual std::unique_ptr<VMemory::Accessor> assign_accessor(const vpid_t& pid) = 0;
   };
@@ -46,8 +39,6 @@ namespace processwarp {
   public:
     /** 大域変数、関数シンボル→アドレス型 */
     typedef std::map<const Symbols::Symbol*, vaddr_t> Globals;
-    /** スレッド一覧型 */
-    typedef std::map<vtid_t, std::unique_ptr<Thread>> Threads;
     /** 組み込みアドレス一覧 */
     typedef std::set<vaddr_t> BuiltinAddrs;
     /** 終了処理時に呼び出す関数一覧 */
@@ -75,23 +66,25 @@ namespace processwarp {
     CallsAtExit calls_at_exit; //< 終了処理時に呼び出す関数一覧
     Globals globals;    ///< 大域変数、関数シンボル→アドレス
     Symbols symbols;    ///< シンボル
-    Threads threads;    ///< スレッド一覧
+    std::map<vtid_t, std::unique_ptr<Thread>> threads;
+    std::set<vtid_t> active_threads;
     std::map<vaddr_t, void*> native_ptr; ///< 仮想アドレスとネイティブポインタのペア
     
     /**
      * Allocate process on memory from delegate.
      * @param delegate
      * @param pid
-     * @param root_tid
      * @param libs
      * @param lib_filter
+     * @param proc_addr
      */
     static std::unique_ptr<Process> alloc(ProcessDelegate& delegate,
 					  const vpid_t& pid,
-					  const vtid_t& root_tid,
+					  vtid_t root_tid,
 					  const std::vector<void*>& libs,
 					  const std::map<std::string, std::string>& lib_filter,
-					  const std::map<std::string, std::pair<builtin_func_t, BuiltinFuncParam>>& builtin_funcs);
+					  const std::map<std::string, std::pair<builtin_func_t, BuiltinFuncParam>>& builtin_funcs,
+					  vaddr_t proc_addr);
 
     /**
      * Read out process information from memory.
@@ -133,7 +126,19 @@ namespace processwarp {
     void close();
 
     /**
-     * Create a new thread.
+     * Get activated thread instance have had process.
+     * @param 
+     */
+    Thread& get_thread(vtid_t addr);
+
+    /**
+     * Activate exist thread assigned in address by other device (or warped to other device).
+     * @param tid
+     */
+    void activate_thread(vtid_t tid);
+
+    /**
+     * Create a new thread and activate.
      * @param func_addr Entry point for new thread.
      * @param arg_addr Argument for entry point.
      * @return Assigned thread-id for new thread.

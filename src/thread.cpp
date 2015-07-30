@@ -1,6 +1,7 @@
 
 #include <cassert>
 
+#include "convert.hpp"
 #include "thread.hpp"
 
 using namespace processwarp;
@@ -8,12 +9,10 @@ using namespace processwarp;
 // Constructor with thread-id.
 Thread::Thread(vtid_t tid_, std::unique_ptr<VMemory::Accessor> memory_) :
   tid(tid_),
-  status(NORMAL),
   memory(std::move(memory_)),
+  complex_operator(*memory),
   warp_stack_size(0),
   warp_call_count(0),
-  join_waiting(JOIN_NONE),
-  complex_operator(*memory),
   OPERATORS {
     nullptr, // 0
     nullptr, // 1 void
@@ -70,6 +69,45 @@ Thread::Thread(vtid_t tid_, std::unique_ptr<VMemory::Accessor> memory_) :
     nullptr, // 34
     nullptr, // 35 quad
     } {
+}
+
+// Allocate thread on memory.
+std::pair<vtid_t, std::unique_ptr<Thread>>
+	Thread::alloc(std::unique_ptr<VMemory::Accessor> memory, vtid_t tid) {
+  picojson::object js_thread;
+  
+  js_thread.insert(std::make_pair("tid", Convert::vtid2json(tid)));
+  js_thread.insert(std::make_pair("status", Convert::int2json<uint8_t>(NORMAL)));
+  js_thread.insert(std::make_pair("join_waiting", Convert::vtid2json(JOIN_WAIT_NONE)));
+  
+  std::string str_thread = picojson::value(js_thread).serialize();
+  tid = memory->set_meta_area(str_thread, tid);
+
+  return std::make_pair(tid, Thread::read(tid, std::move(memory)));
+}
+
+// Read out thread information from memory.
+std::unique_ptr<Thread> Thread::read(vtid_t tid,
+				     std::unique_ptr<VMemory::Accessor> memory) {
+  std::unique_ptr<Thread> thread(new Thread(tid, std::move(memory)));
+  thread->update_info();
+
+  return thread;
+}
+
+// Read out and update thread information on instance.
+void Thread::update_info() {
+  picojson::value js_tmp;
+  std::istringstream is(memory->get_meta_area(tid));
+  std::string err = picojson::parse(js_tmp, is);
+  if (!err.empty()) {
+    /// TODO:error
+    assert(false);
+  }
+  picojson::object& js_thread = js_tmp.get<picojson::object>();
+
+  status = static_cast<Status>(Convert::json2int<uint8_t>(js_thread.at("status")));
+  join_waiting = Convert::json2vtid(js_thread.at("join_waiting"));
 }
 
 // 型依存の演算インスタンスを取得する。

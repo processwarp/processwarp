@@ -26,10 +26,10 @@ VMachineDelegate::~VMachineDelegate() {
 }
     
 // Call when send data to other device.
-void VMachineDelegate:: send_warp_data(const vpid_t& pid,
-				       const vtid_t& tid,
-				       const dev_id_t& dst_device_id,
-				       const std::string& data) {
+void VMachineDelegate::send_vm_data(const vpid_t& pid,
+				    const vtid_t& tid,
+				    const dev_id_t& dst_device_id,
+				    const std::string& data) {
   // Do nothing.
 }
     
@@ -81,11 +81,12 @@ void VMachine::loop() {
       pid  = it_proc->first;
       proc = it_proc->second.get();
 
-      auto it_thread = proc->threads.begin();
-      while(it_thread != proc->threads.end()) {
-	tid    = it_thread->first;
-	thread = it_thread->second.get();
-
+      auto it_thread = proc->active_threads.begin();
+      while(it_thread != proc->active_threads.end()) {
+	tid    = *it_thread;
+	thread = &proc->get_thread(tid);
+	/// @todo thread should be null
+	assert(false);
 	if (thread->status == Thread::NORMAL ||
 	    thread->status == Thread::WAIT_WARP ||
 	    thread->status == Thread::BEFOR_WARP ||
@@ -111,7 +112,8 @@ void VMachine::loop() {
 	    goto next_proc;
 
 	  } else {
-	    it_thread = proc->threads.erase(it_thread);
+	    it_thread = proc->active_threads.erase(it_thread);
+	    proc->threads.erase(tid);
 	    continue;
 	  }
 	}
@@ -123,11 +125,13 @@ void VMachine::loop() {
       ;
     }
     
-  } catch (Error e) {
+  } catch (Error& e) {
     delegate.on_error(pid, "");
     thread->status = Thread::FINISH;
     
-  } catch (std::exception e) {
+  }
+#ifdef NDEBUG
+  catch (std::exception& e) {
     delegate.on_error(pid, e.what());
     thread->status = Thread::FINISH;
     
@@ -135,21 +139,23 @@ void VMachine::loop() {
     delegate.on_error(pid, "unknown exception");
     thread->status = Thread::FINISH;
   }
+#endif
   
   delegate.on_switch_proccess("");
 }
     
 // Pass data from other device.
-bool VMachine::recv_warp_data(const vpid_t& pid,
-			      const vtid_t& tid,
-			      const std::string& data) {
+void VMachine::recv_packet(const vpid_t& pid,
+			   const vtid_t& tid,
+			   const std::string& data) {
   try {
     picojson::value v;
     std::istringstream is(data);
     std::string err = picojson::parse(v, is);
     if (!err.empty()) {
       std::cerr << err << std::endl;
-      return false;
+      assert(false);
+      /// @todo error
     }
     
     picojson::object json = v.get<picojson::object>();
@@ -161,30 +167,33 @@ bool VMachine::recv_warp_data(const vpid_t& pid,
     
     } else {
       assert(false);
-      return false;
+      /// @todo error
     }
 
-    return true;
+    return;
     
-  } catch (Error e) {
+  } catch (Error& e) {
     std::cerr << e.reason << ":" << e.mesg << std::endl;
-    return false;
-    
-  } catch (std::exception e) {
+
+  }
+#ifdef NDEBUG
+  catch (std::exception& e) {
     std::cerr << e.what() << std::endl;
-    return false;
     
   } catch (...) {
     std::cerr << "unknown exception" << std::endl;
-    return false;
   }
+#endif
+
+  assert(false);
+  /// @todo error
 }
 
 // Create empty process.
-void VMachine::create_process(const vpid_t& pid, const vtid_t& root_tid) {
+void VMachine::create_process(const vpid_t& pid, const vtid_t& root_tid, vaddr_t proc_addr) {
   assert(procs.find(pid) == procs.end());
   procs.insert(std::make_pair(pid, std::move(Process::alloc
-					     (*this, pid, root_tid, libs, lib_filter, builtin_funcs))));
+					     (*this, pid, root_tid, libs, lib_filter, builtin_funcs, proc_addr))));
   procs.at(pid)->setup();
 }
 
@@ -201,9 +210,9 @@ void VMachine::exit_process(const vpid_t& pid) {
   procs.at(pid)->exit();
 }
 
-// Get root thread-id of process.
-const vtid_t& VMachine::get_root_tid(const vpid_t& pid) {
-  return procs.at(pid)->root_tid;
+// Get process instance by process-id.
+Process& VMachine::get_process(const vpid_t& pid) {
+  return *procs.at(pid);
 }
 
 // Check whether process has contain in this device.
@@ -218,20 +227,13 @@ void VMachine::warp_process(const vpid_t& pid,
   warp_dest[pid] = dst_device_id;
   // Change vm's status for setup to warp.
   if (tid == ALL_THREAD) {
-    for (auto& it : procs.at(pid)->threads) {
-      procs.at(pid)->setup_warpin(it.first, dst_device_id);
+    for (auto& it : procs.at(pid)->active_threads) {
+      procs.at(pid)->setup_warpin(it, dst_device_id);
     }
 
   } else {
     procs.at(pid)->setup_warpin(tid, dst_device_id);
   }
-}
-
-// @inheritDoc
-vtid_t VMachine::assign_tid(Process& vm) {
-  fixme("assign_tid\n");
-  std::random_device rnd;
-  return rnd();
 }
 
 // @inheritDoc

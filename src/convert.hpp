@@ -153,6 +153,15 @@ namespace processwarp {
     }
 
     /**
+     * Convert virtual-address to string.
+     * @param addr Virtual-address.
+     * @return Virtual-address as string.
+     */
+    inline std::string vaddr2str(const vaddr_t& addr) {
+      return Util::num2hex_str<vaddr_t>(addr);
+    }
+
+    /**
      * Convert device-id to string.
      * @param dev_id Source device-id.
      * @return Converted value as string.
@@ -177,6 +186,15 @@ namespace processwarp {
      */
     inline vtid_t str2vtid(const std::string& str) {
       return Util::hex_str2num<vtid_t>(str);
+    }
+
+    /**
+     * Convert virtual-address from string.
+     * @param str string.
+     * @param Virtual-address.
+     */
+    inline vaddr_t str2vaddr(const std::string& str) {
+      return Util::hex_str2num<vaddr_t>(str);
     }
 
     /**

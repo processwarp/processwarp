@@ -288,7 +288,7 @@ typedef unsigned useconds_t;
 
 
 #if defined(__NEED_pthread_t) && !defined(__DEFINED_pthread_t)
-typedef unsigned int pthread_t;
+typedef void* pthread_t;
 #define __DEFINED_pthread_t
 
 #endif

@@ -78,6 +78,8 @@ namespace processwarp {
       VMemory& vmemory;
       /** Switch of loading mode. */
       bool is_loading;
+      /** Map of page name and page space having on this device. */
+      std::map<vaddr_t, Page> pages;
 
       /**
        * Constructor with name and random.
@@ -86,9 +88,6 @@ namespace processwarp {
        * @param vmemory
        */
       Space(const std::string& name, std::mt19937_64& rnd, VMemory& vmemory);
-
-      /** Map of page name and page space having on this device. */
-      std::map<vaddr_t, Page> pages;
 
       /**
        * Get a new address to allocate a new memory.
@@ -247,10 +246,13 @@ namespace processwarp {
 
       /**
        * Set meta data.
+       * if addr is VADDR_NULL then assign automatic by assign_addr.
+       * if addr is not null then return address is equal to addr.
        * @param data Meta data.
+       * @param addr
        * @param assigned address.
        */
-      vaddr_t set_meta_area(const std::string& data);
+      vaddr_t set_meta_area(const std::string& data, vaddr_t addr);
 
       /**
        * Get meta data.
@@ -476,21 +478,25 @@ namespace processwarp {
     VMemory(VMemoryDelegate& delegate, const dev_id_t& dev_id);
 
     /**
-     * Create a vmemory space in this device.
-     * @param name Space name of vmemory space.
+     * Recv and decode data from other device.
+     * @param name
+     * @param data
      */
-    void create_space(const std::string& name);
-
-    /**
-     * 
-     */
-    void recv_packet(const std::string& name, const std::string& packet);
+    void recv_packet(const std::string& name, const std::string& data);
 
     /**
      * @param name Space name.
      */
     std::unique_ptr<VMemory::Accessor> get_accessor(const std::string& name);
 
+    /**
+     * Get space by name.
+     * Create new space if space is not exist yet.
+     * @param name Space name.
+     * @return Space.
+     */
+    Space& get_space(const std::string& name);
+    
     /**
      * Switch memory's loading mode.
      * @param name Space name.
@@ -510,13 +516,6 @@ namespace processwarp {
     /** Block copy operator. */
     VMemory& operator=(const VMemory&);
 
-    /**
-     * Get space by name.
-     * @param name Space name.
-     * @return Space.
-     */
-    Space& get_space(const std::string& name);
-    
     /**
      * Send packet.
      * @param name Memory space name.

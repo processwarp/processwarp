@@ -98,6 +98,7 @@ namespace processwarp {
     virtual void recv_warp_request_1(const vpid_t& pid,
 				     const vtid_t& tid,
 				     const vtid_t& root_tid,
+				     vaddr_t proc_addr,
 				     const std::string& name,
 				     const std::string& from_account,
 				     const dev_id_t& from_device_id,
@@ -125,23 +126,22 @@ namespace processwarp {
      * @param to_device_id Command destination device-id .
      * @param payload Binary data.
      */
-    virtual void recv_warp_data_1(const vpid_t& pid,
-				  const vtid_t& tid,
-				  const dev_id_t& from_device_id,
-				  const dev_id_t& to_device_id,
-				  const std::string& payload) = 0;
+    virtual void recv_vm_data(const vpid_t& pid,
+			      const vtid_t& tid,
+			      const dev_id_t& src_device_id,
+			      const dev_id_t& dst_device_id,
+			      const std::string& payload) = 0;
 
     /**
      * Call when recv warp data from warp destination device.
-     * @param pid Target pid.
-     * @param tid Target tid.
-     * @param to_device_id Command destination device-id .
-     * @param result Binary data.
+     * @param name Target memory space name.
+     * @param src_device_id What device send from this data.
+     * @param payload Binary data.
      */
-    virtual void recv_warp_data_2(const vpid_t& pid,
-				  const vtid_t& tid,
-				  const dev_id_t& to_device_id,
-				  int result) = 0;
+    virtual void recv_memory_data(const std::string& name,
+				  const dev_id_t& src_device_id,
+				  const dev_id_t& dst_device_id,
+				  const std::string& payload) = 0;
 
     /**
      * Call when process was killed.
@@ -282,6 +282,7 @@ namespace processwarp {
     void send_warp_request_1(const vpid_t& pid,
 			     const vtid_t& tid,
 			     const vtid_t& root_tid,
+			     vaddr_t proc_addr,
 			     const dev_id_t& to_device_id);
 
     /**
@@ -307,32 +308,10 @@ namespace processwarp {
      *   payload: <binary data.>
      * }
      */
-    void send_warp_data_1(const vpid_t& pid,
-			  const vtid_t& tid,
-			  const dev_id_t& to_device_id,
-			  const std::string& payload);
-
-    /**
-     * Send result binary data to virtual machine.
-     * Packet format: {
-     *   pid: <pid to want to warp.>
-     *   tid: <tid to want to warp.>
-     *   to_device_id: <target device-id.>
-     *   result: <true if accept data1.>
-     * }
-     */
-    void send_warp_data_2(const vpid_t& pid,
-			  const vtid_t& tid,
-			  const dev_id_t& to_device_id,
-			  int result);
-
-    /**
-     * Send command of exit process.
-     * Packet format: {
-     *   pid: <pid to want to warp.>
-     * }
-     */
-    void send_exit_process(const vpid_t& pid);
+    void send_vm_data(const vpid_t& pid,
+		      const vtid_t& tid,
+		      const dev_id_t& to_device_id,
+		      const std::string& payload);
 
     /**
      * Packet format: {
@@ -344,6 +323,14 @@ namespace processwarp {
     void send_memory_data(const std::string& name,
 			  const dev_id_t& to_device_id,
 			  const std::string& payload);
+
+    /**
+     * Send command of exit process.
+     * Packet format: {
+     *   pid: <pid to want to warp.>
+     * }
+     */
+    void send_exit_process(const vpid_t& pid);
 
     /**
      * Send console for test.

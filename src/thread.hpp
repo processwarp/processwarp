@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "definitions.hpp"
+#include "lib/picojson.h"
 #include "stackinfo.hpp"
 #include "type_store.hpp"
 #include "wrapped_operator.hpp"
@@ -23,7 +24,7 @@ namespace processwarp {
     typedef std::map<vm_int_t, vm_int_t> WarpParameter;
 
     /** status of vm */
-    enum Status {
+    enum Status : uint8_t {
       NORMAL,
       PASSIVE,
 
@@ -38,11 +39,18 @@ namespace processwarp {
     };
 
     /// thread-id
-    vtid_t tid;
-    /// status of vm
-    Status status;
+    const vtid_t tid;
     /** Accessor to binded memory */
     std::unique_ptr<VMemory::Accessor> memory;
+    /** */
+    WrappedComplexOperator complex_operator;
+    /** */
+    dev_id_t owner;
+    /// status of vm
+    Status status;
+    /// thread-id to join(0:none, 1:detached)
+    vtid_t join_waiting;
+
     /// information of call stack
     StackInfos stackinfos;
     /// Functions that will be called at befor warp.
@@ -56,24 +64,28 @@ namespace processwarp {
     vm_uint_t warp_stack_size;
     vm_uint_t warp_call_count;
     
-    static const vtid_t JOIN_NONE       = 0x0;
-    static const vtid_t DETACHED_THREAD = 0x1;
-    static const vtid_t ROOT_THREAD     = 0xF;
-
-    /// thread-id to join(0:none, 1:detached)
-    vtid_t join_waiting;
-
-    WrappedComplexOperator complex_operator;
-
     WrappedOperator* const OPERATORS[0x36];
 
     /**
-     * Constructor with thread-id.
-     * @param tid Thread-id of this thread.
-     * @param memory 
+     * Allocate thread on memory.
+     * @param memory
      */
-    Thread(vtid_t tid, std::unique_ptr<VMemory::Accessor> memory);
+    static std::pair<vtid_t, std::unique_ptr<Thread>>
+      alloc(std::unique_ptr<VMemory::Accessor> memory, vtid_t tid = VADDR_NULL);
 
+    /**
+     * Read out thread information from memory.
+     * @param addr
+     * @param memory
+     */
+    static std::unique_ptr<Thread> read(vtid_t tid,
+					std::unique_ptr<VMemory::Accessor> memory);
+
+    /**
+     * Read out and update thread information on instance.
+     */
+    void update_info();
+    
     /**
      * 型依存の演算インスタンスを取得する。
      * @param type 方に割り当てたアドレス。
@@ -85,5 +97,14 @@ namespace processwarp {
      * Write out thread data to memory.
      */
     void write_out();
+
+  private:
+    /**
+     * Constructor with thread-id.
+     * @param addr Address of thread data.
+     * @param tid Thread-id of this thread.
+     * @param memory 
+     */
+    Thread(vtid_t tid, std::unique_ptr<VMemory::Accessor> memory);
   };
 }

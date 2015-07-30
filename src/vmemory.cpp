@@ -37,6 +37,11 @@ VMemory::VMemory(VMemoryDelegate& delegate_, const dev_id_t& dev_id_) :
   delegate(delegate_) {
 }
 
+// Recv and decode data from other device.
+void VMemory::recv_packet(const std::string& name, const std::string& data) {
+  assert(false);
+}
+
 std::unique_ptr<VMemory::Accessor> VMemory::get_accessor(const std::string& name) {
   Space& space = get_space(name);
   
@@ -153,9 +158,13 @@ VMemory::Accessor::Accessor(VMemory& vmemory_, Space& space_) :
 }
 
 // Set meta data.
-vaddr_t VMemory::Accessor::set_meta_area(const std::string& data) {
-  vaddr_t addr = space.assign_addr(AD_META);
+vaddr_t VMemory::Accessor::set_meta_area(const std::string& data, vaddr_t addr) {
+  if (addr == VADDR_NULL) {
+    addr = space.assign_addr(AD_META);
+  }
+  assert(space.pages.find(addr) == space.pages.end());
   space.pages.insert(std::make_pair(addr, Page(PT_MASTER, true)));
+  space.pages.at(addr).value = data;
   
   return addr;
 }
@@ -353,6 +362,11 @@ vaddr_t VMemory::Space::assign_addr(AddrType type) {
 	 reserved_que.size() + new_reserve.size() < VMEMORY_RESERVE_BASE &&
 	   retry < VMEMORY_RESERVE_BASE * 2; retry ++) {
       vaddr_t new_addr = get_upper_addr(type | (~AD_MASK & rnd()));
+
+      if (type == AD_META && new_addr <= 0xFF) {
+	continue;
+      }
+      
       if (pages.find(new_addr) == pages.end() &&
 	  new_reserve.find(new_addr) == new_reserve.end() &&
 	  reserved_set.find(new_addr) == reserved_set.end()) {

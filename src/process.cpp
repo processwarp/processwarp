@@ -90,10 +90,11 @@ Process::Process(ProcessDelegate& delegate_,
 // Allocate process on memory from delegate.
 std::unique_ptr<Process> Process::alloc(ProcessDelegate& delegate,
 					const vpid_t& pid,
-					const vtid_t& root_tid,
+					vtid_t root_tid,
 					const std::vector<void*>& libs,
 					const std::map<std::string, std::string>& lib_filter,
-					const std::map<std::string, std::pair<builtin_func_t, BuiltinFuncParam>>& builtin_funcs) {
+					const std::map<std::string, std::pair<builtin_func_t, BuiltinFuncParam>>& builtin_funcs,
+					vaddr_t proc_addr) {
   picojson::object js_proc;
   std::unique_ptr<VMemory::Accessor> memory(delegate.assign_accessor(pid));
   
@@ -101,7 +102,7 @@ std::unique_ptr<Process> Process::alloc(ProcessDelegate& delegate,
   js_proc.insert(std::make_pair("root_tid", Convert::vtid2json(root_tid)));
 
   std::string str_proc = picojson::value(js_proc).serialize();
-  vaddr_t addr = memory->set_meta_area(str_proc);
+  vaddr_t addr = memory->set_meta_area(str_proc, proc_addr);
 
   return Process::read(delegate, std::move(memory), addr, libs, lib_filter, builtin_funcs);
 }
@@ -123,7 +124,7 @@ std::unique_ptr<Process> Process::read(ProcessDelegate& delegate,
   picojson::object& js_proc = js_tmp.get<picojson::object>();
   
   vpid_t pid = Convert::json2vpid(js_proc.at("pid"));
-  vtid_t root_tid = Convert::json2vtid(js_proc.at("tid"));
+  vtid_t root_tid = Convert::json2vtid(js_proc.at("root_tid"));
   
   return std::unique_ptr<Process>
     (new Process(delegate, std::move(memory), addr,
@@ -132,7 +133,7 @@ std::unique_ptr<Process> Process::read(ProcessDelegate& delegate,
 
 // VM命令を実行する。
 void Process::execute(vtid_t tid, int max_clock) {
-  Thread& thread = *(threads.at(tid));
+  Thread& thread = get_thread(tid);
   VMemory::Accessor& memory = *thread.memory;
 
  re_entry: {
@@ -156,7 +157,7 @@ void Process::execute(vtid_t tid, int max_clock) {
 
       } else { // Non root thread.
 	if (thread.status != Thread::ERROR) {
-	  if (thread.join_waiting == Thread::DETACHED_THREAD) {
+	  if (thread.join_waiting == JOIN_WAIT_DETACHED) {
 	    thread.status = Thread::FINISH;
 
 	  } else {
@@ -982,25 +983,41 @@ void Process::call_setup_voidfunc(Thread& thread, vaddr_t func_addr) {
 void Process::close() {
 }
 
+// Get activated thread instance have had process.
+Thread& Process::get_thread(vtid_t tid) {
+  auto it = threads.find(tid);
+  if (it == threads.end() || it->second.get() == nullptr) {
+    return *threads.insert
+      (std::make_pair(tid, Thread::read(addr, delegate.assign_accessor(pid)))).
+      first->second.get();
+    
+  } else {
+    return *it->second.get();
+  }
+}
+
+// Activate exist thread assigned in address by other device (or warped to other device).
+void Process::activate_thread(vtid_t tid) {
+  active_threads.insert(tid);
+}
+
 // Create a new thread.
 vtid_t Process::create_thread(vaddr_t func_addr, vaddr_t arg_addr) {
   std::unique_ptr<FuncStore> func(std::move(FuncStore::read(*this, func_addr)));
-  vtid_t  tid = delegate.assign_tid(*this);
-
-  assert(threads.find(tid) == threads.end());
 
   // check function type
   if (func->type != FC_NORMAL) {
     throw_error_message(Error::SPEC_VIOLATION, func->name.str());
   }
 
-  Thread* thread = new Thread(tid, delegate.assign_accessor(pid));
-  threads.insert(std::make_pair(tid, std::unique_ptr<Thread>(thread)));
+  Thread& thread =
+    *threads.insert(Thread::alloc(delegate.assign_accessor(pid))).first->second.get();
+  active_threads.insert(thread.tid);
 
   vaddr_t root_stack = proc_memory->alloc(sizeof(vaddr_t));
   StackInfo* root_stackinfo = new StackInfo(VADDR_NON, VADDR_NON, 0, 0, root_stack);
   root_stackinfo->output = root_stack;
-  thread->stackinfos.push_back(std::unique_ptr<StackInfo>(root_stackinfo));
+  thread.stackinfos.push_back(std::unique_ptr<StackInfo>(root_stackinfo));
 
   StackInfo* func_stackinfo = nullptr;
   if (func->normal_prop.stack_size != 0) {
@@ -1010,20 +1027,20 @@ vtid_t Process::create_thread(vaddr_t func_addr, vaddr_t arg_addr) {
   } else {
     func_stackinfo = new StackInfo(func->addr, root_stack, 0, 0, VADDR_NON);
   }
-  thread->stackinfos.push_back(std::unique_ptr<StackInfo>(func_stackinfo));
+  thread.stackinfos.push_back(std::unique_ptr<StackInfo>(func_stackinfo));
 
-  return tid;
+  return thread.tid;
 }
 
 // Join a thread.
 bool Process::join_thread(vtid_t current, vtid_t target, vaddr_t retval) {
-  if (threads.find(target) == threads.end()) {
+  if (active_threads.find(target) == active_threads.end()) {
     throw_std_error(StdError::PW_SRCH);
   }
 
-  Thread& target_thread  = *threads.at(target).get();
+  Thread& target_thread  = get_thread(target);
   if (target_thread.join_waiting != current) {
-    if (target_thread.join_waiting != Thread::JOIN_NONE) {
+    if (target_thread.join_waiting != JOIN_WAIT_NONE) {
       throw_std_error(StdError::PW_INVAL);
       
     } else if (target == current) {
@@ -1051,8 +1068,8 @@ bool Process::join_thread(vtid_t current, vtid_t target, vaddr_t retval) {
 void Process::exit() {
   print_debug("Exit process");
   
-  for (auto& it_thread : threads) {
-    Thread& thread = *(it_thread.second.get());
+  for (auto& it_thread : active_threads) {
+    Thread& thread = get_thread(it_thread);
 
     if (thread.status == Thread::PASSIVE) {
       thread.status = Thread::FINISH;
@@ -1064,7 +1081,7 @@ void Process::exit() {
 	       thread.status == Thread::AFTER_WARP) {
       thread.status = Thread::NORMAL;
       fixme("exit thread");
-      threads.at(1).get()->stackinfos.resize(1);
+      get_thread(root_tid).stackinfos.resize(1);
       
     } else {
       assert(false);
@@ -1153,15 +1170,17 @@ void Process::resolve_stackinfo_cache(Thread& thread, StackInfo* stackinfo) {
 
 // VMの初期設定をする。
 void Process::run(const std::vector<std::string>& args,
-		   const std::map<std::string, std::string>& envs) {
+		  const std::map<std::string, std::string>& envs) {
   // make root thread
-  Thread* root_thread = new Thread(root_tid, delegate.assign_accessor(pid));
-  threads.insert(std::make_pair(root_tid, std::unique_ptr<Thread>(root_thread)));
+  Thread& root_thread = 
+    *threads.insert(Thread::alloc(delegate.assign_accessor(pid), root_tid)).
+    first->second.get();
+  active_threads.insert(root_thread.tid);
 
-  VMemory::Accessor& memory = *root_thread->memory;
+  VMemory::Accessor& memory = *root_thread.memory;
   
   // スレッドを初期化
-  root_thread->join_waiting = Thread::ROOT_THREAD;
+  root_thread.join_waiting = JOIN_WAIT_ROOT;
   
   // main関数の取得
   auto it_main_func = globals.find(&symbols.get("main"));
@@ -1243,7 +1262,7 @@ void Process::run(const std::vector<std::string>& args,
   // mainのreturnを受け取るためのスタックを1段確保する
   StackInfo* root_stackinfo = new StackInfo(VADDR_NON, VADDR_NON, 0, 0, root_stack);
   root_stackinfo->output = root_stack;
-  root_thread->stackinfos.push_back(std::unique_ptr<StackInfo>(root_stackinfo));
+  root_thread.stackinfos.push_back(std::unique_ptr<StackInfo>(root_stackinfo));
   
   StackInfo* main_stackinfo;
   if (main_stack != VADDR_NULL) {
@@ -1252,7 +1271,7 @@ void Process::run(const std::vector<std::string>& args,
     main_stackinfo = new StackInfo(main_func->addr, root_stack, 0, 0, VADDR_NON);
   }
 
-  root_thread->stackinfos.push_back(std::unique_ptr<StackInfo>(main_stackinfo));
+  root_thread.stackinfos.push_back(std::unique_ptr<StackInfo>(main_stackinfo));
 }
 
 // 大域変数のアドレスを設定する。
@@ -1300,7 +1319,7 @@ void Process::setup() {
 
 // Prepare to warp out.
 void Process::setup_warpout(const vtid_t& tid) {
-  Thread& thread = *threads.at(tid);
+  Thread& thread = get_thread(tid);
 
   thread.warp_stack_size = thread.stackinfos.size();
   thread.warp_call_count = 0;
@@ -1310,7 +1329,7 @@ void Process::setup_warpout(const vtid_t& tid) {
 
 // Prepare to warp in.
 bool Process::setup_warpin(const vtid_t& tid, const dev_id_t& dst) {
-  Thread& thread = *threads.at(tid);
+  Thread& thread = get_thread(tid);
 
   // Status must be normal when warp
   if (thread.status != Thread::NORMAL) {

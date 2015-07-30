@@ -109,9 +109,13 @@ namespace processwarp {
   /** process-id */
   typedef std::string vpid_t;
   /** thread-id */
-  typedef vm_uint_t vtid_t;
+  typedef vaddr_t vtid_t;
   /** all thread */
   static const vtid_t ALL_THREAD = 0;
+
+  static const vtid_t JOIN_WAIT_NONE     = 0x0;
+  static const vtid_t JOIN_WAIT_ROOT     = 0x1;
+  static const vtid_t JOIN_WAIT_DETACHED = 0x2;
 
   /** device-id */
   typedef std::string dev_id_t;
