@@ -988,7 +988,7 @@ Thread& Process::get_thread(vtid_t tid) {
   auto it = threads.find(tid);
   if (it == threads.end() || it->second.get() == nullptr) {
     return *threads.insert
-      (std::make_pair(tid, Thread::read(addr, delegate.assign_accessor(pid)))).
+      (std::make_pair(tid, Thread::read(tid, delegate.assign_accessor(pid)))).
       first->second.get();
     
   } else {
