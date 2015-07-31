@@ -23,6 +23,7 @@ static const dev_id_t LOADER_DEVICE_ID("LOADER");
  */
 class Loader : public ProcessDelegate, public VMemoryDelegate {
 public:
+  picojson::object& result;
   /// Assigned process-id.
   const vpid_t pid;
   /// Virtual memory for this loader.
@@ -32,7 +33,8 @@ public:
    * Constructor with assined id.
    * @param pid_ Assigned process-id.
    */
-  Loader(const vpid_t& pid_) :
+  Loader(picojson::object& result_, const vpid_t& pid_) :
+    result(result_),
     pid(pid_),
     vmemory(*this, LOADER_DEVICE_ID) {
     vmemory.set_loading(Convert::vpid2str(pid), true);
@@ -75,12 +77,13 @@ public:
     // Write out data to memory.
     proc->proc_memory->write_out();
       
+    result.insert(std::make_pair("proc_addr", Convert::vaddr2json(proc->addr)));
+    result.insert(std::make_pair("root_tid", Convert::vtid2json(proc->root_tid)));
+
     // Dump and write to file.
     picojson::object body;
     picojson::object dump;
     body.insert(std::make_pair("pid", Convert::vpid2json(pid)));
-    body.insert(std::make_pair("proc_addr", Convert::vaddr2json(proc->addr)));
-    body.insert(std::make_pair("root_tid", Convert::vtid2json(proc->root_tid)));
 
     std::map<vaddr_t, VMemory::Page> pages =
       vmemory.get_space(Convert::vpid2str(pid)).pages;
@@ -118,7 +121,7 @@ int main(int argc, char* argv[]) {
       // Get pid.
       vpid_t pid = Convert::json2vpid(result.at("pid"));
       // Make loader.
-      Loader loader(pid);
+      Loader loader(result, pid);
       
       // Convert arguments.
       std::vector<std::string> args;
