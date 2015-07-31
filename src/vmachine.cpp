@@ -83,40 +83,45 @@ void VMachine::loop() {
 
       auto it_thread = proc->active_threads.begin();
       while(it_thread != proc->active_threads.end()) {
-	tid    = *it_thread;
-	thread = &proc->get_thread(tid);
-	/// @todo thread should be null
-	assert(false);
-	if (thread->status == Thread::NORMAL ||
-	    thread->status == Thread::WAIT_WARP ||
-	    thread->status == Thread::BEFOR_WARP ||
-	    thread->status == Thread::AFTER_WARP) {
+	try {
+	  tid    = *it_thread;
+	  thread = &proc->get_thread(tid);
+	  /// @todo thread should be null
+	  assert(false);
+	  if (thread->status == Thread::NORMAL ||
+	      thread->status == Thread::WAIT_WARP ||
+	      thread->status == Thread::BEFOR_WARP ||
+	      thread->status == Thread::AFTER_WARP) {
 	  
-	  delegate.on_switch_proccess(pid);
-	  // run thread
-	  proc->execute(tid, 100);
+	    delegate.on_switch_proccess(pid);
+	    // run thread
+	    proc->execute(tid, 100);
 
-	} else if (thread->status == Thread::WARP) {
-	  do_warp_process(pid);
+	  } else if (thread->status == Thread::WARP) {
+	    do_warp_process(pid);
 	  
-	} else if (thread->status == Thread::ERROR) {
-	  delegate.on_error(pid, "");
+	  } else if (thread->status == Thread::ERROR) {
+	    delegate.on_error(pid, "");
 	
-	} else if (thread->status == Thread::FINISH) {
-	  delegate.on_finish_thread(pid, tid);
+	  } else if (thread->status == Thread::FINISH) {
+	    delegate.on_finish_thread(pid, tid);
 
-	  if (tid == proc->root_tid) {
-	    delegate.on_finish_proccess(pid);
-	    it_proc = procs.erase(it_proc);
-	    // continue double loop
-	    goto next_proc;
+	    if (tid == proc->root_tid) {
+	      delegate.on_finish_proccess(pid);
+	      it_proc = procs.erase(it_proc);
+	      // continue double loop
+	      goto next_proc;
 
-	  } else {
-	    it_thread = proc->active_threads.erase(it_thread);
-	    proc->threads.erase(tid);
-	    continue;
+	    } else {
+	      it_thread = proc->active_threads.erase(it_thread);
+	      proc->threads.erase(tid);
+	      continue;
+	    }
 	  }
+	} catch (VMemory::WaitingException& e) {
+	  // Skip thread because waiting to update memroy data.
 	}
+
 	it_thread ++;
       }
 

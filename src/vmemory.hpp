@@ -67,6 +67,8 @@ namespace processwarp {
       return addr & (~UPPER_MASKS[addr >> 60]);
     }
 
+    class WaitingException {};
+
     /** Bundle pages in memory space. */
     class Space {
     public:
@@ -223,14 +225,14 @@ namespace processwarp {
 	       addr == get_upper_addr(addr));
 	auto page = space.pages.find(addr);
 
-	if (page == space.pages.end() || (readable && page->second.flg_update == false)) {
-	  if (page == space.pages.end()) {
-	    vmemory.send_require(space, addr, DEV_BROADCAST);
-
-	  } else {
-	    assert(page->second.type == PT_COPY && page->second.hint.size() == 1);
-	    vmemory.send_require(space, addr, *(page->second.hint.begin()));
-	  }
+	if (page == space.pages.end()) {
+	  vmemory.send_require(space, addr, DEV_BROADCAST);
+	  throw WaitingException();
+	  
+	} else if (readable && page->second.flg_update == false) {
+	  assert(page->second.type == PT_COPY && page->second.hint.size() == 1);
+	  vmemory.send_require(space, addr, *(page->second.hint.begin()));
+	  throw WaitingException();
 	}
 
 	return page->second;
