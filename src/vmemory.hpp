@@ -46,7 +46,7 @@ namespace processwarp {
     struct Page {
       /** */
       PageType type;
-      /** */
+      /** True if can read. */
       bool flg_update;
       /** */
       std::string value;
@@ -54,7 +54,8 @@ namespace processwarp {
       std::set<dev_id_t> hint;
 
       /** Constructor with member value. */
-      Page(PageType type, bool flg_update);
+      Page(PageType type, bool flg_update, const std::string& value,
+	   const std::set<dev_id_t>& hint);
     };
 
     static const vaddr_t UPPER_MASKS[];
@@ -65,6 +66,10 @@ namespace processwarp {
 
     static vaddr_t get_lower_addr(vaddr_t addr) {
       return addr & (~UPPER_MASKS[addr >> 60]);
+    }
+
+    static bool is_program(vaddr_t addr) {
+      return (addr & AD_MASK) == AD_PROGRAM;
     }
 
     class WaitingException {};
@@ -82,6 +87,12 @@ namespace processwarp {
       bool is_loading;
       /** Map of page name and page space having on this device. */
       std::map<vaddr_t, Page> pages;
+      /** */
+      struct RequireInfo {
+	clock_t last_clock;
+	int try_count;
+      };
+      std::map<vaddr_t, RequireInfo> requiring;
 
       /**
        * Constructor with name and random.
@@ -168,11 +179,27 @@ namespace processwarp {
     void send_copy(const dev_id_t& dev_id, Space& space, Page& page, vaddr_t addr);
 
     /**
+     * This request means tell unwant copy packet to sender.
+     * @param name
+     * @param dev_id
+     * @param addr
+     */
+    void send_unwant(const std::string name, const dev_id_t& dev_id, vaddr_t addr);
+
+    /**
      * This request means to stand as master.
      * @param spec
      * @param page
      */
     void send_stand(Space& space, Page& page, vaddr_t addr);
+
+    /**
+     * This request means to give right of master.
+     * @param space
+     * @param page
+     * @param target
+     */
+    void send_give(Space& space, Page& page, vaddr_t addr, const dev_id_t& dst);
 
     /**
      * Send update packet.
@@ -527,5 +554,12 @@ namespace processwarp {
      */
     void send_packet(const std::string& name, const dev_id_t& dev_id,
 		     const std::string& cmd, picojson::object& payload);
+
+
+    void recv_copy(const std::string& name, picojson::object& json);
+    
+    void recv_require(const std::string& name, picojson::object& json);
+
+    void recv_give(const std::string& name, picojson::object& json);
   };
 }

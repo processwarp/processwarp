@@ -86,8 +86,7 @@ void VMachine::loop() {
 	try {
 	  tid    = *it_thread;
 	  thread = &proc->get_thread(tid);
-	  /// @todo thread should be null
-	  assert(false);
+	  
 	  if (thread->status == Thread::NORMAL ||
 	      thread->status == Thread::WAIT_WARP ||
 	      thread->status == Thread::BEFOR_WARP ||

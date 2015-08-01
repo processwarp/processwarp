@@ -230,4 +230,9 @@ namespace processwarp {
       SHUFFLE,
       VA_ARG,
   };
+
+  /** Interval time of send require packet (ms). */
+  static const clock_t MEMORY_REQUIRE_INTERVAL = 5000;
+  /** Max retry times of send require packet. */
+  static const int MEMORY_REQUIRE_TRY_MAX = 10;
 }

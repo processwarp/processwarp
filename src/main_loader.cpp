@@ -26,6 +26,8 @@ public:
   picojson::object& result;
   /// Assigned process-id.
   const vpid_t pid;
+  /// 
+  const dev_id_t dst_dev_id;
   /// Virtual memory for this loader.
   VMemory vmemory;
   
@@ -33,9 +35,11 @@ public:
    * Constructor with assined id.
    * @param pid_ Assigned process-id.
    */
-  Loader(picojson::object& result_, const vpid_t& pid_) :
+  Loader(picojson::object& result_, const vpid_t& pid_,
+	 const dev_id_t& dst_dev_id_) :
     result(result_),
     pid(pid_),
+    dst_dev_id(dst_dev_id_),
     vmemory(*this, LOADER_DEVICE_ID) {
     vmemory.set_loading(Convert::vpid2str(pid), true);
   }
@@ -82,19 +86,23 @@ public:
 
     // Dump and write to file.
     picojson::object body;
-    picojson::object dump;
     body.insert(std::make_pair("pid", Convert::vpid2json(pid)));
 
-    std::map<vaddr_t, VMemory::Page> pages =
-      vmemory.get_space(Convert::vpid2str(pid)).pages;
-    for (auto& it : pages) {
+    picojson::array js_mem;
+    for (auto& it : vmemory.get_space(Convert::vpid2str(pid)).pages) {
       // Don't export builtin variables.
       if (proc->builtin_addrs.find(it.first) != proc->builtin_addrs.end()) continue;
       
-      dump.insert(std::make_pair(Util::vaddr2str(it.first),
-				 picojson::value(it.second.value)));
+      picojson::object packet;
+      packet.insert(std::make_pair("cmd", picojson::value(std::string("give"))));
+      packet.insert(std::make_pair("addr", Convert::vaddr2json(it.first)));
+      packet.insert(std::make_pair("value", picojson::value(it.second.value)));
+      packet.insert(std::make_pair("src", picojson::value(std::string(""))));
+      packet.insert(std::make_pair("dst", picojson::value(dst_dev_id)));
+      packet.insert(std::make_pair("hint", picojson::value(picojson::array())));
+      js_mem.push_back(picojson::value(picojson::value(packet).serialize()));
     }
-    body.insert(std::make_pair("dump", picojson::value(dump)));
+    body.insert(std::make_pair("memory_data", picojson::value(js_mem)));
 
     std::ofstream ofs(pool_path + Convert::vpid2str(pid) + ".out");
     ofs << picojson::value(body).serialize();
@@ -120,8 +128,9 @@ int main(int argc, char* argv[]) {
     try {
       // Get pid.
       vpid_t pid = Convert::json2vpid(result.at("pid"));
+      dev_id_t dst_dev_id = Convert::json2devid(result.at("dst_device_id"));
       // Make loader.
-      Loader loader(result, pid);
+      Loader loader(result, pid, dst_dev_id);
       
       // Convert arguments.
       std::vector<std::string> args;

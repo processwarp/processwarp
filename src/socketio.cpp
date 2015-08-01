@@ -179,8 +179,8 @@ void SocketIo::connect(const std::string& url) {
   M_BIND_SOCKETIO_EVENT("warp_request_0");
   M_BIND_SOCKETIO_EVENT("warp_request_1");
   M_BIND_SOCKETIO_EVENT("warp_request_2");
-  M_BIND_SOCKETIO_EVENT("warp_data_1");
-  M_BIND_SOCKETIO_EVENT("warp_data_2");
+  M_BIND_SOCKETIO_EVENT("vm_data");
+  M_BIND_SOCKETIO_EVENT("memory_data");
   M_BIND_SOCKETIO_EVENT("exit_process");
   M_BIND_SOCKETIO_EVENT("test_console");
 
@@ -276,13 +276,13 @@ void SocketIo::pool() {
 			    get_tid_by_map(data, "tid"),
 			    get_dev_id_by_map(data, "from_device_id"),
 			    get_dev_id_by_map(data, "to_device_id"),
-			    *data->get_map().at("payload")->get_binary());
+			    get_str_by_map(data, "payload"));
       
     } else if (name == "memory_data") {
       delegate.recv_memory_data(get_str_by_map(data, "name"),
-				get_dev_id_by_map(data, "from_device_id"),
-				get_dev_id_by_map(data, "to_device_id"),
-				*data->get_map().at("payload")->get_binary());
+				get_dev_id_by_map(data, "src"),
+				get_dev_id_by_map(data, "dst"),
+				get_str_by_map(data, "payload"));
       
     } else if (name == "exit_process") {
       delegate.recv_exit_process(get_pid_by_map(data, "pid"));
@@ -449,8 +449,7 @@ void SocketIo::send_vm_data(const vpid_t& pid,
   map.insert(std::make_pair("pid", get_sio_by_pid(pid)));
   map.insert(std::make_pair("tid", get_sio_by_tid(tid)));
   map.insert(std::make_pair("to_device_id", get_sio_by_dev_id(dst_device_id)));
-  map.insert(std::make_pair("payload", sio::binary_message::create
-			    (std::shared_ptr<const std::string>(new std::string(payload)))));
+  map.insert(std::make_pair("payload", get_sio_by_str(payload)));
 
   socket->emit("vm_data", data);
 }
@@ -463,9 +462,8 @@ void SocketIo::send_memory_data(const std::string& name,
   std::map<std::string, sio::message::ptr>& map = data->get_map();
 
   map.insert(std::make_pair("name", get_sio_by_str(name)));
-  map.insert(std::make_pair("to_device_id", get_sio_by_dev_id(dst_device_id)));
-  map.insert(std::make_pair("payload", sio::binary_message::create
-			    (std::shared_ptr<const std::string>(new std::string(payload)))));
+  map.insert(std::make_pair("dst", get_sio_by_dev_id(dst_device_id)));
+  map.insert(std::make_pair("payload", get_sio_by_str(payload)));
 
   socket->emit("memory_data", data);
 }
