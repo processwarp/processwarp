@@ -114,6 +114,7 @@ void VMachine::loop() {
 	    } else {
 	      it_thread = proc->active_threads.erase(it_thread);
 	      proc->threads.erase(tid);
+	      proc->proc_memory->free(tid);
 	      continue;
 	    }
 	  }
