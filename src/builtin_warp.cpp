@@ -44,7 +44,7 @@ BuiltinPost BuiltinWarp::poll_warp_request(Process& proc, Thread& thread, Builti
     thread.warp_stack_size = thread.stackinfos.size();
     thread.warp_call_count = 0;
     thread.status = Thread::BEFOR_WARP;
-    thread.stackinfos.back()->pc ++;
+    thread.get_top_stackinfo().pc ++;
 
     return BP_RE_ENTRY;
     

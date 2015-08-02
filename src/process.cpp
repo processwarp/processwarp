@@ -135,6 +135,11 @@ std::unique_ptr<Process> Process::read(ProcessDelegate& delegate,
 void Process::execute(vtid_t tid, int max_clock) {
   Thread& thread = get_thread(tid);
   VMemory::Accessor& memory = *thread.memory;
+  Finally finally;
+  finally.add([&]{
+      thread.write();
+      memory.write_out();
+    });
 
  re_entry: {
     if (thread.stackinfos.size() == 1) {
@@ -191,7 +196,7 @@ void Process::execute(vtid_t tid, int max_clock) {
       }
     }
 
-    StackInfo& stackinfo = *(thread.stackinfos.back().get());
+    StackInfo& stackinfo = thread.get_top_stackinfo();
     resolve_stackinfo_cache(thread, &stackinfo);
 
     const FuncStore& func = *stackinfo.func_store;
@@ -203,10 +208,6 @@ void Process::execute(vtid_t tid, int max_clock) {
 	    thread.status == Thread::BEFOR_WARP ||
 	    thread.status == Thread::AFTER_WARP) &&
 	   max_clock > 0; max_clock --) {
-      Finally finally_loop;
-      finally_loop.add([&]{
-	  memory.write_out();
-	});
       
       instruction_t code = insts.at(stackinfo.pc);
       print_debug("pc:%d, insts:%" PRIu64 ", code:%08x %s\n",
@@ -233,7 +234,6 @@ void Process::execute(vtid_t tid, int max_clock) {
 	is_tailcall = false;
 	
       case Opcode::TAILCALL: {
-	std::unique_ptr<StackInfo> new_stackinfo;
 	std::unique_ptr<FuncStore> new_func(std::move(get_function(code, op_param)));
 
 	assert(!is_tailcall); // TODO 動きを確認する。
@@ -247,15 +247,17 @@ void Process::execute(vtid_t tid, int max_clock) {
 	  next_pc ++;
 	
 	// スタックのサイズの有無により作りを変える
-	new_stackinfo.reset
-	  (new StackInfo(new_func->addr,
-			 // tailcallの場合、戻り値の格納先を現行のものから引き継ぐ
-			 is_tailcall ? stackinfo.ret_addr : stackinfo.output,
-			 (normal_pc != FILL_OPERAND ? normal_pc : stackinfo.pc + next_pc),
-			 (unwind_pc != FILL_OPERAND ? unwind_pc : stackinfo.pc + next_pc),
-			 (new_func->normal_prop.stack_size != 0 ?
-			  memory.alloc(new_func->normal_prop.stack_size) :
-			  VADDR_NON)));
+	vaddr_t new_stackaddr =
+	  StackInfo::alloc(memory,
+			   new_func->addr,
+			   // tailcallの場合、戻り値の格納先を現行のものから引き継ぐ
+			   is_tailcall ? stackinfo.ret_addr : stackinfo.output,
+			   (normal_pc != FILL_OPERAND ? normal_pc : stackinfo.pc + next_pc),
+			   (unwind_pc != FILL_OPERAND ? unwind_pc : stackinfo.pc + next_pc),
+			   (new_func->normal_prop.stack_size != 0 ?
+			    memory.alloc(new_func->normal_prop.stack_size) :
+			    VADDR_NON));
+	std::unique_ptr<StackInfo> new_stackinfo(StackInfo::read(memory, new_stackaddr));
 	resolve_stackinfo_cache(thread, new_stackinfo.get());
 
 	// 引数を集める
@@ -311,13 +313,14 @@ void Process::execute(vtid_t tid, int max_clock) {
 	    // 末尾再帰の場合、既存のstackinfoを削除
 	    // 次の命令はRETURNのはず
 	    assert(Instruction::get_opcode(insts.at(stackinfo.pc + 2)) == Opcode::RETURN);
-	    thread.stackinfos.pop_back();
+	    thread.pop_stack();
 	  } else {
 	    stackinfo.pc ++;
 	    // TODO assert(false);
 	    // 末尾再帰でない場合、callinfosを追加
 	  }
-	  thread.stackinfos.push_back(std::unique_ptr<StackInfo>(new_stackinfo.release()));
+	  new_stackinfo->write(memory);
+	  thread.push_stack(new_stackaddr, std::move(new_stackinfo));
 	  goto re_entry;
 	  
 	} else if (new_func->type == FuncType::FC_BUILTIN) {
@@ -368,7 +371,7 @@ void Process::execute(vtid_t tid, int max_clock) {
 	upperinfo.pc = stackinfo.normal_pc;
 
 	// stackinfoを1つ除去してre_entryに移動
-	thread.stackinfos.pop_back();
+	thread.pop_stack();
 	goto re_entry;
       } break;
 
@@ -951,16 +954,19 @@ void Process::call_external(Thread& thread,
 // Setup to call function that type : void (*)(void).
 void Process::call_setup_voidfunc(Thread& thread, vaddr_t func_addr) {
   std::unique_ptr<FuncStore> func(FuncStore::read(*this, func_addr));
-  std::unique_ptr<StackInfo> stackinfo
-    (new StackInfo(func->addr,
-		   VADDR_NON, // 戻り値なし
-		   0, 0, // 正常、異常終了時のpc設定もなし
-		   (func->normal_prop.stack_size != 0 ?
-		    thread.memory->alloc(func->normal_prop.stack_size) :
-		    VADDR_NON)));  
+
   // 関数の型に合わせて呼び出す。
   if (func->type == FuncType::FC_NORMAL) {
-    thread.stackinfos.push_back(std::unique_ptr<StackInfo>(stackinfo.release()));
+    vaddr_t stackaddr =
+      StackInfo::alloc(*thread.memory,
+		       func->addr,
+		       VADDR_NON, // 戻り値なし
+		       0, 0, // 正常、異常終了時のpc設定もなし
+		       (func->normal_prop.stack_size != 0 ?
+			thread.memory->alloc(func->normal_prop.stack_size) :
+			VADDR_NON));
+    std::unique_ptr<StackInfo> stackinfo(StackInfo::read(*thread.memory, stackaddr));
+    thread.push_stack(stackaddr, std::move(stackinfo));
     
   } else if (func->type == FuncType::FC_BUILTIN) {
     // VM組み込み関数の呼び出し
@@ -992,7 +998,9 @@ Thread& Process::get_thread(vtid_t tid) {
       first->second.get();
     
   } else {
-    return *it->second.get();
+    Thread& thread = *it->second.get();
+    thread.read();
+    return thread;
   }
 }
 
@@ -1014,20 +1022,26 @@ vtid_t Process::create_thread(vaddr_t func_addr, vaddr_t arg_addr) {
     *threads.insert(Thread::alloc(delegate.assign_accessor(pid))).first->second.get();
   active_threads.insert(thread.tid);
 
-  vaddr_t root_stack = proc_memory->alloc(sizeof(vaddr_t));
-  StackInfo* root_stackinfo = new StackInfo(VADDR_NON, VADDR_NON, 0, 0, root_stack);
+  vaddr_t root_stack = thread.memory->alloc(sizeof(vaddr_t));
+  vaddr_t root_stackaddr =
+    StackInfo::alloc(*thread.memory, VADDR_NON, VADDR_NON, 0, 0, root_stack);
+  std::unique_ptr<StackInfo> root_stackinfo(std::move(StackInfo::read(*thread.memory,
+								      root_stackaddr)));
   root_stackinfo->output = root_stack;
-  thread.stackinfos.push_back(std::unique_ptr<StackInfo>(root_stackinfo));
+  root_stackinfo->write(*thread.memory);
+  thread.push_stack(root_stackaddr, std::move(root_stackinfo));
 
-  StackInfo* func_stackinfo = nullptr;
+  vaddr_t func_stackaddr;
   if (func->normal_prop.stack_size != 0) {
     vaddr_t func_stack = proc_memory->alloc(func->normal_prop.stack_size);
-    func_stackinfo = new StackInfo(func->addr, root_stack, 0, 0, func_stack);
+    func_stackaddr =
+      StackInfo::alloc(*thread.memory, func->addr, root_stack, 0, 0, func_stack);
 
   } else {
-    func_stackinfo = new StackInfo(func->addr, root_stack, 0, 0, VADDR_NON);
+    func_stackaddr =
+      StackInfo::alloc(*thread.memory, func->addr, root_stack, 0, 0, VADDR_NON);
   }
-  thread.stackinfos.push_back(std::unique_ptr<StackInfo>(func_stackinfo));
+  thread.push_stack(func_stackaddr);
 
   return thread.tid;
 }
@@ -1081,8 +1095,10 @@ void Process::exit() {
 	       thread.status == Thread::AFTER_WARP) {
       thread.status = Thread::NORMAL;
       fixme("exit thread");
-      get_thread(root_tid).stackinfos.resize(1);
-      
+      Thread& root_thread = get_thread(root_tid);
+      while(root_thread.stack.size() > 1) {
+	root_thread.pop_stack();
+      }
     } else {
       assert(false);
     }
@@ -1260,18 +1276,16 @@ void Process::run(const std::vector<std::string>& args,
   }
 
   // mainのreturnを受け取るためのスタックを1段確保する
-  StackInfo* root_stackinfo = new StackInfo(VADDR_NON, VADDR_NON, 0, 0, root_stack);
+  vaddr_t root_stackaddr =
+    StackInfo::alloc(memory, VADDR_NON, VADDR_NON, 0, 0, root_stack);
+  std::unique_ptr<StackInfo> root_stackinfo(StackInfo::read(memory, root_stackaddr));
   root_stackinfo->output = root_stack;
-  root_thread.stackinfos.push_back(std::unique_ptr<StackInfo>(root_stackinfo));
+  root_stackinfo->write(memory);
+  root_thread.push_stack(root_stackaddr, std::move(root_stackinfo));
   
-  StackInfo* main_stackinfo;
-  if (main_stack != VADDR_NULL) {
-    main_stackinfo = new StackInfo(main_func->addr, root_stack, 0, 0, main_stack);
-  } else {
-    main_stackinfo = new StackInfo(main_func->addr, root_stack, 0, 0, VADDR_NON);
-  }
-
-  root_thread.stackinfos.push_back(std::unique_ptr<StackInfo>(main_stackinfo));
+  vaddr_t main_stackaddr =
+    StackInfo::alloc(memory, main_func->addr, root_stack, 0, 0, main_stack);
+  root_thread.push_stack(main_stackaddr);
 }
 
 // 大域変数のアドレスを設定する。

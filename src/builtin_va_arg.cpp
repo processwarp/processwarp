@@ -71,7 +71,7 @@ BuiltinPost BuiltinVaArg::start(Process& proc, Thread& thread, BuiltinFuncParam 
   vaddr_t arglist = Process::read_builtin_param_ptr(src, &seek);
 
   // arglistで指定したアドレスに可変長引数の先頭アドレスを格納しておく
-  thread.memory->set<vaddr_t>(arglist, thread.stackinfos.back()->var_arg);
+  thread.memory->set<vaddr_t>(arglist, thread.get_top_stackinfo().var_arg);
   
   return BP_NORMAL;
 }

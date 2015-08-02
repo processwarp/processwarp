@@ -58,10 +58,10 @@ BuiltinPost BuiltinLibc::exit(Process& proc, Thread& thread, BuiltinFuncParam p,
   
   // スタックを1段残して開放する
   while (thread.stackinfos.size() > 1) {
-    StackInfo& top = *(thread.stackinfos.back());
+    StackInfo& top = thread.get_top_stackinfo();
     thread.memory->free(top.stack);
     for (vaddr_t addr : top.alloca_addrs) thread.memory->free(addr);
-    thread.stackinfos.pop_back();
+    thread.pop_stack();
   }
 
   return BP_RE_ENTRY;
@@ -99,16 +99,17 @@ BuiltinPost BuiltinLibc::longjmp(Process& proc, Thread& thread, BuiltinFuncParam
   
   // 余分なスタックを開放
   while (thread.stackinfos.size() > stack_count) {
-    const StackInfo& si = *(thread.stackinfos.back());
+    const StackInfo& si = thread.get_top_stackinfo();
     // スタック領域を解放
     thread.memory->free(si.stack);
     // alloca領域を開放
     for (vaddr_t addr : si.alloca_addrs) {
       thread.memory->free(addr);
     }
-    thread.stackinfos.pop_back();
+    
+    thread.pop_stack();
   }
-  StackInfo& si = *(thread.stackinfos.back());
+  StackInfo& si = thread.get_top_stackinfo();
   // ret_addrのアドレスにvalで指定された値を設定
   thread.memory->set<uint32_t>(thread.memory->get<vaddr_t>(env + seek2), val);
   seek2 += sizeof(vaddr_t);
@@ -312,7 +313,7 @@ BuiltinPost BuiltinLibc::setjmp(Process& proc, Thread& thread, BuiltinFuncParam 
   assert(static_cast<signed>(src.size()) == seek);
 
   int seek2 = 0;
-  const StackInfo& si = *(thread.stackinfos.back());
+  const StackInfo& si = thread.get_top_stackinfo();
   // stack_count
   thread.memory->set<vm_uint_t>(env + seek2, thread.stackinfos.size());
   seek2 += sizeof(vm_int_t);

@@ -79,6 +79,13 @@ std::pair<vtid_t, std::unique_ptr<Thread>>
   js_thread.insert(std::make_pair("tid", Convert::vtid2json(tid)));
   js_thread.insert(std::make_pair("status", Convert::int2json<uint8_t>(NORMAL)));
   js_thread.insert(std::make_pair("join_waiting", Convert::vtid2json(JOIN_WAIT_NONE)));
+  js_thread.insert(std::make_pair("stack", picojson::value(picojson::array())));
+  js_thread.insert(std::make_pair("funcs_at_befor_warp",
+				  picojson::value(picojson::array())));
+  js_thread.insert(std::make_pair("funcs_at_after_warp",
+				  picojson::value(picojson::array())));
+  js_thread.insert(std::make_pair("warp_parameter",
+				  picojson::value(picojson::object())));
   
   std::string str_thread = picojson::value(js_thread).serialize();
   tid = memory->set_meta_area(str_thread, tid);
@@ -90,13 +97,13 @@ std::pair<vtid_t, std::unique_ptr<Thread>>
 std::unique_ptr<Thread> Thread::read(vtid_t tid,
 				     std::unique_ptr<VMemory::Accessor> memory) {
   std::unique_ptr<Thread> thread(new Thread(tid, std::move(memory)));
-  thread->update_info();
+  thread->read();
 
   return thread;
 }
 
 // Read out and update thread information on instance.
-void Thread::update_info() {
+void Thread::read() {
   picojson::value js_tmp;
   std::istringstream is(memory->get_meta_area(tid));
   std::string err = picojson::parse(js_tmp, is);
@@ -108,6 +115,43 @@ void Thread::update_info() {
 
   status = static_cast<Status>(Convert::json2int<uint8_t>(js_thread.at("status")));
   join_waiting = Convert::json2vtid(js_thread.at("join_waiting"));
+  stack = Convert::json2vaddr_vector(js_thread.at("stack"));
+  funcs_at_befor_warp = Convert::json2vaddr_vector(js_thread.at("funcs_at_befor_warp"));
+  funcs_at_after_warp = Convert::json2vaddr_vector(js_thread.at("funcs_at_after_warp"));
+  warp_parameter.clear();
+  for(auto& it : js_thread.at("warp_parameter").get<picojson::object>()) {
+    warp_parameter.insert(std::make_pair(Convert::str2int<vm_int_t>(it.first),
+					 Convert::json2int<vm_int_t>(it.second)));
+  }
+}
+
+// Write out thread information to memory.
+void Thread::write() {
+  picojson::object js_thread;
+
+  js_thread.insert(std::make_pair("tid", Convert::vtid2json(tid)));
+  js_thread.insert(std::make_pair("status", Convert::int2json<uint8_t>(NORMAL)));
+  js_thread.insert(std::make_pair("join_waiting", Convert::vtid2json(JOIN_WAIT_NONE)));
+  js_thread.insert(std::make_pair("stack", Convert::vaddr_vector2json(stack)));
+  js_thread.insert(std::make_pair("funcs_at_befor_warp",
+				  Convert::vaddr_vector2json(funcs_at_befor_warp)));
+  js_thread.insert(std::make_pair("funcs_at_after_warp",
+				  Convert::vaddr_vector2json(funcs_at_after_warp)));
+  picojson::object js_warp_parameter;
+  for (auto &it : warp_parameter) {
+    js_warp_parameter.insert(std::make_pair(Convert::int2str<vm_int_t>(it.first),
+					    Convert::int2json<vm_int_t>(it.second)));
+  }
+  js_thread.insert(std::make_pair("warp_parameter", picojson::value(js_warp_parameter)));
+
+  for (auto& it : stack) {
+    auto it_stackinfo = stackinfos.find(it);
+    if (it_stackinfo != stackinfos.end()) {
+      it_stackinfo->second->write(*memory);
+    }
+  }
+  
+  memory->update_meta_area(tid, picojson::value(js_thread).serialize());
 }
 
 // 型依存の演算インスタンスを取得する。
@@ -123,4 +167,41 @@ WrappedOperator* Thread::get_operator(vaddr_t type) {
     complex_operator.type_store = std::move(TypeStore::read(*memory, type));
     return &complex_operator;
   }
+}
+
+// Get stack-information by virtual-address.
+StackInfo& Thread::get_stackinfo(vaddr_t addr) {
+  auto it_stackinfo = stackinfos.find(addr);
+  if (it_stackinfo == stackinfos.end()) {
+    return *stackinfos.insert
+      (std::make_pair(addr,
+		      StackInfo::read(*memory, addr))).first->second;
+
+  } else {
+    StackInfo& stackinfo = *it_stackinfo->second;
+    return stackinfo;
+  }
+}
+
+// Get stack-information at stack top.
+StackInfo& Thread::get_top_stackinfo() {
+  assert(stack.size() > 0);
+  return get_stackinfo(stack.back());
+}
+
+// Remoev stack-information at stack top.
+void Thread::pop_stack() {
+  stackinfos.erase(stack.back());
+  stack.pop_back();
+}
+
+// Push new stack-information at stack top (without instance).
+void Thread::push_stack(vaddr_t addr) {
+  stack.push_back(addr);
+}
+
+// Push new stack-information at stack top (with instance).
+void Thread::push_stack(vaddr_t addr, std::unique_ptr<StackInfo> top) {
+  stack.push_back(addr);
+  stackinfos.insert(std::make_pair(addr, std::move(top)));
 }

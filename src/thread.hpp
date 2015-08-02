@@ -16,8 +16,6 @@ namespace processwarp {
    */
   class Thread {
   public:
-    /// information of call stack
-    typedef std::vector<std::unique_ptr<StackInfo>> StackInfos;
     /// Type of function list that will be called at befor or/and after warp.
     typedef std::vector<vaddr_t> FuncsAtWarp;
     /// Type of warp parameter.
@@ -52,7 +50,9 @@ namespace processwarp {
     vtid_t join_waiting;
 
     /// information of call stack
-    StackInfos stackinfos;
+    std::map<vaddr_t, std::unique_ptr<StackInfo>> stackinfos;
+    std::vector<vaddr_t> stack;
+
     /// Functions that will be called at befor warp.
     FuncsAtWarp funcs_at_befor_warp;
     /// Functions that will be called at after warp.
@@ -84,7 +84,12 @@ namespace processwarp {
     /**
      * Read out and update thread information on instance.
      */
-    void update_info();
+    void read();
+
+    /**
+     * Write out thread information to memory.
+     */
+    void write();
     
     /**
      * 型依存の演算インスタンスを取得する。
@@ -94,9 +99,35 @@ namespace processwarp {
     WrappedOperator* get_operator(vaddr_t type);
 
     /**
-     * Write out thread data to memory.
+     * Get stack-information by virtual-address.
+     * @param addr Address stack-information assigned.
+     * @return A instance of stack-information.
      */
-    void write_out();
+    StackInfo& get_stackinfo(vaddr_t addr);
+
+    /**
+     * Get stack-information at stack top.
+     * @return A instance of stack-information.
+     */
+    StackInfo& get_top_stackinfo();
+
+    /**
+     * Remoev stack-information at stack top.
+     */
+    void pop_stack();
+
+    /**
+     * Push new stack-information at stack top (without instance).
+     * @param addr Address stack-information assigned.
+     */
+    void push_stack(vaddr_t addr);
+
+    /**
+     * Push new stack-information at stack top (with instance).
+     * @param addr Address stack-information assigned.
+     * @param top
+     */
+    void push_stack(vaddr_t addr, std::unique_ptr<StackInfo> top);
 
   private:
     /**
