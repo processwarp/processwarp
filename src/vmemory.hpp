@@ -348,6 +348,9 @@ namespace processwarp {
 	switch(page.type) {
 	case PT_MASTER: {
 	  page.value.replace(get_lower_addr(dst), size, buffer.get(), size);
+	  for (auto& it_hint : page.hint) {
+	    vmemory.send_copy(it_hint, space, page, get_upper_addr(dst));
+	  }
 	} break;
 
 	case PT_COPY: {
@@ -376,6 +379,9 @@ namespace processwarp {
 	  assert(page.value.size() <= get_lower_addr(dst) + sizeof(T));
 	  page.value.replace(get_lower_addr(dst), sizeof(T),
 			     reinterpret_cast<const char*>(&val), sizeof(T));
+	  for(auto& it_hint : page.hint) {
+	    vmemory.send_copy(it_hint, space, page, get_upper_addr(dst));
+	  }
 	} break;
 	  
 	case PT_COPY: {

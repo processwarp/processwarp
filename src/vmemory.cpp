@@ -524,6 +524,9 @@ void VMemory::Accessor::write_out() {
     case PT_MASTER: {
       std::string tmp(reinterpret_cast<const char*>(it->second.get()), page.value.size());
       page.value.swap(tmp);
+      for(auto& it_hint : page.hint) {
+	vmemory.send_copy(it_hint, space, page, it->first);
+      }
     } break;
 
     case PT_COPY: {
