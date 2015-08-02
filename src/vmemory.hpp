@@ -291,6 +291,13 @@ namespace processwarp {
       const std::string& get_meta_area(vaddr_t addr);
 
       /**
+       * Change meta data.
+       * @param addr Target address.
+       * @param data Meta data.
+       */
+      void update_meta_area(vaddr_t addr, const std::string& data);
+
+      /**
        * Reserve address in program area.
        * This method must use when loading program only.
        * Each address is avoied collision (Only this device but enough when load).

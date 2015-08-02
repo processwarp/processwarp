@@ -385,6 +385,35 @@ const std::string& VMemory::Accessor::get_meta_area(vaddr_t addr) {
   return page.value;
 }
 
+// Change meta data.
+void VMemory::Accessor::update_meta_area(vaddr_t addr, const std::string& data) {
+  assert((AD_MASK & addr) == AD_META);
+  Page& page = get_page(addr, true);
+
+  if (page.value == data) return;
+  
+  switch(page.type) {
+  case PT_MASTER: {
+    page.value = data;
+    for (auto& it_hint : page.hint) {
+      vmemory.send_copy(it_hint, space, page, addr);
+    }
+  } break;
+
+  case PT_COPY: {
+    assert(page.hint.size() == 1);
+    page.flg_update = false;
+    vmemory.send_update(*page.hint.begin(), space, addr,
+			reinterpret_cast<const uint8_t*>(data.data()), data.size());
+  } break;
+
+  default: {
+    /// @todo:error
+    assert(false);
+  } break;
+  }
+}
+
 // Allocates selected byte of memory.
 vaddr_t VMemory::Accessor::alloc(uint64_t size) {
   if (size == 0) size = 1;
