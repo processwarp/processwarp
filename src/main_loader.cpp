@@ -78,6 +78,8 @@ public:
     // Run virtual machine for bind argument and environment variables.
     proc->run(args, envs);
 
+    proc->get_thread(proc->root_tid).write();
+
     // Write out data to memory.
     proc->proc_memory->write_out();
       
