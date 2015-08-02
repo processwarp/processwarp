@@ -29,6 +29,11 @@ namespace processwarp {
     int add(std::function<void()> func);
 
     /**
+     * Remove all finalize functions at this finallizer.
+     */
+    void clear();
+
+    /**
      * Remove finalize function.
      * Do noting if key is 0.
      * @param key A assigned key for function.

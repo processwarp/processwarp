@@ -25,6 +25,11 @@ int Finally::add(std::function<void()> func) {
   return next_key ++;
 }
 
+// Remove all finalize functions at this finallizer.
+void Finally::clear() {
+  funcs.clear();
+}
+
 // Remove finalize function.
 void Finally::remove(int key) {
   if (key != 0) {
