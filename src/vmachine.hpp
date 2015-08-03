@@ -104,7 +104,8 @@ namespace processwarp {
      * @param root_tid Root thread-id.
      * @param addr 
      */
-    void create_process(const vpid_t& pid, const vtid_t& root_tid, vaddr_t proc_addr);
+    void join_process(const vpid_t& pid, const vtid_t& root_tid,
+		      vaddr_t proc_addr, const dev_id_t& master_dev_id);
 
     /**
      * Delete process.

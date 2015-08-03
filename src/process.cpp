@@ -93,8 +93,7 @@ std::unique_ptr<Process> Process::alloc(ProcessDelegate& delegate,
 					vtid_t root_tid,
 					const std::vector<void*>& libs,
 					const std::map<std::string, std::string>& lib_filter,
-					const std::map<std::string, std::pair<builtin_func_t, BuiltinFuncParam>>& builtin_funcs,
-					vaddr_t proc_addr) {
+					const std::map<std::string, std::pair<builtin_func_t, BuiltinFuncParam>>& builtin_funcs) {
   picojson::object js_proc;
   std::unique_ptr<VMemory::Accessor> memory(delegate.assign_accessor(pid));
   
@@ -102,7 +101,28 @@ std::unique_ptr<Process> Process::alloc(ProcessDelegate& delegate,
   js_proc.insert(std::make_pair("root_tid", Convert::vtid2json(root_tid)));
 
   std::string str_proc = picojson::value(js_proc).serialize();
-  vaddr_t addr = memory->set_meta_area(str_proc, proc_addr);
+  vaddr_t addr = memory->set_meta_area(str_proc, VADDR_NULL);
+
+  return Process::read(delegate, std::move(memory), addr, libs, lib_filter, builtin_funcs);
+}
+
+// Allocate process on memory from delegate.
+std::unique_ptr<Process> Process::alloc(ProcessDelegate& delegate,
+					const vpid_t& pid,
+					vtid_t root_tid,
+					const std::vector<void*>& libs,
+					const std::map<std::string, std::string>& lib_filter,
+					const std::map<std::string, std::pair<builtin_func_t, BuiltinFuncParam>>& builtin_funcs,
+					vaddr_t proc_addr,
+					const dev_id_t& master_dev_id) {
+  picojson::object js_proc;
+  std::unique_ptr<VMemory::Accessor> memory(delegate.assign_accessor(pid));
+  
+  js_proc.insert(std::make_pair("pid", Convert::vpid2json(pid)));
+  js_proc.insert(std::make_pair("root_tid", Convert::vtid2json(root_tid)));
+
+  std::string str_proc = picojson::value(js_proc).serialize();
+  vaddr_t addr = memory->set_meta_area(str_proc, proc_addr, master_dev_id);
 
   return Process::read(delegate, std::move(memory), addr, libs, lib_filter, builtin_funcs);
 }

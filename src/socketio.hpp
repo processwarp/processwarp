@@ -99,6 +99,7 @@ namespace processwarp {
 				     const vtid_t& tid,
 				     const vtid_t& root_tid,
 				     vaddr_t proc_addr,
+				     const dev_id_t& master_device_id,
 				     const std::string& name,
 				     const std::string& from_account,
 				     const dev_id_t& from_device_id,
@@ -283,6 +284,7 @@ namespace processwarp {
 			     const vtid_t& tid,
 			     const vtid_t& root_tid,
 			     vaddr_t proc_addr,
+			     const dev_id_t& master_device_id,
 			     const dev_id_t& to_device_id);
 
     /**

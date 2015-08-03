@@ -67,7 +67,7 @@ public:
     std::vector<void*> libs;
     std::map<std::string, std::string> lib_filter;
     std::map<std::string, std::pair<builtin_func_t, BuiltinFuncParam>> builtin_funcs;
-    std::unique_ptr<Process> proc(Process::alloc(*this, pid, JOIN_WAIT_ROOT, libs, lib_filter, builtin_funcs, VADDR_NULL));
+    std::unique_ptr<Process> proc(Process::alloc(*this, pid, JOIN_WAIT_ROOT, libs, lib_filter, builtin_funcs));
     proc->setup();
     
     // Load program from LLVM-IR file.

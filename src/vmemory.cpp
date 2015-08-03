@@ -365,6 +365,28 @@ VMemory::Accessor::Accessor(VMemory& vmemory_, Space& space_) :
   space(space_) {
 }
 
+// Get master device-id for target address.
+const dev_id_t& VMemory::Accessor::get_master(vaddr_t addr) {
+  Page& page = get_page(addr, false);
+
+  switch(page.type) {
+  case PT_MASTER: {
+    return vmemory.dev_id;
+  } break;
+
+  case PT_COPY: {
+    assert(page.hint.size() == 1);
+    return *page.hint.begin();
+  } break;
+
+  default: {
+    /// @todo error
+    assert(false);
+    return DEV_BROADCAST;
+  } break;
+  }
+}
+
 // Set meta data.
 vaddr_t VMemory::Accessor::set_meta_area(const std::string& data, vaddr_t addr) {
   if (addr == VADDR_NULL) {
@@ -373,6 +395,17 @@ vaddr_t VMemory::Accessor::set_meta_area(const std::string& data, vaddr_t addr) 
   assert(space.pages.find(addr) == space.pages.end());
   space.pages.insert(std::make_pair(addr, Page(PT_MASTER, true, data,
 					       std::set<dev_id_t>())));
+  
+  return addr;
+}
+
+vaddr_t VMemory::Accessor::set_meta_area(const std::string& data, vaddr_t addr,
+					 const dev_id_t& master) {
+  assert(addr != VADDR_NULL);
+  assert(space.pages.find(addr) == space.pages.end());
+  std::set<dev_id_t> hint;
+  hint.insert(master);
+  space.pages.insert(std::make_pair(addr, Page(PT_COPY, true, data, hint)));
   
   return addr;
 }

@@ -195,10 +195,12 @@ void VMachine::recv_packet(const vpid_t& pid,
 }
 
 // Create empty process.
-void VMachine::create_process(const vpid_t& pid, const vtid_t& root_tid, vaddr_t proc_addr) {
+void VMachine::join_process(const vpid_t& pid, const vtid_t& root_tid,
+			    vaddr_t proc_addr, const dev_id_t& master_dev_id) {
   assert(procs.find(pid) == procs.end());
   procs.insert(std::make_pair(pid, std::move(Process::alloc
-					     (*this, pid, root_tid, libs, lib_filter, builtin_funcs, proc_addr))));
+					     (*this, pid, root_tid, libs, lib_filter,
+					      builtin_funcs, proc_addr, master_dev_id))));
   procs.at(pid)->setup();
 }
 

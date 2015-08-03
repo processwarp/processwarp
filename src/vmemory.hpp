@@ -274,6 +274,13 @@ namespace processwarp {
       Accessor(VMemory& vmemory, Space& space);
 
       /**
+       * Get master device-id for target address.
+       * @param addr
+       * @return
+       */
+      const dev_id_t& get_master(vaddr_t addr);
+      
+      /**
        * Set meta data.
        * if addr is VADDR_NULL then assign automatic by assign_addr.
        * if addr is not null then return address is equal to addr.
@@ -282,6 +289,8 @@ namespace processwarp {
        * @param assigned address.
        */
       vaddr_t set_meta_area(const std::string& data, vaddr_t addr);
+      
+      vaddr_t set_meta_area(const std::string& data, vaddr_t addr, const dev_id_t& master);
 
       /**
        * Get meta data.

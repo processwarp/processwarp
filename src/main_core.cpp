@@ -249,7 +249,8 @@ public:
     
     /// @todo what to do when this device isn't owner of thread.
     socket.send_warp_request_1(pid, tid, proc.root_tid,
-			       proc.addr, dst_device_id);
+			       proc.addr, proc.proc_memory->get_master(proc.addr),
+			       dst_device_id);
   }
 
   // Call when recv warp request from device that having process.
@@ -257,6 +258,7 @@ public:
 			   const vtid_t& tid,
 			   const vtid_t& root_tid,
 			   vaddr_t proc_addr,
+			   const dev_id_t& master_device_id,
 			   const std::string& name,
 			   const std::string& from_account,
 			   const dev_id_t& from_device_id,
@@ -286,7 +288,7 @@ public:
       }
       
       if (!vm->have_process(pid)) {
-	vm->create_process(pid, root_tid, proc_addr);
+	vm->join_process(pid, root_tid, proc_addr, master_device_id);
       }
       vm->get_process(pid).activate_thread(tid);
 

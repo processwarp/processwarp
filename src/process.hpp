@@ -72,6 +72,7 @@ namespace processwarp {
     
     /**
      * Allocate process on memory from delegate.
+     * if master_dev_id is "" then allocate memory as master otherwise copy.
      * @param delegate
      * @param pid
      * @param libs
@@ -83,8 +84,16 @@ namespace processwarp {
 					  vtid_t root_tid,
 					  const std::vector<void*>& libs,
 					  const std::map<std::string, std::string>& lib_filter,
+					  const std::map<std::string, std::pair<builtin_func_t, BuiltinFuncParam>>& builtin_funcs);
+
+    static std::unique_ptr<Process> alloc(ProcessDelegate& delegate,
+					  const vpid_t& pid,
+					  vtid_t root_tid,
+					  const std::vector<void*>& libs,
+					  const std::map<std::string, std::string>& lib_filter,
 					  const std::map<std::string, std::pair<builtin_func_t, BuiltinFuncParam>>& builtin_funcs,
-					  vaddr_t proc_addr);
+					  vaddr_t proc_addr,
+					  const dev_id_t& master_dev_id);
 
     /**
      * Read out process information from memory.
