@@ -175,6 +175,14 @@ namespace processwarp {
     }
 
     /**
+     * Convert JSON to binary data.
+     * It have JSON to contain binary data as hex string.
+     * @param json Source JSON.
+     * @return Binary data.
+     */
+    std::string json2bin(const picojson::value& json);
+
+    /**
      * Convert process-id to JSON.
      * @param pid Source process-id.
      * @return Process-id as JSON.
@@ -249,5 +257,13 @@ namespace processwarp {
     inline picojson::value devid2json(const dev_id_t& dev_id) {
       return picojson::value(devid2str(dev_id));
     }
+
+    /**
+     * Convert binary data to JSON.
+     * Binary data is converted to hex string and packed by JSON.
+     * @param bin Source binary data.
+     * @return Binary data as JSON.
+     */
+    picojson::value bin2json(const std::string& bin);
   }
 }

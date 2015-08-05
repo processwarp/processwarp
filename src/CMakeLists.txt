@@ -85,6 +85,7 @@ endif()
 
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   set(CORE_FILES
+    convert.cpp
     error.cpp
     func_store.cpp
     finally.cpp
@@ -119,6 +120,7 @@ endif()
 
 if(LLVM_FOUND AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   set(LOADER_FILES
+    convert.cpp
     error.cpp
     func_store.cpp
     finally.cpp
