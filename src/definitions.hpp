@@ -173,6 +173,7 @@ namespace processwarp {
     // TY_F80
     TY_F128     = 0xF000000000000035, ///< 四倍精度浮動小数点型
     TY_MAX      = 0xF0000000000000FF, ///< 基本型最大値
+    TY_MASK     = 0x0FFFFFFFFFFFFFFF,
   };
   
   /** 仮想マシンのOpcode */

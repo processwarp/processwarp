@@ -157,10 +157,11 @@ void Thread::write() {
 // 型依存の演算インスタンスを取得する。
 WrappedOperator* Thread::get_operator(vaddr_t type) {
   // 複合型に対する演算命令
-  if (type < sizeof(OPERATORS) / sizeof(OPERATORS[0])) {
+  if ((type & TY_MASK) <
+      static_cast<uintmax_t>(sizeof(OPERATORS) / sizeof(OPERATORS[0]))) {
     // 存在する基本型の場合、OPERTORSからインスタンスを取得
-    assert(OPERATORS[type] != nullptr);
-    return OPERATORS[type];
+    assert(OPERATORS[type & TY_MASK] != nullptr);
+    return OPERATORS[type & TY_MASK];
     
   } else {
     // 複合型の場合、complex_operatorを使う。
