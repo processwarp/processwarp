@@ -212,7 +212,7 @@ void VMemory::recv_require(const std::string& name, picojson::object& json) {
   if (page.type == PT_MASTER) {
     page.hint.insert(src);
     
-  } if (page.type == PT_COPY) {
+  } else if (page.type == PT_COPY) {
     picojson::object packet;
 
     packet.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
