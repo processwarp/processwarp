@@ -98,7 +98,7 @@ public:
       picojson::object packet;
       packet.insert(std::make_pair("cmd", picojson::value(std::string("give"))));
       packet.insert(std::make_pair("addr", Convert::vaddr2json(it.first)));
-      packet.insert(std::make_pair("value", picojson::value(it.second.value)));
+      packet.insert(std::make_pair("value", Convert::bin2json(it.second.value)));
       packet.insert(std::make_pair("src", picojson::value(std::string(""))));
       packet.insert(std::make_pair("dst", picojson::value(dst_dev_id)));
       packet.insert(std::make_pair("hint", picojson::value(picojson::array())));

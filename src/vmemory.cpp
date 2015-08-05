@@ -74,7 +74,7 @@ void VMemory::recv_packet(const std::string& name, const std::string& data) {
 
 void VMemory::recv_copy(const std::string& name, picojson::object& json) {
   vaddr_t addr = Convert::json2vaddr(json.at("addr"));
-  const std::string& value = json.at("value").get<std::string>();
+  const std::string& value = Convert::json2bin(json.at("value"));
   dev_id_t src = Convert::json2devid(json.at("src"));
   if (get_upper_addr(addr) != addr) {
     /// @todo error
@@ -125,7 +125,7 @@ void VMemory::recv_copy(const std::string& name, picojson::object& json) {
 
 void VMemory::recv_give(const std::string& name, picojson::object& json) {
   vaddr_t addr = get_upper_addr(Convert::json2vaddr(json.at("addr")));
-  const std::string& value = json.at("value").get<std::string>();
+  const std::string& value = Convert::json2bin(json.at("value"));
   dev_id_t src = Convert::json2devid(json.at("src"));
   dev_id_t dst = Convert::json2devid(json.at("dst"));
   picojson::array js_hint = json.at("hint").get<picojson::array>();
@@ -354,7 +354,7 @@ void VMemory::send_unwant(const std::string name, const dev_id_t& dev_id, vaddr_
 void VMemory::send_update(const dev_id_t& dev_id, Space& space, vaddr_t addr,
 			  const uint8_t* data, uint64_t size) {
   picojson::object packet;
-  packet.insert(std::make_pair("value", picojson::value
+  packet.insert(std::make_pair("value", Convert::bin2json
 			       (std::string(reinterpret_cast<const char*>(data), size))));
   packet.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
   send_packet(space.name, dev_id, "update", packet);
