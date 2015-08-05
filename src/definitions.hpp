@@ -121,6 +121,8 @@ namespace processwarp {
   typedef std::string dev_id_t;
   /** To set when broadcast. */
   static const dev_id_t DEV_BROADCAST = "";
+  /** Server's device-id */
+  static const dev_id_t DEV_SERVER = "";
 
   /** trueを表す値 */
   static const uint8_t I8_TRUE = 0x1;

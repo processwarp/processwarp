@@ -146,8 +146,15 @@ void VMemory::recv_give(const std::string& name, picojson::object& json) {
   auto it_page = space.pages.find(addr);
   if (dst == dev_id) {
     std::set<dev_id_t> hint;
-    for (auto& js_h : js_hint)
-      hint.insert(Convert::json2devid(js_h));
+    for (auto& js_h : js_hint) {
+      const dev_id_t& hint_dev = Convert::json2devid(js_h);
+      if (hint_dev != dev_id) {
+	hint.insert(hint_dev);
+      }
+    }
+    if (src != DEV_SERVER) {
+      hint.insert(src);
+    }
     
     if (it_page == space.pages.end()) {
       space.pages.insert(std::make_pair(addr, Page(PT_MASTER, true, value, hint)));
