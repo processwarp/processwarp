@@ -1019,7 +1019,6 @@ Thread& Process::get_thread(vtid_t tid) {
     
   } else {
     Thread& thread = *it->second.get();
-    thread.read();
     return thread;
   }
 }
