@@ -162,7 +162,7 @@ void Process::execute(vtid_t tid, int max_clock) {
     });
 
  re_entry: {
-    if (thread.stackinfos.size() == 1) {
+    if (thread.stack.size() == 1) {
       if (thread.tid == root_tid) {
 	// calls_at_exitに関数が登録されている場合、順番に実行する
 	if (!calls_at_exit.empty() &&
@@ -194,7 +194,7 @@ void Process::execute(vtid_t tid, int max_clock) {
     }
 
     if (thread.status == Thread::BEFOR_WARP &&
-	thread.stackinfos.size() == thread.warp_stack_size) {
+	thread.stack.size() == thread.warp_stack_size) {
       if (thread.funcs_at_befor_warp.size() > thread.warp_call_count) {
 	call_setup_voidfunc(thread, thread.funcs_at_befor_warp.at(thread.warp_call_count));
 	thread.warp_call_count ++;
@@ -205,7 +205,7 @@ void Process::execute(vtid_t tid, int max_clock) {
       }
     }
     if (thread.status == Thread::AFTER_WARP &&
-	thread.stackinfos.size() == thread.warp_stack_size) {
+	thread.stack.size() == thread.warp_stack_size) {
       if (thread.funcs_at_befor_warp.size() > thread.warp_call_count) {
 	call_setup_voidfunc(thread, thread.funcs_at_befor_warp.at(thread.warp_call_count));
 	thread.warp_call_count ++;
@@ -367,7 +367,7 @@ void Process::execute(vtid_t tid, int max_clock) {
       } break;
 
       case Opcode::RETURN: {
-	StackInfo& upperinfo = *(thread.stackinfos.at(thread.stackinfos.size() - 2).get());
+	StackInfo& upperinfo = *(thread.stackinfos.at(thread.stack.size() - 2).get());
 	resolve_stackinfo_cache(thread, &upperinfo);
 
 	if (Instruction::get_operand(code) == FILL_OPERAND) {
@@ -1355,7 +1355,7 @@ void Process::setup() {
 void Process::setup_warpout(const vtid_t& tid) {
   Thread& thread = get_thread(tid);
 
-  thread.warp_stack_size = thread.stackinfos.size();
+  thread.warp_stack_size = thread.stack.size();
   thread.warp_call_count = 0;
 
   thread.status = Thread::AFTER_WARP;
@@ -1373,7 +1373,7 @@ bool Process::setup_warpin(const vtid_t& tid, const dev_id_t& dst) {
   //thread.warp_to = dst;
   
   if (thread.warp_parameter[PW_KEY_WARP_TIMING] == PW_VAL_ON_ANYTIME) {
-    thread.warp_stack_size = thread.stackinfos.size();
+    thread.warp_stack_size = thread.stack.size();
     thread.warp_call_count = 0;
     thread.status = Thread::BEFOR_WARP;
 
