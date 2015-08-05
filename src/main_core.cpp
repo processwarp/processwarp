@@ -331,7 +331,11 @@ public:
 			const dev_id_t& src_device_id,
 			const dev_id_t& dst_device_id,
 			const std::string& payload) override {
-    vm->vmemory.recv_packet(name, payload);
+    if (dst_device_id == device_id ||
+	(dst_device_id == DEV_BROADCAST && src_device_id != device_id)) {
+      assert(src_device_id != device_id);
+      vm->vmemory.recv_packet(name, payload);
+    }
   }
 
   // Call when process was killed.
