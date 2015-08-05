@@ -108,6 +108,7 @@ void VMachine::loop() {
 	    if (tid == proc->root_tid) {
 	      delegate.on_finish_proccess(pid);
 	      it_proc = procs.erase(it_proc);
+	      warp_dest.erase(pid);
 	      // continue double loop
 	      goto next_proc;
 
