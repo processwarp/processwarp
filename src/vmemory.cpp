@@ -670,8 +670,7 @@ vaddr_t VMemory::Space::assign_addr(AddrType type) {
   }
 
   if (reserved_que.size() == 0) {
-    /// TODO:skip
-    assert(false);
+    throw WaitingException();
   }
 
   vaddr_t r = reserved_que.front();
