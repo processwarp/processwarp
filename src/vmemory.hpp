@@ -247,8 +247,9 @@ namespace processwarp {
        * @return
        */
       Page& get_page(vaddr_t addr, bool readable) {
-	assert(get_upper_addr(addr) == AD_META ||
-	       get_upper_addr(addr) == AD_PROGRAM ||
+	assert(addr != VADDR_NULL);
+	assert((addr & AD_MASK) == AD_META ||
+	       (addr & AD_MASK) == AD_PROGRAM ||
 	       addr == get_upper_addr(addr));
 	auto page = space.pages.find(addr);
 
@@ -392,7 +393,7 @@ namespace processwarp {
 	Page& page = get_page(get_upper_addr(dst), false);
 	switch(page.type) {
 	case PT_MASTER: {
-	  assert(page.value.size() <= get_lower_addr(dst) + sizeof(T));
+	  assert(page.value.size() >= get_lower_addr(dst) + sizeof(T));
 	  page.value.replace(get_lower_addr(dst), sizeof(T),
 			     reinterpret_cast<const char*>(&val), sizeof(T));
 	  for(auto& it_hint : page.hint) {
@@ -421,7 +422,7 @@ namespace processwarp {
        */
       template <typename T> T get(vaddr_t src) {
 	Page& page = get_page(get_upper_addr(src), true);
-	assert(page.value.size() <= get_lower_addr(src) + sizeof(T));
+	assert(page.value.size() >= get_lower_addr(src) + sizeof(T));
 	return *reinterpret_cast<const T*>(page.value.data() + get_lower_addr(src));
       }
 
@@ -429,7 +430,7 @@ namespace processwarp {
        */
       const uint8_t* get_raw(vaddr_t src) {
 	Page& page = get_page(get_upper_addr(src), true);
-	assert(page.value.size() <= get_lower_addr(src));
+	assert(page.value.size() >= get_lower_addr(src));
 
 	return reinterpret_cast<const uint8_t*>(page.value.data() + get_lower_addr(src));
       }
@@ -463,7 +464,7 @@ namespace processwarp {
 
 	switch(dst_page.type) {
 	case PT_MASTER: {
-	  assert(dst_page.value.size() <= get_lower_addr(dst) + size);
+	  assert(dst_page.value.size() >= get_lower_addr(dst) + size);
 	  dst_page.value.replace(get_lower_addr(dst), size,
 				 src_page.value.data() + get_lower_addr(src), size);
 	} break;
@@ -488,7 +489,7 @@ namespace processwarp {
 
 	switch(dst_page.type) {
 	case PT_MASTER: {
-	  assert(dst_page.value.size() <= get_lower_addr(dst) + size);
+	  assert(dst_page.value.size() >= get_lower_addr(dst) + size);
 	  dst_page.value.replace(get_lower_addr(dst), size,
 				 reinterpret_cast<const char*>(src), size);
 	} break;

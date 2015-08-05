@@ -258,12 +258,13 @@ void VMemory::send_packet(const std::string& name, const dev_id_t& dev_id,
 
 // This request means to update memory for copy data.
 void VMemory::send_copy(const dev_id_t& dev_id, Space& space, Page& page, vaddr_t addr) {
-  assert(page.type == PT_COPY);
+  assert(page.type != PT_COPY);
+  assert(dev_id != this->dev_id);
   assert(get_upper_addr(addr) == addr);
   picojson::object packet;
   
   packet.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
-  packet.insert(std::make_pair("value", picojson::value(page.value)));
+  packet.insert(std::make_pair("value", Convert::bin2json(page.value)));
 
   send_packet(space.name, dev_id, "copy", packet);
 }
