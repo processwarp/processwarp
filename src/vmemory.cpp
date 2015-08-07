@@ -256,11 +256,11 @@ void VMemory::set_loading(const std::string& name, bool flg) {
 
 // Send packet.
 void VMemory::send_packet(const std::string& name, const dev_id_t& dev_id,
-			  const std::string& cmd, picojson::object& payload) {
-  payload.insert(std::make_pair("cmd", picojson::value(cmd)));
-  payload.insert(std::make_pair("src", picojson::value(this->dev_id)));
+			  const std::string& cmd, picojson::object& data) {
+  data.insert(std::make_pair("cmd", picojson::value(cmd)));
+  data.insert(std::make_pair("src", picojson::value(this->dev_id)));
 
-  delegate.send_memory_data(name, dev_id, picojson::value(payload).serialize());
+  delegate.send_memory_data(name, dev_id, picojson::value(data).serialize());
 }
 
 // This request means to update memory for copy data.

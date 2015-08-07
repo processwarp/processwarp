@@ -125,17 +125,16 @@ public:
   }
   
   // Call when send data to other device.
-  void send_vm_data(const vpid_t& pid,
-		    const vtid_t& tid,
-		    const dev_id_t& dst_dev_id,
-		    const std::string& data) override {
-    socket.send_vm_data(pid, tid, dst_dev_id, data);
+  void send_machine_data(const vpid_t& pid,
+			 const dev_id_t& dst,
+			 const std::string& data) override {
+    socket.send_machine_data(pid, dst, data);
   }
 
   void send_memory_data(const std::string& name,
-			const dev_id_t& dst_dev_id,
+			const dev_id_t& dst,
 			const std::string& data) override {
-    socket.send_memory_data(name, dst_dev_id, data);
+    socket.send_memory_data(name, dst, data);
   }
     
   // Call when context switch of process.
@@ -235,112 +234,27 @@ public:
     procs = new_procs;
   }
 
-  // Call when recv warp request from other device.
-  void recv_warp_request_0(const vpid_t& pid,
-			   const vtid_t& tid,
-			   const dev_id_t& dst_device_id,
-			   const dev_id_t& to_device_id) override {
-    // Not to me.
-    if (to_device_id != device_id) return;
-
-    if (vm->have_process(pid)) return;
-    
-    Process& proc = vm->get_process(pid);
-    
-    /// @todo what to do when this device isn't owner of thread.
-    socket.send_warp_request_1(pid, tid, proc.root_tid,
-			       proc.addr, proc.proc_memory->get_master(proc.addr),
-			       dst_device_id);
-  }
-
-  // Call when recv warp request from device that having process.
-  void recv_warp_request_1(const vpid_t& pid,
-			   const vtid_t& tid,
-			   const vtid_t& root_tid,
-			   vaddr_t proc_addr,
-			   const dev_id_t& master_device_id,
-			   const std::string& name,
-			   const std::string& from_account,
-			   const dev_id_t& from_device_id,
-			   const dev_id_t& to_device_id) override {
-    // Not to me.
-    if (to_device_id != device_id) return;
-
-    if (from_account == "") {
-      // Accept from the same account.
-      socket.send_warp_request_2(pid, tid, from_device_id, 0);
-
-      // Update procs.
-      // Create new proccess infomation for new process.
-      if (procs.find(pid) == procs.end()) {
-	SocketIoProc proc_info;
-	proc_info.pid  = pid;
-	proc_info.name = name;
-	procs.insert(std::make_pair(pid, proc_info));
-      }
-      // Update or create thread pair.
-      SocketIoProc& proc_info = procs.at(pid);
-      if (proc_info.threads.find(tid) != proc_info.threads.end()) {
-	proc_info.threads.at(tid) = device_id;
-
-      } else {
-	proc_info.threads.insert(std::make_pair(tid, device_id));
-      }
-      
-      if (!vm->have_process(pid)) {
-	vm->join_process(pid, root_tid, proc_addr, master_device_id);
-      }
-      vm->get_process(pid).activate_thread(tid);
-
-    } else {
-      // Deny from other account.
-      socket.send_warp_request_2(pid, tid, from_device_id, -111);
-    }
-  }
-
-  // Call when recv warp acception from warp destination device.
-  void recv_warp_request_2(const vpid_t& pid,
-			   const vtid_t& tid,
-			   const dev_id_t& from_device_id,
-			   const dev_id_t& to_device_id,
-			   int result) override {
-    // Not to me.
-    if (to_device_id != device_id) return;
-    
-    if (result == 0) {
-      vm->warp_process(pid, tid, from_device_id);
-
-    } else {
-      fixme("Ouutput log & ignore?");
-    }
-  }
-
   // Call when recv warp data from warp source device.
-  void recv_vm_data(const vpid_t& pid,
-		    const vtid_t& tid,
-		    const dev_id_t& src_dev_id,
-		    const dev_id_t& dst_dev_id,
-		    const std::string& payload) override {
-    // Not to me.
-    if (dst_dev_id != device_id) return;
-
-    vm->recv_packet(pid, tid, payload);
+  void recv_machine_data(const vpid_t& pid,
+			 const dev_id_t& src,
+			 const dev_id_t& dst,
+			 const std::string& data) override {
+    if (dst == device_id ||
+	(dst == DEV_BROADCAST && src != device_id)) {
+      assert(src != device_id);
+      vm->recv_packet(pid, data);
+    }
   }
 
   void recv_memory_data(const std::string& name,
-			const dev_id_t& src_device_id,
-			const dev_id_t& dst_device_id,
-			const std::string& payload) override {
-    if (dst_device_id == device_id ||
-	(dst_device_id == DEV_BROADCAST && src_device_id != device_id)) {
-      assert(src_device_id != device_id);
-      vm->vmemory.recv_packet(name, payload);
+			const dev_id_t& src,
+			const dev_id_t& dst,
+			const std::string& data) override {
+    if (dst == device_id ||
+	(dst == DEV_BROADCAST && src != device_id)) {
+      assert(src != device_id);
+      vm->vmemory.recv_packet(name, data);
     }
-  }
-
-  // Call when process was killed.
-  void recv_exit_process(const vpid_t& pid) override {
-    vm->exit_process(pid);
   }
 
   // Recv console for test.

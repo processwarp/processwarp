@@ -75,81 +75,31 @@ namespace processwarp {
     virtual void recv_sync_proc_list(const std::map<vpid_t, SocketIoProc>& procs) = 0;
     
     /**
-     * Call when recv warp request from other device.
+     * Call when recieve virtual-machine data packet from other device.
+     * Packet isn't filterd. It contain packet that destination is other device.
      * @param pid Target pid.
-     * @param tid Target tid.
-     * @param dst_device_id Warp destination device-id .
-     * @param to_device_id Command destination device-id .
+     * @param src Source device-id (Contain DEV_SERVER and this device).
+     * @param dst Destination device-id (Contain DEV_BROADCAST and NOT this device).
+     * @param data Load data.
      */
-    virtual void recv_warp_request_0(const vpid_t& pid,
-				     const vtid_t& tid,
-				     const dev_id_t& dst_device_id,
-				     const dev_id_t& to_device_id) = 0;
-
+    virtual void recv_machine_data(const vpid_t& pid,
+				   const dev_id_t& src,
+				   const dev_id_t& dst,
+				   const std::string& data) = 0;
+    
     /**
-     * Call when recv warp request from device that having process.
+     * Call when recieve virtual-memory data packet from other device.
+     * Packet isn't filterd. It contain packet that destination is other device.
      * @param pid Target pid.
-     * @param tid Target tid.
-     * @param name Process name.
-     * @param from_account Source account.
-     * @param from_device_id Source device-id.
-     * @param to_device_id Command destination device-id .
-     */
-    virtual void recv_warp_request_1(const vpid_t& pid,
-				     const vtid_t& tid,
-				     const vtid_t& root_tid,
-				     vaddr_t proc_addr,
-				     const dev_id_t& master_device_id,
-				     const std::string& name,
-				     const std::string& from_account,
-				     const dev_id_t& from_device_id,
-				     const dev_id_t& to_device_id) = 0;
-
-    /**
-     * Call when recv warp acception from warp destination device.
-     * @param pid Target pid.
-     * @param tid Target tid.
-     * @param from_device_id Source device-id.
-     * @param to_device_id Command destination device-id .
-     * @param result
-     */
-    virtual void recv_warp_request_2(const vpid_t& pid,
-				     const vtid_t& tid,
-				     const dev_id_t& from_device_id,
-				     const dev_id_t& to_device_id,
-				     int result) = 0;
-
-    /**
-     * Call when recv warp data from warp source device.
-     * @param pid Target pid.
-     * @param tid Target tid.
-     * @param from_device_id Source device-id.
-     * @param to_device_id Command destination device-id .
-     * @param payload Binary data.
-     */
-    virtual void recv_vm_data(const vpid_t& pid,
-			      const vtid_t& tid,
-			      const dev_id_t& src_device_id,
-			      const dev_id_t& dst_device_id,
-			      const std::string& payload) = 0;
-
-    /**
-     * Call when recv warp data from warp destination device.
-     * @param name Target memory space name.
-     * @param src_device_id What device send from this data.
-     * @param payload Binary data.
+     * @param src Source device-id (Contain DEV_SERVER and this device).
+     * @param dst Destination device-id (Contain DEV_BROADCAST and NOT this device).
+     * @param data Load data.
      */
     virtual void recv_memory_data(const std::string& name,
-				  const dev_id_t& src_device_id,
-				  const dev_id_t& dst_device_id,
-				  const std::string& payload) = 0;
-
-    /**
-     * Call when process was killed.
-     * @param pid Target pid.
-     */
-    virtual void recv_exit_process(const vpid_t& pid) = 0;
-
+				  const dev_id_t& src,
+				  const dev_id_t& dst,
+				  const std::string& data) = 0;
+    
     /**
      * Recv console for test.
      * @param pid Source pid.
@@ -258,81 +208,30 @@ namespace processwarp {
     void send_sync_proc_list(const std::map<vpid_t, SocketIoProc>& procs);
 
     /**
-     * Send request of trigger to warp from other device.
+     * Send virtual-machine data packet.
      * Packet format: {
-     *   pid: <pid to want to warp.>
-     *   tid: <tid to want to warp.>
-     *   to_device_id:  <source device-id.>
-     *   dst_device_id: <destination device-id.>
+     *   pid: <pid>
+     *   dst: <destination device-id>
+     *   src: <this device-id, added by server>
+     *   data: <load data>
      * }
      */
-    void send_warp_request_0(const vpid_t& pid,
-			     const vtid_t& tid,
-			     const dev_id_t& to_device_id,
-			     const dev_id_t& dst_device_id);
+    void send_machine_data(const vpid_t& pid,
+			   const dev_id_t& dst,
+			   const std::string& data);
 
     /**
-     * Send request of trigger to warp from device there running process.
-     * Packet format: {
-     *   pid: <pid to want to warp.>
-     *   tid: <tid to want to warp.>
-     *   root_tid: <root tid of process.>
-     *   to_device_id: <destination device-id.>
-     * }
-     */
-    void send_warp_request_1(const vpid_t& pid,
-			     const vtid_t& tid,
-			     const vtid_t& root_tid,
-			     vaddr_t proc_addr,
-			     const dev_id_t& master_device_id,
-			     const dev_id_t& to_device_id);
-
-    /**
-     * Send reply of trigger to warp to device there running process.
-     * Packet format: {
-     *   pid: <pid to want to warp.>
-     *   tid: <tid to want to warp.>
-     *   to_device_id: <source device-id.>
-     *   result: <true if accept warp.>
-     * }
-     */
-    void send_warp_request_2(const vpid_t& pid,
-			     const vtid_t& tid,
-			     const dev_id_t& to_device_id,
-			     int result);
-
-    /**
-     * Send binary data to virtual machine.
-     * Packet format: {
-     *   pid: <pid to want to warp.>
-     *   tid: <tid to want to warp.>
-     *   to_device_id: <target device-id.>
-     *   payload: <binary data.>
-     * }
-     */
-    void send_vm_data(const vpid_t& pid,
-		      const vtid_t& tid,
-		      const dev_id_t& to_device_id,
-		      const std::string& payload);
-
-    /**
+     * Send virtual-memory data packet.
      * Packet format: {
      *   name: <name of memory space>
-     *   to_device_id: <target device_id>
-     *   data: <payload>
+     *   dst: <target device_id>
+     *   src: <this device-id, added by server>
+     *   data: <load data>
      * }
      */
     void send_memory_data(const std::string& name,
-			  const dev_id_t& to_device_id,
-			  const std::string& payload);
-
-    /**
-     * Send command of exit process.
-     * Packet format: {
-     *   pid: <pid to want to warp.>
-     * }
-     */
-    void send_exit_process(const vpid_t& pid);
+			  const dev_id_t& dst,
+			  const std::string& data);
 
     /**
      * Send console for test.

@@ -573,10 +573,10 @@ namespace processwarp {
      * @param name Memory space name.
      * @param dev_id Target device-id.
      * @param cmd Command name.
-     * @param payload Packet payload.
+     * @param data Load data.
      */
     void send_packet(const std::string& name, const dev_id_t& dev_id,
-		     const std::string& cmd, picojson::object& payload);
+		     const std::string& cmd, picojson::object& data);
 
 
     void recv_copy(const std::string& name, picojson::object& json);

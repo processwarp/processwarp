@@ -176,12 +176,8 @@ void SocketIo::connect(const std::string& url) {
   M_BIND_SOCKETIO_EVENT("list_device");
   M_BIND_SOCKETIO_EVENT("bind_device");
   M_BIND_SOCKETIO_EVENT("sync_proc_list");
-  M_BIND_SOCKETIO_EVENT("warp_request_0");
-  M_BIND_SOCKETIO_EVENT("warp_request_1");
-  M_BIND_SOCKETIO_EVENT("warp_request_2");
-  M_BIND_SOCKETIO_EVENT("vm_data");
+  M_BIND_SOCKETIO_EVENT("machine_data");
   M_BIND_SOCKETIO_EVENT("memory_data");
-  M_BIND_SOCKETIO_EVENT("exit_process");
   M_BIND_SOCKETIO_EVENT("test_console");
 
 #undef M_BIND_SOCKETIO_EVENT
@@ -247,46 +243,17 @@ void SocketIo::pool() {
       }
       delegate.recv_sync_proc_list(procs);
 
-    } else if (name == "warp_request_0") {
-      delegate.recv_warp_request_0(get_pid_by_map(data, "pid"),
-				   get_tid_by_map(data, "tid"),
-				   get_dev_id_by_map(data, "dst_device_id"),
-				   get_dev_id_by_map(data, "to_device_id"));
-
-    } else if (name == "warp_request_1") {
-      delegate.recv_warp_request_1(get_pid_by_map(data, "pid"),
-				   get_tid_by_map(data, "tid"),
-				   get_tid_by_map(data, "root_tid"),
-				   get_addr_by_map(data, "proc_addr"),
-				   get_dev_id_by_map(data, "master_device_id"),
-				   get_str_by_map(data, "name"),
-				   get_str_by_map(data, "from_account", false),
-				   get_dev_id_by_map(data, "from_device_id"),
-				   get_dev_id_by_map(data, "to_device_id"));
-
-    } else if (name == "warp_request_2") {
-      print_debug("warp_request_2 : %p\n", &*data->get_map().at("result"));
-      delegate.recv_warp_request_2(get_pid_by_map(data, "pid"),
-				   get_tid_by_map(data, "tid"),
-				   get_dev_id_by_map(data, "from_device_id"),
-				   get_dev_id_by_map(data, "to_device_id"),
-				   data->get_map().at("result")->get_int());
-
-    } else if (name == "vm_data") {
-      delegate.recv_vm_data(get_pid_by_map(data, "pid"),
-			    get_tid_by_map(data, "tid"),
-			    get_dev_id_by_map(data, "from_device_id"),
-			    get_dev_id_by_map(data, "to_device_id"),
-			    get_str_by_map(data, "payload"));
+    } else if (name == "machine_data") {
+      delegate.recv_machine_data(get_pid_by_map(data, "pid"),
+				 get_dev_id_by_map(data, "src"),
+				 get_dev_id_by_map(data, "dst"),
+				 get_str_by_map(data, "data"));
       
     } else if (name == "memory_data") {
       delegate.recv_memory_data(get_str_by_map(data, "name"),
 				get_dev_id_by_map(data, "src"),
 				get_dev_id_by_map(data, "dst"),
-				get_str_by_map(data, "payload"));
-      
-    } else if (name == "exit_process") {
-      delegate.recv_exit_process(get_pid_by_map(data, "pid"));
+				get_str_by_map(data, "data"));
 
     } else if (name == "test_console") {
 #ifndef NDEBUG
@@ -389,96 +356,32 @@ void SocketIo::send_sync_proc_list(const std::map<vpid_t, SocketIoProc>& procs) 
   socket->emit("sync_proc_list", data);
 }
 
-// Send request of trigger to warp from other device.
-void SocketIo::send_warp_request_0(const vpid_t& pid,
-				   const vtid_t& tid,
-				   const dev_id_t& to_device_id,
-				   const dev_id_t& dst_device_id) {
-  sio::message::ptr data(sio::object_message::create());
-  std::map<std::string, sio::message::ptr>& map = data->get_map();
+// Send virtual-machine data packet.
+void SocketIo::send_machine_data(const vpid_t& pid,
+				 const dev_id_t& dst,
+				 const std::string& data) {
+  sio::message::ptr sio_data(sio::object_message::create());
+  std::map<std::string, sio::message::ptr>& map = sio_data->get_map();
 
   map.insert(std::make_pair("pid", get_sio_by_pid(pid)));
-  map.insert(std::make_pair("tid", get_sio_by_tid(tid)));
-  map.insert(std::make_pair("to_device_id", get_sio_by_dev_id(to_device_id)));
-  map.insert(std::make_pair("dst_device_id", get_sio_by_dev_id(dst_device_id)));
+  map.insert(std::make_pair("dst", get_sio_by_dev_id(dst)));
+  map.insert(std::make_pair("data", get_sio_by_str(data)));
 
-  socket->emit("warp_request_0", data);
+  socket->emit("machine_data", sio_data);
 }
 
-// Send request of trigger to warp from device there running process.
-void SocketIo::send_warp_request_1(const vpid_t& pid,
-				   const vtid_t& tid,
-				   const vtid_t& root_tid,
-				   vaddr_t proc_addr,
-				   const dev_id_t& master_device_id,
-				   const dev_id_t& to_device_id) {
-  sio::message::ptr data(sio::object_message::create());
-  std::map<std::string, sio::message::ptr>& map = data->get_map();
-
-  map.insert(std::make_pair("pid", get_sio_by_pid(pid)));
-  map.insert(std::make_pair("tid", get_sio_by_tid(tid)));
-  map.insert(std::make_pair("root_tid", get_sio_by_tid(root_tid)));
-  map.insert(std::make_pair("proc_addr", get_sio_by_addr(proc_addr)));
-  map.insert(std::make_pair("master_device_id", get_sio_by_dev_id(master_device_id)));
-  map.insert(std::make_pair("to_device_id", get_sio_by_dev_id(to_device_id)));
-
-  socket->emit("warp_request_1", data);
-}
-
-// Send reply of trigger to warp to device there running process.
-void SocketIo::send_warp_request_2(const vpid_t& pid,
-				   const vtid_t& tid,
-				   const dev_id_t& to_device_id,
-				   int result) {
-  sio::message::ptr data(sio::object_message::create());
-  std::map<std::string, sio::message::ptr>& map = data->get_map();
-
-  map.insert(std::make_pair("pid", get_sio_by_pid(pid)));
-  map.insert(std::make_pair("tid", get_sio_by_tid(tid)));
-  map.insert(std::make_pair("to_device_id", get_sio_by_dev_id(to_device_id)));
-  map.insert(std::make_pair("result", sio::int_message::create(result)));
-
-  socket->emit("warp_request_2", data);
-}
-
-// Send binary data to virtual machine.
-void SocketIo::send_vm_data(const vpid_t& pid,
-			    const vtid_t& tid,
-			    const dev_id_t& dst_device_id,
-			    const std::string& payload) {
-  sio::message::ptr data(sio::object_message::create());
-  std::map<std::string, sio::message::ptr>& map = data->get_map();
-
-  map.insert(std::make_pair("pid", get_sio_by_pid(pid)));
-  map.insert(std::make_pair("tid", get_sio_by_tid(tid)));
-  map.insert(std::make_pair("to_device_id", get_sio_by_dev_id(dst_device_id)));
-  map.insert(std::make_pair("payload", get_sio_by_str(payload)));
-
-  socket->emit("vm_data", data);
-}
-
-// Send result binary data to virtual machine.
+// Send virtual-memory data packet.
 void SocketIo::send_memory_data(const std::string& name,
-				const dev_id_t& dst_device_id,
-				const std::string& payload) {
-  sio::message::ptr data(sio::object_message::create());
-  std::map<std::string, sio::message::ptr>& map = data->get_map();
-
-  map.insert(std::make_pair("name", get_sio_by_str(name)));
-  map.insert(std::make_pair("dst", get_sio_by_dev_id(dst_device_id)));
-  map.insert(std::make_pair("payload", get_sio_by_str(payload)));
-
-  socket->emit("memory_data", data);
-}
-
-// Send command of exit process.
-void SocketIo::send_exit_process(const vpid_t& pid) {
-  sio::message::ptr data(sio::object_message::create());
-  std::map<std::string, sio::message::ptr>& map = data->get_map();
+				const dev_id_t& dst,
+				const std::string& data) {
+  sio::message::ptr sio_data(sio::object_message::create());
+  std::map<std::string, sio::message::ptr>& map = sio_data->get_map();
   
-  map.insert(std::make_pair("pid", get_sio_by_pid(pid)));
+  map.insert(std::make_pair("name", get_sio_by_str(name)));
+  map.insert(std::make_pair("dst", get_sio_by_dev_id(dst)));
+  map.insert(std::make_pair("data", get_sio_by_str(data)));
 
-  socket->emit("exit_process", data);
+  socket->emit("memory_data", sio_data);
 }
 
 // Send console for test.

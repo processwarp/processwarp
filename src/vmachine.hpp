@@ -24,14 +24,12 @@ namespace processwarp {
     /**
      * Call when send data to other device.
      * @param pid Target pid.
-     * @param tid Target tid.
-     * @param dst_device_id Destination device-id.
-     * @param data Send data (Binary).
+     * @param dst Destination device-id.
+     * @param data Load data.
      */
-    virtual void send_vm_data(const vpid_t& pid,
-			      const vtid_t& tid,
-			      const dev_id_t& dst_device_id,
-			      const std::string& data);
+    virtual void send_machine_data(const vpid_t& pid,
+				   const dev_id_t& dst,
+				   const std::string& load);
     
     /**
      * Call when context switch of process.
@@ -91,11 +89,9 @@ namespace processwarp {
     /**
      * Pass data from other device.
      * @param pid Target pid.
-     * @param tid Target tid.
-     * @param data Received data (Binary).
+     * @param data Received load data.
      */
     void recv_packet(const vpid_t& pid,
-		     const vtid_t& tid,
 		     const std::string& data);
     
     /**

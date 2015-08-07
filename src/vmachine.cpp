@@ -26,10 +26,9 @@ VMachineDelegate::~VMachineDelegate() {
 }
     
 // Call when send data to other device.
-void VMachineDelegate::send_vm_data(const vpid_t& pid,
-				    const vtid_t& tid,
-				    const dev_id_t& dst_device_id,
-				    const std::string& data) {
+void VMachineDelegate::send_machine_data(const vpid_t& pid,
+					 const dev_id_t& dst,
+					 const std::string& data) {
   // Do nothing.
 }
     
@@ -152,7 +151,6 @@ void VMachine::loop() {
     
 // Pass data from other device.
 void VMachine::recv_packet(const vpid_t& pid,
-			   const vtid_t& tid,
 			   const std::string& data) {
   try {
     picojson::value v;
