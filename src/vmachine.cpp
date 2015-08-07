@@ -167,7 +167,7 @@ void VMachine::recv_packet(const vpid_t& pid,
     // select cmd
     std::string cmd = json.at("cmd").get<std::string>();
     if (cmd == "warp") {
-      recv_process_warp(pid, json);
+      recv_warp(pid, json);
     
     } else {
       assert(false);
@@ -295,34 +295,27 @@ void VMachine::do_warp_process(const vpid_t& pid) {
   */
 }
 
-void VMachine::recv_process_warp(const vpid_t& pid, picojson::object& json) {
-  /// TODO
-  assert(false);
-  /*
-  Process& proc = *procs.at(pid);
-  VMemory& vmemory = proc.vmemory;
-  Convert convert(proc);
+void VMachine::recv_warp(const vpid_t& pid, picojson::object& json) {
+  const vtid_t root_tid = Convert::json2vtid(json.at("root_tid"));
+  const vaddr_t proc_addr = Convert::json2vaddr(json.at("proc_addr"));
+  const dev_id_t master_device = Convert::json2devid(json.at("master_device"));
+  const std::string name = json.at("name").get<std::string>();
+  const vtid_t tid = Convert::json2vtid(json.at("tid"));
+  const dev_id_t dst_device = Convert::json2devid(json.at("dst_device"));
+  const dev_id_t src_device = Convert::json2devid(json.at("src_device"));
+  const std::string src_account = json.at("src_account").get<std::string>();
   
-  // Expand transported instance data.
-  picojson::object dump = json.at("dump").get<picojson::object>();
-  for (auto it : dump) {
-    if(!vmemory.addr_is_used(Util::str2vaddr(it.first))) {
-      convert.import_store(Util::str2vaddr(it.first), it.second);
-    }
+  if (device_id != dst_device ||
+      !delegate.judge_new_process(name, src_device, src_account)) {
+    /// @todo reject
+    assert(false);
+    return;
   }
 
-  // Expand thread data.
-  for (auto& it : json.at("threads").get<picojson::object>()) {
-    convert.import_thread(Util::hex_str2num<vtid_t>(it.first), it.second);
-  }
-  
-  proc.setup_warpout(1);
-  
-  // Turn on proc.
-  for (auto& it_thread : proc.threads) {
-    it_thread.second->status = Thread::NORMAL;
-  }
-  */
+  if (!have_process(pid))
+    join_process(pid, root_tid, proc_addr, master_device);
+
+  get_process(pid).warp_out_thread(tid);
 }
 
 // Regist built-in function to virtual machine.

@@ -21,14 +21,12 @@ using namespace emscripten;
  */
 class WebfrontDelegate : public VMachineDelegate, public VMemoryDelegate {
   // Call when send data to other device.
-  void send_warp_data(const vpid_t& pid,
-		      const vtid_t& tid,
-		      const dev_id_t& dst_device_id,
-		      const std::string& data) override {
+  void send_machine_data(const vpid_t& pid,
+			 const dev_id_t& dst,
+			 const std::string& data) override {
     std::stringstream asm_code;
-    asm_code << "send_warp_data('" << pid << "',"
-	     << "'" << tid << "',"
-	     << "'" << dst_device_id << "',"
+    asm_code << "send_machine_data('" << pid << "',"
+	     << "'" << dst << "',"
 	     << static_cast<const void*>(data.data()) << ","
 	     << data.size() << ");";
     emscripten_run_script(asm_code.str().c_str());
@@ -36,11 +34,11 @@ class WebfrontDelegate : public VMachineDelegate, public VMemoryDelegate {
 
   // Call when send memory data to other device.
   void send_memory_data(const std::string& name,
-			const dev_id_t& dev_id,
+			const dev_id_t& dst,
 			const std::string& data) override {
     std::stringstream asm_code;
     asm_code << "send_memory_data('" << name << "',"
-	     << "'" << dev_id << "',"
+	     << "'" << dst << "',"
 	     << static_cast<const void*>(data.data()) << ","
 	     << data.size() << ");";
     emscripten_run_script(asm_code.str().c_str());
@@ -72,6 +70,18 @@ class WebfrontDelegate : public VMachineDelegate, public VMemoryDelegate {
     asm_code << "error_process('" << pid << "');";
     emscripten_run_script(asm_code.str().c_str());
   }
+
+  // Call when new process is arrive.
+  bool judge_new_process(const std::string& name,
+			 const dev_id_t& src_device,
+			 const std::string& src_account) override {
+    std::stringstream asm_code;
+    asm_code << "judge_new_process('" << name
+	     << "', '" << src_device
+	     << "', '" << src_account << "');";
+    int r = emscripten_run_script_int(asm_code.str().c_str());
+    return r != 0;
+  }
 };
 
 /** Empty libraries because don't use dlsym on Emscripten. */
@@ -100,24 +110,30 @@ void init_lib_filter() {
   }
 }
 
-bool recv_warp_data(const vpid_t& pid, std::string tid, const std::string& data) {
-  return vm->recv_warp_data(pid, Convert::str2vtid(tid), data);
+void recv_machine_data(const vpid_t& pid,
+		       const dev_id_t& src,
+		       const dev_id_t& dst,
+		       const std::string& data) {
+  if (dst == vm->device_id ||
+      (dst == DEV_BROADCAST && src != vm->device_id)) {
+    assert(src != vm->device_id);
+    vm->recv_packet(pid, data);
+  }
+}
+
+void recv_memory_data(const std::string& name,
+		      const dev_id_t& src,
+		      const dev_id_t& dst,
+		      const std::string& data) {
+  if (dst == vm->device_id ||
+      (dst == DEV_BROADCAST && src != vm->device_id)) {
+    assert(src != vm->device_id);
+    vm->vmemory.recv_packet(name, data);
+  }
 }
 
 void set_device_id(const dev_id_t& device_id) {
-  vm.reset(new VMachine(delegate, delegate, device_id));
-}
-
-void create_process(const vpid_t& pid, std::string root_tid) {
-  vm->create_process(pid, Convert::str2vtid(root_tid), LIBS, lib_filter);
-}
-
-void delete_process(const vpid_t& pid) {
-  vm->delete_process(pid);
-}
-
-std::string get_root_tid(const vpid_t& pid) {
-  return Convert::vtid2str(vm->get_root_tid(pid));
+  vm.reset(new VMachine(delegate, delegate, device_id, LIBS, lib_filter));
 }
 
 void exit_process(const vpid_t& pid) {
@@ -143,11 +159,9 @@ int main() {
 }
 
 EMSCRIPTEN_BINDINGS(mod) {
-  function("recv_warp_data", &recv_warp_data);
+  function("recv_machine_data", &recv_machine_data);
+  function("recv_memory_data",  &recv_memory_data);
   function("set_device_id",  &set_device_id);
-  function("create_process", &create_process);
-  function("delete_process", &delete_process);
   function("exit_process",   &exit_process);
   function("warp_process",   &warp_process);
-  function("get_root_tid",   &get_root_tid);
 }

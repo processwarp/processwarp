@@ -143,6 +143,7 @@ endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   set(WEBFRONT_FILES
+    convert.cpp
     error.cpp
     func_store.cpp
     finally.cpp

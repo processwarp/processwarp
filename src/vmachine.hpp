@@ -29,7 +29,7 @@ namespace processwarp {
      */
     virtual void send_machine_data(const vpid_t& pid,
 				   const dev_id_t& dst,
-				   const std::string& load);
+				   const std::string& load) = 0;
     
     /**
      * Call when context switch of process.
@@ -56,7 +56,17 @@ namespace processwarp {
      * @param message Error message.
      */
     virtual void on_error(const vpid_t& pid,
-			  const std::string& message);
+			  const std::string& message) = 0;
+
+    /**
+     * Call when new process is arrive.
+     * @param name Program name.
+     * @param src_device
+     * @param src_account
+     */
+    virtual bool judge_new_process(const std::string& name,
+				   const dev_id_t& src_device,
+				   const std::string& src_account) = 0;
   };
   
   /**
@@ -202,6 +212,6 @@ namespace processwarp {
      */
     void do_warp_process(const vpid_t& pid);
 
-    void recv_process_warp(const vpid_t& pid, picojson::object& json);
+    void recv_warp(const vpid_t& pid, picojson::object& json);
   };
 }

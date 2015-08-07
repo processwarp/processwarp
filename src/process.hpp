@@ -141,10 +141,11 @@ namespace processwarp {
     Thread& get_thread(vtid_t addr);
 
     /**
-     * Activate exist thread assigned in address by other device (or warped to other device).
+     * Warp out thread.
+     * Activate exist thread assigned in address.
      * @param tid
      */
-    void activate_thread(vtid_t tid);
+    void warp_out_thread(vtid_t tid);
 
     /**
      * Create a new thread and activate.

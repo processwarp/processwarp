@@ -24,6 +24,8 @@ public:
   const picojson::object conf;
   /** Connection by SocketIO. */
   SocketIo socket;
+  /** Login account. */
+  std::string account;
   /** Device name. */
   std::string device_name;
   /** Device ID. */
@@ -154,6 +156,19 @@ public:
   void on_error(const vpid_t& pid, const std::string& message) override {
     print_debug("error(%s) : %s\n", pid.c_str(), message.c_str());
     on_finish_proccess(pid);
+  }
+
+  // Call when new process is arrive.
+  bool judge_new_process(const std::string& name,
+			 const dev_id_t& src_device,
+			 const std::string& src_account) override {
+    if (src_device == DEV_SERVER ||
+	src_account == account) {
+      return true;
+
+    } else {
+      return false;
+    }
   }
 
   // Call when system error on server.
@@ -309,10 +324,11 @@ public:
     
     // Get device-name.
     device_name = conf.at("device-name").get<std::string>();
+    account = conf.at("account").get<std::string>();
   
     // Connect to server by using Socket.IO.
     socket.connect(conf.at("server").get<std::string>());
-    socket.send_login(conf.at("account").get<std::string>(),
+    socket.send_login(account,
 		      conf.at("password").get<std::string>());
   }
 

@@ -1023,9 +1023,10 @@ Thread& Process::get_thread(vtid_t tid) {
   }
 }
 
-// Activate exist thread assigned in address by other device (or warped to other device).
-void Process::activate_thread(vtid_t tid) {
+// Warp out thread.
+void Process::warp_out_thread(vtid_t tid) {
   active_threads.insert(tid);
+  /// @todo change thread status to AFTER_WARP after sync memory.
 }
 
 // Create a new thread.

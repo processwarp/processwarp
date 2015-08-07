@@ -16,37 +16,37 @@
 using namespace processwarp;
 
 static const std::string pool_path("/tmp/");
-static const dev_id_t LOADER_DEVICE_ID("LOADER");
 
 /**
  * Load program from LLVM-IR and write dump file.
  */
 class Loader : public ProcessDelegate, public VMemoryDelegate {
 public:
-  picojson::object& result;
-  /// Assigned process-id.
-  const vpid_t pid;
-  /// 
-  const dev_id_t dst_dev_id;
   /// Virtual memory for this loader.
   VMemory vmemory;
-  
+
+  /// Assigned process-id.
+  vpid_t in_pid;
+  ///
+  std::string in_name;
+  /// 
+  dev_id_t in_dst_device;
+  ///
+  dev_id_t in_src_device;
+  ///
+  std::string in_src_account;
+
   /**
-   * Constructor with assined id.
-   * @param pid_ Assigned process-id.
+   * Constructor, initialize virtual-memory instance.
    */
-  Loader(picojson::object& result_, const vpid_t& pid_,
-	 const dev_id_t& dst_dev_id_) :
-    result(result_),
-    pid(pid_),
-    dst_dev_id(dst_dev_id_),
-    vmemory(*this, LOADER_DEVICE_ID) {
-    vmemory.set_loading(Convert::vpid2str(pid), true);
+  Loader() :
+    vmemory(*this, DEV_SERVER) {
   }
 
   /**
    */
   std::unique_ptr<VMemory::Accessor> assign_accessor(const vpid_t& pid) {
+    assert(!in_pid.empty());
     return std::move(vmemory.get_accessor(Convert::vpid2str(pid)));
   }
 
@@ -62,17 +62,20 @@ public:
    * 
    */
   void load(const std::vector<std::string>& args) {
+    // Setup virtual-memory.
+    vmemory.set_loading(Convert::vpid2str(in_pid), true);
     // Setup virtual machine.
     // Library is empty because don't use in loader.
     std::vector<void*> libs;
     std::map<std::string, std::string> lib_filter;
     std::map<std::string, std::pair<builtin_func_t, BuiltinFuncParam>> builtin_funcs;
-    std::unique_ptr<Process> proc(Process::alloc(*this, pid, JOIN_WAIT_ROOT, libs, lib_filter, builtin_funcs));
+    std::unique_ptr<Process> proc(Process::alloc(*this, in_pid, JOIN_WAIT_ROOT,
+						 libs, lib_filter, builtin_funcs));
     proc->setup();
     
     // Load program from LLVM-IR file.
     LlvmAsmLoader loader(*proc);
-    loader.load_file(pool_path + Convert::vpid2str(pid) + ".ll");
+    loader.load_file(pool_path + Convert::vpid2str(in_pid) + ".ll");
 
     std::map<std::string, std::string> envs;
     // Run virtual machine for bind argument and environment variables.
@@ -83,15 +86,29 @@ public:
     // Write out data to memory.
     proc->proc_memory->write_out();
       
-    result.insert(std::make_pair("proc_addr", Convert::vaddr2json(proc->addr)));
-    result.insert(std::make_pair("root_tid", Convert::vtid2json(proc->root_tid)));
-
     // Dump and write to file.
     picojson::object body;
-    body.insert(std::make_pair("pid", Convert::vpid2json(pid)));
+    body.insert(std::make_pair("pid", Convert::vpid2json(in_pid)));
 
-    picojson::array js_mem;
-    for (auto& it : vmemory.get_space(Convert::vpid2str(pid)).pages) {
+    picojson::array js_machine;
+    {
+      picojson::object packet;
+      packet.insert(std::make_pair("cmd", picojson::value(std::string("warp"))));
+      packet.insert(std::make_pair("pid", Convert::vpid2json(in_pid)));
+      packet.insert(std::make_pair("root_tid", Convert::vtid2json(proc->root_tid)));
+      packet.insert(std::make_pair("proc_addr", Convert::vaddr2json(proc->addr)));
+      packet.insert(std::make_pair("master_device", Convert::devid2json(DEV_SERVER)));
+      packet.insert(std::make_pair("name", picojson::value(in_name)));
+      packet.insert(std::make_pair("tid", Convert::vtid2json(proc->root_tid)));
+      packet.insert(std::make_pair("dst_device", Convert::devid2json(in_dst_device)));
+      packet.insert(std::make_pair("src_device", Convert::devid2json(in_src_device)));
+      packet.insert(std::make_pair("src_account", picojson::value(in_src_account)));
+      js_machine.push_back(picojson::value(picojson::value(packet).serialize()));
+    }
+    body.insert(std::make_pair("machine_data", picojson::value(js_machine)));
+
+    picojson::array js_memory;
+    for (auto& it : vmemory.get_space(Convert::vpid2str(in_pid)).pages) {
       // Don't export builtin variables.
       if (proc->builtin_addrs.find(it.first) != proc->builtin_addrs.end()) continue;
       
@@ -99,14 +116,14 @@ public:
       packet.insert(std::make_pair("cmd", picojson::value(std::string("give"))));
       packet.insert(std::make_pair("addr", Convert::vaddr2json(it.first)));
       packet.insert(std::make_pair("value", Convert::bin2json(it.second.value)));
-      packet.insert(std::make_pair("src", picojson::value(std::string(""))));
-      packet.insert(std::make_pair("dst", picojson::value(dst_dev_id)));
+      packet.insert(std::make_pair("src", Convert::devid2json(DEV_SERVER)));
+      packet.insert(std::make_pair("dst", Convert::devid2json(in_dst_device)));
       packet.insert(std::make_pair("hint", picojson::value(picojson::array())));
-      js_mem.push_back(picojson::value(picojson::value(packet).serialize()));
+      js_memory.push_back(picojson::value(picojson::value(packet).serialize()));
     }
-    body.insert(std::make_pair("memory_data", picojson::value(js_mem)));
+    body.insert(std::make_pair("memory_data", picojson::value(js_memory)));
 
-    std::ofstream ofs(pool_path + Convert::vpid2str(pid) + ".out");
+    std::ofstream ofs(pool_path + Convert::vpid2str(in_pid) + ".out");
     ofs << picojson::value(body).serialize();
   }
 };
@@ -128,11 +145,14 @@ int main(int argc, char* argv[]) {
     result = v.get<picojson::object>();
     
     try {
-      // Get pid.
-      vpid_t pid = Convert::json2vpid(result.at("pid"));
-      dev_id_t dst_dev_id = Convert::json2devid(result.at("dst_device_id"));
       // Make loader.
-      Loader loader(result, pid, dst_dev_id);
+      Loader loader;
+      // Read information from json.
+      loader.in_pid        = Convert::json2vpid(result.at("pid"));
+      loader.in_name       = result.at("name").get<std::string>();
+      loader.in_dst_device = Convert::json2devid(result.at("dst_device"));
+      loader.in_src_device = Convert::json2devid(result.at("src_device"));
+      loader.in_src_account = result.at("src_account").get<std::string>();
       
       // Convert arguments.
       std::vector<std::string> args;
