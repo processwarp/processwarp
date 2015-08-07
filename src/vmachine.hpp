@@ -101,8 +101,8 @@ namespace processwarp {
      * @param pid Target pid.
      * @param data Received load data.
      */
-    void recv_packet(const vpid_t& pid,
-		     const std::string& data);
+    void recv_machine_data(const vpid_t& pid,
+			   const std::string& data);
     
     /**
      * Create empty process.

@@ -38,7 +38,7 @@ VMemory::VMemory(VMemoryDelegate& delegate_, const dev_id_t& dev_id_) :
 }
 
 // Recv and decode data from other device.
-void VMemory::recv_packet(const std::string& name, const std::string& data) {
+void VMemory::recv_memory_data(const std::string& name, const std::string& data) {
   picojson::value v;
   std::istringstream is(data);
   std::string err = picojson::parse(v, is);

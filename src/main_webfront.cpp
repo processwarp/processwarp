@@ -117,7 +117,7 @@ void recv_machine_data(const vpid_t& pid,
   if (dst == vm->device_id ||
       (dst == DEV_BROADCAST && src != vm->device_id)) {
     assert(src != vm->device_id);
-    vm->recv_packet(pid, data);
+    vm->recv_machine_data(pid, data);
   }
 }
 
@@ -128,7 +128,7 @@ void recv_memory_data(const std::string& name,
   if (dst == vm->device_id ||
       (dst == DEV_BROADCAST && src != vm->device_id)) {
     assert(src != vm->device_id);
-    vm->vmemory.recv_packet(name, data);
+    vm->vmemory.recv_memory_data(name, data);
   }
 }
 

@@ -150,8 +150,7 @@ void VMachine::loop() {
 }
     
 // Pass data from other device.
-void VMachine::recv_packet(const vpid_t& pid,
-			   const std::string& data) {
+void VMachine::recv_machine_data(const vpid_t& pid, const std::string& data) {
   try {
     picojson::value v;
     std::istringstream is(data);

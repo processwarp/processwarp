@@ -257,7 +257,7 @@ public:
     if (dst == device_id ||
 	(dst == DEV_BROADCAST && src != device_id)) {
       assert(src != device_id);
-      vm->recv_packet(pid, data);
+      vm->recv_machine_data(pid, data);
     }
   }
 
@@ -268,7 +268,7 @@ public:
     if (dst == device_id ||
 	(dst == DEV_BROADCAST && src != device_id)) {
       assert(src != device_id);
-      vm->vmemory.recv_packet(name, data);
+      vm->vmemory.recv_memory_data(name, data);
     }
   }
 

@@ -534,7 +534,7 @@ namespace processwarp {
      * @param name
      * @param data
      */
-    void recv_packet(const std::string& name, const std::string& data);
+    void recv_memory_data(const std::string& name, const std::string& data);
 
     /**
      * @param name Space name.
