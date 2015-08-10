@@ -9,6 +9,7 @@
 #include <emscripten.h>
 #include <emscripten/bind.h>
 
+#include "lib/picojson.h"
 #include "convert.hpp"
 #include "vmachine.hpp"
 #include "vmemory.hpp"
@@ -41,6 +42,28 @@ class WebfrontDelegate : public VMachineDelegate, public VMemoryDelegate {
 	     << "'" << dst << "',"
 	     << static_cast<const void*>(data.data()) << ","
 	     << data.size() << ");";
+    emscripten_run_script(asm_code.str().c_str());
+  }
+
+  // Call when change process and thread status running on this virtual machine.
+  void send_sync_proc_list(const std::vector<ProcessTree>& procs) override {
+    picojson::array js_procs;
+    
+    for (auto& proc : procs) {
+      picojson::object js_proc;
+      js_proc.insert(std::make_pair("pid", Convert::vpid2json(proc.pid)));
+      js_proc.insert(std::make_pair("name", picojson::value(proc.name)));
+
+      picojson::object js_threads;
+      for (auto& thread : proc.threads) {
+	js_threads.insert(std::make_pair(Convert::vtid2str(thread.first),
+					 Convert::devid2json(thread.second)));
+      }
+      js_proc.insert(std::make_pair("threads", picojson::value(js_threads)));
+    }
+    std::string js = picojson::value(js_procs).serialize();
+    std::stringstream asm_code;
+    asm_code << "send_sync_proc_list('" << js << "');";
     emscripten_run_script(asm_code.str().c_str());
   }
 
@@ -132,6 +155,34 @@ void recv_memory_data(const std::string& name,
   }
 }
 
+void recv_sync_proc_list(const std::string& js_str) {
+  picojson::value js_tmp;
+  std::istringstream is(js_str);
+  std::string err = picojson::parse(js_tmp, is);
+  if (!err.empty()) {
+    /// @todo error
+    assert(false);
+  }
+
+  std::vector<ProcessTree> procs;
+  for (auto& it_proc : js_tmp.get<picojson::array>()) {
+    picojson::object& js_proc = it_proc.get<picojson::object>();    
+    ProcessTree proc;
+
+    proc.pid  = Convert::json2vpid(js_proc.at("pid"));
+    proc.name = js_proc.at("name").get<std::string>();
+
+    picojson::object& js_threads = js_proc.at("threads").get<picojson::object>();
+    for (auto& it_thread : js_threads) {
+      proc.threads.insert(std::make_pair(Convert::str2vtid(it_thread.first),
+					 Convert::json2devid(it_thread.second)));
+    }
+    procs.push_back(proc);
+  }
+
+  vm->recv_sync_proc_list(procs);
+}
+
 void set_device_id(const dev_id_t& device_id) {
   vm.reset(new VMachine(delegate, delegate, device_id, LIBS, lib_filter));
 }
@@ -161,6 +212,7 @@ int main() {
 EMSCRIPTEN_BINDINGS(mod) {
   function("recv_machine_data", &recv_machine_data);
   function("recv_memory_data",  &recv_memory_data);
+  function("recv_sync_proc_list", &recv_sync_proc_list);
   function("set_device_id",  &set_device_id);
   function("exit_process",   &exit_process);
   function("warp_process",   &warp_process);

@@ -36,6 +36,9 @@ public:
   ///
   std::string in_src_account;
 
+  ///
+  vtid_t out_root_tid;
+
   /**
    * Constructor, initialize virtual-memory instance.
    */
@@ -45,9 +48,14 @@ public:
 
   /**
    */
-  std::unique_ptr<VMemory::Accessor> assign_accessor(const vpid_t& pid) {
+  std::unique_ptr<VMemory::Accessor> assign_accessor(const vpid_t& pid) override {
     assert(!in_pid.empty());
     return std::move(vmemory.get_accessor(Convert::vpid2str(pid)));
+  }
+
+  /**
+   */
+  void on_change_thread_set(Process& proc) override {
   }
 
   // Call when send memory data to other device.
@@ -83,6 +91,10 @@ public:
 
     proc->get_thread(proc->root_tid).write();
 
+
+    // Copy output information.
+    out_root_tid = proc->root_tid;
+    
     // Write out data to memory.
     proc->proc_memory->write_out();
       
@@ -164,6 +176,8 @@ int main(int argc, char* argv[]) {
     
       // Show result.
       result.insert(std::make_pair("result",    picojson::value(0.0)));
+      result.insert(std::make_pair("root_tid",  Convert::vtid2json(loader.out_root_tid)));
+      
       std::cout << picojson::value(result).serialize() << '\0';
     
     } catch(const Error& ex) {

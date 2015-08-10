@@ -226,19 +226,21 @@ void SocketIo::pool() {
 				get_dev_id_by_map(data, "id"));
 
     } else if (name == "sync_proc_list") {
-      std::map<vpid_t, SocketIoProc> procs;
+      std::vector<ProcessTree> procs;
 
-      for (auto it_proc : data->get_map()) {
-	SocketIoProc proc;
+      for (auto& it_proc : data->get_vector()) {
+	ProcessTree proc;
 	
-	proc.pid  = get_pid_by_map(it_proc.second, "pid");
-	proc.name = get_str_by_map(it_proc.second, "name");
+	proc.pid  = get_pid_by_map(it_proc, "pid");
+	proc.name = get_str_by_map(it_proc, "name");
 
-	for (auto it_thread : it_proc.second->get_map().at("threads")->get_map()) {
-	  proc.threads.insert(std::make_pair(Convert::str2vtid(it_thread.first),
-					     get_dev_id_by_map(it_thread.second, "device_id")));
+	auto& threads = it_proc->get_map().at("threads")->get_map();
+	for (auto& it_thread : threads) {
+	  proc.threads.insert(std::make_pair
+			      (Convert::str2vtid(it_thread.first),
+			       Convert::str2devid(it_thread.second->get_string())));
 	}
-	procs.insert(std::make_pair(proc.pid, proc));
+	procs.push_back(proc);
 	
       }
       delegate.recv_sync_proc_list(procs);
@@ -326,34 +328,29 @@ void SocketIo::send_bind_device(const dev_id_t& id,
 }
 
 // Send process list for synchronize.
-void SocketIo::send_sync_proc_list(const std::map<vpid_t, SocketIoProc>& procs) {
-  sio::message::ptr data(sio::object_message::create());
-  std::map<std::string, sio::message::ptr>& map = data->get_map();
+void SocketIo::send_sync_proc_list(const std::vector<ProcessTree>& procs) {
+  auto sio_procs(sio::array_message::create());
+  auto& procs_vector = sio_procs->get_vector();
 
-  for (auto it_proc : procs) {
-    SocketIoProc& proc = it_proc.second;
+  for (auto& it_proc : procs) {
+    auto sio_proc(sio::object_message::create());
+    auto& proc_map = sio_proc->get_map();
+    auto sio_threads(sio::object_message::create());
+    auto& threads_map = sio_threads->get_map();
 
-    sio::message::ptr pdata(sio::object_message::create());
-    std::map<std::string, sio::message::ptr>& pmap = pdata->get_map();
-    sio::message::ptr tdata(sio::object_message::create());
-    std::map<std::string, sio::message::ptr>& tmap = tdata->get_map();
-    sio::message::ptr threads(sio::object_message::create());
-    std::map<std::string, sio::message::ptr>& pthreads = threads->get_map();
+    proc_map.insert(std::make_pair("pid", get_sio_by_pid(it_proc.pid)));
+    proc_map.insert(std::make_pair("name", sio::string_message::create(it_proc.name)));
+    proc_map.insert(std::make_pair("threads", sio_threads));
 
-    pmap.insert(std::make_pair("pid", get_sio_by_pid(proc.pid)));
-    pmap.insert(std::make_pair("name", sio::string_message::create(proc.name)));
-    pmap.insert(std::make_pair("threads", threads));
-
-    for (auto it_thread : proc.threads) {
-      tmap.insert(std::make_pair("tid", get_sio_by_tid(it_thread.first)));
-      tmap.insert(std::make_pair("device_id", get_sio_by_dev_id(it_thread.second)));
-      pthreads.insert(std::make_pair(Convert::vtid2str(it_thread.first), tdata));
+    for (auto& it_thread : it_proc.threads) {
+      threads_map.insert(std::make_pair(Convert::vtid2str(it_thread.first),
+					get_sio_by_dev_id(it_thread.second)));
     }
 
-    map.insert(std::make_pair(Convert::vpid2str(proc.pid), pdata));
+    procs_vector.push_back(sio_proc);
   }
   
-  socket->emit("sync_proc_list", data);
+  socket->emit("sync_proc_list", sio_procs);
 }
 
 // Send virtual-machine data packet.

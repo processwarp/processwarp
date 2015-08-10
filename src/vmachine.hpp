@@ -29,8 +29,14 @@ namespace processwarp {
      */
     virtual void send_machine_data(const vpid_t& pid,
 				   const dev_id_t& dst,
-				   const std::string& load) = 0;
+				   const std::string& data) = 0;
     
+    /**
+     * Call when change process and thread status running on this virtual machine.
+     * @param procs
+     */
+    virtual void send_sync_proc_list(const std::vector<ProcessTree>& procs) = 0;
+
     /**
      * Call when context switch of process.
      * @param pid Target pid. Empty (length == 0) when switch to controller's process.
@@ -103,6 +109,11 @@ namespace processwarp {
      */
     void recv_machine_data(const vpid_t& pid,
 			   const std::string& data);
+
+    /**
+     * Call when recv sync proc list message from server.
+     */
+    void recv_sync_proc_list(const std::vector<ProcessTree>& procs);
     
     /**
      * Create empty process.
@@ -163,6 +174,11 @@ namespace processwarp {
     void setup_builtin();
 
     /**
+     * Make new process-tree and send to server.
+     */
+    void update_proc_list();
+
+    /**
      * Start warp process.
      * Resource remain after warp. Need to call delete_process after all.
      * @param pid Target pid.
@@ -178,6 +194,10 @@ namespace processwarp {
      * @inheritDoc
      */
     std::unique_ptr<VMemory::Accessor> assign_accessor(const vpid_t& pid) override;
+
+    /**
+     */
+    void on_change_thread_set(Process& proc) override;
 
   private:
     /** Event assignee */

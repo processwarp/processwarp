@@ -12,20 +12,6 @@
 
 namespace processwarp {
   /**
-   * Structure using to recv/send_sync_proc_list.
-   */
-  struct SocketIoProc {
-    // pid
-    vpid_t pid;
-    // Root thread-id.
-    vtid_t root_tid;
-    // Name of process
-    std::string name;
-    // Map of tid and device-id.
-    std::map<vtid_t, dev_id_t> threads;
-  };
-  
-  /**
    * Delegate for SocketIo-class.
    */
   class SocketIoDelegate {
@@ -72,7 +58,7 @@ namespace processwarp {
      * Call when recv sync proc list message from server.
      * @param procs Map of pid and SocketIoProc.
      */
-    virtual void recv_sync_proc_list(const std::map<vpid_t, SocketIoProc>& procs) = 0;
+    virtual void recv_sync_proc_list(const std::vector<ProcessTree>& procs) = 0;
     
     /**
      * Call when recieve virtual-machine data packet from other device.
@@ -192,20 +178,17 @@ namespace processwarp {
 
     /**
      * Send process list for synchronize.
-     * Packet format: {
-     *   <pid>: {
+     * Packet format: [
+     *   {
      *     pid: <pid>,
      *     name: <name of process>,
      *     threads: {
-     *       <tid>: {
-     *         tid: <tid>,
-     *         device_id: <device_id>
-     *       }, ...
+     *       <tid>: <device_id>
      *     }
      *   }, ...
      * }
      */
-    void send_sync_proc_list(const std::map<vpid_t, SocketIoProc>& procs);
+    void send_sync_proc_list(const std::vector<ProcessTree>& procs);
 
     /**
      * Send virtual-machine data packet.

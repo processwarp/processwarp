@@ -38,8 +38,8 @@ public:
   /** Map of API name call from and call for that can access. */
   std::map<std::string, std::string> lib_filter;
 
-  /** Map of pid and process infomation. */
-  std::map<vpid_t, SocketIoProc> procs;
+  /** List of process and threads. */
+  std::vector<ProcessTree> procs;
 
   /** Map of device-id and device-name. */
   std::map<dev_id_t, std::string> devices;
@@ -133,6 +133,11 @@ public:
     socket.send_machine_data(pid, dst, data);
   }
 
+  // Call when change process and thread status running on this virtual machine.
+  void send_sync_proc_list(const std::vector<ProcessTree>& procs) {
+    socket.send_sync_proc_list(procs);
+  }
+
   void send_memory_data(const std::string& name,
 			const dev_id_t& dst,
 			const std::string& data) override {
@@ -145,17 +150,9 @@ public:
   }
   //*/
   
-  // Call when process was finish.
-  void on_finish_proccess(const vpid_t& pid) override {
-    procs.erase(pid);
-
-    socket.send_sync_proc_list(procs);
-  }
-
   // Call when rise error.
   void on_error(const vpid_t& pid, const std::string& message) override {
     print_debug("error(%s) : %s\n", pid.c_str(), message.c_str());
-    on_finish_proccess(pid);
   }
 
   // Call when new process is arrive.
@@ -224,29 +221,16 @@ public:
     this->vm->setup_builtin();
 
     // Syncronize processes empty because processes not running just run program.
-    socket.send_sync_proc_list(std::map<vpid_t, SocketIoProc>());
+    vm->update_proc_list();
 
     // Execute applications.
     load_apps();
   }
 
   // Call when recv sync proc list message from server.
-  void recv_sync_proc_list(const std::map<vpid_t, SocketIoProc>& new_procs) override {
-    // Check finished process.
-    auto it = procs.begin();
-    while (it != procs.end()) {
-      if (new_procs.find(it->first) == new_procs.end()) {
-	// Delete proccess if not exit in server's proccess list.
-	vm->delete_process(it->first);
-	it = procs.erase(it);
-
-      } else {
-	it ++;
-      }
-    }
-
-    // Update process list.
-    procs = new_procs;
+  void recv_sync_proc_list(const std::vector<ProcessTree>& procs) override {
+    this->procs = procs;
+    vm->recv_sync_proc_list(procs);
   }
 
   // Call when recv warp data from warp source device.

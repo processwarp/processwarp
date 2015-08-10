@@ -3,6 +3,7 @@
 #include <cinttypes>
 #include <cstdint>
 #include <ctime>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -239,4 +240,14 @@ namespace processwarp {
   static const clock_t MEMORY_REQUIRE_INTERVAL = 5000;
   /** Max retry times of send require packet. */
   static const int MEMORY_REQUIRE_TRY_MAX = 10;
+
+  /**
+   * Structure of process and thread.
+   * Used by sync_proc_list.
+   */
+  struct ProcessTree {
+    vpid_t pid;
+    std::string name;
+    std::map<vtid_t, dev_id_t> threads;
+  };
 }

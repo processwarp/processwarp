@@ -1026,6 +1026,8 @@ Thread& Process::get_thread(vtid_t tid) {
 // Warp out thread.
 void Process::warp_out_thread(vtid_t tid) {
   active_threads.insert(tid);
+  delegate.on_change_thread_set(*this);
+  
   /// @todo change thread status to AFTER_WARP after sync memory.
 }
 
@@ -1040,7 +1042,6 @@ vtid_t Process::create_thread(vaddr_t func_addr, vaddr_t arg_addr) {
 
   Thread& thread =
     *threads.insert(Thread::alloc(delegate.assign_accessor(pid))).first->second.get();
-  active_threads.insert(thread.tid);
 
   vaddr_t root_stack = thread.memory->alloc(sizeof(vaddr_t));
   vaddr_t root_stackaddr =
@@ -1062,6 +1063,9 @@ vtid_t Process::create_thread(vaddr_t func_addr, vaddr_t arg_addr) {
       StackInfo::alloc(*thread.memory, func->addr, root_stack, 0, 0, VADDR_NON);
   }
   thread.push_stack(func_stackaddr);
+
+  active_threads.insert(thread.tid);
+  delegate.on_change_thread_set(*this);
 
   return thread.tid;
 }

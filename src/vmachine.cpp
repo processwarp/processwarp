@@ -108,6 +108,7 @@ void VMachine::loop() {
 	      delegate.on_finish_proccess(pid);
 	      it_proc = procs.erase(it_proc);
 	      warp_dest.erase(pid);
+	      update_proc_list();
 	      // continue double loop
 	      goto next_proc;
 
@@ -115,6 +116,7 @@ void VMachine::loop() {
 	      it_thread = proc->active_threads.erase(it_thread);
 	      proc->threads.erase(tid);
 	      proc->proc_memory->free(tid);
+	      update_proc_list();
 	      continue;
 	    }
 	  }
@@ -192,6 +194,27 @@ void VMachine::recv_machine_data(const vpid_t& pid, const std::string& data) {
   /// @todo error
 }
 
+// Call when recv sync proc list message from server.
+void VMachine::recv_sync_proc_list(const std::vector<ProcessTree>& sv_procs) {
+  std::set<std::tuple<vpid_t, vtid_t>> sv_set;
+  for (auto& sv_proc : sv_procs) {
+    for (auto& sv_thread : sv_proc.threads) {
+      if (sv_thread.second == device_id) {
+	sv_set.insert(std::make_tuple(sv_proc.pid, sv_thread.first));
+      }
+    }
+  }
+
+  std::set<std::tuple<vpid_t, vtid_t>> vm_set;
+  for (auto& vm_proc : procs) {
+    for (auto& vm_thread : vm_proc.second->active_threads) {
+      vm_set.insert(std::make_tuple(vm_proc.first, vm_thread));
+    }
+  }
+
+  if (sv_set != vm_set) update_proc_list();
+}
+
 // Create empty process.
 void VMachine::join_process(const vpid_t& pid, const vtid_t& root_tid,
 			    vaddr_t proc_addr, const dev_id_t& master_dev_id) {
@@ -244,6 +267,11 @@ void VMachine::warp_process(const vpid_t& pid,
 // @inheritDoc
 std::unique_ptr<VMemory::Accessor> VMachine::assign_accessor(const vpid_t& pid) {
   return std::move(vmemory.get_accessor(Convert::vpid2str(pid)));
+}
+
+//
+void VMachine::on_change_thread_set(Process& proc) {
+  update_proc_list();
 }
 
 // Dump and send data to warp process. 
@@ -346,4 +374,22 @@ void VMachine::setup_builtin() {
   BuiltinPosix::regist(*this);
   BuiltinVaArg::regist(*this);
   BuiltinWarp::regist(*this);
+}
+
+// Make new process-tree and send to server.
+void VMachine::update_proc_list() {
+  std::vector<ProcessTree> packet;
+
+  for (auto& proc : procs) {
+    ProcessTree pt;
+    pt.pid = proc.second->pid;
+    
+    for (auto& thread : proc.second->active_threads) {
+      pt.threads.insert(std::make_pair(thread, device_id));
+    }
+
+    packet.push_back(pt);
+  }
+
+  delegate.send_sync_proc_list(packet);
 }

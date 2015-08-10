@@ -29,6 +29,10 @@ namespace processwarp {
     /**
      */
     virtual std::unique_ptr<VMemory::Accessor> assign_accessor(const vpid_t& pid) = 0;
+
+    /**
+     */
+    virtual void on_change_thread_set(Process& proc) = 0;
   };
   
   /**
