@@ -185,6 +185,7 @@ void recv_sync_proc_list(const std::string& js_str) {
 
 void set_device_id(const dev_id_t& device_id) {
   vm.reset(new VMachine(delegate, delegate, device_id, LIBS, lib_filter));
+  vm->setup_builtin();
 }
 
 void exit_process(const vpid_t& pid) {
