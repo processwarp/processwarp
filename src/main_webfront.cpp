@@ -60,6 +60,7 @@ class WebfrontDelegate : public VMachineDelegate, public VMemoryDelegate {
 					 Convert::devid2json(thread.second)));
       }
       js_proc.insert(std::make_pair("threads", picojson::value(js_threads)));
+      js_procs.push_back(picojson::value(js_proc));
     }
     std::string js = picojson::value(js_procs).serialize();
     std::stringstream asm_code;
