@@ -1026,6 +1026,7 @@ Thread& Process::get_thread(vtid_t tid) {
 // Warp out thread.
 void Process::warp_out_thread(vtid_t tid) {
   active_threads.insert(tid);
+  waiting_warp_setup.insert(tid);
   delegate.on_change_thread_set(*this);
   
   /// @todo change thread status to AFTER_WARP after sync memory.
@@ -1353,37 +1354,4 @@ void Process::setup() {
   native_ptr.insert(std::make_pair(VADDR_NULL, nullptr));
 
   print_debug("finish setup.\n");
-}
-
-// Prepare to warp out.
-void Process::setup_warpout(const vtid_t& tid) {
-  Thread& thread = get_thread(tid);
-
-  thread.warp_stack_size = thread.stack.size();
-  thread.warp_call_count = 0;
-
-  thread.status = Thread::AFTER_WARP;
-}
-
-// Prepare to warp in.
-bool Process::setup_warpin(const vtid_t& tid, const dev_id_t& dst) {
-  Thread& thread = get_thread(tid);
-
-  // Status must be normal when warp
-  if (thread.status != Thread::NORMAL) {
-    return false;
-  }
-
-  //thread.warp_to = dst;
-  
-  if (thread.warp_parameter[PW_KEY_WARP_TIMING] == PW_VAL_ON_ANYTIME) {
-    thread.warp_stack_size = thread.stack.size();
-    thread.warp_call_count = 0;
-    thread.status = Thread::BEFOR_WARP;
-
-  } else { // On polling
-    thread.status = Thread::WAIT_WARP;
-  }
-
-  return true;
 }

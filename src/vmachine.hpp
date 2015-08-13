@@ -73,6 +73,11 @@ namespace processwarp {
     virtual bool judge_new_process(const std::string& name,
 				   const dev_id_t& src_device,
 				   const std::string& src_account) = 0;
+
+    /**
+     * Call when get login account information.
+     */
+    virtual std::string get_account() = 0;
   };
   
   /**
@@ -179,15 +184,14 @@ namespace processwarp {
     void update_proc_list();
 
     /**
-     * Start warp process.
-     * Resource remain after warp. Need to call delete_process after all.
-     * @param pid Target pid.
+     * Change thread status to warp thread.
+     * @param pid Target process-id.
      * @param tid Target thread-id.
-     * @param dst_device_id Warp destination.
+     * @param dst_device Warp destination device-id.
      */
-    void warp_process(const vpid_t& pid,
-		      const vtid_t& tid,
-		      const dev_id_t& dst_device_id);
+    void request_warp_thread(const vpid_t& pid,
+			     const vtid_t tid,
+			     const dev_id_t& dst_device);
 
   protected:
     /**
@@ -223,15 +227,42 @@ namespace processwarp {
     /** Map of API name and built-in function pointer and parameter. */
     std::map<std::string, std::pair<builtin_func_t, BuiltinFuncParam>> builtin_funcs;
 
-    /** Map of pid and warp destination device-ids. */
-    std::map<vpid_t, dev_id_t> warp_dest;
-
     /**
-     * Dump and send data to warp process. 
-     * @param pid Target pid.
+     * Convert json to machine data packet and send to destination device.
+     * @param name
+     * @param dst_device
+     * @param cmd
+     * @param data
      */
-    void do_warp_process(const vpid_t& pid);
+    void send_packet(const std::string& name, const dev_id_t& dst_device,
+		     const std::string& cmd, picojson::object& data);
 
     void recv_warp(const vpid_t& pid, picojson::object& json);
+
+    /**
+     * If recv this packet and this device contain target process and thread,
+     * change status to warp thread.
+     * @param pid
+     * @param json
+     */
+    void recv_warp_request(const vpid_t& pid, picojson::object& json);
+
+    /**
+     * This request means to warp thread to target device.
+     * This method regist thread-id to pool and loop method check
+     * target thread's status to change.
+     * @param proc
+     * @param thread
+     */
+    void send_warp(Process& proc, Thread& thread);
+    
+    /**
+     * This request means to broadcast request of warp a thread.
+     * @param pid
+     * @param tid
+     * @param dst_device
+     */
+    void send_warp_request(const vpid_t& pid, const vtid_t tid,
+			   const dev_id_t& dst_device);
   };
 }

@@ -106,6 +106,13 @@ class WebfrontDelegate : public VMachineDelegate, public VMemoryDelegate {
     int r = emscripten_run_script_int(asm_code.str().c_str());
     return r != 0;
   }
+
+  // Call when get login account information.
+  std::string get_account() override {
+    std::stringstream asm_code;
+    asm_code << "get_account();";
+    return emscripten_run_script_string(asm_code.str().c_str());
+  }
 };
 
 /** Empty libraries because don't use dlsym on Emscripten. */
@@ -193,9 +200,12 @@ void exit_process(const vpid_t& pid) {
   vm->exit_process(pid);
 }
 
-void warp_process(const vpid_t& pid, const dev_id_t& device_id) {
-  vtid_t tmp = 1; ///< TODO
-  vm->warp_process(pid, tmp, device_id);
+void request_warp_thread(const std::string& pid,
+			 const std::string& tid,
+			 const dev_id_t& dst_device) {
+  vm->request_warp_thread(Convert::str2vpid(pid),
+			  Convert::str2vtid(tid),
+			  Convert::str2devid(dst_device));
 }
 
 /**
@@ -215,7 +225,7 @@ EMSCRIPTEN_BINDINGS(mod) {
   function("recv_machine_data", &recv_machine_data);
   function("recv_memory_data",  &recv_memory_data);
   function("recv_sync_proc_list", &recv_sync_proc_list);
+  function("request_warp_thread", &request_warp_thread);
   function("set_device_id",  &set_device_id);
   function("exit_process",   &exit_process);
-  function("warp_process",   &warp_process);
 }

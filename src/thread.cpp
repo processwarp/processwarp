@@ -205,3 +205,36 @@ void Thread::push_stack(vaddr_t addr, std::unique_ptr<StackInfo> top) {
   stack.push_back(addr);
   stackinfos.insert(std::make_pair(addr, std::move(top)));
 }
+
+// Prepare to warp out.
+void Thread::setup_warpout() {
+  warp_stack_size = stack.size();
+  warp_call_count = 0;
+
+  status = AFTER_WARP;
+}
+
+// Prepare to warp in.
+bool Thread::setup_warpin(const dev_id_t& dst_device) {
+  if (status == BEFOR_WARP || status == WAIT_WARP) {
+    warp_dst = dst_device;
+    return true;
+
+  } else if (status != NORMAL) {
+    // Status must be normal when warp.
+    return false;
+  }
+
+  if (warp_parameter[PW_KEY_WARP_TIMING] == PW_VAL_ON_ANYTIME) {
+    warp_stack_size = stack.size();
+    warp_call_count = 0;
+    status = BEFOR_WARP;
+
+  } else { // On polling.
+    status = WAIT_WARP;
+  }
+
+  warp_dst = dst_device;
+  
+  return true;
+}

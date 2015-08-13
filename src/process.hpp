@@ -73,6 +73,11 @@ namespace processwarp {
     std::map<vtid_t, std::unique_ptr<Thread>> threads;
     std::set<vtid_t> active_threads;
     std::map<vaddr_t, void*> native_ptr; ///< 仮想アドレスとネイティブポインタのペア
+    /** Process name. */
+    std::string name;
+    
+    std::set<vtid_t> waiting_warp_result;
+    std::set<vtid_t> waiting_warp_setup;
     
     /**
      * Allocate process on memory from delegate.
@@ -287,19 +292,6 @@ namespace processwarp {
      * 初期設定をする。
      */
     void setup();
-
-    /**
-     * Prepare to warp out.
-     * @param tid thread-id to warp out.
-     */
-    void setup_warpout(const vtid_t& tid);
-
-    /**
-     * Prepare to warp in.
-     * @param tid thread-id to warp in.
-     * @param dst Destination device-id.
-     */
-    bool setup_warpin(const vtid_t& tid, const dev_id_t& dst);
 
   private:
     /**

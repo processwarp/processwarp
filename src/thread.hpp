@@ -63,6 +63,8 @@ namespace processwarp {
     /// stack size when befor warp
     vm_uint_t warp_stack_size;
     vm_uint_t warp_call_count;
+    ///
+    dev_id_t warp_dst;
     
     WrappedOperator* const OPERATORS[0x36];
 
@@ -99,17 +101,12 @@ namespace processwarp {
     WrappedOperator* get_operator(vaddr_t type);
 
     /**
-     * Get stack-information by virtual-address.
-     * @param addr Address stack-information assigned.
+     * Get stack-information by index of stack.
+     * If idx is negative, idx is stack's top + idx (stack top is -1).
+     * @param idx
      * @return A instance of stack-information.
      */
-    StackInfo& get_stackinfo(vaddr_t addr);
-
-    /**
-     * Get stack-information at stack top.
-     * @return A instance of stack-information.
-     */
-    StackInfo& get_top_stackinfo();
+    StackInfo& get_stackinfo(int idx);
 
     /**
      * Remoev stack-information at stack top.
@@ -128,6 +125,17 @@ namespace processwarp {
      * @param top
      */
     void push_stack(vaddr_t addr, std::unique_ptr<StackInfo> top);
+
+    /**
+     * Prepare to warp out.
+     */
+    void setup_warpout();
+
+    /**
+     * Prepare to warp in.
+     * @param dst Destination device-id.
+     */
+    bool setup_warpin(const dev_id_t& dst_device);
 
   private:
     /**

@@ -168,6 +168,11 @@ public:
     }
   }
 
+  // Call when get login account information.
+  std::string get_account() override {
+    return account;
+  }
+
   // Call when system error on server.
   void recv_sys_error(int code) override {
     throw_error(Error::SERVER_SYS);

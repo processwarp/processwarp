@@ -80,12 +80,22 @@ void VMachine::loop() {
       pid  = it_proc->first;
       proc = it_proc->second.get();
 
+      for (auto tid : proc->waiting_warp_result) {
+	send_warp(*proc, proc->get_thread(tid));
+      }
+
       auto it_thread = proc->active_threads.begin();
       while(it_thread != proc->active_threads.end()) {
 	try {
 	  tid    = *it_thread;
 	  thread = &proc->get_thread(tid);
 	  
+
+	  if (proc->waiting_warp_setup.find(tid) != proc->waiting_warp_setup.end()) {
+	    thread->setup_warpout();
+	    proc->waiting_warp_setup.erase(tid);
+	  }
+
 	  if (thread->status == Thread::NORMAL ||
 	      thread->status == Thread::WAIT_WARP ||
 	      thread->status == Thread::BEFOR_WARP ||
@@ -96,7 +106,7 @@ void VMachine::loop() {
 	    proc->execute(tid, 100);
 
 	  } else if (thread->status == Thread::WARP) {
-	    do_warp_process(pid);
+	    send_warp(*proc, *thread);
 	  
 	  } else if (thread->status == Thread::ERROR) {
 	    delegate.on_error(pid, "");
@@ -107,7 +117,6 @@ void VMachine::loop() {
 	    if (tid == proc->root_tid) {
 	      delegate.on_finish_proccess(pid);
 	      it_proc = procs.erase(it_proc);
-	      warp_dest.erase(pid);
 	      update_proc_list();
 	      // continue double loop
 	      goto next_proc;
@@ -169,6 +178,9 @@ void VMachine::recv_machine_data(const vpid_t& pid, const std::string& data) {
     std::string cmd = json.at("cmd").get<std::string>();
     if (cmd == "warp") {
       recv_warp(pid, json);
+
+    } else if (cmd == "warp_request") {
+      recv_warp_request(pid, json);
     
     } else {
       assert(false);
@@ -198,13 +210,30 @@ void VMachine::recv_machine_data(const vpid_t& pid, const std::string& data) {
 void VMachine::recv_sync_proc_list(const std::vector<ProcessTree>& sv_procs) {
   std::set<std::tuple<vpid_t, vtid_t>> sv_set;
   for (auto& sv_proc : sv_procs) {
+    // Update process name.
+    auto it_vm_proc = procs.find(sv_proc.pid);
+    Process* proc = nullptr;
+    if (it_vm_proc != procs.end()) {
+      proc = it_vm_proc->second.get();
+      proc->name = sv_proc.name;
+    }
+
     for (auto& sv_thread : sv_proc.threads) {
+      // Collect pid and tid of server.
       if (sv_thread.second == device_id) {
 	sv_set.insert(std::make_tuple(sv_proc.pid, sv_thread.first));
+
+      } else if (proc != nullptr &&
+		 proc->waiting_warp_result.find(sv_thread.first) !=
+		 proc->waiting_warp_result.end()) {
+	// Remove thread if warp was success.
+	proc->waiting_warp_result.erase(sv_thread.first);
+	proc->threads.erase(sv_thread.first);
       }
     }
   }
 
+  // Collect pid and tid of virtual machine.
   std::set<std::tuple<vpid_t, vtid_t>> vm_set;
   for (auto& vm_proc : procs) {
     for (auto& vm_thread : vm_proc.second->active_threads) {
@@ -212,6 +241,7 @@ void VMachine::recv_sync_proc_list(const std::vector<ProcessTree>& sv_procs) {
     }
   }
 
+  // If not equal pid and tid between server and virtual machine, then update process list.
   if (sv_set != vm_set) update_proc_list();
 }
 
@@ -229,7 +259,6 @@ void VMachine::join_process(const vpid_t& pid, const vtid_t& root_tid,
 void VMachine::delete_process(const vpid_t& pid) {
   if (procs.find(pid) == procs.end()) return;
   procs.erase(pid);
-  warp_dest.erase(pid);
 }
 
 // Start exiting process.
@@ -248,19 +277,18 @@ bool VMachine::have_process(const vpid_t& pid) {
   return (procs.find(pid) != procs.end());
 }
 
-// Start warp process.
-void VMachine::warp_process(const vpid_t& pid,
-			    const vtid_t& tid,
-			    const dev_id_t& dst_device_id) {
-  warp_dest[pid] = dst_device_id;
-  // Change vm's status for setup to warp.
-  if (tid == ALL_THREAD) {
-    for (auto& it : procs.at(pid)->active_threads) {
-      procs.at(pid)->setup_warpin(it, dst_device_id);
-    }
+// Change thread status to warp thread.
+void VMachine::request_warp_thread(const vpid_t& pid,
+				   const vtid_t tid,
+				   const dev_id_t& dst_device) {
+  auto it_proc = procs.find(pid);
+  if (it_proc != procs.end() &&
+      (it_proc->second->active_threads.find(tid)) !=
+      it_proc->second->active_threads.end()) {
+    it_proc->second->get_thread(tid).setup_warpin(dst_device);
 
   } else {
-    procs.at(pid)->setup_warpin(tid, dst_device_id);
+    send_warp_request(pid, tid, dst_device);
   }
 }
 
@@ -272,54 +300,6 @@ std::unique_ptr<VMemory::Accessor> VMachine::assign_accessor(const vpid_t& pid) 
 //
 void VMachine::on_change_thread_set(Process& proc) {
   update_proc_list();
-}
-
-// Dump and send data to warp process. 
-void VMachine::do_warp_process(const vpid_t& pid) {
-  /// TODO:
-  assert(false);
-  /*
-  Process& proc    = *procs.at(pid);
-  VMemory::Accessor& memory = *proc.proc_memory;
-  
-  // Dump process.
-  Convert convert(proc);
-  Convert::Related related;
-  picojson::object body;
-  picojson::object dump;
-  picojson::object threads;
-  body.insert(std::make_pair("cmd", picojson::value(std::string("warp"))));
-  body.insert(std::make_pair("pid", Convert::vpid2json(pid)));
-  body.insert(std::make_pair("root_tid", Convert::vtid2json(proc.root_tid)));
-  for (auto& it : proc.threads) {
-    threads.insert(std::make_pair(Convert::vtid2str(it.first),
-				  convert.export_thread(*it.second, related)));
-  }
-  body.insert(std::make_pair("threads", picojson::value(threads)));
-
-  std::set<vaddr_t> all = proc.vmemory.get_alladdr();
-  for (auto it : all) {
-    // Don't export null instance.
-    if (it == VADDR_NULL || it == VADDR_NON) continue;
-    // Don't export build in instance.
-    if (proc.builtin_addrs.find(it) != proc.builtin_addrs.end()) continue;
-    
-    dump.insert(std::make_pair(Util::vaddr2str(it), convert.export_store(it, related)));
-    // Free allocated data.
-    if (!VMemory::addr_is_func(it) && !VMemory::addr_is_type(it)) {
-      vmemory.free(it);
-    }
-  }
-  body.insert(std::make_pair("dump", picojson::value(dump)));
-
-  std::string data = picojson::value(body).serialize();
-  delegate.send_warp_data(pid, 1, warp_dest.at(pid), data);
-
-  warp_dest.erase(pid);
-  for (auto& it_thread : proc.threads) {
-    it_thread.second->status = Thread::PASSIVE;
-  }
-  */
 }
 
 void VMachine::recv_warp(const vpid_t& pid, picojson::object& json) {
@@ -345,6 +325,20 @@ void VMachine::recv_warp(const vpid_t& pid, picojson::object& json) {
   get_process(pid).warp_out_thread(tid);
 }
 
+// If recv this packet and this device contain target process and thread,
+// change status to warp thread.
+void VMachine::recv_warp_request(const vpid_t& pid, picojson::object& json) {
+  const vtid_t tid = Convert::json2vtid(json.at("tid"));
+  const dev_id_t dst_device = Convert::json2devid(json.at("dst"));
+  
+  auto it_proc = procs.find(pid);
+  if (it_proc != procs.end() &&
+      (it_proc->second->active_threads.find(tid)) !=
+      it_proc->second->active_threads.end()) {
+    it_proc->second->get_thread(tid).setup_warpin(dst_device);
+  }
+}
+
 // Regist built-in function to virtual machine.
 void VMachine::regist_builtin_func(const std::string& name,
 				   builtin_func_t func, int i64) {
@@ -359,6 +353,48 @@ void VMachine::regist_builtin_func(const std::string& name,
   BuiltinFuncParam param;
   param.ptr = ptr;
   builtin_funcs.insert(std::make_pair(name, std::make_pair(func, param)));
+}
+
+// Convert json to machine data packet and send to destination device.
+void VMachine::send_packet(const std::string& name, const dev_id_t& dst_device,
+			   const std::string& cmd, picojson::object& data) {
+  data.insert(std::make_pair("cmd", picojson::value(cmd)));
+  data.insert(std::make_pair("src", Convert::devid2json(device_id)));
+
+  delegate.send_machine_data(name, dst_device, picojson::value(data).serialize());
+}
+
+// This request means to warp thread to target device.
+void VMachine::send_warp(Process& proc, Thread& thread) {
+  picojson::object packet;
+
+  packet.insert(std::make_pair("root_tid", Convert::vtid2json(proc.root_tid)));
+  packet.insert(std::make_pair("proc_addr", Convert::vaddr2json(proc.addr)));
+  packet.insert(std::make_pair("master_device", Convert::devid2json
+			       (proc.proc_memory->get_master(proc.addr))));
+  packet.insert(std::make_pair("name", picojson::value(proc.name)));
+  packet.insert(std::make_pair("tid", Convert::vtid2json(thread.tid)));
+  packet.insert(std::make_pair("dst_device", Convert::devid2json(thread.warp_dst)));
+  packet.insert(std::make_pair("src_device", Convert::devid2json(device_id)));
+  packet.insert(std::make_pair("src_account", picojson::value(delegate.get_account())));
+  
+  proc.waiting_warp_result.insert(thread.tid);
+  proc.active_threads.erase(thread.tid);
+  
+  send_packet(proc.pid, thread.warp_dst, "warp", packet);
+}
+
+// This request means to broadcast request of warp a thread.
+void VMachine::send_warp_request(const vpid_t& pid, const vtid_t tid,
+				 const dev_id_t& dst_device) {
+  picojson::object packet;
+
+  packet.insert(std::make_pair("cmd", picojson::value(std::string("warp_request"))));
+  //packet.insert(std::make_pair("pid", Convert::vpid2json(pid)));
+  packet.insert(std::make_pair("tid", Convert::vtid2json(tid)));
+  packet.insert(std::make_pair("dst", Convert::devid2json(dst_device)));
+  
+  send_packet(pid, DEV_BROADCAST, "warp_request", packet);
 }
 
 // Setup virtual machine.
