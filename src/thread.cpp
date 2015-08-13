@@ -171,7 +171,11 @@ WrappedOperator* Thread::get_operator(vaddr_t type) {
 }
 
 // Get stack-information by virtual-address.
-StackInfo& Thread::get_stackinfo(vaddr_t addr) {
+StackInfo& Thread::get_stackinfo(int idx) {
+  if (idx < 0) {
+    idx = stack.size() + idx;
+  }
+  vaddr_t addr = stack.at(idx);
   auto it_stackinfo = stackinfos.find(addr);
   if (it_stackinfo == stackinfos.end()) {
     return *stackinfos.insert
@@ -182,12 +186,6 @@ StackInfo& Thread::get_stackinfo(vaddr_t addr) {
     StackInfo& stackinfo = *it_stackinfo->second;
     return stackinfo;
   }
-}
-
-// Get stack-information at stack top.
-StackInfo& Thread::get_top_stackinfo() {
-  assert(stack.size() > 0);
-  return get_stackinfo(stack.back());
 }
 
 // Remoev stack-information at stack top.

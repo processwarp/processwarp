@@ -216,7 +216,7 @@ void Process::execute(vtid_t tid, int max_clock) {
       }
     }
 
-    StackInfo& stackinfo = thread.get_top_stackinfo();
+    StackInfo& stackinfo = thread.get_stackinfo(-1);
     resolve_stackinfo_cache(thread, &stackinfo);
 
     const FuncStore& func = *stackinfo.func_store;
@@ -367,7 +367,7 @@ void Process::execute(vtid_t tid, int max_clock) {
       } break;
 
       case Opcode::RETURN: {
-	StackInfo& upperinfo = *(thread.stackinfos.at(thread.stack.size() - 2).get());
+	StackInfo& upperinfo = thread.get_stackinfo(-2);
 	resolve_stackinfo_cache(thread, &upperinfo);
 
 	if (Instruction::get_operand(code) == FILL_OPERAND) {
@@ -1091,7 +1091,7 @@ bool Process::join_thread(vtid_t current, vtid_t target, vaddr_t retval) {
   if (target_thread.status == Thread::JOIN_WAIT) {
     // copy retval
     proc_memory->set<vaddr_t>(retval, proc_memory->get<vaddr_t>
-			     (target_thread.stackinfos.at(0)->stack));
+			     (target_thread.get_stackinfo(0).stack));
 
     target_thread.status = Thread::FINISH;
     return true;
