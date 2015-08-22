@@ -8,6 +8,7 @@
 #include <set>
 
 #include "lib/picojson.h"
+#include "convert.hpp"
 #include "definitions.hpp"
 #include "util.hpp"
 
@@ -52,6 +53,8 @@ namespace processwarp {
       std::string value;
       /** */
       std::set<dev_id_t> hint;
+      /** Reference count to use to master. */
+      int master_count;
 
       /** Constructor with member value. */
       Page(PageType type, bool flg_update, const std::string& value,
@@ -262,7 +265,7 @@ namespace processwarp {
 	  vmemory.send_require(space, addr, *(page->second.hint.begin()));
 	  throw WaitingException();
 	}
-
+	assert(page->second.type == PT_MASTER || page->second.master_count == 0);
 	return page->second;
       }
 
@@ -280,6 +283,9 @@ namespace processwarp {
        * @return
        */
       const dev_id_t& get_master(vaddr_t addr);
+      
+      typedef std::unique_ptr<int, std::function<void(int*)>> MasterKey;
+      MasterKey keep_master(vaddr_t addr);
       
       /**
        * Set meta data.
@@ -582,6 +588,12 @@ namespace processwarp {
     void recv_copy(const std::string& name, picojson::object& json);
     
     void recv_require(const std::string& name, picojson::object& json);
+
+    void recv_reserve(const std::string& name, picojson::object& json);
+
+    void recv_stand(const std::string& name, picojson::object& json);
+    
+    void recv_update(const std::string& name, picojson::object& json);
 
     void recv_give(const std::string& name, picojson::object& json);
   };

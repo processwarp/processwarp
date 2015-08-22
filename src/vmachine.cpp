@@ -70,7 +70,6 @@ VMachine::VMachine(VMachineDelegate& delegate_,
 // Main loop.
 void VMachine::loop() {
   vpid_t pid;
-  vtid_t tid;
   Process* proc;
   Thread*  thread;
 
@@ -84,12 +83,15 @@ void VMachine::loop() {
 	send_warp(*proc, proc->get_thread(tid));
       }
 
-      auto it_thread = proc->active_threads.begin();
-      while(it_thread != proc->active_threads.end()) {
+      std::vector<vtid_t> tmp_threads;
+      for (vtid_t tid : proc->active_threads) tmp_threads.push_back(tid);
+      for (vtid_t tid : tmp_threads) {
+	// Skip if thread was not active yet.
+	if (proc->active_threads.find(tid) == proc->active_threads.end()) continue;
+
 	try {
-	  tid    = *it_thread;
 	  thread = &proc->get_thread(tid);
-	  
+	  print_debug("loop tid=%016" PRIx64 " status=%d\n", tid, thread->status);
 
 	  if (proc->waiting_warp_setup.find(tid) != proc->waiting_warp_setup.end()) {
 	    thread->setup_warpout();
@@ -122,7 +124,7 @@ void VMachine::loop() {
 	      goto next_proc;
 
 	    } else {
-	      it_thread = proc->active_threads.erase(it_thread);
+	      proc->active_threads.erase(tid);
 	      proc->threads.erase(tid);
 	      proc->proc_memory->free(tid);
 	      update_proc_list();
@@ -132,8 +134,6 @@ void VMachine::loop() {
 	} catch (VMemory::WaitingException& e) {
 	  // Skip thread because waiting to update memroy data.
 	}
-
-	it_thread ++;
       }
 
       it_proc ++;

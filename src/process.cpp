@@ -155,6 +155,8 @@ std::unique_ptr<Process> Process::read(ProcessDelegate& delegate,
 void Process::execute(vtid_t tid, int max_clock) {
   Thread& thread = get_thread(tid);
   VMemory::Accessor& memory = *thread.memory;
+  VMemory::Accessor::MasterKey thread_master_key = memory.keep_master(thread.tid);
+  
   Finally finally;
   finally.add([&]{
       thread.write();
@@ -217,6 +219,8 @@ void Process::execute(vtid_t tid, int max_clock) {
     }
 
     StackInfo& stackinfo = thread.get_stackinfo(-1);
+    VMemory::Accessor::MasterKey stackinfo_master_key = memory.keep_master(stackinfo.addr);
+    VMemory::Accessor::MasterKey stack_master_key = memory.keep_master(stackinfo.stack);
     resolve_stackinfo_cache(thread, &stackinfo);
 
     const FuncStore& func = *stackinfo.func_store;
@@ -266,6 +270,7 @@ void Process::execute(vtid_t tid, int max_clock) {
 	      Instruction::get_opcode(insts.at(stackinfo.pc + next_pc)) == Opcode::EXTRA)
 	  next_pc ++;
 	
+	Finally finally_call;
 	// スタックのサイズの有無により作りを変える
 	vaddr_t new_stackaddr =
 	  StackInfo::alloc(memory,
@@ -277,6 +282,9 @@ void Process::execute(vtid_t tid, int max_clock) {
 			   (new_func->normal_prop.stack_size != 0 ?
 			    memory.alloc(new_func->normal_prop.stack_size) :
 			    VADDR_NON));
+	finally_call.add([&] {
+	    memory.free(new_stackaddr);
+	  });
 	std::unique_ptr<StackInfo> new_stackinfo(StackInfo::read(memory, new_stackaddr));
 	resolve_stackinfo_cache(thread, new_stackinfo.get());
 
@@ -311,8 +319,6 @@ void Process::execute(vtid_t tid, int max_clock) {
 	  args += 1;
 	}
 
-	// pcの書き換え
-	stackinfo.pc += args * 2 + 2;
 	print_debug("call %s\n", new_func->name.str().c_str());
 	if (new_func->type == FuncType::FC_NORMAL) {
 	  // 可変長引数でない場合、引数の数をチェック
@@ -323,6 +329,9 @@ void Process::execute(vtid_t tid, int max_clock) {
 	  // 可変長引数分がある場合、別領域を作成
 	  if (work.size() != 0) {
 	    new_stackinfo->var_arg = memory.alloc(work.size());
+	    finally_call.add([&]{
+		memory.free(new_stackinfo->var_arg);
+	      });
 	    new_stackinfo->alloca_addrs.push_back(new_stackinfo->var_arg);
 	    memory.set_copy(new_stackinfo->var_arg, work.data(), work.size());
 	  } else {
@@ -332,15 +341,21 @@ void Process::execute(vtid_t tid, int max_clock) {
 	  if (is_tailcall) {
 	    // 末尾再帰の場合、既存のstackinfoを削除
 	    // 次の命令はRETURNのはず
-	    assert(Instruction::get_opcode(insts.at(stackinfo.pc + 2)) == Opcode::RETURN);
+	    assert(Instruction::get_opcode(insts.at(stackinfo.pc + stackinfo.pc * 2 + 4))
+		   == Opcode::RETURN);
 	    thread.pop_stack();
 	  } else {
-	    stackinfo.pc ++;
 	    // TODO assert(false);
 	    // 末尾再帰でない場合、callinfosを追加
 	  }
 	  new_stackinfo->write(memory);
 	  thread.push_stack(new_stackaddr, std::move(new_stackinfo));
+	  finally_call.clear();
+	  if (is_tailcall) {
+	    stackinfo.pc += args * 2 + 2;
+	  } else {
+	    stackinfo.pc += args * 2 + 3;
+	  }
 	  goto re_entry;
 	  
 	} else if (new_func->type == FuncType::FC_BUILTIN) {
@@ -349,9 +364,9 @@ void Process::execute(vtid_t tid, int max_clock) {
 	  BuiltinPost bp = new_func->builtin(*this, thread, new_func->builtin_param,
 					     stackinfo.output, work);
 	  switch(bp) {
-	  case BP_NORMAL: break;
-	  case BP_RE_ENTRY: goto re_entry;
-	  case BP_RETRY_LATER: stackinfo.pc -= args * 2 + 2; return;
+	  case BP_NORMAL: stackinfo.pc += args * 2 + 2; break;
+	  case BP_RE_ENTRY: stackinfo.pc += args * 2 + 2; goto re_entry;
+	  case BP_RETRY_LATER: return;
 	  default: assert(false);
 	  }
 
@@ -362,8 +377,8 @@ void Process::execute(vtid_t tid, int max_clock) {
 
 	  // 関数の呼び出し
 	  call_external(thread, *new_func, stackinfo.output, work);
+	  stackinfo.pc += args * 2 + 2;
 	}
-	
       } break;
 
       case Opcode::RETURN: {

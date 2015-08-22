@@ -52,16 +52,23 @@ void VMemory::recv_memory_data(const std::string& name, const std::string& data)
   std::string cmd = json.at("cmd").get<std::string>();
   if (cmd == "copy") {
     recv_copy(name, json);
-
+    
   } else if (cmd == "require") {
     recv_require(name, json);
-    /*
+    
   } else if (cmd == "update") {
+    recv_update(name, json);
+
   } else if (cmd == "reserve") {
+    recv_reserve(name, json);
+
+    /*
   } else if (cmd == "free") {
   } else if (cmd == "release") {
-  } else if (cmd == "stand") {
     */
+  } else if (cmd == "stand") {
+    recv_stand(name, json);
+
   } else if (cmd == "give") {
     recv_give(name, json);
   } else {
@@ -129,7 +136,18 @@ void VMemory::recv_give(const std::string& name, picojson::object& json) {
   dev_id_t src = Convert::json2devid(json.at("src"));
   dev_id_t dst = Convert::json2devid(json.at("dst"));
   picojson::array js_hint = json.at("hint").get<picojson::array>();
-
+  if (std::strlen(value.c_str()) == value.size()) {
+    print_debug("recv give %016" PRIx64 "\n%s\n", addr, value.c_str());
+  } else {
+    std::ostringstream os;
+    for (unsigned int i = 0; i < value.size(); i ++) {
+      if (i % 16 == 0) os << std::endl;
+      os << std::hex << std::setfill('0') << std::setw(2) <<
+	(0xff & value.c_str()[i]) << " ";
+    }
+    os << std::endl;
+    print_debug("recv give %016" PRIx64 "%s", addr, os.str().c_str());
+  }
   auto it_space = spaces.find(name);
   if (it_space == spaces.end()) {
     if (dst == dev_id) {
@@ -161,7 +179,10 @@ void VMemory::recv_give(const std::string& name, picojson::object& json) {
 
     } else {
       Page& page = it_page->second;
-      assert(page.type == PT_COPY);
+      /// @todo assert(page.type == PT_COPY);
+      if (page.type == PT_MASTER) {
+	return;
+      }
 
       page.type = PT_MASTER;
       page.flg_update = true;
@@ -231,6 +252,88 @@ void VMemory::recv_require(const std::string& name, picojson::object& json) {
   send_copy(src, space, page, addr);
 }
 
+void VMemory::recv_reserve(const std::string& name, picojson::object& json) {
+  auto it_space = spaces.find(name);
+  if (it_space == spaces.end()) {
+    /// @todo send "I'm not in this space"
+  }
+
+  Space& space = *it_space->second;
+  for (auto& js_addr : json.at("addrs").get<picojson::array>()) {
+    vaddr_t addr = Convert::json2vaddr(js_addr);
+
+    if (space.pages.find(addr) != space.pages.end()) {
+      /// @todo send "Address send was used yet!"
+      assert(false);
+    }
+  }
+}
+
+void VMemory::recv_stand(const std::string& name, picojson::object& json) {
+  vaddr_t addr = get_upper_addr(Convert::json2vaddr(json.at("addr")));
+  dev_id_t src_device = Convert::json2devid(json.at("src"));
+
+  auto it_space = spaces.find(name);
+  if (it_space == spaces.end()) {
+    return;
+  }
+
+  Space& space = *it_space->second;
+  auto it_page = space.pages.find(addr);
+  if (it_page == space.pages.end()) {
+    return;
+  }
+
+  Page& page = it_page->second;
+  if (page.type == PT_MASTER && page.master_count == 0) {
+    assert(page.flg_update == true);
+    send_give(space, page, addr, src_device);
+    
+    page.type = PT_COPY;
+    page.hint.clear();
+    page.hint.insert(src_device);
+  }
+}
+
+void VMemory::recv_update(const std::string& name, picojson::object& json) {
+  std::string value = Convert::json2bin(json.at("value"));
+  vaddr_t addr = Convert::json2vaddr(json.at("addr"));
+
+  auto it_space = spaces.find(name);
+  if (it_space == spaces.end()) {
+    // @todo relay
+    assert(false);
+    return;
+  }
+
+  Space& space = *it_space->second;
+  auto it_page = space.pages.find(get_upper_addr(addr));
+  if (it_page == space.pages.end()) {
+    // @todo relay
+    assert(false);
+    return;
+  }
+
+  Page& page = it_page->second;
+  if (page.type == PT_MASTER) {
+    if (page.value.size() < get_lower_addr(addr) + value.size()) {
+      // @toto error
+      assert(false);
+      return;
+    }
+    page.value.replace(get_lower_addr(addr), value.size(),
+		       value.data(), value.size());
+
+  } else if (page.type == PT_COPY) {
+    send_update(*page.hint.begin(), space, addr,
+		reinterpret_cast<const uint8_t*>(value.data()), value.size());
+    
+  } else {
+    // @todo error
+    assert(false);
+  }
+}
+
 std::unique_ptr<VMemory::Accessor> VMemory::get_accessor(const std::string& name) {
   Space& space = get_space(name);
   
@@ -283,6 +386,23 @@ void VMemory::send_free(const dev_id_t& dev_id, Space& space, vaddr_t addr) {
   packet.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
 
   send_packet(space.name, dev_id, "free", packet);
+}
+
+// This request means to give right of master.
+void VMemory::send_give(Space& space, Page& page, vaddr_t addr, const dev_id_t& dst) {
+  assert(page.type == PT_MASTER && page.master_count == 0);
+  picojson::object packet;
+  picojson::array hint;
+
+  packet.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
+  packet.insert(std::make_pair("value", Convert::bin2json(page.value)));
+  packet.insert(std::make_pair("dst", Convert::devid2json(dst)));
+  for (auto& h : page.hint) {
+    hint.push_back(Convert::devid2json(h));
+  }
+  packet.insert(std::make_pair("hint", picojson::value(hint)));
+  
+  send_packet(space.name, dst, "give", packet);
 }
 
 // This request means to broadcast some unused address.
@@ -391,6 +511,31 @@ const dev_id_t& VMemory::Accessor::get_master(vaddr_t addr) {
     /// @todo error
     assert(false);
     return DEV_BROADCAST;
+  } break;
+  }
+}
+
+VMemory::Accessor::MasterKey VMemory::Accessor::keep_master(vaddr_t addr) {
+  Page& page = get_page(addr, true);
+
+  switch(page.type) {
+  case PT_MASTER: {
+    page.master_count ++;
+    print_debug("keep master @%s %d\n",
+		Convert::vaddr2str(addr).c_str(), page.master_count);
+    return MasterKey(&page.master_count, [](int* master_count){
+	(*master_count) --;
+      });
+  } break;
+
+  case PT_COPY: {
+    vmemory.send_stand(space, page, get_upper_addr(addr));
+    throw WaitingException();
+  } break;
+
+  default: {
+    /// @todo error
+    assert(false);
   } break;
   }
 }
@@ -622,7 +767,8 @@ VMemory::Page::Page(PageType type_, bool flg_update_,
   type(type_),
   flg_update(flg_update_),
   value(value_),
-  hint(hint_) {
+  hint(hint_),
+  master_count(0) {
 }
 
 // Constructor with name and random.
@@ -687,7 +833,7 @@ vaddr_t VMemory::Space::assign_addr(AddrType type) {
 
 // Release a binded address for be used memory to be unused.
 void VMemory::Space::release_addr(vaddr_t addr) {
-  std::deque<vaddr_t>& reserved_que = reserved[get_addr_type(addr) >> 60];
+  std::deque<vaddr_t>& reserved_que = reserved[addr >> 60];
   reserved_que.push_front(addr);
 
   if (reserved_que.size() > VMEMORY_RESERVE_MAX) {
