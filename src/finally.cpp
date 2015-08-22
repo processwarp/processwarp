@@ -1,4 +1,6 @@
 
+#include <cassert>
+
 #include "finally.hpp"
 
 using namespace processwarp;
@@ -14,7 +16,11 @@ Finally::~Finally() {
     next_key --;
     auto func = funcs.find(next_key);
     if (func != funcs.end()) {
-      func->second();
+      try {
+	func->second();
+      } catch (...) {
+	assert(false);
+      }
     }
   } while(next_key != 0);
 }
