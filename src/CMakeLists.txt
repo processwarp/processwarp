@@ -83,6 +83,8 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   list(APPEND extra_libs dl)
 endif()
 
+file(GLOB HEADER_FILES "*.hpp")
+
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   set(CORE_FILES
     convert.cpp
@@ -114,7 +116,7 @@ if(GLFW_FOUND)
   list(APPEND CORE_FILES builtin_glfw3.cpp)
 endif()
 
-  add_executable(core ${CORE_FILES})
+  add_executable(core ${CORE_FILES} ${HEADER_FILES})
   target_link_libraries(core ${extra_libs})
 endif()
 
@@ -137,7 +139,7 @@ if(LLVM_FOUND AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     vmemory.cpp
     wrapped_operator.cpp
     )
-  add_executable(loader ${LOADER_FILES})
+  add_executable(loader ${LOADER_FILES} ${HEADER_FILES})
   target_link_libraries(loader ${extra_libs})
 endif()
 
