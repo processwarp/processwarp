@@ -111,22 +111,15 @@ namespace processwarp {
 #ifdef NDEBUG
 #define print_debug(...) //
 #else  // NDEBUG
-#ifndef EMSCRIPTEN
-#define print_debug(...) {						\
-      std::string file(__FILE__);					\
-      std::string::size_type sep = file.rfind('/');			\
-      if (sep == std::string::npos) sep = file.rfind('\\');		\
-      const char* file_cstr = file.c_str();				\
-      if (sep != std::string::npos) file_cstr += sep + 1;		\
-      fprintf(stderr, "\x1b[36mdebug\x1b[39m [%d@%s] ", __LINE__, file_cstr); \
-      fprintf(stderr, "" __VA_ARGS__);					\
+#define print_debug(...) {					\
+      std::string file(__FILE__);				\
+      std::string::size_type sep = file.rfind('/');		\
+      if (sep == std::string::npos) sep = file.rfind('\\');	\
+      const char* file_cstr = file.c_str();			\
+      if (sep != std::string::npos) file_cstr += sep + 1;	\
+      fprintf(stderr, "debug [%d@%s] ", __LINE__, file_cstr);	\
+      fprintf(stderr, "" __VA_ARGS__);				\
     }
-#else  // EMSCRIPTEN
-#define print_debug(...) {						\
-      fprintf(stderr, "debug [%d@" __FILE__ "] ", __LINE__);		\
-      fprintf(stderr, "" __VA_ARGS__);					\
-    }
-#endif // EMSCRIPTEN
 #endif // NDEBUG
 
 #if !defined(ENABLE_LLVM) || defined(NDEBUG) || defined(EMSCRIPTEN)
