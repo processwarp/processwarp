@@ -65,7 +65,7 @@ BuiltinPost BuiltinPosix::bi_pthread_exit(Process& proc, Thread& thread, Builtin
 BuiltinPost BuiltinPosix::bi_pthread_join(Process& proc, Thread& thread, BuiltinFuncParam p,
 					  vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
-  vtid_t  p_thread = Process::read_builtin_param_i(src, &seek);
+  vtid_t  p_thread = Process::read_builtin_param_ptr(src, &seek);
   vaddr_t p_retval = Process::read_builtin_param_ptr(src, &seek);
   assert(static_cast<signed>(src.size()) == seek);
   //vm_int_t& ret = *reinterpret_cast<vm_int_t*>(proc.get_raw_addr(dst));
