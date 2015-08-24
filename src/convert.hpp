@@ -262,8 +262,9 @@ namespace processwarp {
      * Convert binary data to JSON.
      * Binary data is converted to hex string and packed by JSON.
      * @param bin Source binary data.
+     * @param size Source binary data size.
      * @return Binary data as JSON.
      */
-    picojson::value bin2json(const std::string& bin);
+    picojson::value bin2json(const uint8_t* bin, unsigned int size);
   }
 }

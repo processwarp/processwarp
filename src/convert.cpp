@@ -15,11 +15,11 @@ std::string Convert::json2bin(const picojson::value& json) {
 }
 
 // Convert binary data to JSON.
-picojson::value Convert::bin2json(const std::string& bin) {
+picojson::value Convert::bin2json(const uint8_t* bin, unsigned int size) {
   std::ostringstream os;
   os << std::hex << std::setfill('0');
-  for (unsigned int i = 0; i < bin.size(); i ++) {
-    os << std::setw(2) << (0xFF & static_cast<int>(bin.at(i)));
+  for (unsigned int i = 0; i < size; i ++) {
+    os << std::setw(2) << (0xFF & static_cast<int>(bin[i]));
   }
   return picojson::value(os.str());
 }

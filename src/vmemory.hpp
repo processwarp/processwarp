@@ -50,15 +50,24 @@ namespace processwarp {
       /** True if can read. */
       bool flg_update;
       /** */
-      std::string value;
+      std::unique_ptr<uint8_t[]> value;
+      /** */
+      uint64_t size;
       /** */
       std::set<dev_id_t> hint;
       /** Reference count to use to master. */
       int master_count;
 
-      /** Constructor with member value. */
-      Page(PageType type, bool flg_update, const std::string& value,
-	   const std::set<dev_id_t>& hint);
+      /**
+       * Constructor with value by string.
+       */
+      Page(PageType type, bool flg_update,
+	   const std::string& value_str, const std::set<dev_id_t>& hint);
+
+      /**
+       * Constructor without initialize value.
+       */
+      Page(PageType type, bool flg_update, const std::set<dev_id_t>& hint);
     };
 
     static const vaddr_t UPPER_MASKS[];
@@ -304,7 +313,7 @@ namespace processwarp {
        * @param addr Target Address.
        * @return
        */
-      const std::string& get_meta_area(vaddr_t addr);
+      std::string get_meta_area(vaddr_t addr);
 
       /**
        * Change meta data.
@@ -334,7 +343,7 @@ namespace processwarp {
        * @param addr Target address.
        * @return
        */
-      const std::string& get_program_area(vaddr_t addr);
+      std::string get_program_area(vaddr_t addr);
 
       /**
        * Allocates selected byte of memory.
@@ -365,12 +374,9 @@ namespace processwarp {
       void set_fill(vaddr_t dst, uint8_t c, uint64_t size) {
 	Page& page = get_page(get_upper_addr(dst), false);
 
-	std::unique_ptr<char[]> buffer(new char[size]);
-	std::memset(buffer.get(), c, size);
-
 	switch(page.type) {
 	case PT_MASTER: {
-	  page.value.replace(get_lower_addr(dst), size, buffer.get(), size);
+	  std::memset(page.value.get() + get_lower_addr(dst), c, size);
 	  for (auto& it_hint : page.hint) {
 	    vmemory.send_copy(it_hint, space, page, get_upper_addr(dst));
 	  }
@@ -379,6 +385,8 @@ namespace processwarp {
 	case PT_COPY: {
 	  assert(page.hint.size() == 1);
 	  page.flg_update = false;
+	  std::unique_ptr<char[]> buffer(new char[size]);
+	  std::memset(buffer.get(), c, size);
 	  vmemory.send_update(*page.hint.begin(), space, dst,
 			      reinterpret_cast<const uint8_t*>(buffer.get()), size);
 	} break;
@@ -399,9 +407,8 @@ namespace processwarp {
 	Page& page = get_page(get_upper_addr(dst), false);
 	switch(page.type) {
 	case PT_MASTER: {
-	  assert(page.value.size() >= get_lower_addr(dst) + sizeof(T));
-	  page.value.replace(get_lower_addr(dst), sizeof(T),
-			     reinterpret_cast<const char*>(&val), sizeof(T));
+	  assert(page.size >= get_lower_addr(dst) + sizeof(T));
+	  std::memcpy(page.value.get() + get_lower_addr(dst), &val, sizeof(T));
 	  for(auto& it_hint : page.hint) {
 	    vmemory.send_copy(it_hint, space, page, get_upper_addr(dst));
 	  }
@@ -428,17 +435,17 @@ namespace processwarp {
        */
       template <typename T> T get(vaddr_t src) {
 	Page& page = get_page(get_upper_addr(src), true);
-	assert(page.value.size() >= get_lower_addr(src) + sizeof(T));
-	return *reinterpret_cast<const T*>(page.value.data() + get_lower_addr(src));
+	assert(page.size >= get_lower_addr(src) + sizeof(T));
+	return *reinterpret_cast<const T*>(page.value.get() + get_lower_addr(src));
       }
 
       /**
        */
       const uint8_t* get_raw(vaddr_t src) {
 	Page& page = get_page(get_upper_addr(src), true);
-	assert(page.value.size() >= get_lower_addr(src));
+	assert(page.size >= get_lower_addr(src));
 
-	return reinterpret_cast<const uint8_t*>(page.value.data() + get_lower_addr(src));
+	return reinterpret_cast<const uint8_t*>(page.value.get() + get_lower_addr(src));
       }
       
       /**
@@ -449,8 +456,8 @@ namespace processwarp {
 
 	if (raw_writable.find(upper) == raw_writable.end()) {
 	  Page& page = get_page(upper, true);
-	  std::unique_ptr<uint8_t[]> tmp(new uint8_t[page.value.size()]);
-	  memcpy(tmp.get(), page.value.data(), page.value.size());
+	  std::unique_ptr<uint8_t[]> tmp(new uint8_t[page.size]);
+	  std::memcpy(tmp.get(), page.value.get(), page.size);
 	  raw_writable.insert(std::make_pair(upper, std::move(tmp)));
 	}
 
@@ -470,16 +477,16 @@ namespace processwarp {
 
 	switch(dst_page.type) {
 	case PT_MASTER: {
-	  assert(dst_page.value.size() >= get_lower_addr(dst) + size);
-	  dst_page.value.replace(get_lower_addr(dst), size,
-				 src_page.value.data() + get_lower_addr(src), size);
+	  assert(dst_page.size >= get_lower_addr(dst) + size);
+	  std::memmove(dst_page.value.get() + get_lower_addr(dst),
+		       src_page.value.get() + get_lower_addr(src), size);
 	} break;
 
 	case PT_COPY: {
 	  assert(dst_page.hint.size() == 1);
 	  dst_page.flg_update = false;
 	  vmemory.send_update(*dst_page.hint.begin(), space, dst,
-			      reinterpret_cast<const uint8_t*>(src_page.value.data() +
+			      reinterpret_cast<const uint8_t*>(src_page.value.get() +
 							       get_lower_addr(src)), size);
 	} break;
 
@@ -495,9 +502,8 @@ namespace processwarp {
 
 	switch(dst_page.type) {
 	case PT_MASTER: {
-	  assert(dst_page.value.size() >= get_lower_addr(dst) + size);
-	  dst_page.value.replace(get_lower_addr(dst), size,
-				 reinterpret_cast<const char*>(src), size);
+	  assert(dst_page.size >= get_lower_addr(dst) + size);
+	  std::memmove(dst_page.value.get() + get_lower_addr(dst), src, size);
 	} break;
 
 	case PT_COPY: {
@@ -524,13 +530,15 @@ namespace processwarp {
 	  Page& page = it_page.second;
 	  print_debug("addr:%s\n", Convert::vaddr2str(addr).c_str());
 	  if ((addr & AD_MASK) == AD_META) {
-	    print_debug("value:%s\n", page.value.c_str());
+	    print_debug("value:%s\n",
+			std::string(reinterpret_cast<const char*>(page.value.get()), page.size).
+			c_str());
 
 	  } else {
 	    print_debug("value:");
-	    for (unsigned int i = 0; i < page.value.size(); i ++) {
+	    for (unsigned int i = 0; i < page.size; i ++) {
 	      if (i % 16 == 0) fprintf(stderr, "\n%016llx : ", addr + i);
-	      fprintf(stderr, "%02x ", 0xFF & page.value.data()[i]);
+	      fprintf(stderr, "%02x ", 0xFF & page.value[i]);
 	    }
 	    fprintf(stderr, "\n");
 	  }
