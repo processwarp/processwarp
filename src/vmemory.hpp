@@ -517,6 +517,29 @@ namespace processwarp {
       void lock_master(vaddr_t addr);
       void release_master(vaddr_t addr);
 
+#ifndef NDEBUG
+      void print_dump() {
+	for (auto& it_page : space.pages) {
+	  vaddr_t addr = it_page.first;
+	  Page& page = it_page.second;
+	  print_debug("addr:%s\n", Convert::vaddr2str(addr).c_str());
+	  if ((addr & AD_MASK) == AD_META) {
+	    print_debug("value:%s\n", page.value.c_str());
+
+	  } else {
+	    print_debug("value:");
+	    for (unsigned int i = 0; i < page.value.size(); i ++) {
+	      if (i % 16 == 0) fprintf(stderr, "\n%016llx : ", addr + i);
+	      fprintf(stderr, "%02x ", 0xFF & page.value.data()[i]);
+	    }
+	    fprintf(stderr, "\n");
+	  }
+	}
+      }
+#else
+      void print_dump() {}
+#endif
+
     private:
       /** Map of upper address and copy of raw writable area.  */
       std::map<vaddr_t, std::unique_ptr<uint8_t[]>> raw_writable;
