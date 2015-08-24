@@ -133,7 +133,8 @@ static void ems_loop() {
 
 void init_lib_filter() {
   static const char* API_NAME_PAIR[][2] = {
-    {"printf", "printf"}
+    {"printf", "printf"},
+    {"puts",   "puts"}
   };
 
   for (unsigned int i = 0; i < sizeof(API_NAME_PAIR) / sizeof(API_NAME_PAIR[0]); i ++) {
