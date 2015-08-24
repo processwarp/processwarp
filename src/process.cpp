@@ -395,6 +395,7 @@ void Process::execute(vtid_t tid, int max_clock) {
 	  stackinfo.type_operator->copy(upperinfo.output, operand);
 	}
 	// スタック領域を開放
+	stack_master_key.reset();
 	memory.free(stackinfo.stack);
 
 	// alloca領域を開放
@@ -406,6 +407,7 @@ void Process::execute(vtid_t tid, int max_clock) {
 	upperinfo.pc = stackinfo.normal_pc;
 
 	// stackinfoを1つ除去してre_entryに移動
+	stackinfo_master_key.reset();
 	thread.pop_stack();
 	goto re_entry;
       } break;
