@@ -1088,10 +1088,6 @@ vtid_t Process::create_thread(vaddr_t func_addr, vaddr_t arg_addr) {
 
 // Join a thread.
 bool Process::join_thread(vtid_t current, vtid_t target, vaddr_t retval) {
-  if (active_threads.find(target) == active_threads.end()) {
-    throw_std_error(StdError::PW_SRCH);
-  }
-
   Thread& target_thread  = get_thread(target);
   if (target_thread.join_waiting != current) {
     if (target_thread.join_waiting != JOIN_WAIT_NONE) {
