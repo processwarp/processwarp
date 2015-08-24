@@ -24,7 +24,6 @@ namespace processwarp {
     /** status of vm */
     enum Status : uint8_t {
       NORMAL,
-      PASSIVE,
 
       WAIT_WARP,
       BEFOR_WARP,

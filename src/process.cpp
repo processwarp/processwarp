@@ -1125,14 +1125,11 @@ void Process::exit() {
   for (auto& it_thread : active_threads) {
     Thread& thread = get_thread(it_thread);
 
-    if (thread.status == Thread::PASSIVE) {
-      thread.status = Thread::FINISH;
-    
-    } else if (thread.status == Thread::NORMAL ||
-	       thread.status == Thread::WAIT_WARP ||
-	       thread.status == Thread::BEFOR_WARP ||
-	       thread.status == Thread::WARP ||
-	       thread.status == Thread::AFTER_WARP) {
+    if (thread.status == Thread::NORMAL ||
+	thread.status == Thread::WAIT_WARP ||
+	thread.status == Thread::BEFOR_WARP ||
+	thread.status == Thread::WARP ||
+	thread.status == Thread::AFTER_WARP) {
       thread.status = Thread::NORMAL;
       fixme("exit thread");
       Thread& root_thread = get_thread(root_tid);
