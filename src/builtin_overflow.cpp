@@ -1,7 +1,10 @@
 
 #include "builtin_overflow.hpp"
 #include "process.hpp"
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-local-typedef"
 #include "lib/safeint3.hpp"
+#pragma clang diagnostic pop
 
 using namespace processwarp;
 
