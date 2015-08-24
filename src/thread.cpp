@@ -130,8 +130,8 @@ void Thread::write() {
   picojson::object js_thread;
 
   js_thread.insert(std::make_pair("tid", Convert::vtid2json(tid)));
-  js_thread.insert(std::make_pair("status", Convert::int2json<uint8_t>(NORMAL)));
-  js_thread.insert(std::make_pair("join_waiting", Convert::vtid2json(JOIN_WAIT_NONE)));
+  js_thread.insert(std::make_pair("status", Convert::int2json<uint8_t>(status)));
+  js_thread.insert(std::make_pair("join_waiting", Convert::vtid2json(join_waiting)));
   js_thread.insert(std::make_pair("stack", Convert::vaddr_vector2json(stack)));
   js_thread.insert(std::make_pair("funcs_at_befor_warp",
 				  Convert::vaddr_vector2json(funcs_at_befor_warp)));
