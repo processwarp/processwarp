@@ -15,7 +15,7 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   endif()
 
   # GLFW
-  # pkg_search_module(GLFW glfw3)
+  pkg_search_module(GLFW glfw3)
   if(GLFW_FOUND)
     include_directories(${GLFW_INCLUDE_DIRS})
     string(REPLACE ";" " " GLFW_CFLAGS_STR "${GLFW_CFLAGS}")

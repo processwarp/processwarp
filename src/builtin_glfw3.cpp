@@ -18,11 +18,12 @@ BuiltinPost BuiltinGlfw3::createWindow(Process& proc, Thread& thread, BuiltinFun
   uint8_t* share = thread.memory->get_raw_writable(Process::read_builtin_param_ptr(src, &seek));  
   assert(static_cast<signed>(src.size()) == seek);
 
-  GLFWwindow* window = glfwCreateWindow(width, height,
-					reinterpret_cast<const char*>(title),
-					reinterpret_cast<GLFWmonitor*>(monitor),
-					reinterpret_cast<GLFWwindow*>(share));
-  
+  // GLFWwindow* window =
+  glfwCreateWindow(width, height,
+		   reinterpret_cast<const char*>(title),
+		   reinterpret_cast<GLFWmonitor*>(monitor),
+		   reinterpret_cast<GLFWwindow*>(share));
+
   /// TODO:ネイティブのアドレスとのペアを作成。
   //thread.memory.set<vaddr_t>(dst, proc.create_native_ptr(window));
   

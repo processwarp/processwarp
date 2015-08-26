@@ -1,10 +1,14 @@
 
 #include "builtin_overflow.hpp"
 #include "process.hpp"
+#ifdef EMSCRIPTEN
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-local-typedef"
+#endif
 #include "lib/safeint3.hpp"
+#ifdef EMSCRIPTEN
 #pragma clang diagnostic pop
+#endif
 
 using namespace processwarp;
 
