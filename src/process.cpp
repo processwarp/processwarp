@@ -929,20 +929,20 @@ void Process::call_external(Thread& thread,
       case BasicType::TY_UI64:
       case BasicType::TY_SI64: {
 	uint64_t raw_val = *reinterpret_cast<uint64_t*>(args.data() + seek + sizeof(vaddr_t));
-	vararg_buf.resize(vararg_buf.size() + 2);
-	memcpy(&vararg_buf.back(), &raw_val, sizeof(raw_val));
+	vararg_buf.resize(vararg_buf.size() + 2 + (vararg_buf.size() % 2));
+	memcpy(&vararg_buf.at(vararg_buf.size() - 2), &raw_val, sizeof(raw_val));
       } break;
 
       case BasicType::TY_F32: {
 	double raw_val = static_cast<double>(*reinterpret_cast<float*>(args.data() + seek + sizeof(vaddr_t)));
-	vararg_buf.resize(vararg_buf.size() + 2);
-	memcpy(&vararg_buf.back(), &raw_val, sizeof(raw_val));
+	vararg_buf.resize(vararg_buf.size() + 2 + (vararg_buf.size() % 2));
+	memcpy(&vararg_buf.at(vararg_buf.size() - 2), &raw_val, sizeof(raw_val));
       } break;
 
       case BasicType::TY_F64: {
 	double raw_val = *reinterpret_cast<double*>(args.data() + seek + sizeof(vaddr_t));
-	vararg_buf.resize(vararg_buf.size() + 2);
-	memcpy(&vararg_buf.back(), &raw_val, sizeof(raw_val));
+	vararg_buf.resize(vararg_buf.size() + 2 + (vararg_buf.size() % 2));
+	memcpy(&vararg_buf.at(vararg_buf.size() - 2), &raw_val, sizeof(raw_val));
       } break;
       };
       seek  += sizeof(vaddr_t) + type->size;
