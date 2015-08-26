@@ -637,7 +637,7 @@ void VMemory::Accessor::free(vaddr_t addr) {
   Page& page = get_page(addr, false);
   switch(page.type) {
   case PT_MASTER: {
-    assert(page.master_count == 0);
+    assert(page.master_count == 0 && raw_writable.find(addr) == raw_writable.end());
     page.size = 0;
     page.value.reset();
     for (auto& to : page.hint) {
