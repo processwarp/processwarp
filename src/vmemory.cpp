@@ -542,6 +542,7 @@ VMemory::Accessor::MasterKey VMemory::Accessor::keep_master(vaddr_t addr) {
   default: {
     /// @todo error
     assert(false);
+    return MasterKey(nullptr);
   } break;
   }
 }
