@@ -108,6 +108,13 @@ namespace processwarp {
     void loop();
     
     /**
+     * Tell memory is update by other node.
+     * @param pid Target process.
+     * @param addr Updated page address.
+     */
+    void on_recv_update(const vpid_t& pid, vaddr_t addr);
+    
+    /**
      * Pass data from other device.
      * @param pid Target pid.
      * @param data Received load data.

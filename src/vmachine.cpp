@@ -88,6 +88,8 @@ void VMachine::loop() {
       for (vtid_t tid : tmp_threads) {
 	// Skip if thread was not active yet.
 	if (proc->active_threads.find(tid) == proc->active_threads.end()) continue;
+	// Skip if thread waiting update memory.
+	if (proc->waiting_addr.find(tid) != proc->waiting_addr.end()) continue;
 
 	try {
 	  thread = &proc->get_thread(tid);
@@ -131,8 +133,15 @@ void VMachine::loop() {
 	      continue;
 	    }
 	  }
-	} catch (VMemory::WaitingException& e) {
+
+	} catch (Interrupt& e) {
 	  // Skip thread because waiting to update memroy data.
+	  assert(e.type == Interrupt::MEMORY_REQUIRE);
+	  vaddr_t waiting_addr = static_cast<InterruptMemoryRequire&>(e).addr;
+	  print_debug("■memory need:%s\n", Convert::vaddr2str(waiting_addr).c_str());
+	  if (waiting_addr != VADDR_NULL) {
+	    proc->waiting_addr.insert(std::make_pair(tid, waiting_addr));
+	  }
 	}
       }
 
@@ -158,6 +167,29 @@ void VMachine::loop() {
 #endif
   
   delegate.on_switch_proccess("");
+}
+
+// Tell memory is update by other node.
+void VMachine::on_recv_update(const vpid_t& pid, vaddr_t addr) {
+  assert(addr == VMemory::get_upper_addr(addr));
+  
+  auto it_proc = procs.find(pid);
+  if (it_proc != procs.end()) {
+    Process& proc = *it_proc->second.get();
+    auto it_waiting = proc.waiting_addr.begin();
+    while(it_waiting != proc.waiting_addr.end()) {
+      if (it_waiting->second == addr) {
+	it_waiting = proc.waiting_addr.erase(it_waiting);
+
+      } else {
+	it_waiting ++;
+      }
+    }
+    
+  } else {
+    /// @todo
+    assert(false);
+  }
 }
     
 // Pass data from other device.

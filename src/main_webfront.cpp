@@ -20,7 +20,46 @@ using namespace emscripten;
 /**
  * VMachineDelegate implement using Emscripten.
  */
-class WebfrontDelegate : public VMachineDelegate, public VMemoryDelegate {
+class MainWebfront : public VMachineDelegate, public VMemoryDelegate {
+public:
+  /** Empty libraries because don't use dlsym on Emscripten. */
+  std::vector<void*> LIBS;
+  std::map<std::string, std::string> lib_filter;
+  /** Instance of virtual machine. */
+  std::unique_ptr<VMachine> vm;
+
+  /**
+   * Initialize lib filter.
+   * Convert list to map of api name in vm and ffi.
+   */
+  void init_lib_filter() {
+    static const char* API_NAME_PAIR[][2] = {
+      {"printf", "printf"},
+      {"puts",   "puts"}
+    };
+    
+    for (unsigned int i = 0; i < sizeof(API_NAME_PAIR) / sizeof(API_NAME_PAIR[0]); i ++) {
+      lib_filter.insert(std::make_pair(API_NAME_PAIR[i][0], API_NAME_PAIR[i][1]));
+    }
+  }
+
+  /**
+   * Initialize instance.
+   * Call all initialize methods.
+   */
+  void init() {
+    init_lib_filter();
+  }
+
+  /**
+   * Setup instance of virtual machine with device-id.
+   */
+  void set_device_id(const dev_id_t& device_id) {
+    vm.reset(new VMachine(*this, *this, device_id, LIBS, lib_filter));
+    vm->setup_builtin();
+  }
+
+
   // Call when send data to other device.
   void send_machine_data(const vpid_t& pid,
 			 const dev_id_t& dst,
@@ -66,6 +105,16 @@ class WebfrontDelegate : public VMachineDelegate, public VMemoryDelegate {
     std::stringstream asm_code;
     asm_code << "send_sync_proc_list('" << js << "');";
     emscripten_run_script(asm_code.str().c_str());
+  }
+
+  /**
+   * Call when memory is update by other node.
+   * Relay event to instance of virtual-machine.
+   */
+  void on_recv_update(const std::string& name, vaddr_t addr) override {
+    if (vm.get() != nullptr) {
+      vm->on_recv_update(Convert::str2vpid(name), addr);
+    }
   }
 
   // Call when context switch of process.
@@ -115,30 +164,13 @@ class WebfrontDelegate : public VMachineDelegate, public VMemoryDelegate {
   }
 };
 
-/** Empty libraries because don't use dlsym on Emscripten. */
-static std::vector<void*> LIBS;
-static std::map<std::string, std::string> lib_filter;
-
 /** Instance of delegate. */
-WebfrontDelegate delegate;
-/** Instance of virtual machine. */
-std::unique_ptr<VMachine> vm;
+MainWebfront webfront;
 
 /** Main loop for Emscripten. */
 static void ems_loop() {
-  if (vm.get() != nullptr) {
-    vm->loop();
-  }
-}
-
-void init_lib_filter() {
-  static const char* API_NAME_PAIR[][2] = {
-    {"printf", "printf"},
-    {"puts",   "puts"}
-  };
-
-  for (unsigned int i = 0; i < sizeof(API_NAME_PAIR) / sizeof(API_NAME_PAIR[0]); i ++) {
-    lib_filter.insert(std::make_pair(API_NAME_PAIR[i][0], API_NAME_PAIR[i][1]));
+  if (webfront.vm.get() != nullptr) {
+    webfront.vm->loop();
   }
 }
 
@@ -146,10 +178,10 @@ void recv_machine_data(const vpid_t& pid,
 		       const dev_id_t& src,
 		       const dev_id_t& dst,
 		       const std::string& data) {
-  if (dst == vm->device_id ||
-      (dst == DEV_BROADCAST && src != vm->device_id)) {
-    assert(src != vm->device_id);
-    vm->recv_machine_data(pid, data);
+  if (dst == webfront.vm->device_id ||
+      (dst == DEV_BROADCAST && src != webfront.vm->device_id)) {
+    assert(src != webfront.vm->device_id);
+    webfront.vm->recv_machine_data(pid, data);
   }
 }
 
@@ -157,10 +189,10 @@ void recv_memory_data(const std::string& name,
 		      const dev_id_t& src,
 		      const dev_id_t& dst,
 		      const std::string& data) {
-  if (dst == vm->device_id ||
-      (dst == DEV_BROADCAST && src != vm->device_id)) {
-    assert(src != vm->device_id);
-    vm->vmemory.recv_memory_data(name, data);
+  if (dst == webfront.vm->device_id ||
+      (dst == DEV_BROADCAST && src != webfront.vm->device_id)) {
+    assert(src != webfront.vm->device_id);
+    webfront.vm->vmemory.recv_memory_data(name, data);
   }
 }
 
@@ -189,24 +221,23 @@ void recv_sync_proc_list(const std::string& js_str) {
     procs.push_back(proc);
   }
 
-  vm->recv_sync_proc_list(procs);
+  webfront.vm->recv_sync_proc_list(procs);
 }
 
 void set_device_id(const dev_id_t& device_id) {
-  vm.reset(new VMachine(delegate, delegate, device_id, LIBS, lib_filter));
-  vm->setup_builtin();
+  webfront.set_device_id(device_id);
 }
 
 void exit_process(const vpid_t& pid) {
-  vm->exit_process(pid);
+  webfront.vm->exit_process(pid);
 }
 
 void request_warp_thread(const std::string& pid,
 			 const std::string& tid,
 			 const dev_id_t& dst_device) {
-  vm->request_warp_thread(Convert::str2vpid(pid),
-			  Convert::str2vtid(tid),
-			  Convert::str2devid(dst_device));
+  webfront.vm->request_warp_thread(Convert::str2vpid(pid),
+				   Convert::str2vtid(tid),
+				   Convert::str2devid(dst_device));
 }
 
 /**
@@ -215,7 +246,7 @@ void request_warp_thread(const std::string& pid,
  * @return return code.
  */
 int main() {
-  init_lib_filter();
+  webfront.init();
   // set main loop for Emscripten
   emscripten_set_main_loop(ems_loop, 0, true);
   

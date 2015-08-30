@@ -101,6 +101,7 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     builtin_va_arg.cpp
     builtin_warp.cpp
     main_core.cpp
+    interrupt_memory_require.cpp
     process.cpp
     socketio.cpp
     stackinfo.cpp
@@ -130,6 +131,7 @@ if(LLVM_FOUND AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     basic_operator.cpp
     llvm_asm_loader.cpp
     main_loader.cpp
+    interrupt_memory_require.cpp
     process.cpp
     stackinfo.cpp
     std_error.cpp
@@ -160,6 +162,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     builtin_va_arg.cpp
     builtin_warp.cpp
     main_webfront.cpp
+    interrupt_memory_require.cpp
     process.cpp
     stackinfo.cpp
     std_error.cpp

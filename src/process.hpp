@@ -78,6 +78,9 @@ namespace processwarp {
     
     std::set<vtid_t> waiting_warp_result;
     std::set<vtid_t> waiting_warp_setup;
+
+    /** Memory addres waiting to update by other node. (not dump) */
+    std::map<vtid_t, vaddr_t> waiting_addr;
     
     /**
      * Allocate process on memory from delegate.

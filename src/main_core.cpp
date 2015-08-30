@@ -155,6 +155,16 @@ public:
     print_debug("error(%s) : %s\n", pid.c_str(), message.c_str());
   }
 
+  /**
+   * Call when memory is update by other node.
+   * Relay event to instance of virtual-machine.
+   */
+  void on_recv_update(const std::string& name, vaddr_t addr) override {
+    if (vm.get() != nullptr) {
+      vm->on_recv_update(Convert::str2vpid(name), addr);
+    }
+  }
+
   // Call when new process is arrive.
   bool judge_new_process(const std::string& name,
 			 const dev_id_t& src_device,

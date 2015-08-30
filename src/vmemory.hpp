@@ -10,6 +10,7 @@
 #include "lib/picojson.h"
 #include "convert.hpp"
 #include "definitions.hpp"
+#include "interrupt_memory_require.hpp"
 #include "util.hpp"
 
 namespace processwarp {
@@ -29,6 +30,13 @@ namespace processwarp {
     virtual void send_memory_data(const std::string& name,
 				  const dev_id_t& dev_id,
 				  const std::string& data) = 0;
+
+    /**
+     * Call when memory is update by other node.
+     * @param name Space name.
+     * @param addr Updated page address.
+     */
+    virtual void on_recv_update(const std::string& name, vaddr_t addr) = 0;
   };
   
   /**
@@ -84,8 +92,6 @@ namespace processwarp {
       return (addr & AD_MASK) == AD_PROGRAM;
     }
 
-    class WaitingException {};
-
     /** Bundle pages in memory space. */
     class Space {
     public:
@@ -99,12 +105,7 @@ namespace processwarp {
       bool is_loading;
       /** Map of page name and page space having on this device. */
       std::map<vaddr_t, Page> pages;
-      /** */
-      struct RequireInfo {
-	clock_t last_clock;
-	int try_count;
-      };
-      std::map<vaddr_t, RequireInfo> requiring;
+      std::set<vaddr_t> requiring;
 
       /**
        * Constructor with name and random.
@@ -267,12 +268,12 @@ namespace processwarp {
 
 	if (page == space.pages.end()) {
 	  vmemory.send_require(space, addr, DEV_BROADCAST);
-	  throw WaitingException();
+	  throw InterruptMemoryRequire(addr);
 	  
 	} else if (readable && page->second.flg_update == false) {
 	  assert(page->second.type == PT_COPY && page->second.hint.size() == 1);
 	  vmemory.send_require(space, addr, *(page->second.hint.begin()));
-	  throw WaitingException();
+	  throw InterruptMemoryRequire(addr);
 	}
 	assert(page->second.type == PT_MASTER || page->second.master_count == 0);
 	return page->second;

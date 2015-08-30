@@ -238,9 +238,7 @@ namespace processwarp {
 
   /** Interval time of send require packet (sec). */
   static const clock_t MEMORY_REQUIRE_INTERVAL = 5 * CLOCKS_PER_SEC;
-  /** Max retry times of send require packet. */
-  static const int MEMORY_REQUIRE_TRY_MAX = 10;
-
+  
   /**
    * Structure of process and thread.
    * Used by sync_proc_list.

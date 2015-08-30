@@ -100,10 +100,7 @@ void VMemory::recv_copy(const std::string& name, picojson::object& json) {
     if (value.size() == 0) return;
     
     auto it_ri = space.requiring.find(addr);
-    if (it_ri == space.requiring.end()) {
-      send_unwant(name, src, addr);
-
-    } else {
+    if (it_ri != space.requiring.end()) {
       std::set<dev_id_t> hint;
       hint.insert(src);
       space.pages.insert(std::make_pair
@@ -130,28 +127,23 @@ void VMemory::recv_copy(const std::string& name, picojson::object& json) {
       space.pages.erase(addr);
     }
 
-    space.requiring.erase(addr);
+    auto it_ri = space.requiring.find(addr);
+    if (it_ri != space.requiring.end()) {
+      space.requiring.erase(it_ri);
+    }
   }
+
+  delegate.on_recv_update(name, addr);
 }
 
 void VMemory::recv_give(const std::string& name, picojson::object& json) {
-  vaddr_t addr = get_upper_addr(Convert::json2vaddr(json.at("addr")));
+  vaddr_t addr = Convert::json2vaddr(json.at("addr"));
   const std::string& value = Convert::json2bin(json.at("value"));
   dev_id_t src = Convert::json2devid(json.at("src"));
   dev_id_t dst = Convert::json2devid(json.at("dst"));
   picojson::array js_hint = json.at("hint").get<picojson::array>();
-  if (std::strlen(value.c_str()) == value.size()) {
-    print_debug("recv give %016" PRIx64 "\n%s\n", addr, value.c_str());
-  } else {
-    std::ostringstream os;
-    for (unsigned int i = 0; i < value.size(); i ++) {
-      if (i % 16 == 0) os << std::endl;
-      os << std::hex << std::setfill('0') << std::setw(2) <<
-	(0xff & value.c_str()[i]) << " ";
-    }
-    os << std::endl;
-    print_debug("recv give %016" PRIx64 "%s", addr, os.str().c_str());
-  }
+  assert(addr == get_upper_addr(addr));
+  
   auto it_space = spaces.find(name);
   if (it_space == spaces.end()) {
     if (dst == dev_id) {
@@ -183,10 +175,7 @@ void VMemory::recv_give(const std::string& name, picojson::object& json) {
 
     } else {
       Page& page = it_page->second;
-      /// @todo assert(page.type == PT_COPY);
-      if (page.type == PT_MASTER) {
-	return;
-      }
+      assert(page.type == PT_COPY);
 
       page.type = PT_MASTER;
       page.flg_update = true;
@@ -197,10 +186,18 @@ void VMemory::recv_give(const std::string& name, picojson::object& json) {
       std::memcpy(page.value.get(), value.data(), page.size);
       page.hint = hint;
     }
-    space.requiring.erase(addr);
+    
+    auto it_ri = space.requiring.find(addr);
+    if (it_ri != space.requiring.end()) {
+      space.requiring.erase(it_ri);
+    }
+
+    delegate.on_recv_update(name, addr);
 
   } else {
     if (it_page == space.pages.end()) {
+      /// @todo
+      assert(false);
       send_unwant(name, dst, addr);
 
     } else {
@@ -214,8 +211,10 @@ void VMemory::recv_give(const std::string& name, picojson::object& json) {
 }
 
 void VMemory::recv_require(const std::string& name, picojson::object& json) {
-  vaddr_t addr = get_upper_addr(Convert::json2vaddr(json.at("addr")));
+  vaddr_t addr = Convert::json2vaddr(json.at("addr"));
   dev_id_t src = Convert::json2devid(json.at("src"));
+  assert(addr == get_upper_addr(addr));
+  assert(src != dev_id);
 
   auto it_space = spaces.find(name);
   if (it_space == spaces.end()) {
@@ -278,8 +277,10 @@ void VMemory::recv_reserve(const std::string& name, picojson::object& json) {
 }
 
 void VMemory::recv_stand(const std::string& name, picojson::object& json) {
-  vaddr_t addr = get_upper_addr(Convert::json2vaddr(json.at("addr")));
+  vaddr_t addr = Convert::json2vaddr(json.at("addr"));
   dev_id_t src_device = Convert::json2devid(json.at("src"));
+  assert(addr == get_upper_addr(addr));
+  assert(src_device != dev_id);
 
   auto it_space = spaces.find(name);
   if (it_space == spaces.end()) {
@@ -301,6 +302,8 @@ void VMemory::recv_stand(const std::string& name, picojson::object& json) {
     page.hint.clear();
     page.hint.insert(src_device);
   }
+
+  space.requiring.erase(addr);
 }
 
 void VMemory::recv_update(const std::string& name, picojson::object& json) {
@@ -330,6 +333,7 @@ void VMemory::recv_update(const std::string& name, picojson::object& json) {
       return;
     }
     std::memcpy(page.value.get() + get_lower_addr(addr), value.data(), value.size());
+    delegate.on_recv_update(name, get_upper_addr(addr));
 
   } else if (page.type == PT_COPY) {
     send_update(*page.hint.begin(), space, addr,
@@ -367,6 +371,7 @@ void VMemory::set_loading(const std::string& name, bool flg) {
 // Send packet.
 void VMemory::send_packet(const std::string& name, const dev_id_t& dev_id,
 			  const std::string& cmd, picojson::object& data) {
+  assert(dev_id != this->dev_id);
   data.insert(std::make_pair("cmd", picojson::value(cmd)));
   data.insert(std::make_pair("src", Convert::devid2json(this->dev_id)));
 
@@ -398,6 +403,7 @@ void VMemory::send_free(const dev_id_t& dev_id, Space& space, vaddr_t addr) {
 // This request means to give right of master.
 void VMemory::send_give(Space& space, Page& page, vaddr_t addr, const dev_id_t& dst) {
   assert(page.type == PT_MASTER && page.master_count == 0);
+  assert(addr == get_upper_addr(addr));
   picojson::object packet;
   picojson::array hint;
 
@@ -427,24 +433,8 @@ void VMemory::send_release(Space& space, std::set<vaddr_t> addrs) {
 
 // This request means to need a data of copy.
 void VMemory::send_require(Space& space, vaddr_t addr, const dev_id_t& dev_id) {
-  auto it_ri = space.requiring.find(addr);
-  if (it_ri == space.requiring.end()) {
-    VMemory::Space::RequireInfo ri;
-    ri.last_clock = clock();
-    ri.try_count = 1;
-    space.requiring.insert(std::make_pair(addr, ri));
-
-  } else {
-    VMemory::Space::RequireInfo& ri = it_ri->second;
-    clock_t now = clock();
-    if (now - ri.last_clock < MEMORY_REQUIRE_INTERVAL) return;
-    if (ri.try_count > MEMORY_REQUIRE_TRY_MAX) {
-      /// @todo error
-      assert(false);
-    }
-    ri.last_clock = now;
-    ri.try_count ++;
-  }
+  assert(get_upper_addr(addr) == addr);
+  space.requiring.insert(addr);
   picojson::object packet;
 
   packet.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
@@ -467,14 +457,14 @@ void VMemory::send_reserve(Space& space, std::set<vaddr_t> addrs) {
 
 // This request means to stand as master.
 void VMemory::send_stand(Space& space, Page& page, vaddr_t addr) {
-  if (page.type != PT_MASTER) {
-    assert(page.hint.size() == 1);
-    picojson::object packet;
+  assert(page.type == PT_COPY);
+  assert(page.hint.size() == 1);
+  assert(addr == get_upper_addr(addr));
+  picojson::object packet;
 
-    packet.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
-
-    send_packet(space.name, *page.hint.begin(), "stand", packet);
-  }
+  packet.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
+  
+  send_packet(space.name, *page.hint.begin(), "stand", packet);
 }
 
 // This request means tell unwant copy packet to sender.
@@ -522,21 +512,20 @@ const dev_id_t& VMemory::Accessor::get_master(vaddr_t addr) {
 }
 
 VMemory::Accessor::MasterKey VMemory::Accessor::keep_master(vaddr_t addr) {
+  addr = get_upper_addr(addr);
   Page& page = get_page(addr, true);
 
   switch(page.type) {
   case PT_MASTER: {
     page.master_count ++;
-    print_debug("keep master @%s %d\n",
-		Convert::vaddr2str(addr).c_str(), page.master_count);
     return MasterKey(&page.master_count, [](int* master_count){
 	(*master_count) --;
       });
   } break;
 
   case PT_COPY: {
-    vmemory.send_stand(space, page, get_upper_addr(addr));
-    throw WaitingException();
+    vmemory.send_stand(space, page, addr);
+    throw InterruptMemoryRequire(addr);
   } break;
 
   default: {
@@ -716,9 +705,7 @@ vaddr_t VMemory::Accessor::realloc(vaddr_t addr, uint64_t size) {
   case PT_COPY: {
     assert(page.hint.size() == 1);
     vmemory.send_stand(space, page, addr);
-    /// TODO:skip
-    assert(false);
-    return VADDR_NULL;
+    throw InterruptMemoryRequire(addr);
   } break;
 
   default: {
@@ -869,7 +856,7 @@ vaddr_t VMemory::Space::assign_addr(AddrType type) {
   }
 
   if (reserved_que.size() == 0) {
-    throw WaitingException();
+    throw InterruptMemoryRequire(VADDR_NULL);
   }
 
   vaddr_t r = reserved_que.front();

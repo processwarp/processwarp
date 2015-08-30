@@ -65,6 +65,14 @@ public:
     print_debug("send memory data (%s@%s):%s\n", name.c_str(), dev_id.c_str(), data.c_str());
     assert(false);
   }
+
+  /**
+   * Call when memory is update by other node.
+   * Should not call.
+   */
+  void on_recv_update(const std::string& name, vaddr_t addr) override {
+    assert(false);
+  }
   
   /**
    * 
