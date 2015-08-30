@@ -338,9 +338,12 @@ void WrappedPointerOperator::bit_cast(vaddr_t dst, size_t size, vaddr_t src) {
 
 // 値をコピーする。
 void WrappedPointerOperator::copy(vaddr_t dst, vaddr_t src) {
+#ifndef NDEBUG
+  vaddr_t dbg_data = memory.get<vaddr_t>(dst);
+#endif
   memory.set<vaddr_t>(dst, memory.get<vaddr_t>(src));
   print_debug("copy %016" PRIx64 " (%016" PRIx64 " <- %016" PRIx64 ")\n",
-	      memory.get<vaddr_t>(dst), dst, src);
+	      dbg_data, dst, src);
 }
 
 // 比較命令(a==b)に対応した演算を行う。
