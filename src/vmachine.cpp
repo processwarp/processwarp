@@ -154,17 +154,16 @@ void VMachine::loop() {
     delegate.on_error(pid, "");
     thread->status = Thread::FINISH;
     
-  }
 #ifdef NDEBUG
-  catch (std::exception& e) {
+  } catch (std::exception& e) {
     delegate.on_error(pid, e.what());
     thread->status = Thread::FINISH;
     
   } catch (...) {
     delegate.on_error(pid, "unknown exception");
     thread->status = Thread::FINISH;
-  }
 #endif
+  }
   
   delegate.on_switch_proccess("");
 }
