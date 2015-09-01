@@ -1,4 +1,5 @@
 
+#include <ctime>
 #include <random>
 
 #include "builtin_bit.hpp"
@@ -78,9 +79,13 @@ void VMachine::loop() {
     while (it_proc != procs.end()) {
       pid  = it_proc->first;
       proc = it_proc->second.get();
-
-      for (auto tid : proc->waiting_warp_result) {
-	send_warp(*proc, proc->get_thread(tid));
+      
+      std::clock_t now = clock();
+      for (auto it_waiting : proc->waiting_warp_result) {
+	if (it_waiting.second + MEMORY_REQUIRE_INTERVAL < now) {
+	  send_warp(*proc, proc->get_thread(it_waiting.first));
+	  it_waiting.second = now;
+	}
       }
 
       std::vector<vtid_t> tmp_threads;
@@ -110,6 +115,8 @@ void VMachine::loop() {
 	    proc->execute(tid, 100);
 
 	  } else if (thread->status == Thread::WARP) {
+	    proc->waiting_warp_result.insert(std::make_pair(thread->tid, std::clock()));
+	    proc->active_threads.erase(thread->tid);
 	    send_warp(*proc, *thread);
 	  
 	  } else if (thread->status == Thread::ERROR) {
@@ -408,9 +415,6 @@ void VMachine::send_warp(Process& proc, Thread& thread) {
   packet.insert(std::make_pair("dst_device", Convert::devid2json(thread.warp_dst)));
   packet.insert(std::make_pair("src_device", Convert::devid2json(device_id)));
   packet.insert(std::make_pair("src_account", picojson::value(delegate.get_account())));
-  
-  proc.waiting_warp_result.insert(thread.tid);
-  proc.active_threads.erase(thread.tid);
   
   send_packet(proc.pid, thread.warp_dst, "warp", packet);
 }
