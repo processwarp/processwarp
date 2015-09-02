@@ -3,6 +3,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <queue>
 #include <vector>
 
 #include "lib/picojson.h"
@@ -233,6 +234,9 @@ namespace processwarp {
 
     /** Map of API name and built-in function pointer and parameter. */
     std::map<std::string, std::pair<builtin_func_t, BuiltinFuncParam>> builtin_funcs;
+
+    /** */
+    std::queue<std::pair<vpid_t, vtid_t>> loop_queue;
 
     /**
      * Convert json to machine data packet and send to destination device.

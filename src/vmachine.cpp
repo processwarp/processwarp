@@ -71,90 +71,111 @@ VMachine::VMachine(VMachineDelegate& delegate_,
 // Main loop.
 void VMachine::loop() {
   vpid_t pid;
+  vtid_t tid;
   Process* proc;
   Thread*  thread;
 
   try {
-    auto it_proc = procs.begin();
-    while (it_proc != procs.end()) {
-      pid  = it_proc->first;
-      proc = it_proc->second.get();
-      
+    if (loop_queue.empty()) {
+      // Make list of process and threads temporary.
       std::clock_t now = clock();
-      for (auto it_waiting : proc->waiting_warp_result) {
-	if (it_waiting.second + MEMORY_REQUIRE_INTERVAL < now) {
-	  send_warp(*proc, proc->get_thread(it_waiting.first));
-	  it_waiting.second = now;
-	}
-      }
-
-      std::vector<vtid_t> tmp_threads;
-      for (vtid_t tid : proc->active_threads) tmp_threads.push_back(tid);
-      for (vtid_t tid : tmp_threads) {
-	// Skip if thread was not active yet.
-	if (proc->active_threads.find(tid) == proc->active_threads.end()) continue;
-	// Skip if thread waiting update memory.
-	if (proc->waiting_addr.find(tid) != proc->waiting_addr.end()) continue;
-
-	try {
-	  thread = &proc->get_thread(tid);
-	  print_debug("loop tid=%016" PRIx64 " status=%d\n", tid, thread->status);
-
-	  if (proc->waiting_warp_setup.find(tid) != proc->waiting_warp_setup.end()) {
-	    thread->setup_warpout();
-	    proc->waiting_warp_setup.erase(tid);
-	  }
-
-	  if (thread->status == Thread::NORMAL ||
-	      thread->status == Thread::WAIT_WARP ||
-	      thread->status == Thread::BEFOR_WARP ||
-	      thread->status == Thread::AFTER_WARP) {
-	  
-	    delegate.on_switch_proccess(pid);
-	    // run thread
-	    proc->execute(tid, 100);
-
-	  } else if (thread->status == Thread::WARP) {
-	    proc->waiting_warp_result.insert(std::make_pair(thread->tid, std::clock()));
-	    proc->active_threads.erase(thread->tid);
-	    send_warp(*proc, *thread);
-	  
-	  } else if (thread->status == Thread::ERROR) {
-	    delegate.on_error(pid, "");
+      for (auto& it_proc : procs) {
+	pid  = it_proc.first;
+	proc = it_proc.second.get();
 	
-	  } else if (thread->status == Thread::FINISH) {
-	    delegate.on_finish_thread(pid, tid);
-
-	    if (tid == proc->root_tid) {
-	      delegate.on_finish_proccess(pid);
-	      it_proc = procs.erase(it_proc);
-	      update_proc_list();
-	      // continue double loop
-	      goto next_proc;
-
-	    } else {
-	      proc->active_threads.erase(tid);
-	      proc->threads.erase(tid);
-	      proc->proc_memory->free(tid);
-	      update_proc_list();
-	      continue;
-	    }
-	  }
-
-	} catch (Interrupt& e) {
-	  // Skip thread because waiting to update memroy data.
-	  assert(e.type == Interrupt::MEMORY_REQUIRE);
-	  vaddr_t waiting_addr = static_cast<InterruptMemoryRequire&>(e).addr;
-	  print_debug("■memory need:%s\n", Convert::vaddr2str(waiting_addr).c_str());
-	  if (waiting_addr != VADDR_NULL) {
-	    proc->waiting_addr.insert(std::make_pair(tid, waiting_addr));
+	// @todo migrate method anywhere 
+	for (auto& it_waiting : proc->waiting_warp_result) {
+	  if (it_waiting.second + MEMORY_REQUIRE_INTERVAL < now) {
+	    send_warp(*proc, proc->get_thread(it_waiting.first));
+	    it_waiting.second = now;
 	  }
 	}
-      }
 
-      it_proc ++;
-    next_proc:
-      ;
+	for (auto& tid : proc->active_threads) {
+	  loop_queue.push(std::make_pair(pid, tid));
+	}
+      }
+      // Return if thread to run is empty.
+      if (loop_queue.empty()) return;
+    }
+    
+    pid = loop_queue.front().first;
+    tid = loop_queue.front().second;
+    loop_queue.pop();
+
+    // Get instance of process.
+    auto it_proc = procs.find(pid);
+    if (it_proc == procs.end()) {
+      return;
+    } else {
+      proc = it_proc->second.get();
+    }
+
+    // Skip if thread waiting to update memory.
+    if (proc->waiting_addr.find(tid) != proc->waiting_addr.end()) {
+      return;
+    }
+
+    // Get instance of thread.
+    auto it_thread = proc->active_threads.find(tid);
+    if (it_thread == proc->active_threads.end()) {
+      return;
+    } else {
+      thread = &proc->get_thread(tid);
+    }
+    
+    print_debug("loop pid=%s tid=%016" PRIx64 " status=%d\n",
+		pid.c_str(), tid, thread->status);
+    
+    // Setting of warpuot to thread if need.
+    if (proc->waiting_warp_setup.find(tid) != proc->waiting_warp_setup.end()) {
+      thread->setup_warpout();
+      proc->waiting_warp_setup.erase(tid);
+    }
+
+    if (thread->status == Thread::NORMAL ||
+	thread->status == Thread::WAIT_WARP ||
+	thread->status == Thread::BEFOR_WARP ||
+	thread->status == Thread::AFTER_WARP) {
+	  
+      delegate.on_switch_proccess(pid);
+      // run thread
+      proc->execute(tid, 100);
+      print_debug("loop finish status=%d\n", thread->status);
+
+    } else if (thread->status == Thread::WARP) {
+      proc->waiting_warp_result.insert(std::make_pair(thread->tid, std::clock()));
+      proc->active_threads.erase(thread->tid);
+      send_warp(*proc, *thread);
+	  
+    } else if (thread->status == Thread::ERROR) {
+      delegate.on_error(pid, "");
+	
+    } else if (thread->status == Thread::FINISH) {
+      delegate.on_finish_thread(pid, tid);
+
+      if (tid == proc->root_tid) {
+	delegate.on_finish_proccess(pid);
+	it_proc = procs.erase(it_proc);
+	update_proc_list();
+	assert(false);
+
+      } else {
+	proc->active_threads.erase(tid);
+	proc->threads.erase(tid);
+	proc->proc_memory->free(tid);
+	update_proc_list();
+	assert(false);
+      }
+    }
+
+  } catch (Interrupt& e) {
+    // Skip thread because waiting to update memroy data.
+    assert(e.type == Interrupt::MEMORY_REQUIRE);
+    vaddr_t waiting_addr = static_cast<InterruptMemoryRequire&>(e).addr;
+    print_debug("memory need:%s\n", Convert::vaddr2str(waiting_addr).c_str());
+    if (waiting_addr != VADDR_NULL) {
+      proc->waiting_addr.insert(std::make_pair(tid, waiting_addr));
     }
     
   } catch (Error& e) {
