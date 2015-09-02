@@ -280,6 +280,11 @@ namespace processwarp {
       }
 
     public:
+#ifndef NDEBUG
+      /** Checker for sequence of memory access between reading and writing on a clock. */
+      bool is_read_sequence;
+#endif
+
       /**
        * Constructor with memory space.
        * @param controller Virtual memory.
@@ -373,6 +378,9 @@ namespace processwarp {
        *
        */
       void set_fill(vaddr_t dst, uint8_t c, uint64_t size) {
+#ifndef NDEBUG
+	is_read_sequence = false;
+#endif
 	Page& page = get_page(get_upper_addr(dst), false);
 
 	switch(page.type) {
@@ -405,6 +413,9 @@ namespace processwarp {
        * @param val Value to be set.
        */
       template <typename T> void set(vaddr_t dst, T val) {
+#ifndef NDEBUG
+	is_read_sequence = false;
+#endif
 	Page& page = get_page(get_upper_addr(dst), false);
 	switch(page.type) {
 	case PT_MASTER: {
@@ -435,6 +446,7 @@ namespace processwarp {
        * @return Saved value.
        */
       template <typename T> T get(vaddr_t src) {
+	assert(is_read_sequence);
 	Page& page = get_page(get_upper_addr(src), true);
 	assert(page.size >= get_lower_addr(src) + sizeof(T));
 	return *reinterpret_cast<const T*>(page.value.get() + get_lower_addr(src));
@@ -443,6 +455,7 @@ namespace processwarp {
       /**
        */
       const uint8_t* get_raw(vaddr_t src) {
+	assert(is_read_sequence);
 	Page& page = get_page(get_upper_addr(src), true);
 	assert(page.size >= get_lower_addr(src));
 
@@ -473,6 +486,9 @@ namespace processwarp {
       /**
        */
       void set_copy(vaddr_t dst, vaddr_t src, uint64_t size) {
+#ifndef NDEBUG
+	is_read_sequence = false;
+#endif
 	Page& src_page = get_page(get_upper_addr(src), true);
 	Page& dst_page = get_page(get_upper_addr(dst), false);
 
@@ -499,6 +515,9 @@ namespace processwarp {
       }
       
       void set_copy(vaddr_t dst, const uint8_t* src, uint64_t size) {
+#ifndef NDEBUG
+	is_read_sequence = false;
+#endif
 	Page& dst_page = get_page(get_upper_addr(dst), false);
 
 	switch(dst_page.type) {

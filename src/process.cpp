@@ -155,6 +155,9 @@ std::unique_ptr<Process> Process::read(ProcessDelegate& delegate,
 void Process::execute(vtid_t tid, int max_clock) {
   Thread& thread = get_thread(tid);
   VMemory::Accessor& memory = *thread.memory;
+#ifndef NDEBUG
+  memory.is_read_sequence = true;
+#endif
   VMemory::Accessor::MasterKey thread_master_key = memory.keep_master(thread.tid);
   
   Finally finally;
@@ -232,6 +235,9 @@ void Process::execute(vtid_t tid, int max_clock) {
 	    thread.status == Thread::BEFOR_WARP ||
 	    thread.status == Thread::AFTER_WARP) &&
 	   max_clock > 0; max_clock --) {
+#ifndef NDEBUG
+      memory.is_read_sequence = true;
+#endif
       
       instruction_t code = insts.at(stackinfo.pc);
       print_debug("pc:%d, insts:%" PRIu64 ", code:%08x %s\n",
