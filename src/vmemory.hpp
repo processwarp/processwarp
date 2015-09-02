@@ -521,9 +521,6 @@ namespace processwarp {
 	}
       }
 
-      void lock_master(vaddr_t addr);
-      void release_master(vaddr_t addr);
-
 #ifndef NDEBUG
       void print_dump() {
 	for (auto& it_page : space.pages) {
