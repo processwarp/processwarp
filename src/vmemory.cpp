@@ -175,7 +175,9 @@ void VMemory::recv_give(const std::string& name, picojson::object& json) {
 
     } else {
       Page& page = it_page->second;
-      assert(page.type == PT_COPY);
+      assert(page.type == PT_COPY || page.type == PT_PROGRAM);
+      // Skip if page type is program and I have it yet.
+      if (page.type == PT_PROGRAM) return;
 
       page.type = PT_MASTER;
       page.flg_update = true;
