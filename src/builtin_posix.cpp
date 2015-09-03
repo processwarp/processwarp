@@ -52,11 +52,10 @@ BuiltinPost BuiltinPosix::bi_pthread_create(Process& proc, Thread& thread, Built
 BuiltinPost BuiltinPosix::bi_pthread_exit(Process& proc, Thread& thread, BuiltinFuncParam p,
 					  vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
-  /// TODO: apply function.
-  /* vaddr_t p_retval = */Process::read_builtin_param_ptr(src, &seek);
+  vaddr_t p_retval = Process::read_builtin_param_ptr(src, &seek);
   assert(static_cast<signed>(src.size()) == seek);
  
-  // proc.exit_thread(th.tid, p_retval);
+  proc.exit_thread(thread.tid, p_retval);
 
   return BP_RE_ENTRY;
 }

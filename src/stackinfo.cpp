@@ -130,3 +130,11 @@ void StackInfo::write(VMemory::Accessor& memory) {
 
   memory.update_meta_area(addr, picojson::value(js_stackinfo).serialize());
 }
+
+// Free all memory area bind to this stack without a area bind to this instance.
+void StackInfo::destroy(VMemory::Accessor& memory) {
+  memory.free(stack);
+  for (vaddr_t alloca_addr : alloca_addrs) {
+    memory.free(alloca_addr);
+  }
+}

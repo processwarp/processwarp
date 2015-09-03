@@ -156,17 +156,13 @@ void VMachine::loop() {
 
       if (tid == proc->root_tid) {
 	delegate.on_finish_proccess(pid);
-	it_proc = procs.erase(it_proc);
-	update_proc_list();
 	assert(false);
 
       } else {
-	proc->active_threads.erase(tid);
-	proc->threads.erase(tid);
-	proc->proc_memory->free(tid);
-	update_proc_list();
-	assert(false);
+	proc->destroy_thread(*thread);
       }
+
+      update_proc_list();
     }
 
   } catch (Interrupt& e) {

@@ -400,19 +400,11 @@ void Process::execute(vtid_t tid, int max_clock) {
 	  
 	  stackinfo.type_operator->copy(upperinfo.output, operand);
 	}
-	// スタック領域を開放
-	stack_master_key.reset();
-	memory.free(stackinfo.stack);
-
-	// alloca領域を開放
-	for (vaddr_t addr : stackinfo.alloca_addrs) {
-	  memory.free(addr);
-	}
-	
 	// 1段上のスタックのpcを設定(normal_pc)
 	upperinfo.pc = stackinfo.normal_pc;
 
 	// stackinfoを1つ除去してre_entryに移動
+	stack_master_key.reset();
 	stackinfo_master_key.reset();
 	thread.pop_stack();
 	goto re_entry;
@@ -1094,6 +1086,42 @@ vtid_t Process::create_thread(vaddr_t func_addr, vaddr_t arg_addr) {
   return thread.tid;
 }
 
+// Prepare to exit a thread.
+void Process::exit_thread(vtid_t tid, vaddr_t retval) {
+  Thread& thread = get_thread(tid);
+  StackInfo& root_stackinfo = thread.get_stackinfo(1);
+  // Copy return value.
+  thread.memory->set_copy(root_stackinfo.ret_addr,
+			  reinterpret_cast<const uint8_t*>(&retval),
+			  sizeof(retval));
+  // Free stacks.
+  while(thread.stack.size() > 1) {
+    thread.pop_stack();
+  }
+}
+
+// Free a instance of thread, leave stack-top for join thread if need.
+void Process::destroy_thread(Thread& thread) {
+#ifndef NDEBUG
+  thread.memory->is_read_sequence = true;
+#endif
+  if (thread.join_waiting == JOIN_WAIT_DETACHED) {
+    while (thread.stack.size() > 0) {
+      thread.pop_stack();
+    }
+    proc_memory->free(thread.tid);
+    active_threads.erase(thread.tid);
+    threads.erase(thread.tid);
+
+  } else {
+    while (thread.stack.size() > 1) {
+      thread.pop_stack();
+    }
+    thread.status = Thread::JOIN_WAIT;
+    thread.write();
+  }
+}
+
 // Join a thread.
 bool Process::join_thread(vtid_t current, vtid_t target, vaddr_t retval) {
   Thread& target_thread  = get_thread(target);
@@ -1113,7 +1141,9 @@ bool Process::join_thread(vtid_t current, vtid_t target, vaddr_t retval) {
     proc_memory->set<vaddr_t>(retval, proc_memory->get<vaddr_t>
 			     (target_thread.get_stackinfo(0).stack));
 
+    target_thread.join_waiting = JOIN_WAIT_DETACHED;
     target_thread.status = Thread::FINISH;
+    target_thread.write();
     return true;
 
   } else {

@@ -183,6 +183,12 @@ namespace processwarp {
     void exit_thread(vtid_t tid, vaddr_t retval);
 
     /**
+     * Free a instance of thread, leave stack-top for join thread if need.
+     * @param thread Target thread.
+     */
+    void destroy_thread(Thread& thread);
+
+    /**
      * Join a thread.
      * @param current Current thread (join from).
      * @param target Join target thread.

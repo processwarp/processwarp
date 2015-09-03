@@ -190,6 +190,7 @@ StackInfo& Thread::get_stackinfo(int idx) {
 
 // Remoev stack-information at stack top.
 void Thread::pop_stack() {
+  get_stackinfo(-1).destroy(*memory);
   stackinfos.erase(stack.back());
   memory->free(stack.back());
   stack.pop_back();

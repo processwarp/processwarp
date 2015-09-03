@@ -99,6 +99,12 @@ namespace processwarp {
      */
     void write(VMemory::Accessor& memory);
 
+    /**
+     * Free all memory area bind to this stack without a area bind to this instance.
+     * @param memory
+     */
+    void destroy(VMemory::Accessor& memory);
+
   private:
     /**
      * コンストラクタ。
