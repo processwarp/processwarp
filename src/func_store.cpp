@@ -76,8 +76,7 @@ void FuncStore::alloc_external(VMemory::Accessor& memory,
 }
 
 // Read out function information from memory.
-std::unique_ptr<FuncStore> FuncStore::read(Process& proc, vaddr_t addr) {
-  VMemory::Accessor& memory = *proc.proc_memory;
+std::unique_ptr<FuncStore> FuncStore::read(Process& proc, VMemory::Accessor& memory, vaddr_t addr) {
   picojson::value js_tmp;
   std::istringstream is(memory.get_program_area(addr));
   std::string err = picojson::parse(js_tmp, is);

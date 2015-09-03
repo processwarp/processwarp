@@ -43,11 +43,11 @@ inline std::unique_ptr<FuncStore> get_function(instruction_t code, OperandParam&
   if ((operand & HEAD_OPERAND) != 0) {
     // 定数の場合1の補数表現からの復元
     vaddr_t addr = param.memory.get<vaddr_t>(param.k + (FILL_OPERAND - operand));
-    return std::move(FuncStore::read(param.proc, addr));
+    return std::move(FuncStore::read(param.proc, param.memory, addr));
     
   } else {
     vaddr_t addr = param.memory.get<vaddr_t>(param.stack + operand);
-    return std::move(FuncStore::read(param.proc, addr));
+    return std::move(FuncStore::read(param.proc, param.memory, addr));
   }
 }
 
@@ -996,7 +996,7 @@ void Process::call_external(Thread& thread,
 
 // Setup to call function that type : void (*)(void).
 void Process::call_setup_voidfunc(Thread& thread, vaddr_t func_addr) {
-  std::unique_ptr<FuncStore> func(FuncStore::read(*this, func_addr));
+  std::unique_ptr<FuncStore> func(FuncStore::read(*this, *thread.memory, func_addr));
 
   // 関数の型に合わせて呼び出す。
   if (func->type == FuncType::FC_NORMAL) {
@@ -1057,7 +1057,7 @@ void Process::warp_out_thread(vtid_t tid) {
 
 // Create a new thread.
 vtid_t Process::create_thread(vaddr_t func_addr, vaddr_t arg_addr) {
-  std::unique_ptr<FuncStore> func(std::move(FuncStore::read(*this, func_addr)));
+  std::unique_ptr<FuncStore> func(std::move(FuncStore::read(*this, *proc_memory, func_addr)));
 
   // check function type
   if (func->type != FC_NORMAL) {
@@ -1210,7 +1210,7 @@ M_READ_BUILTIN_PARAM(read_builtin_param_i64, uint64_t, TY_UI64);
 void Process::resolve_stackinfo_cache(Thread& thread, StackInfo* stackinfo) {
   // 関数
   if (stackinfo->func != VADDR_NON) {
-    stackinfo->func_store = std::move(FuncStore::read(*this, stackinfo->func));
+    stackinfo->func_store = std::move(FuncStore::read(*this, *thread.memory, stackinfo->func));
   } else {
     stackinfo->func_store.reset(nullptr);
   }
@@ -1243,7 +1243,8 @@ void Process::run(const std::vector<std::string>& args,
   auto it_main_func = globals.find(&symbols.get("main"));
   if (it_main_func == globals.end())
     throw_error_message(Error::SYM_NOT_FOUND, "main");
-  std::unique_ptr<FuncStore> main_func(std::move(FuncStore::read(*this, it_main_func->second)));
+  std::unique_ptr<FuncStore> main_func(std::move(FuncStore::read(*this, *proc_memory,
+								 it_main_func->second)));
 
   // main関数用のスタックを確保する
   vaddr_t main_stack = VADDR_NULL;

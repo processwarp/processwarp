@@ -86,10 +86,11 @@ namespace processwarp {
     /**
      * Read out function information from memory.
      * @param proc Process using function information.
+     * @param memory Memory accessor to use read.
      * @param addr Address saving function infromation.
      * @return Function information.
      */
-    static std::unique_ptr<FuncStore> read(Process& proc, vaddr_t addr);
+    static std::unique_ptr<FuncStore> read(Process& proc, VMemory::Accessor& memory, vaddr_t addr);
 
   private:
     /**
