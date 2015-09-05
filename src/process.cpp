@@ -203,8 +203,8 @@ void Process::execute(Thread& thread, int max_clock) {
     }
     if (thread.status == Thread::AFTER_WARP &&
 	thread.stack.size() == thread.warp_stack_size) {
-      if (thread.funcs_at_befor_warp.size() > thread.warp_call_count) {
-	call_setup_voidfunc(thread, thread.funcs_at_befor_warp.at(thread.warp_call_count));
+      if (thread.funcs_at_after_warp.size() > thread.warp_call_count) {
+	call_setup_voidfunc(thread, thread.funcs_at_after_warp.at(thread.warp_call_count));
 	thread.warp_call_count ++;
 	goto re_entry;
 	
