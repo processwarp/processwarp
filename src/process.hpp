@@ -177,16 +177,17 @@ namespace processwarp {
 
     /**
      * Prepare to exit a thread.
-     * @param tid Target thread.
+     * @param thread Target thread.
      * @param retval Thread's return value.
      */
-    void exit_thread(vtid_t tid, vaddr_t retval);
+    void exit_thread(Thread& thread, vaddr_t retval);
 
     /**
      * Free a instance of thread, leave stack-top for join thread if need.
      * @param thread Target thread.
+     * @return True if thread instance was disabled yet (Dont access).
      */
-    void destroy_thread(Thread& thread);
+    bool destroy_thread(Thread& thread);
 
     /**
      * Join a thread.
@@ -199,10 +200,10 @@ namespace processwarp {
     
     /**
      * Execute instructions.
-     * @param tid target thread-id.
+     * @param thread Target thread.
      * @param max_clock max instruction count for context switching.
      */
-    void execute(vtid_t tid, int max_clock);
+    void execute(Thread& thread, int max_clock);
 
     /**
      * Change status to exit.

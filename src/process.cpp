@@ -152,19 +152,11 @@ std::unique_ptr<Process> Process::read(ProcessDelegate& delegate,
 }
 
 // VM命令を実行する。
-void Process::execute(vtid_t tid, int max_clock) {
-  Thread& thread = get_thread(tid);
+void Process::execute(Thread& thread, int max_clock) {
   VMemory::Accessor& memory = *thread.memory;
 #ifndef NDEBUG
   memory.is_read_sequence = true;
 #endif
-  VMemory::Accessor::MasterKey thread_master_key = memory.keep_master(thread.tid);
-  
-  Finally finally;
-  finally.add([&]{
-      thread.write();
-      memory.write_out();
-    });
 
  re_entry: {
     if (thread.stack.size() == 1) {
@@ -1034,6 +1026,7 @@ Thread& Process::get_thread(vtid_t tid) {
     
   } else {
     Thread& thread = *it->second.get();
+    thread.read();
     return thread;
   }
 }
@@ -1043,8 +1036,6 @@ void Process::warp_out_thread(vtid_t tid) {
   active_threads.insert(tid);
   waiting_warp_setup.insert(tid);
   delegate.on_change_thread_set(*this);
-  
-  /// @todo change thread status to AFTER_WARP after sync memory.
 }
 
 // Create a new thread.
@@ -1079,6 +1070,7 @@ vtid_t Process::create_thread(vaddr_t func_addr, vaddr_t arg_addr) {
       StackInfo::alloc(*thread.memory, func->addr, root_stack, 0, 0, VADDR_NON);
   }
   thread.push_stack(func_stackaddr);
+  thread.write();
 
   active_threads.insert(thread.tid);
   delegate.on_change_thread_set(*this);
@@ -1087,8 +1079,7 @@ vtid_t Process::create_thread(vaddr_t func_addr, vaddr_t arg_addr) {
 }
 
 // Prepare to exit a thread.
-void Process::exit_thread(vtid_t tid, vaddr_t retval) {
-  Thread& thread = get_thread(tid);
+void Process::exit_thread(Thread& thread, vaddr_t retval) {
   StackInfo& root_stackinfo = thread.get_stackinfo(1);
   // Copy return value.
   thread.memory->set_copy(root_stackinfo.ret_addr,
@@ -1101,7 +1092,7 @@ void Process::exit_thread(vtid_t tid, vaddr_t retval) {
 }
 
 // Free a instance of thread, leave stack-top for join thread if need.
-void Process::destroy_thread(Thread& thread) {
+bool Process::destroy_thread(Thread& thread) {
 #ifndef NDEBUG
   thread.memory->is_read_sequence = true;
 #endif
@@ -1112,13 +1103,14 @@ void Process::destroy_thread(Thread& thread) {
     proc_memory->free(thread.tid);
     active_threads.erase(thread.tid);
     threads.erase(thread.tid);
+    return true;
 
   } else {
     while (thread.stack.size() > 1) {
       thread.pop_stack();
     }
     thread.status = Thread::JOIN_WAIT;
-    thread.write();
+    return false;
   }
 }
 

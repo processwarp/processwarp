@@ -55,7 +55,7 @@ BuiltinPost BuiltinPosix::bi_pthread_exit(Process& proc, Thread& thread, Builtin
   vaddr_t p_retval = Process::read_builtin_param_ptr(src, &seek);
   assert(static_cast<signed>(src.size()) == seek);
  
-  proc.exit_thread(thread.tid, p_retval);
+  proc.exit_thread(thread, p_retval);
 
   return BP_RE_ENTRY;
 }

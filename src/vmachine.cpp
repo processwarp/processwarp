@@ -16,6 +16,7 @@
 #include "convert.hpp"
 #include "definitions.hpp"
 #include "error.hpp"
+#include "finally.hpp"
 #include "vmachine.hpp"
 #include "vmemory.hpp"
 
@@ -91,6 +92,21 @@ void VMachine::loop() {
 	  }
 	}
 
+	// Reload thread information from memory.
+	auto it_thread = proc->threads.begin();
+	while(it_thread != proc->threads.end()) {
+	  if (proc->active_threads.find(it_thread->first) != proc->active_threads.end()) {
+#ifndef NDEBUG
+	    it_thread->second->memory->is_read_sequence = true;
+#endif
+	    it_thread->second->read();
+	    it_thread ++;
+
+	  } else {
+	    it_thread = proc->threads.erase(it_thread);
+	  }
+	}
+	
 	for (auto& tid : proc->active_threads) {
 	  loop_queue.push(std::make_pair(pid, tid));
 	}
@@ -123,7 +139,14 @@ void VMachine::loop() {
     } else {
       thread = &proc->get_thread(tid);
     }
-    
+    VMemory::Accessor::MasterKey thread_master_key =
+      thread->memory->keep_master(tid);
+    Finally finally;
+    finally.add([&]{
+	thread->write();
+	thread->memory->write_out();
+      });
+
     print_debug("loop pid=%s tid=%016" PRIx64 " status=%d\n",
 		pid.c_str(), tid, thread->status);
     
@@ -140,7 +163,7 @@ void VMachine::loop() {
 	  
       delegate.on_switch_proccess(pid);
       // run thread
-      proc->execute(tid, 100);
+      proc->execute(*thread, 100);
       print_debug("loop finish status=%d\n", thread->status);
 
     } else if (thread->status == Thread::WARP) {
@@ -159,7 +182,9 @@ void VMachine::loop() {
 	assert(false);
 
       } else {
-	proc->destroy_thread(*thread);
+	if (proc->destroy_thread(*thread)) {
+	  finally.clear();
+	}
       }
 
       update_proc_list();
@@ -390,7 +415,10 @@ void VMachine::recv_warp_request(const vpid_t& pid, picojson::object& json) {
   if (it_proc != procs.end() &&
       (it_proc->second->active_threads.find(tid)) !=
       it_proc->second->active_threads.end()) {
-    it_proc->second->get_thread(tid).setup_warpin(dst_device);
+    Thread& thread = it_proc->second->get_thread(tid);
+    thread.setup_warpin(dst_device);
+    thread.write();
+    thread.memory->write_out();
   }
 }
 
