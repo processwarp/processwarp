@@ -239,6 +239,24 @@ namespace processwarp {
     std::queue<std::pair<vpid_t, vtid_t>> loop_queue;
 
     /**
+     * Change flag to FINISH for all defunct thread.
+     * @param sv_procs
+     */
+    void kill_defunct_thread(const std::vector<ProcessTree>& sv_procs);
+
+    /**
+     * Delete process if active-threads in this node were not exist.
+     * @param sv_procs
+     */
+    void clean_defunct_processe(const std::vector<ProcessTree>& sv_procs);
+
+    /*
+     * Delete memory space if process in all nodes was not exist.
+     * @param sv_procs
+     */
+    void clean_defunct_memoryspace(const std::vector<ProcessTree>& sv_procs);
+
+    /**
      * Convert json to machine data packet and send to destination device.
      * @param name
      * @param dst_device

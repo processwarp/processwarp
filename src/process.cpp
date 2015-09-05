@@ -1096,7 +1096,8 @@ bool Process::destroy_thread(Thread& thread) {
 #ifndef NDEBUG
   thread.memory->is_read_sequence = true;
 #endif
-  if (thread.join_waiting == JOIN_WAIT_DETACHED) {
+  if (thread.join_waiting == JOIN_WAIT_DETACHED ||
+      thread.join_waiting == JOIN_WAIT_ROOT) {
     while (thread.stack.size() > 0) {
       thread.pop_stack();
     }

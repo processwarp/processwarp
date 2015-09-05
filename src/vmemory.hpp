@@ -240,6 +240,8 @@ namespace processwarp {
     const dev_id_t dev_id;
     /** Random value generator to use for generating address. */
     std::mt19937_64 rnd;
+    /** Memory spaces. Space name and Space map. */
+    std::map<std::string, std::unique_ptr<Space>> spaces;
 
     /**
      * Memory accessor.
@@ -613,8 +615,6 @@ namespace processwarp {
   private:      
     /** Delegate for controller. */
     VMemoryDelegate& delegate;
-    /** Memory spaces. Space name and Space map. */
-    std::map<std::string, std::unique_ptr<Space>> spaces;
 
     /** Block copy constructor. */
     VMemory(const VMemory&);

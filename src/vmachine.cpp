@@ -175,16 +175,14 @@ void VMachine::loop() {
       delegate.on_error(pid, "");
 	
     } else if (thread->status == Thread::FINISH) {
-      delegate.on_finish_thread(pid, tid);
+      thread_master_key.reset();
+      if (proc->destroy_thread(*thread)) {
+	finally.clear();
+      }
 
+      delegate.on_finish_thread(pid, tid);
       if (tid == proc->root_tid) {
 	delegate.on_finish_proccess(pid);
-	assert(false);
-
-      } else {
-	if (proc->destroy_thread(*thread)) {
-	  finally.clear();
-	}
       }
 
       update_proc_list();
@@ -288,6 +286,9 @@ void VMachine::recv_machine_data(const vpid_t& pid, const std::string& data) {
 
 // Call when recv sync proc list message from server.
 void VMachine::recv_sync_proc_list(const std::vector<ProcessTree>& sv_procs) {
+  kill_defunct_thread(sv_procs);
+  clean_defunct_processe(sv_procs);
+  clean_defunct_memoryspace(sv_procs);
   std::set<std::tuple<vpid_t, vtid_t>> sv_set;
   for (auto& sv_proc : sv_procs) {
     // Update process name.
@@ -436,6 +437,80 @@ void VMachine::regist_builtin_func(const std::string& name,
   BuiltinFuncParam param;
   param.ptr = ptr;
   builtin_funcs.insert(std::make_pair(name, std::make_pair(func, param)));
+}
+
+// Change flag to FINISH for all defunct thread.
+void VMachine::kill_defunct_thread(const std::vector<ProcessTree>& sv_procs) {
+  for (auto& sv_proc : sv_procs) {
+    auto it_proc = procs.find(sv_proc.pid);
+    if (it_proc != procs.end() &&
+	sv_proc.threads.find(it_proc->second->root_tid) == sv_proc.threads.end()) {
+      // Change flag to FINISH for all threads if proccess was not exist yet.
+      Process& proc = *it_proc->second;
+      for (auto& tid : proc.active_threads) {
+	Thread& thread = proc.get_thread(tid);
+	thread.status = Thread::FINISH;
+	thread.write();
+	thread.memory->write_out();
+      }
+    }
+  }
+
+  for (auto& it_proc : procs) {
+    bool is_find = false;
+    for (auto& it_sv_proc : sv_procs) {
+      if (it_sv_proc.pid == it_proc.first) {
+	is_find = true;
+	break;
+      }
+    }
+    if (!is_find) {
+      Process& proc = *it_proc.second;
+      for (auto& tid : proc.active_threads) {
+	Thread& thread = proc.get_thread(tid);
+	thread.status = Thread::FINISH;
+	thread.write();
+	thread.memory->write_out();
+      }
+    }
+  }
+}
+
+// Delete process if active-threads in this node were not exist.
+void VMachine::clean_defunct_processe(const std::vector<ProcessTree>& sv_procs) {
+  auto it_proc = procs.begin();
+  while (it_proc != procs.end()) {
+    if (it_proc->second->active_threads.size() == 0) {
+      it_proc = procs.erase(it_proc);
+
+    } else {
+      it_proc ++;
+    }
+  }
+}
+
+// Delete memory space if process in all nodes was not exist.
+void VMachine::clean_defunct_memoryspace(const std::vector<ProcessTree>& sv_procs) {
+  auto it_space = vmemory.spaces.begin();
+  while (it_space != vmemory.spaces.end()) {
+    vpid_t pid = Convert::str2vpid(it_space->first);
+
+    bool is_find = false;
+    for (auto& it_sv_proc : sv_procs) {
+      if (it_sv_proc.pid == pid) {
+	is_find = true;
+	break;
+      }
+    }
+
+    if (!is_find &&
+	procs.find(pid) == procs.end()) {
+      it_space = vmemory.spaces.erase(it_space);
+
+    } else {
+      it_space ++;
+    }
+  }
 }
 
 // Convert json to machine data packet and send to destination device.
