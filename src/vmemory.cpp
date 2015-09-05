@@ -62,8 +62,10 @@ void VMemory::recv_memory_data(const std::string& name, const std::string& data)
   } else if (cmd == "reserve") {
     recv_reserve(name, json);
 
-    /*
   } else if (cmd == "free") {
+    recv_free(name, json);
+    
+    /*
   } else if (cmd == "release") {
     */
   } else if (cmd == "stand") {
@@ -134,6 +136,50 @@ void VMemory::recv_copy(const std::string& name, picojson::object& json) {
   }
 
   delegate.on_recv_update(name, addr);
+}
+
+void VMemory::recv_free(const std::string& name, picojson::object& json) {
+  vaddr_t addr = Convert::json2vaddr(json.at("addr"));
+  assert(addr == get_upper_addr(addr));
+
+  auto it_space = spaces.find(name);
+  if (it_space == spaces.end()) {
+    /// @todo I'm not in this space.
+    assert(false);
+  }
+
+  Space& space = *it_space->second;
+  auto it_page = space.pages.find(addr);
+  if (it_page == space.pages.end()) {
+    /// @todo Relay bload cast when packet was not bload cast.
+  }
+  
+  Page& page = it_page->second;
+  switch(page.type) {
+  case PT_MASTER: {
+    if (page.master_count != 0) {
+      /// @todo error
+      assert(false);
+    }
+    page.size = 0;
+    page.value.reset();
+    for (auto& to : page.hint) {
+      send_copy(to, space, page, addr);
+    }
+    space.release_addr(addr);
+    space.pages.erase(addr);
+  } break;
+
+  case PT_COPY: {
+    assert(page.hint.size() == 1);
+    send_free(*page.hint.begin(), space, addr);
+  } break;
+
+  default: {
+    /// TODO:error
+    assert(false);
+  } break;
+  }
 }
 
 void VMemory::recv_give(const std::string& name, picojson::object& json) {

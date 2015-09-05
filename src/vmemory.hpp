@@ -634,6 +634,8 @@ namespace processwarp {
 
 
     void recv_copy(const std::string& name, picojson::object& json);
+
+    void recv_free(const std::string& name, picojson::object& json);
     
     void recv_require(const std::string& name, picojson::object& json);
 
