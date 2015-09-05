@@ -1350,6 +1350,7 @@ void Process::run(const std::vector<std::string>& args,
   vaddr_t main_stackaddr =
     StackInfo::alloc(memory, main_func->addr, root_stack, 0, 0, main_stack);
   root_thread.push_stack(main_stackaddr);
+  root_thread.write();
 }
 
 // 大域変数のアドレスを設定する。
