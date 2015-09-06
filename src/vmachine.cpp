@@ -230,8 +230,7 @@ void VMachine::on_recv_update(const vpid_t& pid, vaddr_t addr) {
     }
     
   } else {
-    /// @todo
-    assert(false);
+    /// @todo Pass or drop page to other node.
   }
 }
     
