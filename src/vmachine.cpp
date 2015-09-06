@@ -96,9 +96,6 @@ void VMachine::loop() {
 	auto it_thread = proc->threads.begin();
 	while(it_thread != proc->threads.end()) {
 	  if (proc->active_threads.find(it_thread->first) != proc->active_threads.end()) {
-#ifndef NDEBUG
-	    it_thread->second->memory->is_read_sequence = true;
-#endif
 	    it_thread->second->read();
 	    it_thread ++;
 

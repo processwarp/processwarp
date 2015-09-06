@@ -154,10 +154,6 @@ std::unique_ptr<Process> Process::read(ProcessDelegate& delegate,
 // VM命令を実行する。
 void Process::execute(Thread& thread, int max_clock) {
   VMemory::Accessor& memory = *thread.memory;
-#ifndef NDEBUG
-  memory.is_read_sequence = true;
-#endif
-
  re_entry: {
     if (thread.stack.size() == 1) {
       if (thread.tid == root_tid) {
@@ -227,9 +223,10 @@ void Process::execute(Thread& thread, int max_clock) {
 	    thread.status == Thread::BEFOR_WARP ||
 	    thread.status == Thread::AFTER_WARP) &&
 	   max_clock > 0; max_clock --) {
-#ifndef NDEBUG
-      memory.is_read_sequence = true;
-#endif
+      Finally finally;
+      finally.add([&]{
+	  memory.write_out();
+	});
       
       instruction_t code = insts.at(stackinfo.pc);
       print_debug("pc:%d, insts:%" PRIu64 ", code:%08x %s\n",
@@ -1093,9 +1090,6 @@ void Process::exit_thread(Thread& thread, vaddr_t retval) {
 
 // Free a instance of thread, leave stack-top for join thread if need.
 bool Process::destroy_thread(Thread& thread) {
-#ifndef NDEBUG
-  thread.memory->is_read_sequence = true;
-#endif
   if (thread.join_waiting == JOIN_WAIT_DETACHED ||
       thread.join_waiting == JOIN_WAIT_ROOT) {
     while (thread.stack.size() > 0) {

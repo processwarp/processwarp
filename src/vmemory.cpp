@@ -535,9 +535,6 @@ void VMemory::send_update(const dev_id_t& dev_id, Space& space, vaddr_t addr,
 VMemory::Accessor::Accessor(VMemory& vmemory_, Space& space_) :
   vmemory(vmemory_),
   space(space_) {
-#ifndef NDEBUG
-  is_read_sequence = true;
-#endif
 }
 
 // Get master device-id for target address.
@@ -613,7 +610,6 @@ vaddr_t VMemory::Accessor::set_meta_area(const std::string& data, vaddr_t addr,
 // Get meta data.
 std::string VMemory::Accessor::get_meta_area(vaddr_t addr) {
   assert((AD_MASK & addr) == AD_META);
-  assert(is_read_sequence);
   Page& page = get_page(addr, true);
 
   return std::string(reinterpret_cast<char*>(page.value.get()), page.size);
@@ -669,9 +665,6 @@ vaddr_t VMemory::Accessor::alloc(uint64_t size) {
 
 // Frees allocations that were created via the preceding alloc or realloc.
 void VMemory::Accessor::free(vaddr_t addr) {
-#ifndef NDEBUG
-  is_read_sequence = false;
-#endif
   if (addr == VADDR_NULL) return;
 
   if (addr != get_upper_addr(addr)) {
@@ -706,9 +699,6 @@ void VMemory::Accessor::free(vaddr_t addr) {
 
 // Change the size of allocation pointed to by addr to size.
 vaddr_t VMemory::Accessor::realloc(vaddr_t addr, uint64_t size) {
-#ifndef NDEBUG
-  is_read_sequence = false;
-#endif
   if (addr == VADDR_NULL) return this->alloc(size);
   if (addr != get_upper_addr(addr)) {
     /// TODO:error
@@ -806,7 +796,6 @@ void VMemory::Accessor::set_program_area(vaddr_t addr, const std::string& data) 
 
 // Get program data.
 std::string VMemory::Accessor::get_program_area(vaddr_t addr) {
-  assert(is_read_sequence);
   Page& page = get_page(addr, true);
   
   return std::string(reinterpret_cast<const char*>(page.value.get()), page.size);
@@ -814,9 +803,6 @@ std::string VMemory::Accessor::get_program_area(vaddr_t addr) {
 
 // Write out the data selected by get_raw_writable.
 void VMemory::Accessor::write_out() {
-#ifndef NDEBUG
-  is_read_sequence = false;
-#endif
   auto it = raw_writable.begin();
 
   while (it != raw_writable.end()) {
