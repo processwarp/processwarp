@@ -307,8 +307,8 @@ void Process::execute(Thread& thread, int max_clock) {
 	    // 可変長引数、ネイティブメソッド用引数は一時領域に格納
 	    std::size_t dest = work.size();
 	    work.resize(dest + sizeof(vaddr_t) + type->size);
-	    memcpy(work.data() + dest,                   &(type->addr),         sizeof(vaddr_t));
-	    memcpy(work.data() + dest + sizeof(vaddr_t), memory.get_raw(value), type->size);
+	    std::memcpy(work.data() + dest, &(type->addr), sizeof(vaddr_t));
+	    std::memcpy(work.data() + dest + sizeof(vaddr_t), memory.get_raw(value), type->size);
 	  }
 	  
 	  args += 1;
@@ -889,47 +889,47 @@ void Process::call_external(Thread& thread,
 	  raw_ptr = static_cast<void*>(memory.get_raw_writable(addr));
 	}
 	vararg_buf.resize(vararg_buf.size() + 1);
-	memcpy(&vararg_buf.back(), &raw_ptr, sizeof(void*));
+	std::memcpy(&vararg_buf.back(), &raw_ptr, sizeof(void*));
       } break;
 
       case BasicType::TY_UI8:
       case BasicType::TY_SI8: {
 	int32_t raw_val = static_cast<int32_t>(*reinterpret_cast<int8_t*>(args.data() + seek + sizeof(vaddr_t)));
 	vararg_buf.resize(vararg_buf.size() + 1);
-	memcpy(&vararg_buf.back(), &raw_val, sizeof(raw_val));
+	std::memcpy(&vararg_buf.back(), &raw_val, sizeof(raw_val));
       } break;
 	
       case BasicType::TY_UI16:
       case BasicType::TY_SI16: {
 	int32_t raw_val = static_cast<int32_t>(*reinterpret_cast<int16_t*>(args.data() + seek + sizeof(vaddr_t)));
 	vararg_buf.resize(vararg_buf.size() + 1);
-	memcpy(&vararg_buf.back(), &raw_val, sizeof(raw_val));
+	std::memcpy(&vararg_buf.back(), &raw_val, sizeof(raw_val));
       } break;
 	
       case BasicType::TY_UI32:
       case BasicType::TY_SI32: {
 	int32_t raw_val = *reinterpret_cast<int32_t*>(args.data() + seek + sizeof(vaddr_t));
 	vararg_buf.resize(vararg_buf.size() + 1);
-	memcpy(&vararg_buf.back(), &raw_val, sizeof(raw_val));
+	std::memcpy(&vararg_buf.back(), &raw_val, sizeof(raw_val));
       } break;
 
       case BasicType::TY_UI64:
       case BasicType::TY_SI64: {
 	uint64_t raw_val = *reinterpret_cast<uint64_t*>(args.data() + seek + sizeof(vaddr_t));
 	vararg_buf.resize(vararg_buf.size() + 2 + (vararg_buf.size() % 2));
-	memcpy(&vararg_buf.at(vararg_buf.size() - 2), &raw_val, sizeof(raw_val));
+	std::memcpy(&vararg_buf.at(vararg_buf.size() - 2), &raw_val, sizeof(raw_val));
       } break;
 
       case BasicType::TY_F32: {
 	double raw_val = static_cast<double>(*reinterpret_cast<float*>(args.data() + seek + sizeof(vaddr_t)));
 	vararg_buf.resize(vararg_buf.size() + 2 + (vararg_buf.size() % 2));
-	memcpy(&vararg_buf.at(vararg_buf.size() - 2), &raw_val, sizeof(raw_val));
+	std::memcpy(&vararg_buf.at(vararg_buf.size() - 2), &raw_val, sizeof(raw_val));
       } break;
 
       case BasicType::TY_F64: {
 	double raw_val = *reinterpret_cast<double*>(args.data() + seek + sizeof(vaddr_t));
 	vararg_buf.resize(vararg_buf.size() + 2 + (vararg_buf.size() % 2));
-	memcpy(&vararg_buf.at(vararg_buf.size() - 2), &raw_val, sizeof(raw_val));
+	std::memcpy(&vararg_buf.at(vararg_buf.size() - 2), &raw_val, sizeof(raw_val));
       } break;
       };
       seek  += sizeof(vaddr_t) + type->size;
