@@ -363,7 +363,10 @@ void VMachine::request_warp_thread(const vpid_t& pid,
   if (it_proc != procs.end() &&
       (it_proc->second->active_threads.find(tid)) !=
       it_proc->second->active_threads.end()) {
-    it_proc->second->get_thread(tid).setup_warpin(dst_device);
+    Thread& thread = it_proc->second->get_thread(tid);
+    thread.setup_warpin(dst_device);
+    thread.write();
+    thread.memory->write_out();
 
   } else {
     send_warp_request(pid, tid, dst_device);

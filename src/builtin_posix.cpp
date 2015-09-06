@@ -70,11 +70,12 @@ BuiltinPost BuiltinPosix::bi_pthread_join(Process& proc, Thread& thread, Builtin
   //vm_int_t& ret = *reinterpret_cast<vm_int_t*>(proc.get_raw_addr(dst));
   
   try {
-    thread.memory->set<vm_int_t>(dst, 0);
     if (proc.join_thread(thread.tid, p_thread, p_retval)) {
+      thread.memory->set<vm_int_t>(dst, 0);
       return BP_NORMAL;
 
     } else {
+      thread.memory->set<vm_int_t>(dst, 0);
       return BP_RETRY_LATER;
     }
 
