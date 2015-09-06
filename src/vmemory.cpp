@@ -198,6 +198,8 @@ void VMemory::recv_give(const std::string& name, picojson::object& json) {
 
     } else {
       send_unwant(name, dst, addr);
+      /// @todo send_unwant and relay packet to dst.
+      assert(false);
       return;
     }
   }
