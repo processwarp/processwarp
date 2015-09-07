@@ -1139,26 +1139,17 @@ bool Process::join_thread(vtid_t current, vtid_t target, vaddr_t retval) {
   }
 }
 
-// Change status to exit.
-void Process::exit() {
-  print_debug("Exit process");
-  
-  for (auto& it_thread : active_threads) {
-    Thread& thread = get_thread(it_thread);
+// Change status in order to exit force.
+void Process::terminate() {
+  auto it_thread = active_threads.find(root_tid);
+  assert(it_thread != active_threads.end());
 
-    if (thread.status == Thread::NORMAL ||
-	thread.status == Thread::WAIT_WARP ||
-	thread.status == Thread::BEFOR_WARP ||
-	thread.status == Thread::WARP ||
-	thread.status == Thread::AFTER_WARP) {
-      thread.status = Thread::NORMAL;
-      fixme("exit thread");
-      Thread& root_thread = get_thread(root_tid);
-      while(root_thread.stack.size() > 1) {
-	root_thread.pop_stack();
-      }
-    } else {
-      assert(false);
+  if (it_thread != active_threads.end()) {
+    Thread& root_thread = get_thread(root_tid);
+    if (root_thread.status != Thread::ERROR) {
+      root_thread.status = Thread::FINISH;
+      root_thread.write();
+      root_thread.memory->write_out();
     }
   }
 }

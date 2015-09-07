@@ -256,6 +256,9 @@ void VMachine::recv_machine_data(const vpid_t& pid, const std::string& data) {
     } else if (cmd == "warp_request") {
       recv_warp_request(pid, json);
     
+    } else if (cmd == "terminate") {
+      recv_terminate(pid, json);
+      
     } else {
       assert(false);
       /// @todo error
@@ -332,16 +335,21 @@ void VMachine::join_process(const vpid_t& pid, const vtid_t& root_tid,
   procs.at(pid)->setup();
 }
 
-// Delete process.
-void VMachine::delete_process(const vpid_t& pid) {
-  if (procs.find(pid) == procs.end()) return;
-  procs.erase(pid);
-}
+// Change status of process in order to terminate.
+void VMachine::terminate_process(const vpid_t& pid) {
+  auto it_proc = procs.find(pid);
+  if (it_proc != procs.end()) {
+    Process& proc = *it_proc->second;
+    if (proc.active_threads.find(proc.root_tid) != proc.active_threads.end()) {
+      proc.terminate();
 
-// Start exiting process.
-void VMachine::exit_process(const vpid_t& pid) {
-  if (procs.find(pid) == procs.end()) return;
-  procs.at(pid)->exit();
+    } else {
+      send_terminate(pid);
+    }
+
+  } else {
+    send_terminate(pid);
+  }
 }
 
 // Get process instance by process-id.
@@ -422,6 +430,18 @@ void VMachine::recv_warp_request(const vpid_t& pid, picojson::object& json) {
   }
 }
 
+// If recv this packet and this node have root-thread of target process,
+// Change status of root-thread in order to terminate process.
+void VMachine::recv_terminate(const vpid_t& pid, picojson::object& json) {
+  auto it_proc = procs.find(pid);
+  if (it_proc != procs.end()) {
+    Process& proc = *it_proc->second;
+    if (proc.active_threads.find(proc.root_tid) != proc.active_threads.end()) {
+      proc.terminate();
+    }
+  }
+}
+
 // Regist built-in function to virtual machine.
 void VMachine::regist_builtin_func(const std::string& name,
 				   builtin_func_t func, int i64) {
@@ -444,11 +464,12 @@ void VMachine::kill_defunct_thread(const std::vector<ProcessTree>& sv_procs) {
     auto it_proc = procs.find(sv_proc.pid);
     if (it_proc != procs.end() &&
 	sv_proc.threads.find(it_proc->second->root_tid) == sv_proc.threads.end()) {
-      // Change flag to FINISH for all threads if proccess was not exist yet.
+      // Change flag to FINISH for all threads if root-thread was not exist yet.
       Process& proc = *it_proc->second;
       for (auto& tid : proc.active_threads) {
 	Thread& thread = proc.get_thread(tid);
 	thread.status = Thread::FINISH;
+	thread.join_waiting = JOIN_WAIT_DETACHED;
 	thread.write();
 	thread.memory->write_out();
       }
@@ -464,10 +485,12 @@ void VMachine::kill_defunct_thread(const std::vector<ProcessTree>& sv_procs) {
       }
     }
     if (!is_find) {
+      // Change flag to FINISH for all threads if process was not exist yet.
       Process& proc = *it_proc.second;
       for (auto& tid : proc.active_threads) {
 	Thread& thread = proc.get_thread(tid);
 	thread.status = Thread::FINISH;
+	thread.join_waiting = JOIN_WAIT_DETACHED;
 	thread.write();
 	thread.memory->write_out();
       }
@@ -549,6 +572,15 @@ void VMachine::send_warp_request(const vpid_t& pid, const vtid_t tid,
   packet.insert(std::make_pair("dst", Convert::devid2json(dst_device)));
   
   send_packet(pid, DEV_BROADCAST, "warp_request", packet);
+}
+
+// This request means to broadcast request of terminateing process.
+void VMachine::send_terminate(const vpid_t& pid) {
+  picojson::object packet;
+
+  // Nothing for payload.
+  
+  send_packet(pid, DEV_BROADCAST, "terminate", packet);
 }
 
 // Setup virtual machine.

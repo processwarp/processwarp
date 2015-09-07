@@ -138,17 +138,11 @@ namespace processwarp {
 		      vaddr_t proc_addr, const dev_id_t& master_dev_id);
 
     /**
-     * Delete process.
+     * Change status of process in order to terminate.
+     * After terminate process, resources of process are free automatic.
      * @param pid Target pid.
      */
-    void delete_process(const vpid_t& pid);
-
-    /**
-     * Start exiting process.
-     * Resource remain after exit. Need to call delete_process after all.
-     * @param pid Target pid.
-     */
-    void exit_process(const vpid_t& pid);
+    void terminate_process(const vpid_t& pid);
 
     /**
      * Get process instance by process-id.
@@ -276,6 +270,13 @@ namespace processwarp {
      */
     void recv_warp_request(const vpid_t& pid, picojson::object& json);
 
+
+    /**
+     * If recv this packet and this node have root-thread of target process,
+     * Change status of root-thread in order to terminate process.
+     */
+    void recv_terminate(const vpid_t& pid, picojson::object& json);
+
     /**
      * This request means to warp thread to target device.
      * This method regist thread-id to pool and loop method check
@@ -293,5 +294,11 @@ namespace processwarp {
      */
     void send_warp_request(const vpid_t& pid, const vtid_t tid,
 			   const dev_id_t& dst_device);
+
+    /**
+     * This request means to broadcast request of terminateing process.
+     * @param pid Target process-id.
+     */
+    void send_terminate(const vpid_t& pid);
   };
 }

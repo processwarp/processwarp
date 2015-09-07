@@ -206,9 +206,10 @@ namespace processwarp {
     void execute(Thread& thread, int max_clock);
 
     /**
-     * Change status to exit.
+     * Change status in order to exit force.
+     * This method have effect when root-thread is exist on this node.
      */
-    void exit();
+    void terminate();
 
     /**
      * ライブラリなど、外部の関数へのポインタを取得する。

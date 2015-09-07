@@ -228,8 +228,8 @@ void set_device_id(const dev_id_t& device_id) {
   webfront.set_device_id(device_id);
 }
 
-void exit_process(const vpid_t& pid) {
-  webfront.vm->exit_process(pid);
+void quit_process(const vpid_t& pid) {
+  webfront.vm->terminate_process(pid);
 }
 
 void request_warp_thread(const std::string& pid,
@@ -259,5 +259,5 @@ EMSCRIPTEN_BINDINGS(mod) {
   function("recv_sync_proc_list", &recv_sync_proc_list);
   function("request_warp_thread", &request_warp_thread);
   function("set_device_id",  &set_device_id);
-  function("exit_process",   &exit_process);
+  function("quit_process",   &quit_process);
 }
