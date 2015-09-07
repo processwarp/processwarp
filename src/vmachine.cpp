@@ -75,6 +75,7 @@ void VMachine::loop() {
   vtid_t tid;
   Process* proc;
   Thread*  thread;
+  Finally finally;
 
   try {
     if (loop_queue.empty()) {
@@ -138,7 +139,6 @@ void VMachine::loop() {
     }
     VMemory::Accessor::MasterKey thread_master_key =
       thread->memory->keep_master(tid);
-    Finally finally;
     finally.add([&]{
 	thread->write();
 	thread->memory->write_out();
@@ -195,17 +195,17 @@ void VMachine::loop() {
     }
     
   } catch (Error& e) {
-    delegate.on_error(pid, "");
     thread->status = Thread::FINISH;
+    delegate.on_error(pid, "");
     
 #ifdef NDEBUG
   } catch (std::exception& e) {
-    delegate.on_error(pid, e.what());
     thread->status = Thread::FINISH;
+    delegate.on_error(pid, e.what());
     
   } catch (...) {
-    delegate.on_error(pid, "unknown exception");
     thread->status = Thread::FINISH;
+    delegate.on_error(pid, "unknown exception");
 #endif
   }
   
