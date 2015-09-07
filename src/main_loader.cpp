@@ -94,7 +94,7 @@ public:
     // Load program from LLVM file.
     LlvmAsmLoader loader(*proc);
 
-    if (in_type == "IR") {
+    if (in_type == "LL") {
       loader.load_ir_file(pool_path + Convert::vpid2str(in_pid) + ".llvm");
 
     } else if(in_type == "BC") {
