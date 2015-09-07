@@ -49,10 +49,16 @@ namespace processwarp {
     virtual ~LlvmAsmLoader();
     
     /**
-     * LLVMのアセンブリファイルを読み込んで仮想マシンにロードする。
+     * LLVM-IRファイル(テキスト形式)を読み込んで仮想マシンにロードする。
      * @param filename ファイル名
      */
-    void load_file(const std::string& filename);
+    void load_ir_file(const std::string& filename);
+
+    /**
+     * LLVM-Bitcodeファイル(バイナリ形式)を読み込んで仮想マシンにロードする。
+     * @param filename ファイル名
+     */
+    void load_bc_file(const std::string& filename);
 
   private:
     /// 解析中の関数の命令/変数

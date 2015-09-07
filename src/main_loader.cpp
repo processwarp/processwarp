@@ -35,6 +35,8 @@ public:
   dev_id_t in_src_device;
   ///
   std::string in_src_account;
+  ///
+  std::string in_type;
 
   ///
   vtid_t out_root_tid;
@@ -89,9 +91,18 @@ public:
 						 libs, lib_filter, builtin_funcs));
     proc->setup();
     
-    // Load program from LLVM-IR file.
+    // Load program from LLVM file.
     LlvmAsmLoader loader(*proc);
-    loader.load_file(pool_path + Convert::vpid2str(in_pid) + ".ll");
+
+    if (in_type == "IR") {
+      loader.load_ir_file(pool_path + Convert::vpid2str(in_pid) + ".llvm");
+
+    } else if(in_type == "BC") {
+      loader.load_bc_file(pool_path + Convert::vpid2str(in_pid) + ".llvm");
+
+    } else {
+      throw_error(Error::SERVER_SYS);
+    }
 
     std::map<std::string, std::string> envs;
     // Run virtual machine for bind argument and environment variables.
@@ -174,6 +185,7 @@ int main(int argc, char* argv[]) {
       loader.in_dst_device = Convert::json2devid(result.at("dst_device"));
       loader.in_src_device = Convert::json2devid(result.at("src_device"));
       loader.in_src_account = result.at("src_account").get<std::string>();
+      loader.in_type       = result.at("type").get<std::string>();
       
       // Convert arguments.
       std::vector<std::string> args;

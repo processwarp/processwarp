@@ -1,6 +1,7 @@
 
 #include <iostream>
 #include <llvm/AsmParser/Parser.h>
+#include <llvm/IRReader/IRReader.h>
 #include <llvm/Support/ManagedStatic.h>
 #include <llvm/Support/SourceMgr.h>
 #include <memory>
@@ -106,8 +107,8 @@ LlvmAsmLoader::~LlvmAsmLoader() {
   llvm::llvm_shutdown();
 }
   
-// LLVMのアセンブリファイルを読み込んで仮想マシンにロードする。
-void LlvmAsmLoader::load_file(const std::string& filename) {
+// LLVM-IRファイル(テキスト形式)を読み込んで仮想マシンにロードする。
+void LlvmAsmLoader::load_ir_file(const std::string& filename) {
 #if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR == 5
   llvm::SMDiagnostic error;
   llvm::Module* module = llvm::ParseAssemblyFile(filename, error, context);
@@ -119,6 +120,25 @@ void LlvmAsmLoader::load_file(const std::string& filename) {
   // for 3.6
   llvm::SMDiagnostic error;
   std::unique_ptr<llvm::Module> module = llvm::parseAssemblyFile(filename, error, context);
+  if (module == nullptr)
+    throw_error_message(Error::PARSE, error.getMessage().str() + "[" + filename + "]");
+  load_module(module.get());
+#endif
+}
+
+// LLVM-Bitcodeファイル(バイナリ形式)を読み込んで仮想マシンにロードする。
+void LlvmAsmLoader::load_bc_file(const std::string& filename) {
+#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR == 5
+  llvm::SMDiagnostic error;
+  llvm::Module* module = llvm::ParseIRFile(filename, error, context);
+  if (module == nullptr)
+    throw_error_message(Error::PARSE, error.getMessage().str() + "[" + filename + "]");
+  load_module(module);
+  
+#else
+  // for 3.6
+  llvm::SMDiagnostic error;
+  std::unique_ptr<llvm::Module> module = llvm::parseIRFile(filename, error, context);
   if (module == nullptr)
     throw_error_message(Error::PARSE, error.getMessage().str() + "[" + filename + "]");
   load_module(module.get());
