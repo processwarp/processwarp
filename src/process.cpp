@@ -1126,8 +1126,10 @@ bool Process::join_thread(vtid_t current, vtid_t target, vaddr_t retval) {
 
   if (target_thread.status == Thread::JOIN_WAIT) {
     // copy retval
-    proc_memory->set<vaddr_t>(retval, proc_memory->get<vaddr_t>
-			     (target_thread.get_stackinfo(0).stack));
+    if (retval != VADDR_NULL) {
+      proc_memory->set<vaddr_t>(retval, proc_memory->get<vaddr_t>
+				(target_thread.get_stackinfo(0).stack));
+    }
 
     target_thread.join_waiting = JOIN_WAIT_DETACHED;
     target_thread.status = Thread::FINISH;
