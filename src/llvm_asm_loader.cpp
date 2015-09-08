@@ -988,7 +988,7 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 	  const llvm::LoadInst& inst = static_cast<const llvm::LoadInst&>(*i);
 	  // set_type <ty>
 	  push_code(fc, Opcode::SET_TYPE,
-		    assign_type(fc, inst.getPointerOperand()->getType()));
+		    assign_type(fc, inst.getPointerOperand()->getType()->getPointerElementType()));
 	  // set_align <alignment>
 	  push_code(fc, Opcode::SET_ALIGN,
 		    inst.getAlignment());
