@@ -1059,6 +1059,7 @@ vtid_t Process::create_thread(vaddr_t func_addr, vaddr_t arg_addr) {
   vaddr_t func_stackaddr;
   if (func->normal_prop.stack_size != 0) {
     vaddr_t func_stack = proc_memory->alloc(func->normal_prop.stack_size);
+    thread.memory->set<vaddr_t>(func_stack, arg_addr);
     func_stackaddr =
       StackInfo::alloc(*thread.memory, func->addr, root_stack, 0, 0, func_stack);
 
