@@ -161,12 +161,10 @@ void SocketIo::connect(const std::string& url) {
   // Bind 'on' event to Socket.IO.
 #define M_BIND_SOCKETIO_EVENT(_name) {					\
     socket->on(_name,							\
-	       (sio::socket::event_listener_aux) [&]			\
-	       (std::string const& name, sio::message::ptr const& data,	\
-		bool isAck, sio::message::ptr& ack_resp) {		\
+	       [&](sio::event &) {                                      \
 		 print_debug("recv : %s\n", _name);			\
 		 std::lock_guard<std::mutex> guard(sio_mutex);		\
-		 sio_queue.push(make_pair(_name, data));		\
+		 sio_queue.push(make_pair(_name, event.get_message())); \
 	       });							\
   }
   
