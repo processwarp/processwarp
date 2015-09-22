@@ -1,7 +1,8 @@
 
 #include <cassert>
-#include <queue>
+#include <deque>
 #include <set>
+#include <string>
 
 #include "convert.hpp"
 #include "error.hpp"
@@ -9,32 +10,32 @@
 #include "util.hpp"
 #include "vmemory.hpp"
 
-using namespace processwarp;
+namespace processwarp {
 
 const vaddr_t VMemory::UPPER_MASKS[]  = {
-  0xFFFFFFFFFFFFFFFF, ///< Meta data
+  0xFFFFFFFFFFFFFFFF,  ///< Meta data
   0xFFFFFFFFFFFFFF00,
   0xFFFFFFFFFFFF0000,
   0xFFFFFFFFFF000000,
   0xFFFFFFFF00000000,
   0xFFFFFF0000000000,
   0xFFFF000000000000,
-  0x0000000000000000, // dummy
-  0x0000000000000000, // dummy
+  0x0000000000000000,  // dummy
+  0x0000000000000000,  // dummy
   0xFFFFFFFFFFFFFF00,
   0xFFFFFFFFFFFF0000,
   0xFFFFFFFFFF000000,
   0xFFFFFFFF00000000,
   0xFFFFFF0000000000,
   0xFFFF000000000000,
-  0xFFFFFFFFFFFFFFFF, // Function, Type
+  0xFFFFFFFFFFFFFFFF,  // Function, Type
 };
 
 // Constructor with device-id.
 VMemory::VMemory(VMemoryDelegate& delegate_, const dev_id_t& dev_id_) :
-  dev_id(dev_id_),
-  rnd(std::random_device()()),
-  delegate(delegate_) {
+    dev_id(dev_id_),
+    rnd(std::random_device()()),
+    delegate(delegate_) {
 }
 
 // Recv and decode data from other device.
@@ -52,10 +53,10 @@ void VMemory::recv_memory_data(const std::string& name, const std::string& data)
   std::string cmd = json.at("cmd").get<std::string>();
   if (cmd == "copy") {
     recv_copy(name, json);
-    
+
   } else if (cmd == "require") {
     recv_require(name, json);
-    
+
   } else if (cmd == "update") {
     recv_update(name, json);
 
@@ -64,9 +65,9 @@ void VMemory::recv_memory_data(const std::string& name, const std::string& data)
 
   } else if (cmd == "free") {
     recv_free(name, json);
-    
+
     /*
-  } else if (cmd == "release") {
+      } else if (cmd == "release") {
     */
   } else if (cmd == "stand") {
     recv_stand(name, json);
@@ -100,14 +101,14 @@ void VMemory::recv_copy(const std::string& name, picojson::object& json) {
   auto it_page = space.pages.find(addr);
   if (it_page == space.pages.end()) {
     if (value.size() == 0) return;
-    
+
     auto it_ri = space.requiring.find(addr);
     if (it_ri != space.requiring.end()) {
       std::set<dev_id_t> hint;
       hint.insert(src);
       space.pages.insert(std::make_pair
-			 (addr, Page(is_program(addr) ? PT_PROGRAM : PT_COPY,
-				     true, value, hint)));
+                         (addr, Page(is_program(addr) ? PT_PROGRAM : PT_COPY,
+                                     true, value, hint)));
       space.requiring.erase(it_ri);
     }
 
@@ -119,8 +120,8 @@ void VMemory::recv_copy(const std::string& name, picojson::object& json) {
 
     if (value.size() != 0) {
       if (page.size != value.size()) {
-	page.size = value.size();
-	page.value.reset(new uint8_t[page.size]);
+        page.size = value.size();
+        page.value.reset(new uint8_t[page.size]);
       }
       std::memcpy(page.value.get(), value.data(), page.size);
       page.flg_update = true;
@@ -153,32 +154,32 @@ void VMemory::recv_free(const std::string& name, picojson::object& json) {
   if (it_page == space.pages.end()) {
     /// @todo Relay bload cast when packet was not bload cast.
   }
-  
+
   Page& page = it_page->second;
-  switch(page.type) {
-  case PT_MASTER: {
-    if (page.master_count != 0) {
+  switch (page.type) {
+    case PT_MASTER: {
+      if (page.master_count != 0) {
+        /// @todo error
+        assert(false);
+      }
+      page.size = 0;
+      page.value.reset();
+      for (auto& to : page.hint) {
+        send_copy(to, space, page, addr);
+      }
+      space.release_addr(addr);
+      space.pages.erase(addr);
+    } break;
+
+    case PT_COPY: {
+      assert(page.hint.size() == 1);
+      send_free(*page.hint.begin(), space, addr);
+    } break;
+
+    default: {
       /// @todo error
       assert(false);
-    }
-    page.size = 0;
-    page.value.reset();
-    for (auto& to : page.hint) {
-      send_copy(to, space, page, addr);
-    }
-    space.release_addr(addr);
-    space.pages.erase(addr);
-  } break;
-
-  case PT_COPY: {
-    assert(page.hint.size() == 1);
-    send_free(*page.hint.begin(), space, addr);
-  } break;
-
-  default: {
-    /// TODO:error
-    assert(false);
-  } break;
+    } break;
   }
 }
 
@@ -189,7 +190,7 @@ void VMemory::recv_give(const std::string& name, picojson::object& json) {
   dev_id_t dst = Convert::json2devid(json.at("dst"));
   picojson::array js_hint = json.at("hint").get<picojson::array>();
   assert(addr == get_upper_addr(addr));
-  
+
   auto it_space = spaces.find(name);
   if (it_space == spaces.end()) {
     if (dst == dev_id) {
@@ -211,13 +212,13 @@ void VMemory::recv_give(const std::string& name, picojson::object& json) {
     for (auto& js_h : js_hint) {
       const dev_id_t& hint_dev = Convert::json2devid(js_h);
       if (hint_dev != dev_id) {
-	hint.insert(hint_dev);
+        hint.insert(hint_dev);
       }
     }
     if (src != DEV_SERVER) {
       hint.insert(src);
     }
-    
+
     if (it_page == space.pages.end()) {
       space.pages.insert(std::make_pair(addr, Page(PT_MASTER, true, value, hint)));
 
@@ -230,13 +231,13 @@ void VMemory::recv_give(const std::string& name, picojson::object& json) {
       page.type = PT_MASTER;
       page.flg_update = true;
       if (page.size != value.size()) {
-	page.size = value.size();
-	page.value.reset(new uint8_t[page.size]);
+        page.size = value.size();
+        page.value.reset(new uint8_t[page.size]);
       }
       std::memcpy(page.value.get(), value.data(), page.size);
       page.hint = hint;
     }
-    
+
     auto it_ri = space.requiring.find(addr);
     if (it_ri != space.requiring.end()) {
       space.requiring.erase(it_ri);
@@ -292,11 +293,11 @@ void VMemory::recv_require(const std::string& name, picojson::object& json) {
     }
     return;
   }
-  
+
   Page& page = it_page->second;
   if (page.type == PT_MASTER) {
     page.hint.insert(src);
-    
+
   } else if (page.type == PT_COPY) {
     picojson::object packet;
 
@@ -347,7 +348,7 @@ void VMemory::recv_stand(const std::string& name, picojson::object& json) {
   if (page.type == PT_MASTER && page.master_count == 0) {
     assert(page.flg_update == true);
     send_give(space, page, addr, src_device);
-    
+
     page.type = PT_COPY;
     page.hint.clear();
     page.hint.insert(src_device);
@@ -362,7 +363,7 @@ void VMemory::recv_update(const std::string& name, picojson::object& json) {
 
   auto it_space = spaces.find(name);
   if (it_space == spaces.end()) {
-    // @todo relay
+    /// @todo relay
     assert(false);
     return;
   }
@@ -370,7 +371,7 @@ void VMemory::recv_update(const std::string& name, picojson::object& json) {
   Space& space = *it_space->second;
   auto it_page = space.pages.find(get_upper_addr(addr));
   if (it_page == space.pages.end()) {
-    // @todo relay
+    /// @todo relay
     assert(false);
     return;
   }
@@ -378,7 +379,7 @@ void VMemory::recv_update(const std::string& name, picojson::object& json) {
   Page& page = it_page->second;
   if (page.type == PT_MASTER) {
     if (page.size < get_lower_addr(addr) + value.size()) {
-      // @toto error
+      /// @toto error
       assert(false);
       return;
     }
@@ -387,17 +388,17 @@ void VMemory::recv_update(const std::string& name, picojson::object& json) {
 
   } else if (page.type == PT_COPY) {
     send_update(*page.hint.begin(), space, addr,
-		reinterpret_cast<const uint8_t*>(value.data()), value.size());
-    
+                reinterpret_cast<const uint8_t*>(value.data()), value.size());
+
   } else {
-    // @todo error
+    /// @todo error
     assert(false);
   }
 }
 
 std::unique_ptr<VMemory::Accessor> VMemory::get_accessor(const std::string& name) {
   Space& space = get_space(name);
-  
+
   return std::unique_ptr<VMemory::Accessor>(new Accessor(*this, space));
 }
 
@@ -405,7 +406,7 @@ std::unique_ptr<VMemory::Accessor> VMemory::get_accessor(const std::string& name
 VMemory::Space& VMemory::get_space(const std::string& name) {
   if (spaces.find(name) == spaces.end()) {
     spaces.insert(std::make_pair(name, std::unique_ptr<Space>
-				 (new Space(name, rnd, *this))));
+                                 (new Space(name, rnd, *this))));
   }
 
   return *spaces.at(name);
@@ -420,7 +421,7 @@ void VMemory::set_loading(const std::string& name, bool flg) {
 
 // Send packet.
 void VMemory::send_packet(const std::string& name, const dev_id_t& dev_id,
-			  const std::string& cmd, picojson::object& data) {
+                          const std::string& cmd, picojson::object& data) {
   assert(dev_id != this->dev_id);
   data.insert(std::make_pair("cmd", picojson::value(cmd)));
   data.insert(std::make_pair("src", Convert::devid2json(this->dev_id)));
@@ -434,7 +435,7 @@ void VMemory::send_copy(const dev_id_t& dev_id, Space& space, Page& page, vaddr_
   assert(dev_id != this->dev_id);
   assert(get_upper_addr(addr) == addr);
   picojson::object packet;
-  
+
   packet.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
   packet.insert(std::make_pair("value", Convert::bin2json(page.value.get(), page.size)));
 
@@ -464,7 +465,7 @@ void VMemory::send_give(Space& space, Page& page, vaddr_t addr, const dev_id_t& 
     hint.push_back(Convert::devid2json(h));
   }
   packet.insert(std::make_pair("hint", picojson::value(hint)));
-  
+
   send_packet(space.name, dst, "give", packet);
 }
 
@@ -513,7 +514,7 @@ void VMemory::send_stand(Space& space, Page& page, vaddr_t addr) {
   picojson::object packet;
 
   packet.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
-  
+
   send_packet(space.name, *page.hint.begin(), "stand", packet);
 }
 
@@ -526,7 +527,7 @@ void VMemory::send_unwant(const std::string name, const dev_id_t& dev_id, vaddr_
 
 // Send update packet.
 void VMemory::send_update(const dev_id_t& dev_id, Space& space, vaddr_t addr,
-			  const uint8_t* data, uint64_t size) {
+                          const uint8_t* data, uint64_t size) {
   picojson::object packet;
   packet.insert(std::make_pair("value", Convert::bin2json(data, size)));
   packet.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
@@ -535,29 +536,29 @@ void VMemory::send_update(const dev_id_t& dev_id, Space& space, vaddr_t addr,
 
 // Constructor with memory space.
 VMemory::Accessor::Accessor(VMemory& vmemory_, Space& space_) :
-  vmemory(vmemory_),
-  space(space_) {
+    vmemory(vmemory_),
+    space(space_) {
 }
 
 // Get master device-id for target address.
 const dev_id_t& VMemory::Accessor::get_master(vaddr_t addr) {
   Page& page = get_page(addr, false);
 
-  switch(page.type) {
-  case PT_MASTER: {
-    return vmemory.dev_id;
-  } break;
+  switch (page.type) {
+    case PT_MASTER: {
+      return vmemory.dev_id;
+    } break;
 
-  case PT_COPY: {
-    assert(page.hint.size() == 1);
-    return *page.hint.begin();
-  } break;
+    case PT_COPY: {
+      assert(page.hint.size() == 1);
+      return *page.hint.begin();
+    } break;
 
-  default: {
-    /// @todo error
-    assert(false);
-    return DEV_BROADCAST;
-  } break;
+    default: {
+      /// @todo error
+      assert(false);
+      return DEV_BROADCAST;
+    } break;
   }
 }
 
@@ -565,24 +566,24 @@ VMemory::Accessor::MasterKey VMemory::Accessor::keep_master(vaddr_t addr) {
   addr = get_upper_addr(addr);
   Page& page = get_page(addr, true);
 
-  switch(page.type) {
-  case PT_MASTER: {
-    page.master_count ++;
-    return MasterKey(&page.master_count, [](int* master_count){
-	(*master_count) --;
-      });
-  } break;
+  switch (page.type) {
+    case PT_MASTER: {
+      page.master_count++;
+      return MasterKey(&page.master_count, [](int* master_count){
+          (*master_count)--;
+        });
+    } break;
 
-  case PT_COPY: {
-    vmemory.send_stand(space, page, addr);
-    throw InterruptMemoryRequire(addr);
-  } break;
+    case PT_COPY: {
+      vmemory.send_stand(space, page, addr);
+      throw InterruptMemoryRequire(addr);
+    } break;
 
-  default: {
-    /// @todo error
-    assert(false);
-    return MasterKey(nullptr);
-  } break;
+    default: {
+      /// @todo error
+      assert(false);
+      return MasterKey(nullptr);
+    } break;
   }
 }
 
@@ -593,19 +594,19 @@ vaddr_t VMemory::Accessor::set_meta_area(const std::string& data, vaddr_t addr) 
   }
   assert(space.pages.find(addr) == space.pages.end());
   space.pages.insert(std::make_pair(addr, Page(PT_MASTER, true, data,
-					       std::set<dev_id_t>())));
-  
+                                               std::set<dev_id_t>())));
+
   return addr;
 }
 
 vaddr_t VMemory::Accessor::set_meta_area(const std::string& data, vaddr_t addr,
-					 const dev_id_t& master) {
+                                         const dev_id_t& master) {
   assert(addr != VADDR_NULL);
   assert(space.pages.find(addr) == space.pages.end());
   std::set<dev_id_t> hint;
   hint.insert(master);
   space.pages.insert(std::make_pair(addr, Page(PT_COPY, true, data, hint)));
-  
+
   return addr;
 }
 
@@ -624,30 +625,30 @@ void VMemory::Accessor::update_meta_area(vaddr_t addr, const std::string& data) 
 
   if (page.size == data.size() &&
       std::memcmp(page.value.get(), data.data(), page.size) == 0) return;
-  
-  switch(page.type) {
-  case PT_MASTER: {
-    if (page.size != data.size()) {
-      page.size = data.size();
-      page.value.reset(new uint8_t[page.size]);
-    }
-    std::memcpy(page.value.get(), data.data(), page.size);
-    for (auto& it_hint : page.hint) {
-      vmemory.send_copy(it_hint, space, page, addr);
-    }
-  } break;
 
-  case PT_COPY: {
-    assert(page.hint.size() == 1);
-    page.flg_update = false;
-    vmemory.send_update(*page.hint.begin(), space, addr,
-			reinterpret_cast<const uint8_t*>(data.data()), data.size());
-  } break;
+  switch (page.type) {
+    case PT_MASTER: {
+      if (page.size != data.size()) {
+        page.size = data.size();
+        page.value.reset(new uint8_t[page.size]);
+      }
+      std::memcpy(page.value.get(), data.data(), page.size);
+      for (auto& it_hint : page.hint) {
+        vmemory.send_copy(it_hint, space, page, addr);
+      }
+    } break;
 
-  default: {
-    /// @todo:error
-    assert(false);
-  } break;
+    case PT_COPY: {
+      assert(page.hint.size() == 1);
+      page.flg_update = false;
+      vmemory.send_update(*page.hint.begin(), space, addr,
+                          reinterpret_cast<const uint8_t*>(data.data()), data.size());
+    } break;
+
+    default: {
+      /// @todo:error
+      assert(false);
+    } break;
   }
 }
 
@@ -658,7 +659,7 @@ vaddr_t VMemory::Accessor::alloc(uint64_t size) {
   vaddr_t addr = space.assign_addr(get_addr_type(size));
 
   Page& page = space.pages.insert
-    (std::make_pair(addr, Page(PT_MASTER, true, std::set<dev_id_t>()))).first->second;
+               (std::make_pair(addr, Page(PT_MASTER, true, std::set<dev_id_t>()))).first->second;
   page.size = size;
   page.value.reset(new uint8_t[size]);
 
@@ -670,32 +671,32 @@ void VMemory::Accessor::free(vaddr_t addr) {
   if (addr == VADDR_NULL) return;
 
   if (addr != get_upper_addr(addr)) {
-    /// TODO:error
+    /// @todo error
     assert(false);
   }
 
   Page& page = get_page(addr, false);
-  switch(page.type) {
-  case PT_MASTER: {
-    assert(page.master_count == 0 && raw_writable.find(addr) == raw_writable.end());
-    page.size = 0;
-    page.value.reset();
-    for (auto& to : page.hint) {
-      vmemory.send_copy(to, space, page, addr);
-    }
-    space.release_addr(addr);
-    space.pages.erase(addr);
-  } break;
+  switch (page.type) {
+    case PT_MASTER: {
+      assert(page.master_count == 0 && raw_writable.find(addr) == raw_writable.end());
+      page.size = 0;
+      page.value.reset();
+      for (auto& to : page.hint) {
+        vmemory.send_copy(to, space, page, addr);
+      }
+      space.release_addr(addr);
+      space.pages.erase(addr);
+    } break;
 
-  case PT_COPY: {
-    assert(page.hint.size() == 1);
-    vmemory.send_free(*page.hint.begin(), space, addr);
-  } break;
+    case PT_COPY: {
+      assert(page.hint.size() == 1);
+      vmemory.send_free(*page.hint.begin(), space, addr);
+    } break;
 
-  default: {
-    /// TODO:error
-    assert(false);
-  } break;
+    default: {
+      /// @todo error
+      assert(false);
+    } break;
   }
 }
 
@@ -703,66 +704,66 @@ void VMemory::Accessor::free(vaddr_t addr) {
 vaddr_t VMemory::Accessor::realloc(vaddr_t addr, uint64_t size) {
   if (addr == VADDR_NULL) return this->alloc(size);
   if (addr != get_upper_addr(addr)) {
-    /// TODO:error
+    /// @todo error
     assert(false);
   }
   if (size == 0) size = 1;
 
   Page& page = get_page(addr, false);
-  switch(page.type) {
-  case PT_MASTER: {
-    AddrType old_type = static_cast<AddrType>(addr & AD_MASK);
-    AddrType new_type = get_addr_type(size);
-    if (old_type == new_type) {
-      std::unique_ptr<uint8_t[]> tmp(new uint8_t[size]);
-      if (page.size < size) {
-	std::memcpy(tmp.get(), page.value.get(), page.size);
-	std::memset(tmp.get() + page.size, 0, size - page.size);
-	
-      } else {
-	std::memcpy(tmp.get(), page.value.get(), size);
-      }
-      page.size = size;
-      page.value.swap(tmp);
+  switch (page.type) {
+    case PT_MASTER: {
+      AddrType old_type = static_cast<AddrType>(addr & AD_MASK);
+      AddrType new_type = get_addr_type(size);
+      if (old_type == new_type) {
+        std::unique_ptr<uint8_t[]> tmp(new uint8_t[size]);
+        if (page.size < size) {
+          std::memcpy(tmp.get(), page.value.get(), page.size);
+          std::memset(tmp.get() + page.size, 0, size - page.size);
 
-      for (auto& to : page.hint) {
-	vmemory.send_copy(to, space, page, addr);
-      }
-      return addr;
-      
-    } else {
-      vaddr_t new_addr = space.assign_addr(get_addr_type(size));
-      
-      Page& new_page =
-	space.pages.insert(std::make_pair(new_addr, Page(PT_MASTER, true, page.hint))).
-	first->second;
-      new_page.value.reset(new uint8_t[size]);
-      if (page.size < size) {
-	std::memcpy(new_page.value.get(), page.value.get(), page.size);
-	std::memset(new_page.value.get() + page.size, 0, size - page.size);
+        } else {
+          std::memcpy(tmp.get(), page.value.get(), size);
+        }
+        page.size = size;
+        page.value.swap(tmp);
+
+        for (auto& to : page.hint) {
+          vmemory.send_copy(to, space, page, addr);
+        }
+        return addr;
 
       } else {
-	std::memcpy(new_page.value.get(), page.value.get(), size);
+        vaddr_t new_addr = space.assign_addr(get_addr_type(size));
+
+        Page& new_page =
+            space.pages.insert(std::make_pair(new_addr, Page(PT_MASTER, true, page.hint))).
+            first->second;
+        new_page.value.reset(new uint8_t[size]);
+        if (page.size < size) {
+          std::memcpy(new_page.value.get(), page.value.get(), page.size);
+          std::memset(new_page.value.get() + page.size, 0, size - page.size);
+
+        } else {
+          std::memcpy(new_page.value.get(), page.value.get(), size);
+        }
+        new_page.size = size;
+
+        this->free(addr);
+
+        return new_addr;
       }
-      new_page.size = size;
+    } break;
 
-      this->free(addr);
+    case PT_COPY: {
+      assert(page.hint.size() == 1);
+      vmemory.send_stand(space, page, addr);
+      throw InterruptMemoryRequire(addr);
+    } break;
 
-      return new_addr;
-    }
-  } break;
-
-  case PT_COPY: {
-    assert(page.hint.size() == 1);
-    vmemory.send_stand(space, page, addr);
-    throw InterruptMemoryRequire(addr);
-  } break;
-
-  default: {
-    /// TODO:error
-    assert(false);
-    return VADDR_NULL;
-  } break;
+    default: {
+      /// @todo error
+      assert(false);
+      return VADDR_NULL;
+    } break;
   }
 }
 
@@ -772,7 +773,7 @@ vaddr_t VMemory::Accessor::reserve_program_area() {
 
   do {
     new_addr = AD_PROGRAM | (~AD_MASK & space.rnd());
-  } while(space.pages.find(new_addr) != space.pages.end());
+  } while (space.pages.find(new_addr) != space.pages.end());
 
   space.pages.insert(std::make_pair(new_addr, Page(PT_PROGRAM, true, std::set<dev_id_t>())));
 
@@ -785,7 +786,7 @@ void VMemory::Accessor::set_program_area(vaddr_t addr, const std::string& data) 
   auto it_page = space.pages.find(addr);
   if (it_page == space.pages.end()) {
     space.pages.insert(std::make_pair(addr, Page(PT_PROGRAM, true, data,
-						 std::set<dev_id_t>())));
+                                                 std::set<dev_id_t>())));
 
   } else {
     Page& page = it_page->second;
@@ -799,7 +800,7 @@ void VMemory::Accessor::set_program_area(vaddr_t addr, const std::string& data) 
 // Get program data.
 std::string VMemory::Accessor::get_program_area(vaddr_t addr) {
   Page& page = get_page(addr, true);
-  
+
   return std::string(reinterpret_cast<const char*>(page.value.get()), page.size);
 }
 
@@ -809,57 +810,57 @@ void VMemory::Accessor::write_out() {
 
   while (it != raw_writable.end()) {
     Page& page = get_page(it->first, false);
-    switch(page.type) {
-    case PT_MASTER: {
-      page.value.swap(it->second);
-      for(auto& it_hint : page.hint) {
-	vmemory.send_copy(it_hint, space, page, it->first);
-      }
-    } break;
+    switch (page.type) {
+      case PT_MASTER: {
+        page.value.swap(it->second);
+        for (auto& it_hint : page.hint) {
+          vmemory.send_copy(it_hint, space, page, it->first);
+        }
+      } break;
 
-    case PT_COPY: {
-      assert(page.hint.size() == 1);
-      page.flg_update = false;
-      vmemory.send_update(*page.hint.begin(), space, it->first, it->second.get(), page.size);
-    } break;
+      case PT_COPY: {
+        assert(page.hint.size() == 1);
+        page.flg_update = false;
+        vmemory.send_update(*page.hint.begin(), space, it->first, it->second.get(), page.size);
+      } break;
 
-    default: {
-      /// TODO:error
-      assert(false);
-    } break;
+      default: {
+        /// @todo error
+        assert(false);
+      } break;
     }
-    
+
     it = raw_writable.erase(it);
   }
 }
 
 // Constructor with value by string.
 VMemory::Page::Page(PageType type_, bool flg_update_,
-		    const std::string& value_str, const std::set<dev_id_t>& hint_) :
-  type(type_),
-  flg_update(flg_update_),
-  value(new uint8_t[value_str.size()]),
-  size(value_str.size()),
-  hint(hint_),
-  master_count(0) {
+                    const std::string& value_str, const std::set<dev_id_t>& hint_) :
+    type(type_),
+    flg_update(flg_update_),
+    value(new uint8_t[value_str.size()]),
+    size(value_str.size()),
+    hint(hint_),
+    master_count(0) {
   std::memcpy(value.get(), value_str.data(), size);
 }
 
 // Constructor without initialize value.
 VMemory::Page::Page(PageType type_, bool flg_update_, const std::set<dev_id_t>& hint_) :
-  type(type_),
-  flg_update(flg_update_),
-  size(0),
-  hint(hint_),
-  master_count(0) {
+    type(type_),
+    flg_update(flg_update_),
+    size(0),
+    hint(hint_),
+    master_count(0) {
 }
 
 // Constructor with name and random.
 VMemory::Space::Space(const std::string& name_, std::mt19937_64& rnd_, VMemory& vmemory_) :
-  name(name_),
-  rnd(rnd_),
-  vmemory(vmemory_),
-  is_loading(false) {
+    name(name_),
+    rnd(rnd_),
+    vmemory(vmemory_),
+    is_loading(false) {
 }
 
 // Get a new address to allocate a new memory.
@@ -873,35 +874,35 @@ vaddr_t VMemory::Space::assign_addr(AddrType type) {
     for (auto& it : reserved_que) {
       reserved_set.insert(it);
     }
-    
+
     for (unsigned int retry = 0;
-	 reserved_que.size() + new_reserve.size() < VMEMORY_RESERVE_BASE &&
-	   retry < VMEMORY_RESERVE_BASE * 2; retry ++) {
+         reserved_que.size() + new_reserve.size() < VMEMORY_RESERVE_BASE &&
+                              retry < VMEMORY_RESERVE_BASE * 2; retry ++) {
       vaddr_t new_addr = get_upper_addr(type | (~AD_MASK & rnd()));
 
       if (type == AD_META && new_addr <= 0xFF) {
-	continue;
+        continue;
       }
-      
+
       if (pages.find(new_addr) == pages.end() &&
-	  new_reserve.find(new_addr) == new_reserve.end() &&
-	  reserved_set.find(new_addr) == reserved_set.end()) {
-	new_reserve.insert(new_addr);
+          new_reserve.find(new_addr) == new_reserve.end() &&
+          reserved_set.find(new_addr) == reserved_set.end()) {
+        new_reserve.insert(new_addr);
       }
     }
-    
+
     if (is_loading) {
       for (auto& it : new_reserve) {
-	reserved_que.push_back(it);
+        reserved_que.push_back(it);
       }
 
     } else {
       vmemory.send_reserve(*this, new_reserve);
       finally.add([&]() {
-	  for (auto& it : new_reserve) {
-	    reserved_que.push_back(it);
-	  }
-	});
+          for (auto& it : new_reserve) {
+            reserved_que.push_back(it);
+          }
+        });
     }
   }
 
@@ -921,7 +922,7 @@ void VMemory::Space::release_addr(vaddr_t addr) {
 
   if (reserved_que.size() > VMEMORY_RESERVE_MAX) {
     std::set<vaddr_t> release_set;
-    
+
     while (reserved_que.size() > VMEMORY_RESERVE_BASE) {
       release_set.insert(reserved_que.back());
       reserved_que.pop_back();
@@ -930,3 +931,4 @@ void VMemory::Space::release_addr(vaddr_t addr) {
     vmemory.send_release(*this, release_set);
   }
 }
+}  // namespace processwarp

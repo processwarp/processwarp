@@ -1,13 +1,15 @@
 
 #include <map>
 #include <memory>
+#include <string>
+#include <vector>
 
 #include "convert.hpp"
 #include "error.hpp"
 #include "socketio.hpp"
 #include "util.hpp"
 
-using namespace processwarp;
+namespace processwarp {
 
 /**
  * Get string value by key from Socket.IO map.
@@ -28,10 +30,10 @@ std::string get_str_by_map(sio::message::ptr data, std::string key, bool is_must
     sio::message::ptr ptr = data->get_map().at(key);
     if (ptr.get() == nullptr) {
       if (is_must) {
-	throw_error_message(Error::PROTOCOL, key);
+        throw_error_message(Error::PROTOCOL, key);
 
       } else {
-	return "";
+        return "";
       }
     } else {
       return data->get_map().at(key)->get_string();
@@ -126,7 +128,7 @@ sio::message::ptr get_sio_by_dev_id(dev_id_t dev_id) {
 
 // Constractor with delegate.
 SocketIo::SocketIo(SocketIoDelegate& _delegate) :
-  delegate(_delegate) {
+    delegate(_delegate) {
 }
 
 // Destructor with close Socket.IO.
@@ -150,7 +152,7 @@ void SocketIo::connect(const std::string& url) {
       sio_cond.wait(sio_mutex);
     }
   }
-  
+
   if (sio_status == CONNECT) {
     socket = client.socket();
 
@@ -159,15 +161,15 @@ void SocketIo::connect(const std::string& url) {
   }
 
   // Bind 'on' event to Socket.IO.
-#define M_BIND_SOCKETIO_EVENT(_name) {					\
-    socket->on(_name,							\
-	       [&](sio::event& event) {                                 \
-		 print_debug("recv : %s\n", _name);			\
-		 std::lock_guard<std::mutex> guard(sio_mutex);		\
-		 sio_queue.push(make_pair(_name, event.get_message())); \
-	       });							\
+#define M_BIND_SOCKETIO_EVENT(_name) {                                  \
+    socket->on(_name,                                                   \
+               [&](sio::event& event) {                                 \
+                 print_debug("recv : %s\n", _name);                     \
+                 std::lock_guard<std::mutex> guard(sio_mutex);          \
+                 sio_queue.push(make_pair(_name, event.get_message())); \
+               });                                                      \
   }
-  
+
   M_BIND_SOCKETIO_EVENT("sys_error");
   M_BIND_SOCKETIO_EVENT("app_error");
   M_BIND_SOCKETIO_EVENT("login");
@@ -202,18 +204,18 @@ void SocketIo::pool() {
     } else if (name == "app_error") {
       //
       delegate.recv_app_error(data->get_map().at("code")->get_int());
-      
+
     } else if (name == "login") {
       //
       delegate.recv_login(data->get_map().at("result")->get_int());
-      
+
     } else if (name == "list_device") {
       //
       std::map<dev_id_t, std::string> devices;
 
       for (auto it : data->get_map().at("devices")->get_vector()) {
-	devices.insert(std::make_pair(get_dev_id_by_map(it, "id"),
-				      it->get_map().at("name")->get_string()));
+        devices.insert(std::make_pair(get_dev_id_by_map(it, "id"),
+                                      it->get_map().at("name")->get_string()));
       }
 
       delegate.recv_list_device(data->get_map().at("result")->get_int(), devices);
@@ -221,46 +223,45 @@ void SocketIo::pool() {
     } else if (name == "bind_device") {
       //
       delegate.recv_bind_device(data->get_map().at("result")->get_int(),
-				get_dev_id_by_map(data, "id"));
+                                get_dev_id_by_map(data, "id"));
 
     } else if (name == "sync_proc_list") {
       std::vector<ProcessTree> procs;
 
       for (auto& it_proc : data->get_vector()) {
-	ProcessTree proc;
-	
-	proc.pid  = get_pid_by_map(it_proc, "pid");
-	proc.name = get_str_by_map(it_proc, "name");
+        ProcessTree proc;
 
-	auto& threads = it_proc->get_map().at("threads")->get_map();
-	for (auto& it_thread : threads) {
-	  proc.threads.insert(std::make_pair
-			      (Convert::str2vtid(it_thread.first),
-			       Convert::str2devid(it_thread.second->get_string())));
-	}
-	procs.push_back(proc);
-	
+        proc.pid  = get_pid_by_map(it_proc, "pid");
+        proc.name = get_str_by_map(it_proc, "name");
+
+        auto& threads = it_proc->get_map().at("threads")->get_map();
+        for (auto& it_thread : threads) {
+          proc.threads.insert(std::make_pair
+                              (Convert::str2vtid(it_thread.first),
+                               Convert::str2devid(it_thread.second->get_string())));
+        }
+        procs.push_back(proc);
       }
       delegate.recv_sync_proc_list(procs);
 
     } else if (name == "machine_data") {
       delegate.recv_machine_data(get_pid_by_map(data, "pid"),
-				 get_dev_id_by_map(data, "src"),
-				 get_dev_id_by_map(data, "dst"),
-				 get_str_by_map(data, "data"));
-      
+                                 get_dev_id_by_map(data, "src"),
+                                 get_dev_id_by_map(data, "dst"),
+                                 get_str_by_map(data, "data"));
+
     } else if (name == "memory_data") {
       delegate.recv_memory_data(get_str_by_map(data, "name"),
-				get_dev_id_by_map(data, "src"),
-				get_dev_id_by_map(data, "dst"),
-				get_str_by_map(data, "data"));
+                                get_dev_id_by_map(data, "src"),
+                                get_dev_id_by_map(data, "dst"),
+                                get_str_by_map(data, "data"));
 
     } else if (name == "test_console") {
 #ifndef NDEBUG
       delegate.recv_test_console(get_pid_by_map(data, "pid"),
-				 get_str_by_map(data, "dev"),
-				 *data->get_map().at("payload")->get_binary(),
-				 get_dev_id_by_map(data, "from_device_id"));
+                                 get_str_by_map(data, "dev"),
+                                 *data->get_map().at("payload")->get_binary(),
+                                 get_dev_id_by_map(data, "from_device_id"));
 #endif
 
     } else {
@@ -271,35 +272,35 @@ void SocketIo::pool() {
 
 // Send load llvm command.
 void SocketIo::send_load_llvm(const std::string& name,
-			      const std::string& file,
-			      const std::vector<std::string>& args,
-			      const dev_id_t& dst_device_id) {
+                              const std::string& file,
+                              const std::vector<std::string>& args,
+                              const dev_id_t& dst_device_id) {
   sio::message::ptr data(sio::object_message::create());
   sio::message::ptr args_ptr(sio::array_message::create());
   std::map<std::string, sio::message::ptr>& map = data->get_map();
   std::vector<sio::message::ptr>& args_vtr = args_ptr->get_vector();
-  
+
   map.insert(std::make_pair("name", sio::string_message::create(name)));
   map.insert(std::make_pair("file", sio::binary_message::create
-			    (std::shared_ptr<const std::string>(new std::string(file)))));
+                            (std::shared_ptr<const std::string>(new std::string(file)))));
   for (auto& arg : args) {
     args_vtr.push_back(sio::string_message::create(arg));
   }
   map.insert(std::make_pair("args", args_ptr));
   map.insert(std::make_pair("dst_device_id", get_sio_by_dev_id(dst_device_id)));
-  
+
   socket->emit("load_llvm", data);
 }
 
 // Send login command.
 void SocketIo::send_login(const std::string& account,
-			  const std::string& password) {
+                          const std::string& password) {
   sio::message::ptr data(sio::object_message::create());
   std::map<std::string, sio::message::ptr>& map = data->get_map();
-  
+
   map.insert(std::make_pair("account",  sio::string_message::create(account)));
   map.insert(std::make_pair("password", sio::string_message::create(password)));
-  
+
   socket->emit("login", data);
 }
 
@@ -309,11 +310,10 @@ void SocketIo::send_list_device() {
 
   socket->emit("list_device", data);
 }
-    
 
 // Send device bind command.
 void SocketIo::send_bind_device(const dev_id_t& id,
-				const std::string& name) {
+                                const std::string& name) {
   sio::message::ptr data(sio::object_message::create());
   std::map<std::string, sio::message::ptr>& map = data->get_map();
 
@@ -342,19 +342,19 @@ void SocketIo::send_sync_proc_list(const std::vector<ProcessTree>& procs) {
 
     for (auto& it_thread : it_proc.threads) {
       threads_map.insert(std::make_pair(Convert::vtid2str(it_thread.first),
-					get_sio_by_dev_id(it_thread.second)));
+                                        get_sio_by_dev_id(it_thread.second)));
     }
 
     procs_vector.push_back(sio_proc);
   }
-  
+
   socket->emit("sync_proc_list", sio_procs);
 }
 
 // Send virtual-machine data packet.
 void SocketIo::send_machine_data(const vpid_t& pid,
-				 const dev_id_t& dst,
-				 const std::string& data) {
+                                 const dev_id_t& dst,
+                                 const std::string& data) {
   sio::message::ptr sio_data(sio::object_message::create());
   std::map<std::string, sio::message::ptr>& map = sio_data->get_map();
 
@@ -367,11 +367,11 @@ void SocketIo::send_machine_data(const vpid_t& pid,
 
 // Send virtual-memory data packet.
 void SocketIo::send_memory_data(const std::string& name,
-				const dev_id_t& dst,
-				const std::string& data) {
+                                const dev_id_t& dst,
+                                const std::string& data) {
   sio::message::ptr sio_data(sio::object_message::create());
   std::map<std::string, sio::message::ptr>& map = sio_data->get_map();
-  
+
   map.insert(std::make_pair("name", get_sio_by_str(name)));
   map.insert(std::make_pair("dst", get_sio_by_dev_id(dst)));
   map.insert(std::make_pair("data", get_sio_by_str(data)));
@@ -381,17 +381,17 @@ void SocketIo::send_memory_data(const std::string& name,
 
 // Send console for test.
 void SocketIo::send_test_console(const vpid_t& pid,
-				 const std::string& dev,
-				 const std::string& payload) {
+                                 const std::string& dev,
+                                 const std::string& payload) {
 #ifndef NDEBUG
   sio::message::ptr data(sio::object_message::create());
   std::map<std::string, sio::message::ptr>& map = data->get_map();
-  
+
   map.insert(std::make_pair("pid", get_sio_by_pid(pid)));
   map.insert(std::make_pair("dev", sio::string_message::create(dev)));
   map.insert(std::make_pair("payload", sio::binary_message::create
-			    (std::shared_ptr<const std::string>(new std::string(payload)))));
-  
+                            (std::shared_ptr<const std::string>(new std::string(payload)))));
+
   socket->emit("test_console", data);
 #endif
 }
@@ -416,3 +416,4 @@ void SocketIo::on_open() {
   sio_cond.notify_all();
   sio_status = CONNECT;
 }
+}  // namespace processwarp

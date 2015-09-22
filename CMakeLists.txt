@@ -10,6 +10,16 @@ elseif(NOT (${CMAKE_BUILD_TYPE} STREQUAL "Release" OR ${CMAKE_BUILD_TYPE} STREQU
   return()
 endif()
 
+# Check for Google Coding Style.
+add_custom_target(cpplint
+  python
+  `which cpplint.py`
+  --extensions=cpp,h,hpp
+  --linelength=100
+  --filter=-legal/copyright,-runtime/references,-build/c++11,-build/include_what_you_use
+  ${PROJECT_SOURCE_DIR}/src/*.{cpp,h,hpp}
+  )
+
 # include_directories(include)
 
 add_subdirectory(src)

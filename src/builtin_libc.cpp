@@ -2,6 +2,7 @@
 #include <cassert>
 #include <cinttypes>
 #include <cstring>
+#include <vector>
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -11,11 +12,33 @@
 #include "builtin_libc.hpp"
 #include "process.hpp"
 
-using namespace processwarp;
+namespace processwarp {
+
+inline int64_t get_psize(int64_t size, std::vector<uint8_t>& src, int* seek) {
+  switch (size) {
+#define M_CASE_SIZE(BITS, CONTAINER)                                    \
+    case (BITS): {                                                      \
+      CONTAINER size_tmp = Process::read_builtin_param_i##BITS(src, seek); \
+      return static_cast<int64_t>(size_tmp);                            \
+    } break;
+
+    M_CASE_SIZE(8,  uint8_t);
+    M_CASE_SIZE(16, uint16_t);
+    M_CASE_SIZE(32, uint32_t);
+    M_CASE_SIZE(64, uint64_t);
+#undef M_CASE_SIZE
+
+    default: {
+      assert(false);
+      return 0;
+    } break;
+  }
+}
 
 // atexit関数。
-BuiltinPost BuiltinLibc::atexit(Process& proc, Thread& thread, BuiltinFuncParam p,
-				vaddr_t dst, std::vector<uint8_t>& src) {
+BuiltinPost BuiltinLibc::atexit(Process& proc, Thread& thread,
+                                BuiltinFuncParam p, vaddr_t dst,
+                                std::vector<uint8_t>& src) {
   int seek = 0;
   // コピー先アドレスを取得
   vaddr_t func = Process::read_builtin_param_ptr(src, &seek);
@@ -30,8 +53,9 @@ BuiltinPost BuiltinLibc::atexit(Process& proc, Thread& thread, BuiltinFuncParam 
 }
 
 // calloc関数。データ領域の確保とクリアを行う。
-BuiltinPost BuiltinLibc::calloc(Process& proc, Thread& thread, BuiltinFuncParam p,
-				vaddr_t dst, std::vector<uint8_t>& src) {
+BuiltinPost BuiltinLibc::calloc(Process& proc, Thread& thread,
+                                BuiltinFuncParam p, vaddr_t dst,
+                                std::vector<uint8_t>& src) {
   int seek = 0;
   uint64_t count = Process::read_builtin_param_size(src, &seek);
   uint64_t size = Process::read_builtin_param_size(src, &seek);
@@ -47,15 +71,15 @@ BuiltinPost BuiltinLibc::calloc(Process& proc, Thread& thread, BuiltinFuncParam 
 
 // exit関数。
 BuiltinPost BuiltinLibc::exit(Process& proc, Thread& thread, BuiltinFuncParam p,
-			      vaddr_t dst, std::vector<uint8_t>& src) {
+                              vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
   // コピー先アドレスを取得
-  vm_int_t ret = static_cast<vm_int_t>(Process::read_builtin_param_i(src, &seek));
+  vm_uint_t ret = Process::read_builtin_param_i(src, &seek);
   assert(static_cast<signed>(src.size()) == seek);
-  
+
   // 終了コードを設定する
   thread.memory->set<uint32_t>(thread.stackinfos.at(0)->stack, ret);
-  
+
   // スタックを1段残して開放する
   while (thread.stackinfos.size() > 1) {
     StackInfo& top = thread.get_stackinfo(-1);
@@ -69,7 +93,7 @@ BuiltinPost BuiltinLibc::exit(Process& proc, Thread& thread, BuiltinFuncParam p,
 
 // free関数。指定データ領域を開放する。
 BuiltinPost BuiltinLibc::free(Process& proc, Thread& thread, BuiltinFuncParam p,
-			      vaddr_t dst, std::vector<uint8_t>& src) {
+                              vaddr_t dst, std::vector<uint8_t>& src) {
   int seek = 0;
   vaddr_t ptr = Process::read_builtin_param_ptr(src, &seek);
   assert(static_cast<signed>(src.size()) == seek);
@@ -80,8 +104,9 @@ BuiltinPost BuiltinLibc::free(Process& proc, Thread& thread, BuiltinFuncParam p,
 }
 
 // longjmp関数。保存されたスタックコンテキストへの非局所的なジャンプ。
-BuiltinPost BuiltinLibc::longjmp(Process& proc, Thread& thread, BuiltinFuncParam p,
-				 vaddr_t dst, std::vector<uint8_t>& src) {
+BuiltinPost BuiltinLibc::longjmp(Process& proc, Thread& thread,
+                                 BuiltinFuncParam p, vaddr_t dst,
+                                 std::vector<uint8_t>& src) {
   int seek = 0;
   // 引数を開く。
   vaddr_t env = Process::read_builtin_param_ptr(src, &seek);
@@ -96,7 +121,7 @@ BuiltinPost BuiltinLibc::longjmp(Process& proc, Thread& thread, BuiltinFuncParam
   if (thread.stackinfos.size() < stack_count) {
     throw_error(Error::SEGMENT_FAULT);
   }
-  
+
   // 余分なスタックを開放
   while (thread.stackinfos.size() > stack_count) {
     const StackInfo& si = thread.get_stackinfo(-1);
@@ -106,7 +131,7 @@ BuiltinPost BuiltinLibc::longjmp(Process& proc, Thread& thread, BuiltinFuncParam
     for (vaddr_t addr : si.alloca_addrs) {
       thread.memory->free(addr);
     }
-    
+
     thread.pop_stack();
   }
   StackInfo& si = thread.get_stackinfo(-1);
@@ -144,8 +169,9 @@ BuiltinPost BuiltinLibc::longjmp(Process& proc, Thread& thread, BuiltinFuncParam
 }
 
 // malloc関数。データ領域の確保を行う。
-BuiltinPost BuiltinLibc::malloc(Process& proc, Thread& thread, BuiltinFuncParam p,
-				vaddr_t dst, std::vector<uint8_t>& src) {
+BuiltinPost BuiltinLibc::malloc(Process& proc, Thread& thread,
+                                BuiltinFuncParam p, vaddr_t dst,
+                                std::vector<uint8_t>& src) {
   int seek = 0;
   uint64_t size = Process::read_builtin_param_size(src, &seek);
   assert(static_cast<signed>(src.size()) == seek);
@@ -156,8 +182,9 @@ BuiltinPost BuiltinLibc::malloc(Process& proc, Thread& thread, BuiltinFuncParam 
 }
 
 // memcpy関数。
-BuiltinPost BuiltinLibc::memcpy(Process& proc, Thread& thread, BuiltinFuncParam p,
-				vaddr_t dst, std::vector<uint8_t>& src) {
+BuiltinPost BuiltinLibc::memcpy(Process& proc, Thread& thread,
+                                BuiltinFuncParam p, vaddr_t dst,
+                                std::vector<uint8_t>& src) {
   int seek = 0;
   // コピー先アドレスを取得
   vaddr_t p_dst = Process::read_builtin_param_ptr(src, &seek);
@@ -165,18 +192,7 @@ BuiltinPost BuiltinLibc::memcpy(Process& proc, Thread& thread, BuiltinFuncParam 
   vaddr_t p_src = Process::read_builtin_param_ptr(src, &seek);
 
   // コピーサイズを取得
-  uint64_t p_size = 0;
-  switch(p.i64) {
-  case 8:  p_size = static_cast<int64_t>(Process::read_builtin_param_i8 (src, &seek)); break;
-  case 16: p_size = static_cast<int64_t>(Process::read_builtin_param_i16(src, &seek)); break;
-  case 32: p_size = static_cast<int64_t>(Process::read_builtin_param_i32(src, &seek)); break;
-  case 64: p_size = static_cast<int64_t>(Process::read_builtin_param_i64(src, &seek)); break;
-
-  default: {
-    print_debug("p.i64 %" PRIu64 "\n", p.i64);
-    assert(false);
-  } break;
-  }
+  uint64_t p_size = get_psize(p.i64, src, &seek);
   // アライメントを取得
   /*int32_t p_align =*/Process::read_builtin_param_i32(src, &seek);
   // 実行順番の制約(VMでは実行順番を入れ替えないので無視する)を取得
@@ -190,8 +206,9 @@ BuiltinPost BuiltinLibc::memcpy(Process& proc, Thread& thread, BuiltinFuncParam 
 }
 
 // memmove関数。
-BuiltinPost BuiltinLibc::memmove(Process& proc, Thread& thread, BuiltinFuncParam p,
-				 vaddr_t dst, std::vector<uint8_t>& src) {
+BuiltinPost BuiltinLibc::memmove(Process& proc, Thread& thread,
+                                 BuiltinFuncParam p, vaddr_t dst,
+                                 std::vector<uint8_t>& src) {
   int seek = 0;
   // コピー先アドレスを取得
   vaddr_t p_dst = Process::read_builtin_param_ptr(src, &seek);
@@ -200,18 +217,7 @@ BuiltinPost BuiltinLibc::memmove(Process& proc, Thread& thread, BuiltinFuncParam
   assert(static_cast<signed>(src.size()) == seek);
 
   // コピーサイズを取得
-  uint64_t p_size = 0;
-  switch(p.i64) {
-  case 8:  p_size = static_cast<int64_t>(Process::read_builtin_param_i8 (src, &seek)); break;
-  case 16: p_size = static_cast<int64_t>(Process::read_builtin_param_i16(src, &seek)); break;
-  case 32: p_size = static_cast<int64_t>(Process::read_builtin_param_i32(src, &seek)); break;
-  case 64: p_size = static_cast<int64_t>(Process::read_builtin_param_i64(src, &seek)); break;
-
-  default: {
-    print_debug("p.i64 %" PRIu64 "\n", p.i64);
-    assert(false);
-  } break;
-  }
+  uint64_t p_size = get_psize(p.i64, src, &seek);
   // アライメントを取得
   /*int32_t p_align =*/Process::read_builtin_param_i32(src, &seek);
   // 実行順番の制約(VMでは実行順番を入れ替えないので無視する)を取得
@@ -225,8 +231,9 @@ BuiltinPost BuiltinLibc::memmove(Process& proc, Thread& thread, BuiltinFuncParam
 }
 
 // memset関数。
-BuiltinPost BuiltinLibc::memset(Process& proc, Thread& thread, BuiltinFuncParam p,
-				vaddr_t dst, std::vector<uint8_t>& src) {
+BuiltinPost BuiltinLibc::memset(Process& proc, Thread& thread,
+                                BuiltinFuncParam p, vaddr_t dst,
+                                std::vector<uint8_t>& src) {
   int seek = 0;
   // 設定先先アドレスを取得
   vaddr_t p_dst = Process::read_builtin_param_ptr(src, &seek);
@@ -234,23 +241,12 @@ BuiltinPost BuiltinLibc::memset(Process& proc, Thread& thread, BuiltinFuncParam 
   uint8_t p_val = Process::read_builtin_param_i8(src, &seek);
 
   // 設定サイズを取得
-  uint64_t p_len = 0;
-  switch(p.i64) {
-  case 8:  p_len = static_cast<int64_t>(Process::read_builtin_param_i8 (src, &seek)); break;
-  case 16: p_len = static_cast<int64_t>(Process::read_builtin_param_i16(src, &seek)); break;
-  case 32: p_len = static_cast<int64_t>(Process::read_builtin_param_i32(src, &seek)); break;
-  case 64: p_len = static_cast<int64_t>(Process::read_builtin_param_i64(src, &seek)); break;
-
-  default: {
-    print_debug("p.i64 %" PRIu64 "\n", p.i64);
-    assert(false);
-  } break;
-  }
+  uint64_t p_len = get_psize(p.i64, src, &seek);
   // アライメントを取得
   /*int32_t p_align =*/Process::read_builtin_param_i32(src, &seek);
   // 実行順番の制約(VMでは実行順番を入れ替えないので無視する)を取得
   /*int8_t p_isvolation =*/Process::read_builtin_param_i8(src, &seek);
-  
+
   // 読み込んだパラメタ長と渡されたパラメタ長は同じはず
   assert(static_cast<signed>(src.size()) == seek);
   thread.memory->set_fill(p_dst, p_val, p_len);
@@ -259,8 +255,9 @@ BuiltinPost BuiltinLibc::memset(Process& proc, Thread& thread, BuiltinFuncParam 
 }
 
 // realloc関数。データ領域の再確保を行う。
-BuiltinPost BuiltinLibc::realloc(Process& proc, Thread& thread, BuiltinFuncParam p,
-				 vaddr_t dst, std::vector<uint8_t>& src) {
+BuiltinPost BuiltinLibc::realloc(Process& proc, Thread& thread,
+                                 BuiltinFuncParam p, vaddr_t dst,
+                                 std::vector<uint8_t>& src) {
   int seek = 0;
   vaddr_t ptr = Process::read_builtin_param_ptr(src, &seek);
   uint64_t size = Process::read_builtin_param_size(src, &seek);
@@ -291,7 +288,7 @@ void BuiltinLibc::regist(VMachine& vm) {
   vm.regist_builtin_func("llvm.memcpy.p0i8.p0i8.i16", BuiltinLibc::memcpy, 16);
   vm.regist_builtin_func("llvm.memcpy.p0i8.p0i8.i32", BuiltinLibc::memcpy, 32);
   vm.regist_builtin_func("llvm.memcpy.p0i8.p0i8.i64", BuiltinLibc::memcpy, 64);
-  
+
   vm.regist_builtin_func("llvm.memmove.p0i8.p0i8.i8",  BuiltinLibc::memmove, 8);
   vm.regist_builtin_func("llvm.memmove.p0i8.p0i8.i16", BuiltinLibc::memmove, 16);
   vm.regist_builtin_func("llvm.memmove.p0i8.p0i8.i32", BuiltinLibc::memmove, 32);
@@ -304,8 +301,9 @@ void BuiltinLibc::regist(VMachine& vm) {
 }
 
 // setjmp関数。非局所的なジャンプのために、スタックコンテキストを保存する。
-BuiltinPost BuiltinLibc::setjmp(Process& proc, Thread& thread, BuiltinFuncParam p,
-				vaddr_t dst, std::vector<uint8_t>& src) {
+BuiltinPost BuiltinLibc::setjmp(Process& proc, Thread& thread,
+                                BuiltinFuncParam p, vaddr_t dst,
+                                std::vector<uint8_t>& src) {
   int seek = 0;
   // 引数を開く。
   vaddr_t env = Process::read_builtin_param_ptr(src, &seek);
@@ -343,16 +341,17 @@ BuiltinPost BuiltinLibc::setjmp(Process& proc, Thread& thread, BuiltinFuncParam 
   // address
   thread.memory->set<vaddr_t>(env + seek2, si.address);
   seek2 += sizeof(vaddr_t);
-  
+
   // setjmp自体の戻り値は0
-  thread.memory->set<int32_t>(dst ,0);
+  thread.memory->set<int32_t>(dst, 0);
 
   return BP_RE_ENTRY;
 }
 
 // strtol関数。文字列を数値に変換する。
-BuiltinPost BuiltinLibc::strtol(Process& proc, Thread& thread, BuiltinFuncParam p,
-				vaddr_t dst, std::vector<uint8_t>& src) {
+BuiltinPost BuiltinLibc::strtol(Process& proc, Thread& thread,
+                                BuiltinFuncParam p, vaddr_t dst,
+                                std::vector<uint8_t>& src) {
   int seek = 0;
   // 引数の読み込み
   vaddr_t nptr = Process::read_builtin_param_ptr(src, &seek);
@@ -369,7 +368,7 @@ BuiltinPost BuiltinLibc::strtol(Process& proc, Thread& thread, BuiltinFuncParam 
     // endptrが指定されている場合、ポインタの書き換えが必要
     char *work_ptr;
     thread.memory->set<int64_t>(dst, std::strtol(raw_ptr, &work_ptr, base));
-    
+
     if (work_ptr == nullptr) {
       thread.memory->set<vaddr_t>(endptr, VADDR_NULL);
 
@@ -380,3 +379,4 @@ BuiltinPost BuiltinLibc::strtol(Process& proc, Thread& thread, BuiltinFuncParam 
 
   return BP_NORMAL;
 }
+}  // namespace processwarp

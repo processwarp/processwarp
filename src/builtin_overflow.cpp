@@ -1,30 +1,29 @@
 
+#include <vector>
+
 #include "builtin_overflow.hpp"
 #include "process.hpp"
-#ifdef EMSCRIPTEN
+
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-local-typedef"
-#endif
 #include "lib/safeint3.hpp"
-#ifdef EMSCRIPTEN
 #pragma clang diagnostic pop
-#endif
 
-using namespace processwarp;
+namespace processwarp {
 
 /**
  * @param SFUNC SafeIntの演算関数
  * @param INT_T 計算のベースになる整数型
  * @param WIDTH 整数のビット幅
  */
-#define M_CASE_PER_WIDTH(SFUNC, INT_T, WIDTH)				\
-  case WIDTH: {								\
-  INT_T a = static_cast<INT_T>(Process::read_builtin_param_i##WIDTH(src, &seek)); \
-  INT_T b = static_cast<INT_T>(Process::read_builtin_param_i##WIDTH(src, &seek)); \
-  INT_T res;								\
-  bool flg = SFUNC<INT_T, INT_T>(a, b, res);				\
-  thread.memory->set<INT_T>(dst, res);					\
-  thread.memory->set<uint8_t>(dst + sizeof(INT_T), flg ? 0x00 : 0xff);	\
+#define M_CASE_PER_WIDTH(SFUNC, INT_T, WIDTH)                           \
+  case WIDTH: {                                                         \
+    INT_T a = static_cast<INT_T>(Process::read_builtin_param_i##WIDTH(src, &seek)); \
+    INT_T b = static_cast<INT_T>(Process::read_builtin_param_i##WIDTH(src, &seek)); \
+    INT_T res;                                                          \
+    bool flg = SFUNC<INT_T, INT_T>(a, b, res);                          \
+    thread.memory->set<INT_T>(dst, res);                                \
+    thread.memory->set<uint8_t>(dst + sizeof(INT_T), flg ? 0x00 : 0xff); \
   } break
 
 /**
@@ -34,17 +33,18 @@ using namespace processwarp;
  * @param I32 32bit幅の計算のベースになる整数型
  * @param I64 64bit幅の計算のベースになる整数型
  */
-#define M_FUNC_PER_METHOD(FNAME, SFUNC, I16, I32, I64)			\
-  BuiltinPost BuiltinOverflow::FNAME(Process& proc, Thread& thread, BuiltinFuncParam p, \
-				     vaddr_t dst, std::vector<uint8_t>& src) { \
-    int seek = 0;							\
-    switch (p.i64) {							\
-      M_CASE_PER_WIDTH(SFUNC, I16, 16);					\
-      M_CASE_PER_WIDTH(SFUNC, I32, 32);					\
-      M_CASE_PER_WIDTH(SFUNC, I64, 64);					\
-    default: assert(false); break;					\
-    }									\
-    return BP_NORMAL;							\
+#define M_FUNC_PER_METHOD(FNAME, SFUNC, I16, I32, I64)                  \
+  BuiltinPost BuiltinOverflow::FNAME(Process& proc, Thread& thread,     \
+                                     BuiltinFuncParam p, vaddr_t dst,   \
+                                     std::vector<uint8_t>& src) {       \
+    int seek = 0;                                                       \
+    switch (p.i64) {                                                    \
+      M_CASE_PER_WIDTH(SFUNC, I16, 16);                                 \
+      M_CASE_PER_WIDTH(SFUNC, I32, 32);                                 \
+      M_CASE_PER_WIDTH(SFUNC, I64, 64);                                 \
+      default: assert(false); break;                                    \
+    }                                                                   \
+    return BP_NORMAL;                                                   \
   }
 
 M_FUNC_PER_METHOD(sadd, SafeAdd,      int16_t, int32_t, int64_t)
@@ -83,3 +83,4 @@ void BuiltinOverflow::regist(VMachine& vm) {
   vm.regist_builtin_func("llvm.usub.with.overflow.i32", BuiltinOverflow::usub, 32);
   vm.regist_builtin_func("llvm.usub.with.overflow.i64", BuiltinOverflow::usub, 64);
 }
+}  // namespace processwarp

@@ -1,40 +1,41 @@
 
 #include <memory>
+#include <string>
 
 #include "convert.hpp"
 #include "func_store.hpp"
 #include "stackinfo.hpp"
 
-using namespace processwarp;
+namespace processwarp {
 
 // コンストラクタ。
 StackInfo::StackInfo(vaddr_t addr_,
-		     vaddr_t func_,
-		     vaddr_t ret_addr_,
-		     unsigned int normal_pc_,
-		     unsigned int unwind_pc_,
-		     vaddr_t stack_) :
-  addr(addr_),
-  func(func_),
-  ret_addr(ret_addr_),
-  normal_pc(normal_pc_),
-  unwind_pc(unwind_pc_),
-  stack(stack_) {
+                     vaddr_t func_,
+                     vaddr_t ret_addr_,
+                     unsigned int normal_pc_,
+                     unsigned int unwind_pc_,
+                     vaddr_t stack_) :
+    addr(addr_),
+    func(func_),
+    ret_addr(ret_addr_),
+    normal_pc(normal_pc_),
+    unwind_pc(unwind_pc_),
+    stack(stack_) {
 }
 
 // Allocate a now stack-information on memory.
 vaddr_t StackInfo::alloc(VMemory::Accessor& memory,
-			 vaddr_t func, vaddr_t ret_addr,
-			 unsigned int normal_pc, unsigned int unwind_pc,
-			 vaddr_t stack) {
+                         vaddr_t func, vaddr_t ret_addr,
+                         unsigned int normal_pc, unsigned int unwind_pc,
+                         vaddr_t stack) {
   picojson::object js_stackinfo;
-  
+
   js_stackinfo.insert(std::make_pair("func", Convert::vaddr2json(func)));
   js_stackinfo.insert(std::make_pair("ret_addr", Convert::vaddr2json(ret_addr)));
   js_stackinfo.insert(std::make_pair("normal_pc",
-				     Convert::int2json<unsigned int>(normal_pc)));
+                                     Convert::int2json<unsigned int>(normal_pc)));
   js_stackinfo.insert(std::make_pair("unwind_pc",
-				     Convert::int2json<unsigned int>(unwind_pc)));
+                                     Convert::int2json<unsigned int>(unwind_pc)));
   js_stackinfo.insert(std::make_pair("stack", Convert::vaddr2json(stack)));
 
   js_stackinfo.insert(std::make_pair("alloca_addrs", picojson::value(picojson::array())));
@@ -63,12 +64,12 @@ std::unique_ptr<StackInfo> StackInfo::read(VMemory::Accessor& memory, vaddr_t ad
   }
   picojson::object& js_stackinfo = js_tmp.get<picojson::object>();
   std::unique_ptr<StackInfo> stackinfo
-    (new StackInfo(addr,
-		   Convert::json2vaddr(js_stackinfo.at("func")),
-		   Convert::json2vaddr(js_stackinfo.at("ret_addr")),
-		   Convert::json2int<unsigned int>(js_stackinfo.at("normal_pc")),
-		   Convert::json2int<unsigned int>(js_stackinfo.at("unwind_pc")),
-		   Convert::json2vaddr(js_stackinfo.at("stack"))));
+      (new StackInfo(addr,
+                     Convert::json2vaddr(js_stackinfo.at("func")),
+                     Convert::json2vaddr(js_stackinfo.at("ret_addr")),
+                     Convert::json2int<unsigned int>(js_stackinfo.at("normal_pc")),
+                     Convert::json2int<unsigned int>(js_stackinfo.at("unwind_pc")),
+                     Convert::json2vaddr(js_stackinfo.at("stack"))));
 
   stackinfo->read(js_stackinfo);
 
@@ -84,7 +85,7 @@ void StackInfo::read(VMemory::Accessor& memory) {
     /// @todo error
     assert(false);
   }
-  
+
   return read(js_tmp.get<picojson::object>());
 }
 
@@ -111,13 +112,13 @@ void StackInfo::write(VMemory::Accessor& memory) {
   js_stackinfo.insert(std::make_pair("func", Convert::vaddr2json(func)));
   js_stackinfo.insert(std::make_pair("ret_addr", Convert::vaddr2json(ret_addr)));
   js_stackinfo.insert(std::make_pair("normal_pc",
-				     Convert::int2json<unsigned int>(normal_pc)));
+                                     Convert::int2json<unsigned int>(normal_pc)));
   js_stackinfo.insert(std::make_pair("unwind_pc",
-				     Convert::int2json<unsigned int>(unwind_pc)));
+                                     Convert::int2json<unsigned int>(unwind_pc)));
   js_stackinfo.insert(std::make_pair("stack", Convert::vaddr2json(stack)));
 
   js_stackinfo.insert(std::make_pair("alloca_addrs",
-				     Convert::vaddr_vector2json(alloca_addrs)));
+                                     Convert::vaddr_vector2json(alloca_addrs)));
   js_stackinfo.insert(std::make_pair("var_arg", Convert::vaddr2json(var_arg)));
   js_stackinfo.insert(std::make_pair("pc", Convert::int2json<unsigned int>(pc)));
   js_stackinfo.insert(std::make_pair("phi0", Convert::int2json<unsigned int>(phi0)));
@@ -138,3 +139,4 @@ void StackInfo::destroy(VMemory::Accessor& memory) {
     memory.free(alloca_addr);
   }
 }
+}  // namespace processwarp

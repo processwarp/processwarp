@@ -1,7 +1,10 @@
 
+#include <string>
+#include <vector>
+
 #include "convert.hpp"
 
-using namespace processwarp;
+namespace processwarp {
 
 // Convert JSON to binary data.
 std::string Convert::json2bin(const picojson::value& json) {
@@ -23,3 +26,4 @@ picojson::value Convert::bin2json(const uint8_t* bin, unsigned int size) {
   }
   return picojson::value(os.str());
 }
+}  // namespace processwarp

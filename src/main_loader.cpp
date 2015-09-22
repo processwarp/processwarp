@@ -2,7 +2,11 @@
 #include <cstring>
 #include <iostream>
 #include <fstream>
+#include <map>
 #include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "lib/picojson.h"
 
@@ -13,7 +17,7 @@
 #include "process.hpp"
 #include "vmemory.hpp"
 
-using namespace processwarp;
+namespace processwarp {
 
 static const std::string pool_path("/tmp/");
 
@@ -21,7 +25,7 @@ static const std::string pool_path("/tmp/");
  * Load program from LLVM-IR and write dump file.
  */
 class Loader : public ProcessDelegate, public VMemoryDelegate {
-public:
+ public:
   /// Virtual memory for this loader.
   VMemory vmemory;
 
@@ -29,7 +33,7 @@ public:
   vpid_t in_pid;
   ///
   std::string in_name;
-  /// 
+  ///
   dev_id_t in_dst_device;
   ///
   dev_id_t in_src_device;
@@ -45,12 +49,13 @@ public:
    * Constructor, initialize virtual-memory instance.
    */
   Loader() :
-    vmemory(*this, DEV_SERVER) {
+      vmemory(*this, DEV_SERVER) {
   }
 
   /**
    */
-  std::unique_ptr<VMemory::Accessor> assign_accessor(const vpid_t& pid) override {
+  std::unique_ptr<VMemory::Accessor> assign_accessor
+  (const vpid_t& pid) override {
     assert(!in_pid.empty());
     return std::move(vmemory.get_accessor(Convert::vpid2str(pid)));
   }
@@ -62,9 +67,10 @@ public:
 
   // Call when send memory data to other device.
   void send_memory_data(const std::string& name,
-			const dev_id_t& dev_id,
-			const std::string& data) override {
-    print_debug("send memory data (%s@%s):%s\n", name.c_str(), dev_id.c_str(), data.c_str());
+                        const dev_id_t& dev_id,
+                        const std::string& data) override {
+    print_debug("send memory data (%s@%s):%s\n",
+                name.c_str(), dev_id.c_str(), data.c_str());
     assert(false);
   }
 
@@ -75,7 +81,7 @@ public:
   void on_recv_update(const std::string& name, vaddr_t addr) override {
     assert(false);
   }
-  
+
   /**
    * 
    */
@@ -86,18 +92,20 @@ public:
     // Library is empty because don't use in loader.
     std::vector<void*> libs;
     std::map<std::string, std::string> lib_filter;
-    std::map<std::string, std::pair<builtin_func_t, BuiltinFuncParam>> builtin_funcs;
+    std::map<std::string,
+             std::pair<builtin_func_t, BuiltinFuncParam>> builtin_funcs;
     std::unique_ptr<Process> proc(Process::alloc(*this, in_pid, JOIN_WAIT_ROOT,
-						 libs, lib_filter, builtin_funcs));
+                                                 libs, lib_filter,
+                                                 builtin_funcs));
     proc->setup();
-    
+
     // Load program from LLVM file.
     LlvmAsmLoader loader(*proc);
 
     if (in_type == "LL") {
       loader.load_ir_file(pool_path + Convert::vpid2str(in_pid) + ".llvm");
 
-    } else if(in_type == "BC") {
+    } else if (in_type == "BC") {
       loader.load_bc_file(pool_path + Convert::vpid2str(in_pid) + ".llvm");
 
     } else {
@@ -113,10 +121,10 @@ public:
 
     // Copy output information.
     out_root_tid = proc->root_tid;
-    
+
     // Write out data to memory.
     proc->proc_memory->write_out();
-      
+
     // Dump and write to file.
     picojson::object body;
     body.insert(std::make_pair("pid", Convert::vpid2json(in_pid)));
@@ -124,33 +132,52 @@ public:
     picojson::array js_machine;
     {
       picojson::object packet;
-      packet.insert(std::make_pair("cmd", picojson::value(std::string("warp"))));
-      packet.insert(std::make_pair("pid", Convert::vpid2json(in_pid)));
-      packet.insert(std::make_pair("root_tid", Convert::vtid2json(proc->root_tid)));
-      packet.insert(std::make_pair("proc_addr", Convert::vaddr2json(proc->addr)));
-      packet.insert(std::make_pair("master_device", Convert::devid2json(DEV_SERVER)));
-      packet.insert(std::make_pair("name", picojson::value(in_name)));
-      packet.insert(std::make_pair("tid", Convert::vtid2json(proc->root_tid)));
-      packet.insert(std::make_pair("dst_device", Convert::devid2json(in_dst_device)));
-      packet.insert(std::make_pair("src_device", Convert::devid2json(in_src_device)));
-      packet.insert(std::make_pair("src_account", picojson::value(in_src_account)));
-      js_machine.push_back(picojson::value(picojson::value(packet).serialize()));
+      packet.insert(std::make_pair("cmd",
+                                   picojson::value(std::string("warp"))));
+      packet.insert(std::make_pair("pid",
+                                   Convert::vpid2json(in_pid)));
+      packet.insert(std::make_pair("root_tid",
+                                   Convert::vtid2json(proc->root_tid)));
+      packet.insert(std::make_pair("proc_addr",
+                                   Convert::vaddr2json(proc->addr)));
+      packet.insert(std::make_pair("master_device",
+                                   Convert::devid2json(DEV_SERVER)));
+      packet.insert(std::make_pair("name",
+                                   picojson::value(in_name)));
+      packet.insert(std::make_pair("tid",
+                                   Convert::vtid2json(proc->root_tid)));
+      packet.insert(std::make_pair("dst_device",
+                                   Convert::devid2json(in_dst_device)));
+      packet.insert(std::make_pair("src_device",
+                                   Convert::devid2json(in_src_device)));
+      packet.insert(std::make_pair("src_account",
+                                   picojson::value(in_src_account)));
+      js_machine.push_back(picojson::value
+                           (picojson::value(packet).serialize()));
     }
     body.insert(std::make_pair("machine_data", picojson::value(js_machine)));
 
     picojson::array js_memory;
     for (auto& it : vmemory.get_space(Convert::vpid2str(in_pid)).pages) {
       // Don't export builtin variables.
-      if (proc->builtin_addrs.find(it.first) != proc->builtin_addrs.end()) continue;
-      
+      if (proc->builtin_addrs.find(it.first) != proc->builtin_addrs.end()) {
+        continue;
+      }
+
       picojson::object packet;
-      packet.insert(std::make_pair("cmd", picojson::value(std::string("give"))));
-      packet.insert(std::make_pair("addr", Convert::vaddr2json(it.first)));
-      packet.insert(std::make_pair("value", Convert::bin2json(it.second.value.get(),
-							      it.second.size)));
-      packet.insert(std::make_pair("src", Convert::devid2json(DEV_SERVER)));
-      packet.insert(std::make_pair("dst", Convert::devid2json(in_dst_device)));
-      packet.insert(std::make_pair("hint", picojson::value(picojson::array())));
+      packet.insert(std::make_pair("cmd",
+                                   picojson::value(std::string("give"))));
+      packet.insert(std::make_pair("addr",
+                                   Convert::vaddr2json(it.first)));
+      packet.insert(std::make_pair("value",
+                                   Convert::bin2json(it.second.value.get(),
+                                                     it.second.size)));
+      packet.insert(std::make_pair("src",
+                                   Convert::devid2json(DEV_SERVER)));
+      packet.insert(std::make_pair("dst",
+                                   Convert::devid2json(in_dst_device)));
+      packet.insert(std::make_pair("hint",
+                                   picojson::value(picojson::array())));
       js_memory.push_back(picojson::value(picojson::value(packet).serialize()));
     }
     body.insert(std::make_pair("memory_data", picojson::value(js_memory)));
@@ -159,13 +186,14 @@ public:
     ofs << picojson::value(body).serialize();
   }
 };
-  
+}  // namespace processwarp
+
 int main(int argc, char* argv[]) {
   // Read stdin and separate by '\0'.
   std::string line;
   picojson::object result;
 
-  while(std::getline(std::cin, line, '\0')) {
+  while (std::getline(std::cin, line, '\0')) {
     // Convert json string to picojson instance.
     picojson::value v;
     std::istringstream is(line);
@@ -175,58 +203,73 @@ int main(int argc, char* argv[]) {
       exit(EXIT_FAILURE);
     }
     result = v.get<picojson::object>();
-    
+
     try {
       // Make loader.
-      Loader loader;
+      processwarp::Loader loader;
       // Read information from json.
-      loader.in_pid        = Convert::json2vpid(result.at("pid"));
-      loader.in_name       = result.at("name").get<std::string>();
-      loader.in_dst_device = Convert::json2devid(result.at("dst_device"));
-      loader.in_src_device = Convert::json2devid(result.at("src_device"));
+      loader.in_pid  = processwarp::Convert::json2vpid(result.at("pid"));
+      loader.in_name = result.at("name").get<std::string>();
+      loader.in_dst_device =
+          processwarp::Convert::json2devid(result.at("dst_device"));
+      loader.in_src_device =
+          processwarp::Convert::json2devid(result.at("src_device"));
       loader.in_src_account = result.at("src_account").get<std::string>();
       loader.in_type       = result.at("type").get<std::string>();
-      
+
       // Convert arguments.
       std::vector<std::string> args;
       for (auto& it : result.at("args").get<picojson::array>()) {
-	args.push_back(it.get<std::string>());
+        args.push_back(it.get<std::string>());
       }
       // Load.
       loader.load(args);
-    
+
       // Show result.
-      result.insert(std::make_pair("result",    picojson::value(0.0)));
-      result.insert(std::make_pair("root_tid",  Convert::vtid2json(loader.out_root_tid)));
-      
+      result.insert(std::make_pair("result",
+                                   picojson::value(0.0)));
+      result.insert(std::make_pair("root_tid",
+                                   processwarp::Convert::vtid2json
+                                   (loader.out_root_tid)));
+
       std::cout << picojson::value(result).serialize() << '\0';
-    
-    } catch(const Error& ex) {
+    } catch(const processwarp::Error& ex) {
       // Show error information.
-      result.insert(std::make_pair("result",    picojson::value(-1.0)));
-      result.insert(std::make_pair("reason",    picojson::value(std::to_string(ex.reason))));
+      result.insert(std::make_pair("result",
+                                   picojson::value(-1.0)));
+      result.insert
+          (std::make_pair("reason",
+                          picojson::value(std::to_string(ex.reason))));
       result.insert(std::make_pair("message",   picojson::value(ex.mesg)));
-      result.insert(std::make_pair("llvm_version",
-				   picojson::value(std::string(LLVM_VERSION_STRING))));
+      result.insert
+          (std::make_pair("llvm_version",
+                          picojson::value(std::string(LLVM_VERSION_STRING))));
       std::cout << picojson::value(result).serialize() << '\0';
-      
     } catch(const std::exception& ex) {
       // Show error information.
-      result.insert(std::make_pair("result",    picojson::value(-1.0)));
-      result.insert(std::make_pair("reason",    picojson::value(std::to_string(-1))));
-      result.insert(std::make_pair("message",   picojson::value(std::string(ex.what()))));
-      result.insert(std::make_pair("llvm_version",
-				   picojson::value(std::string(LLVM_VERSION_STRING))));
+      result.insert(std::make_pair("result",
+                                   picojson::value(-1.0)));
+      result.insert(std::make_pair("reason",
+                                   picojson::value(std::to_string(-1))));
+      result.insert(std::make_pair("message",
+                                   picojson::value(std::string(ex.what()))));
+      result.insert
+          (std::make_pair("llvm_version",
+                          picojson::value(std::string(LLVM_VERSION_STRING))));
       std::cout << picojson::value(result).serialize() << '\0';
-      
-    } catch(...) {
+    } catch (...) {
       int errsv = errno;
       // Show error information.
-      result.insert(std::make_pair("result",    picojson::value(-1.0)));
-      result.insert(std::make_pair("reason",    picojson::value(std::to_string(-2))));
-      result.insert(std::make_pair("message",   picojson::value(std::string(std::strerror(errsv)))));
-      result.insert(std::make_pair("llvm_version",
-				   picojson::value(std::string(LLVM_VERSION_STRING))));
+      result.insert(std::make_pair("result",
+                                   picojson::value(-1.0)));
+      result.insert(std::make_pair("reason",
+                                   picojson::value(std::to_string(-2))));
+      result.insert
+          (std::make_pair("message",
+                          picojson::value(std::string(std::strerror(errsv)))));
+      result.insert
+          (std::make_pair("llvm_version",
+                          picojson::value(std::string(LLVM_VERSION_STRING))));
       std::cout << picojson::value(result).serialize() << '\0';
     }
   }

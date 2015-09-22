@@ -1,7 +1,10 @@
 
+#include <memory>
+#include <string>
+
 #include "symbols.hpp"
 
-using namespace processwarp;
+namespace processwarp {
 
 // シンボル文字列を取得する。
 const std::string& Symbols::Symbol::str() const {
@@ -10,7 +13,7 @@ const std::string& Symbols::Symbol::str() const {
 
 // 文字列を指定してシンボルを作成。
 Symbols::Symbol::Symbol(const std::string& str) :
-  std::string(str) {
+    std::string(str) {
 }
 
 // 文字列に対応するシンボル文字列を取得する。
@@ -20,7 +23,7 @@ const Symbols::Symbol& Symbols::get(const std::string& src) {
   if (exist != store.end()) {
     // 既存のシンボルに合致した場合、参照に変換して戻す。
     return *(exist->second);
-    
+
   } else {
     // 対応するシンボルがない場合、新しく作成する。
     Symbol* copy = new Symbol(src);
@@ -28,3 +31,4 @@ const Symbols::Symbol& Symbols::get(const std::string& src) {
     return *copy;
   }
 }
+}  // namespace processwarp

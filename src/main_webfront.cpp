@@ -1,27 +1,29 @@
 
+#include <emscripten.h>
+#include <emscripten/bind.h>
+
 #include <cstdio>
 #include <cstdlib>
 #include <exception>
 #include <iostream>
 #include <map>
 #include <memory>
-
-#include <emscripten.h>
-#include <emscripten/bind.h>
+#include <string>
+#include <vector>
 
 #include "lib/picojson.h"
+
 #include "convert.hpp"
 #include "vmachine.hpp"
 #include "vmemory.hpp"
 
-using namespace processwarp;
-using namespace emscripten;
+namespace processwarp {
 
 /**
  * VMachineDelegate implement using Emscripten.
  */
 class MainWebfront : public VMachineDelegate, public VMemoryDelegate {
-public:
+ public:
   /** Empty libraries because don't use dlsym on Emscripten. */
   std::vector<void*> LIBS;
   std::map<std::string, std::string> lib_filter;
@@ -37,9 +39,11 @@ public:
       {"printf", "printf"},
       {"puts",   "puts"}
     };
-    
-    for (unsigned int i = 0; i < sizeof(API_NAME_PAIR) / sizeof(API_NAME_PAIR[0]); i ++) {
-      lib_filter.insert(std::make_pair(API_NAME_PAIR[i][0], API_NAME_PAIR[i][1]));
+
+    for (unsigned int i = 0;
+         i < sizeof(API_NAME_PAIR) / sizeof(API_NAME_PAIR[0]); i ++) {
+      lib_filter.insert(std::make_pair(API_NAME_PAIR[i][0],
+                                       API_NAME_PAIR[i][1]));
     }
   }
 
@@ -62,32 +66,32 @@ public:
 
   // Call when send data to other device.
   void send_machine_data(const vpid_t& pid,
-			 const dev_id_t& dst,
-			 const std::string& data) override {
+                         const dev_id_t& dst,
+                         const std::string& data) override {
     std::stringstream asm_code;
     asm_code << "send_machine_data('" << pid << "',"
-	     << "'" << dst << "',"
-	     << static_cast<const void*>(data.data()) << ","
-	     << data.size() << ");";
+             << "'" << dst << "',"
+             << static_cast<const void*>(data.data()) << ","
+             << data.size() << ");";
     emscripten_run_script(asm_code.str().c_str());
   }
 
   // Call when send memory data to other device.
   void send_memory_data(const std::string& name,
-			const dev_id_t& dst,
-			const std::string& data) override {
+                        const dev_id_t& dst,
+                        const std::string& data) override {
     std::stringstream asm_code;
     asm_code << "send_memory_data('" << name << "',"
-	     << "'" << dst << "',"
-	     << static_cast<const void*>(data.data()) << ","
-	     << data.size() << ");";
+             << "'" << dst << "',"
+             << static_cast<const void*>(data.data()) << ","
+             << data.size() << ");";
     emscripten_run_script(asm_code.str().c_str());
   }
 
   // Call when change process and thread status running on this virtual machine.
   void send_sync_proc_list(const std::vector<ProcessTree>& procs) override {
     picojson::array js_procs;
-    
+
     for (auto& proc : procs) {
       picojson::object js_proc;
       js_proc.insert(std::make_pair("pid", Convert::vpid2json(proc.pid)));
@@ -95,8 +99,8 @@ public:
 
       picojson::object js_threads;
       for (auto& thread : proc.threads) {
-	js_threads.insert(std::make_pair(Convert::vtid2str(thread.first),
-					 Convert::devid2json(thread.second)));
+        js_threads.insert(std::make_pair(Convert::vtid2str(thread.first),
+                                         Convert::devid2json(thread.second)));
       }
       js_proc.insert(std::make_pair("threads", picojson::value(js_threads)));
       js_procs.push_back(picojson::value(js_proc));
@@ -146,12 +150,12 @@ public:
 
   // Call when new process is arrive.
   bool judge_new_process(const std::string& name,
-			 const dev_id_t& src_device,
-			 const std::string& src_account) override {
+                         const dev_id_t& src_device,
+                         const std::string& src_account) override {
     std::stringstream asm_code;
     asm_code << "judge_new_process('" << name
-	     << "', '" << src_device
-	     << "', '" << src_account << "');";
+             << "', '" << src_device
+             << "', '" << src_account << "');";
     int r = emscripten_run_script_int(asm_code.str().c_str());
     return r != 0;
   }
@@ -175,9 +179,9 @@ static void ems_loop() {
 }
 
 void recv_machine_data(const vpid_t& pid,
-		       const dev_id_t& src,
-		       const dev_id_t& dst,
-		       const std::string& data) {
+                       const dev_id_t& src,
+                       const dev_id_t& dst,
+                       const std::string& data) {
   if (dst == webfront.vm->device_id ||
       (dst == DEV_BROADCAST && src != webfront.vm->device_id)) {
     assert(src != webfront.vm->device_id);
@@ -186,9 +190,9 @@ void recv_machine_data(const vpid_t& pid,
 }
 
 void recv_memory_data(const std::string& name,
-		      const dev_id_t& src,
-		      const dev_id_t& dst,
-		      const std::string& data) {
+                      const dev_id_t& src,
+                      const dev_id_t& dst,
+                      const std::string& data) {
   if (dst == webfront.vm->device_id ||
       (dst == DEV_BROADCAST && src != webfront.vm->device_id)) {
     assert(src != webfront.vm->device_id);
@@ -207,16 +211,18 @@ void recv_sync_proc_list(const std::string& js_str) {
 
   std::vector<ProcessTree> procs;
   for (auto& it_proc : js_tmp.get<picojson::array>()) {
-    picojson::object& js_proc = it_proc.get<picojson::object>();    
+    picojson::object& js_proc = it_proc.get<picojson::object>();
     ProcessTree proc;
 
     proc.pid  = Convert::json2vpid(js_proc.at("pid"));
     proc.name = js_proc.at("name").get<std::string>();
 
-    picojson::object& js_threads = js_proc.at("threads").get<picojson::object>();
+    picojson::object& js_threads =
+        js_proc.at("threads").get<picojson::object>();
     for (auto& it_thread : js_threads) {
-      proc.threads.insert(std::make_pair(Convert::str2vtid(it_thread.first),
-					 Convert::json2devid(it_thread.second)));
+      proc.threads.insert
+          (std::make_pair(Convert::str2vtid(it_thread.first),
+                          Convert::json2devid(it_thread.second)));
     }
     procs.push_back(proc);
   }
@@ -233,12 +239,13 @@ void quit_process(const vpid_t& pid) {
 }
 
 void request_warp_thread(const std::string& pid,
-			 const std::string& tid,
-			 const dev_id_t& dst_device) {
+                         const std::string& tid,
+                         const dev_id_t& dst_device) {
   webfront.vm->request_warp_thread(Convert::str2vpid(pid),
-				   Convert::str2vtid(tid),
-				   Convert::str2devid(dst_device));
+                                   Convert::str2vtid(tid),
+                                   Convert::str2devid(dst_device));
 }
+}  // namespace processwarp
 
 /**
  * Entry point for Emscripten.
@@ -246,18 +253,18 @@ void request_warp_thread(const std::string& pid,
  * @return return code.
  */
 int main() {
-  webfront.init();
+  processwarp::webfront.init();
   // set main loop for Emscripten
-  emscripten_set_main_loop(ems_loop, 0, true);
-  
+  emscripten_set_main_loop(processwarp::ems_loop, 0, true);
+
   return EXIT_SUCCESS;
 }
 
 EMSCRIPTEN_BINDINGS(mod) {
-  function("recv_machine_data", &recv_machine_data);
-  function("recv_memory_data",  &recv_memory_data);
-  function("recv_sync_proc_list", &recv_sync_proc_list);
-  function("request_warp_thread", &request_warp_thread);
-  function("set_device_id",  &set_device_id);
-  function("quit_process",   &quit_process);
+  emscripten::function("recv_machine_data", &processwarp::recv_machine_data);
+  emscripten::function("recv_memory_data",  &processwarp::recv_memory_data);
+  emscripten::function("recv_sync_proc_list", &processwarp::recv_sync_proc_list);
+  emscripten::function("request_warp_thread", &processwarp::request_warp_thread);
+  emscripten::function("set_device_id",  &processwarp::set_device_id);
+  emscripten::function("quit_process",   &processwarp::quit_process);
 }

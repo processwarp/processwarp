@@ -1,39 +1,42 @@
 
 #include <cassert>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "convert.hpp"
 #include "type_store.hpp"
 
-using namespace processwarp;
+namespace processwarp {
 
 static const std::vector<vaddr_t> DUMMY_MEMBER;
 
 TypeStore::TypeStore(vaddr_t addr_,
-		     TypeKind kind_,
-		     size_t size_,
-		     unsigned int alignment_,
-		     const std::vector<vaddr_t>& member_,
-		     vaddr_t element_,
-		     unsigned int num_) :
-  addr(addr_),
-  kind(kind_),
-  size(size_),
-  alignment(alignment_),
-  member(member_),
-  element(element_),
-  num(num_) {
+                     TypeKind kind_,
+                     size_t size_,
+                     unsigned int alignment_,
+                     const std::vector<vaddr_t>& member_,
+                     vaddr_t element_,
+                     unsigned int num_) :
+    addr(addr_),
+    kind(kind_),
+    size(size_),
+    alignment(alignment_),
+    member(member_),
+    element(element_),
+    num(num_) {
 }
 
 // Allocate a new basic type to memory.
 vaddr_t TypeStore::alloc_basic(VMemory::Accessor& memory, unsigned int size,
-			       unsigned int alignment, vaddr_t addr) {
+                               unsigned int alignment, vaddr_t addr) {
   picojson::object js_type;
 
   js_type.insert(std::make_pair("program_type", Convert::int2json<uint8_t>(PT_TYPE)));
   js_type.insert(std::make_pair("kind", Convert::int2json<uint8_t>(TK_BASIC)));
   js_type.insert(std::make_pair("size", Convert::int2json<unsigned int>(size)));
   js_type.insert(std::make_pair("alignment", Convert::int2json<unsigned int>(alignment)));
-  
+
   memory.set_program_area(addr, picojson::value(js_type).serialize());
 
   return addr;
@@ -57,7 +60,7 @@ vaddr_t TypeStore::alloc_struct(VMemory::Accessor& memory, const std::vector<vad
 
   vaddr_t addr = memory.reserve_program_area();
   memory.set_program_area(addr, picojson::value(js_type).serialize());
-  
+
   return addr;
 }
 
@@ -75,7 +78,7 @@ vaddr_t TypeStore::alloc_array(VMemory::Accessor& memory, vaddr_t element, unsig
 
   vaddr_t addr = memory.reserve_program_area();
   memory.set_program_area(addr, picojson::value(js_type).serialize());
-  
+
   return addr;
 }
 
@@ -93,7 +96,7 @@ vaddr_t TypeStore::alloc_vector(VMemory::Accessor& memory, vaddr_t element, unsi
 
   vaddr_t addr = memory.reserve_program_area();
   memory.set_program_area(addr, picojson::value(js_type).serialize());
-  
+
   return addr;
 }
 
@@ -103,58 +106,58 @@ std::unique_ptr<TypeStore> TypeStore::read(VMemory::Accessor& memory, vaddr_t ad
   std::istringstream is(memory.get_program_area(addr));
   std::string err = picojson::parse(js_tmp, is);
   if (!err.empty()) {
-    /// TODO:error
+    /// @todo error
     assert(false);
   }
   picojson::object& js_type = js_tmp.get<picojson::object>();
-  
+
   ProgramType pt = static_cast<ProgramType>(Convert::json2int<uint8_t>(js_type.at("program_type")));
   if (pt != PT_TYPE) {
-    /// TODO:error
+    /// @todo error
     assert(false);
   }
-  
+
   TypeKind kind = static_cast<TypeKind>(Convert::json2int<uint8_t>(js_type.at("kind")));
   unsigned int size = Convert::json2int<unsigned int>(js_type.at("size"));
   unsigned int alignment = Convert::json2int<unsigned int>(js_type.at("alignment"));
-  
-  switch(kind) {
-  case TK_BASIC: {
-    return std::unique_ptr<TypeStore>
-      (new TypeStore(addr, kind, size, alignment, DUMMY_MEMBER, VADDR_NULL, 0));
-  } break;
 
-  case TK_STRUCT: {
-    picojson::array& js_member = js_type.at("member").get<picojson::array>();
-    std::vector<vaddr_t> member;
-    for (auto it : js_member) {
-      member.push_back(Convert::json2vaddr(it));
-    }
-    
-    return std::unique_ptr<TypeStore>
-      (new TypeStore(addr, kind, size, alignment, member, VADDR_NULL, 0));
-  } break;
+  switch (kind) {
+    case TK_BASIC: {
+      return std::unique_ptr<TypeStore>
+          (new TypeStore(addr, kind, size, alignment, DUMMY_MEMBER, VADDR_NULL, 0));
+    } break;
 
-  case TK_ARRAY:
-  case TK_VECTOR: {
-    vaddr_t element = Convert::json2vaddr(js_type.at("element"));
-    unsigned int num = Convert::json2int<unsigned int>(js_type.at("num"));
+    case TK_STRUCT: {
+      picojson::array& js_member = js_type.at("member").get<picojson::array>();
+      std::vector<vaddr_t> member;
+      for (auto it : js_member) {
+        member.push_back(Convert::json2vaddr(it));
+      }
 
-    return std::unique_ptr<TypeStore>
-      (new TypeStore(addr, kind, size, alignment, DUMMY_MEMBER, element, num));
-  } break;
-    
-  default: {
-    /// TODO:error
-    assert(false);
-    return std::unique_ptr<TypeStore>(nullptr);
-  } break;
+      return std::unique_ptr<TypeStore>
+          (new TypeStore(addr, kind, size, alignment, member, VADDR_NULL, 0));
+    } break;
+
+    case TK_ARRAY:
+    case TK_VECTOR: {
+      vaddr_t element = Convert::json2vaddr(js_type.at("element"));
+      unsigned int num = Convert::json2int<unsigned int>(js_type.at("num"));
+
+      return std::unique_ptr<TypeStore>
+          (new TypeStore(addr, kind, size, alignment, DUMMY_MEMBER, element, num));
+    } break;
+
+    default: {
+      /// @todo error
+      assert(false);
+      return std::unique_ptr<TypeStore>(nullptr);
+    } break;
   }
 }
 
 // Calcuate a size and alignment for structure.
 std::pair<size_t, unsigned int> TypeStore::calc_type_size(VMemory::Accessor& memory,
-							  const std::vector<vaddr_t>& member) {
+                                                          const std::vector<vaddr_t>& member) {
   size_t size = 0;
   unsigned int max_alignment = 0;
   unsigned int odd;
@@ -176,8 +179,9 @@ std::pair<size_t, unsigned int> TypeStore::calc_type_size(VMemory::Accessor& mem
 
 // Calucuate a size and alignment for some type.
 std::pair<size_t, unsigned int> TypeStore::calc_type_size(VMemory::Accessor& memory,
-							  vaddr_t type) {
+                                                          vaddr_t type) {
   std::unique_ptr<TypeStore> t(std::move(TypeStore::read(memory, type)));
-  
+
   return std::make_pair(t->size, t->alignment);
 }
+}  // namespace processwarp

@@ -1,8 +1,10 @@
 
+#include <string>
+
 #include "util.hpp"
 #include "instruction.hpp"
 
-using namespace processwarp;
+namespace processwarp {
 
 static const char* OPCODE_STR[] = {
   "NOP",
@@ -15,7 +17,7 @@ static const char* OPCODE_STR[] = {
   "SET_VALUE",
   "SET_OV_PTR",
   "ADD",
-  "SUB", // 10
+  "SUB",  // 10
   "MUL",
   "DIV",
   "REM",
@@ -25,7 +27,7 @@ static const char* OPCODE_STR[] = {
   "NAND",
   "OR",
   "XOR",
-  "MAX", // 20
+  "MAX",  // 20
   "MIN",
   "SET",
   "SET_PTR",
@@ -35,7 +37,7 @@ static const char* OPCODE_STR[] = {
   "MUL_ADR",
   "GET_ADR",
   "LOAD",
-  "STORE", // 30
+  "STORE",  // 30
   "CMPXCHG",
   "ALLOCA",
   "TEST",
@@ -45,7 +47,7 @@ static const char* OPCODE_STR[] = {
   "PHI",
   "TYPE_CAST",
   "BIT_CAST",
-  "EQUAL", // 40
+  "EQUAL",  // 40
   "NOT_EQUAL",
   "GREATER",
   "GREATER_EQUAL",
@@ -61,9 +63,9 @@ const llvm::Instruction* Util::llvm_instruction;
 #endif
 
 // Show alert to fix function when NDEBUG isn't defined.
-void Util::_fixme(long line, const char* file, std::string mesg) {
-    std::cerr.setf(std::ios::dec);
-    std::cerr << "\x1b[31mfixme\x1b[39m [l" << line << "@" << file << "] " << mesg << std::endl;
+void Util::_fixme(int line, const char* file, std::string mesg) {
+  std::cerr.setf(std::ios::dec);
+  std::cerr << "\x1b[31mfixme\x1b[39m [l" << line << "@" << file << "] " << mesg << std::endl;
 }
 
 // Convert instruction code to readable string.
@@ -76,7 +78,7 @@ std::string Util::code2str(instruction_t code) {
 template<> std::string Util::num2hex_str<uint8_t>(uint8_t v) {
   std::ostringstream os;
   os << std::hex << std::setfill('0') <<
-    std::setw(sizeof(uint8_t) * 2) << static_cast<uint32_t>(v);
+      std::setw(sizeof(uint8_t) * 2) << static_cast<uint32_t>(v);
   return os.str();
 }
 
@@ -86,3 +88,4 @@ template<> uint8_t Util::hex_str2num<uint8_t>(const std::string& str) {
   is >> std::hex >> v;
   return static_cast<uint8_t>(v);
 }
+}  // namespace processwarp
