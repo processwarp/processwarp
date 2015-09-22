@@ -27,7 +27,7 @@ class BasicOperator {
    * @param dst コピー先
    * @param src コピー元
    */
-  virtual void copy(uint8_t* dst, uint8_t* src) const;
+  virtual void copy_value(uint8_t* dst, uint8_t* src) const;
 
   /**
    * 比較命令(isnan(a) || isnan(b))に対応した演算を行う。
@@ -184,7 +184,7 @@ template <typename T> class PrimitiveOperator : public BasicOperator {
    * @param dst コピー先
    * @param src コピー元
    */
-  void copy(uint8_t* dst, uint8_t* src) const override;
+  void copy_value(uint8_t* dst, uint8_t* src) const override;
 
   /**
    * 比較命令(isnan(a) || isnan(b))に対応した演算を行う。
@@ -341,7 +341,7 @@ class PointerOperator : public BasicOperator {
    * @param dst コピー先
    * @param src コピー元
    */
-  void copy(uint8_t* dst, uint8_t* src) const override;
+  void copy_value(uint8_t* dst, uint8_t* src) const override;
 
   /**
    * 比較命令(a==b)に対応した演算を行う。

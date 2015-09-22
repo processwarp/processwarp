@@ -23,9 +23,9 @@ BuiltinPost BuiltinGlfw3::createWindow(Process& proc, Thread& thread,
   vaddr_t share_addr = Process::read_builtin_param_ptr(src, &seek);
   assert(static_cast<signed>(src.size()) == seek);
 
-  const uint8_t* title = thread.memory->get_raw(title_addr);
-  uint8_t* monitor = thread.memory->get_raw_writable(monitor_addr);
-  uint8_t* share = thread.memory->get_raw_writable(share_addr);
+  const uint8_t* title = thread.memory->read_raw(title_addr);
+  uint8_t* monitor = thread.memory->read_writable(monitor_addr);
+  uint8_t* share = thread.memory->read_writable(share_addr);
 
   // GLFWwindow* window =
   glfwCreateWindow(width, height,
@@ -48,7 +48,7 @@ BuiltinPost BuiltinGlfw3::destroyWindow(Process& proc, Thread& thread,
   assert(static_cast<signed>(src.size()) == seek);
 
   glfwDestroyWindow(reinterpret_cast<GLFWwindow*>
-                    (thread.memory->get_raw_writable(window)));
+                    (thread.memory->read_writable(window)));
 
   /// @todo ネイティブのアドレスとのペアを解消。
   // proc.destory_native_ptr(window);

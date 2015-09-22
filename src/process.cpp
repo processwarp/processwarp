@@ -50,11 +50,11 @@ inline std::unique_ptr<FuncStore> get_function(instruction_t code,
   if ((operand & HEAD_OPERAND) != 0) {
     // 定数の場合1の補数表現からの復元
     vaddr_t addr =
-        param.memory.get<vaddr_t>(param.k + (FILL_OPERAND - operand));
+        param.memory.read<vaddr_t>(param.k + (FILL_OPERAND - operand));
     return std::move(FuncStore::read(param.proc, param.memory, addr));
 
   } else {
-    vaddr_t addr = param.memory.get<vaddr_t>(param.stack + operand);
+    vaddr_t addr = param.memory.read<vaddr_t>(param.stack + operand);
     return std::move(FuncStore::read(param.proc, param.memory, addr));
   }
 }
@@ -73,7 +73,7 @@ inline vaddr_t get_operand(instruction_t code, OperandParam& param) {
 inline std::unique_ptr<TypeStore> get_type(instruction_t code,
                                            OperandParam& param) {
   int operand = Instruction::get_operand(code);
-  vaddr_t addr = param.memory.get<vaddr_t>(param.k + (FILL_OPERAND - operand));
+  vaddr_t addr = param.memory.read<vaddr_t>(param.k + (FILL_OPERAND - operand));
   return std::move(TypeStore::read(param.memory, addr));
 }
 
@@ -312,7 +312,7 @@ re_entry: {
 
             if (new_func->type == FuncType::FC_NORMAL && args < new_func->arg_num) {
               // 通常の引数はスタックの先頭にコピー
-              memory.set_copy(new_stackinfo->stack + written_size, value, type->size);
+              memory.write_copy(new_stackinfo->stack + written_size, value, type->size);
               written_size += type->size;
 
             } else {
@@ -320,7 +320,7 @@ re_entry: {
               std::size_t dest = work.size();
               work.resize(dest + sizeof(vaddr_t) + type->size);
               std::memcpy(work.data() + dest, &(type->addr), sizeof(vaddr_t));
-              std::memcpy(work.data() + dest + sizeof(vaddr_t), memory.get_raw(value), type->size);
+              std::memcpy(work.data() + dest + sizeof(vaddr_t), memory.read_raw(value), type->size);
             }
 
             args += 1;
@@ -340,7 +340,7 @@ re_entry: {
                   memory.free(new_stackinfo->var_arg);
                 });
               new_stackinfo->alloca_addrs.push_back(new_stackinfo->var_arg);
-              memory.set_copy(new_stackinfo->var_arg, work.data(), work.size());
+              memory.write_copy(new_stackinfo->var_arg, work.data(), work.size());
             } else {
               new_stackinfo->var_arg = VADDR_NON;
             }
@@ -399,7 +399,7 @@ re_entry: {
             // 戻り値を設定する
             vaddr_t operand = get_operand(code, op_param);
 
-            stackinfo.type_operator->copy(upperinfo.output, operand);
+            stackinfo.type_operator->copy_value(upperinfo.output, operand);
           }
           // 1段上のスタックのpcを設定(normal_pc)
           upperinfo.pc = stackinfo.normal_pc;
@@ -443,21 +443,21 @@ re_entry: {
           M_BINARY_OPERATOR(XOR, op_xor);  // xor
 
         case SET_OV_PTR: {
-          stackinfo.value        = memory.get<vaddr_t>(get_operand(code, op_param));
-          stackinfo.type_operator->copy(stackinfo.output, stackinfo.value);
+          stackinfo.value        = memory.read<vaddr_t>(get_operand(code, op_param));
+          stackinfo.type_operator->copy_value(stackinfo.output, stackinfo.value);
           stackinfo.output       = stackinfo.value;
           print_debug("output = %016" PRIx64 "\n", stackinfo.output);
           print_debug("value = %016" PRIx64 "\n", stackinfo.value);
         } break;
 
         case Opcode::SET: {
-          memory.set_copy(stackinfo.output,
-                          get_operand(code, op_param),
-                          stackinfo.type_store->size);
+          memory.write_copy(stackinfo.output,
+                            get_operand(code, op_param),
+                            stackinfo.type_store->size);
         } break;
 
         case Opcode::SET_PTR: {
-          stackinfo.address = memory.get<vaddr_t>(get_operand(code, op_param));
+          stackinfo.address = memory.read<vaddr_t>(get_operand(code, op_param));
           print_debug("address = %016" PRIx64 "\n", stackinfo.address);
         } break;
 
@@ -486,20 +486,20 @@ re_entry: {
         } break;
 
         case Opcode::GET_ADR: {
-          memory.set<vaddr_t>(get_operand(code, op_param), stackinfo.address);
+          memory.write<vaddr_t>(get_operand(code, op_param), stackinfo.address);
           print_debug("*%016" PRIx64 " = %016" PRIx64 "\n",
                       get_operand(code, op_param), stackinfo.address);
         } break;
 
         case Opcode::LOAD: {
-          stackinfo.type_operator->copy(get_operand(code, op_param), stackinfo.address);
+          stackinfo.type_operator->copy_value(get_operand(code, op_param), stackinfo.address);
           print_debug("*%016" PRIx64 " = *%016" PRIx64 "(size = %" PRIu64 ")\n",
                       get_operand(code, op_param), stackinfo.address,
                       static_cast<longest_uint_t>(stackinfo.type_store->size));
         } break;
 
         case Opcode::STORE: {
-          stackinfo.type_operator->copy(stackinfo.address, get_operand(code, op_param));
+          stackinfo.type_operator->copy_value(stackinfo.address, get_operand(code, op_param));
           print_debug("store %016" PRIx64 "\n", stackinfo.address);
         } break;
 
@@ -512,25 +512,25 @@ re_entry: {
 
           if (is_eq) {
             // *a == vを満たす場合、値を書き換え＆書き換え成功フラグを設定
-            stackinfo.type_operator->copy(stackinfo.output, stackinfo.address);
-            memory.set<uint8_t>(stackinfo.output + stackinfo.type_store->size, 1);
-            stackinfo.type_operator->copy(stackinfo.address, get_operand(code, op_param));
+            stackinfo.type_operator->copy_value(stackinfo.output, stackinfo.address);
+            memory.write<uint8_t>(stackinfo.output + stackinfo.type_store->size, 1);
+            stackinfo.type_operator->copy_value(stackinfo.address, get_operand(code, op_param));
 
           } else {
             // *a != vの場合、書き換え成功フラグをリセット
-            stackinfo.type_operator->copy(stackinfo.output, stackinfo.address);
-            memory.set<uint8_t>(stackinfo.output + stackinfo.type_store->size, 0);
+            stackinfo.type_operator->copy_value(stackinfo.output, stackinfo.address);
+            memory.write<uint8_t>(stackinfo.output + stackinfo.type_store->size, 0);
           }
         } break;
 
         case Opcode::ALLOCA: {
           // サイズを計算
-          size_t size = memory.get<uint32_t>(get_operand(code, op_param)) *
+          size_t size = memory.read<uint32_t>(get_operand(code, op_param)) *
                         stackinfo.type_store->size;
           // 領域を確保
           vaddr_t addr = memory.alloc(size);
           // 確保領域のアドレスを設定
-          memory.set<vaddr_t>(stackinfo.output, addr);
+          memory.write<vaddr_t>(stackinfo.output, addr);
           // allocaで確保した領域はスタック終了時に開放できるように記録しておく
           stackinfo.alloca_addrs.push_back(addr);
           print_debug("alloca *%016" PRIx64 " = %016" PRIx64 "(%" PRIu64 " byte)\n",
@@ -540,7 +540,7 @@ re_entry: {
         case Opcode::TEST: {
           instruction_t code2 = insts.at(stackinfo.pc + 1);
           // operandの指し先がtrueかどうか判定。
-          if (memory.get<uint8_t>(get_operand(code, op_param))) {
+          if (memory.read<uint8_t>(get_operand(code, op_param))) {
             stackinfo.phi0 = stackinfo.phi1;
             stackinfo.phi1 = stackinfo.pc = Instruction::get_operand(code2);
             print_debug("pc = %d\n", stackinfo.pc);
@@ -579,7 +579,7 @@ re_entry: {
           stackinfo.phi0 = stackinfo.phi1;
           stackinfo.phi1 =
               stackinfo.pc =
-              static_cast<unsigned int>(memory.get<vaddr_t>(get_operand(code, op_param)));
+              static_cast<unsigned int>(memory.read<vaddr_t>(get_operand(code, op_param)));
           print_debug("pc = %d\n", stackinfo.pc);
           continue;
         } break;
@@ -595,7 +595,7 @@ re_entry: {
             }
 
             if (stackinfo.phi0 == Instruction::get_operand(code2)) {
-              stackinfo.type_operator->copy(stackinfo.output, get_operand(code, op_param));
+              stackinfo.type_operator->copy_value(stackinfo.output, get_operand(code, op_param));
             }
             count += 2;
             if (insts.size() <= stackinfo.pc + count + 1) break;
@@ -627,17 +627,17 @@ re_entry: {
 
         case Opcode::OR_NANS: {
           if (stackinfo.type_operator->is_or_nans(stackinfo.value, get_operand(code, op_param))) {
-            memory.set<uint8_t>(stackinfo.output, I8_TRUE);
+            memory.write<uint8_t>(stackinfo.output, I8_TRUE);
             stackinfo.pc += 1;  // 次の命令をスキップ
           }
         } break;
 
         case Opcode::SELECT: {
-          if (memory.get<uint8_t>(stackinfo.value)) {
-            stackinfo.type_operator->copy(stackinfo.output, get_operand(code, op_param));
+          if (memory.read<uint8_t>(stackinfo.value)) {
+            stackinfo.type_operator->copy_value(stackinfo.output, get_operand(code, op_param));
           } else {
-            stackinfo.type_operator->copy(stackinfo.output,
-                                          get_operand(insts.at(stackinfo.pc + 1), op_param));
+            stackinfo.type_operator->copy_value(stackinfo.output,
+                                                get_operand(insts.at(stackinfo.pc + 1), op_param));
           }
           stackinfo.pc += 1;  // EXTRA分pcを進める
         } break;
@@ -651,11 +651,11 @@ re_entry: {
           WrappedOperator* element_based = thread.get_operator(stackinfo.type_store->element);
           uint32_t len = stackinfo.type_store->num;
           for (int i = 0; i < m; i ++) {
-            uint32_t mask = memory.get<uint32_t>(operand_mask + sizeof(uint32_t) * i);
-            element_based->copy(stackinfo.output + i * stackinfo.type_store->size,
-                                (mask < len ?
-                                 stackinfo.value + element_store->size * mask :
-                                 operand_v2 + element_store->size * (mask - len)));
+            uint32_t mask = memory.read<uint32_t>(operand_mask + sizeof(uint32_t) * i);
+            element_based->copy_value(stackinfo.output + i * stackinfo.type_store->size,
+                                      (mask < len ?
+                                       stackinfo.value + element_store->size * mask :
+                                       operand_v2 + element_store->size * (mask - len)));
           }
           stackinfo.pc += 2;  // EXTRA分pcを進める
         } break;
@@ -720,7 +720,7 @@ void Process::call_external(Thread& thread,
 
         } else {
           *reinterpret_cast<void**>(args.data() + seek + sizeof(vaddr_t)) =
-              memory.get_raw_writable(addr);
+              memory.read_writable(addr);
         }
         ffi_args.push_back(args.data() + seek + sizeof(vaddr_t));
       } break;
@@ -802,7 +802,7 @@ void Process::call_external(Thread& thread,
   ffi_call(&cif, func.external, ret_buf.data(), ffi_args.data());
   // 戻り値格納用領域から戻り値を取り出し。
   if (ret_addr != VADDR_NULL) {
-    memory.set_copy(ret_addr, reinterpret_cast<uint8_t*>(ret_buf.data()), ret_size);
+    memory.write_copy(ret_addr, reinterpret_cast<uint8_t*>(ret_buf.data()), ret_size);
   }
 
 #else  // !defined(EMSCRIPTEN)
@@ -844,7 +844,7 @@ void Process::call_external(Thread& thread,
           asm_param << static_cast<void*>(native->second);
 
         } else {
-          asm_param << static_cast<void*>(memory.get_raw_writable(addr));
+          asm_param << static_cast<void*>(memory.read_writable(addr));
         }
       } break;
 
@@ -904,7 +904,7 @@ void Process::call_external(Thread& thread,
             raw_ptr = static_cast<void*>(native->second);
 
           } else {
-            raw_ptr = static_cast<void*>(memory.get_raw_writable(addr));
+            raw_ptr = static_cast<void*>(memory.read_writable(addr));
           }
           vararg_buf.resize(vararg_buf.size() + 1);
           std::memcpy(&vararg_buf.back(), &raw_ptr, sizeof(void*));
@@ -990,7 +990,7 @@ void Process::call_external(Thread& thread,
 
   if (func.ret_type != BasicType::TY_VOID) {
     // 戻り値格納用領域から戻り値を取り出し。
-    memory.set_copy(ret_addr, reinterpret_cast<const uint8_t*>(ret_buf.data()), ret_size);
+    memory.write_copy(ret_addr, reinterpret_cast<const uint8_t*>(ret_buf.data()), ret_size);
   }
 
 #endif
@@ -1082,7 +1082,7 @@ vtid_t Process::create_thread(vaddr_t func_addr, vaddr_t arg_addr) {
   vaddr_t func_stackaddr;
   if (func->normal_prop.stack_size != 0) {
     vaddr_t func_stack = proc_memory->alloc(func->normal_prop.stack_size);
-    thread.memory->set<vaddr_t>(func_stack, arg_addr);
+    thread.memory->write<vaddr_t>(func_stack, arg_addr);
     func_stackaddr =
         StackInfo::alloc(*thread.memory, func->addr, root_stack, 0, 0, func_stack);
 
@@ -1103,9 +1103,9 @@ vtid_t Process::create_thread(vaddr_t func_addr, vaddr_t arg_addr) {
 void Process::exit_thread(Thread& thread, vaddr_t retval) {
   StackInfo& root_stackinfo = thread.get_stackinfo(1);
   // Copy return value.
-  thread.memory->set_copy(root_stackinfo.ret_addr,
-                          reinterpret_cast<const uint8_t*>(&retval),
-                          sizeof(retval));
+  thread.memory->write_copy(root_stackinfo.ret_addr,
+                            reinterpret_cast<const uint8_t*>(&retval),
+                            sizeof(retval));
   // Free stacks.
   while (thread.stack.size() > 1) {
     thread.pop_stack();
@@ -1150,8 +1150,8 @@ bool Process::join_thread(vtid_t current, vtid_t target, vaddr_t retval) {
   if (target_thread.status == Thread::JOIN_WAIT) {
     // copy retval
     if (retval != VADDR_NULL) {
-      proc_memory->set<vaddr_t>(retval, proc_memory->get<vaddr_t>
-                                (target_thread.get_stackinfo(0).stack));
+      proc_memory->write<vaddr_t>(retval, proc_memory->read<vaddr_t>
+                                  (target_thread.get_stackinfo(0).stack));
     }
 
     target_thread.join_waiting = JOIN_WAIT_DETACHED;
@@ -1311,17 +1311,17 @@ void Process::run(const std::vector<std::string>& args,
     // main関数のスタックの先頭にargc, argvを格納する
     vm_int_t argc = args.size();
     vaddr_t  argv = root_stack + ret_size;
-    memory.set<vm_int_t>(main_stack, argc);
-    memory.set<vaddr_t>(main_stack + sizeof(vm_int_t), argv);
+    memory.write<vm_int_t>(main_stack, argc);
+    memory.write<vaddr_t>(main_stack + sizeof(vm_int_t), argv);
 
     // root_stack_dataにmain関数の戻り値、argvとして渡すポインタの配列、引数文字列、、を格納する
     vaddr_t sum = ret_size + sizeof(vaddr_t) * args.size();
     for (unsigned int i = 0, arg_size = args.size(); i < arg_size; i ++) {
       vaddr_t addr = root_stack + sum;
-      memory.set<vaddr_t>(root_stack + ret_size + sizeof(vaddr_t) * i, addr);
-      memory.set_copy(root_stack + sum,
-                      reinterpret_cast<const uint8_t*>(args.at(i).c_str()),
-                      args.at(i).length() + 1);
+      memory.write<vaddr_t>(root_stack + ret_size + sizeof(vaddr_t) * i, addr);
+      memory.write_copy(root_stack + sum,
+                        reinterpret_cast<const uint8_t*>(args.at(i).c_str()),
+                        args.at(i).length() + 1);
       sum += args.at(i).length() + 1;
     }
 
@@ -1330,18 +1330,18 @@ void Process::run(const std::vector<std::string>& args,
       // main関数のスタックにenvpを格納する。
       unsigned int arg_size = sum;
       vaddr_t envp = root_stack + sum;
-      memory.set<vaddr_t>(main_stack + 4 + sizeof(vaddr_t), envp);
+      memory.write<vaddr_t>(main_stack + 4 + sizeof(vaddr_t), envp);
       sum += sizeof(vaddr_t) * (envs.size() + 1);
       int i = 0;
       for (auto pair : envs) {
         vaddr_t addr = root_stack + sum;
-        memory.set<vaddr_t>(root_stack + arg_size + sizeof(vaddr_t) * i, addr);
-        sum += snprintf(reinterpret_cast<char*>(memory.get_raw_writable(root_stack + sum)),
+        memory.write<vaddr_t>(root_stack + arg_size + sizeof(vaddr_t) * i, addr);
+        sum += snprintf(reinterpret_cast<char*>(memory.read_writable(root_stack + sum)),
                         root_stack_size - sum,
                         "%s=%s", pair.first.c_str(), pair.second.c_str()) + 1;
         i++;
       }
-      memory.set<vaddr_t>(root_stack + arg_size + sizeof(vaddr_t) * i, VADDR_NULL);
+      memory.write<vaddr_t>(root_stack + arg_size + sizeof(vaddr_t) * i, VADDR_NULL);
     }
 
   } else if (main_func->arg_num != 0) {

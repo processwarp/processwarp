@@ -37,7 +37,7 @@ class WrappedOperator {
    * @param dst コピー先
    * @param src コピー元
    */
-  virtual void copy(vaddr_t dst, vaddr_t src);
+  virtual void copy_value(vaddr_t dst, vaddr_t src);
 
   /**
    * 値を読み込む
@@ -211,7 +211,7 @@ template <typename T> class WrappedPrimitiveOperator : public WrappedOperator {
    * @param dst コピー先
    * @param src コピー元
    */
-  void copy(vaddr_t dst, vaddr_t src) override;
+  void copy_value(vaddr_t dst, vaddr_t src) override;
 
   /**
    * 値を読み込む
@@ -385,7 +385,7 @@ class WrappedPointerOperator : public WrappedOperator {
    * @param dst コピー先
    * @param src コピー元
    */
-  void copy(vaddr_t dst, vaddr_t src) override;
+  void copy_value(vaddr_t dst, vaddr_t src) override;
 
   /**
    * 比較命令(a==b)に対応した演算を行う。
@@ -452,6 +452,6 @@ class WrappedComplexOperator : public WrappedOperator {
    * @param dst コピー先
    * @param src コピー元
    */
-  void copy(vaddr_t dst, vaddr_t src) override;
+  void copy_value(vaddr_t dst, vaddr_t src) override;
 };
 }  // namespace processwarp

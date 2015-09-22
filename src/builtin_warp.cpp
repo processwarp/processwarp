@@ -17,7 +17,7 @@ BuiltinPost BuiltinWarp::at_after_warp(Process& proc, Thread& thread,
 
   thread.funcs_at_after_warp.push_back(func);
 
-  thread.memory->set<vm_int_t>(dst, 0);
+  thread.memory->write<vm_int_t>(dst, 0);
 
   return BP_NORMAL;
 }
@@ -32,7 +32,7 @@ BuiltinPost BuiltinWarp::at_befor_warp(Process& proc, Thread& thread,
 
   thread.funcs_at_befor_warp.push_back(func);
 
-  thread.memory->set<vm_int_t>(dst, 0);
+  thread.memory->write<vm_int_t>(dst, 0);
 
   return BP_NORMAL;
 }
@@ -68,7 +68,7 @@ BuiltinPost BuiltinWarp::set_processwarp_param(Process& proc, Thread& thread,
   /// @todo validate key & val.
   thread.warp_parameter[static_cast<vm_int_t>(key)] = static_cast<vm_int_t>(val);
 
-  thread.memory->set<vm_int_t>(dst, 0);
+  thread.memory->write<vm_int_t>(dst, 0);
 
   return BP_NORMAL;
 }

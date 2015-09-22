@@ -16,7 +16,7 @@ add_custom_target(cpplint
   `which cpplint.py`
   --extensions=cpp,h,hpp
   --linelength=100
-  --filter=-legal/copyright,-runtime/references,-build/c++11,-build/include_what_you_use
+  --filter=-legal/copyright,-runtime/references,-build/c++11
   ${PROJECT_SOURCE_DIR}/src/*.{cpp,h,hpp}
   )
 

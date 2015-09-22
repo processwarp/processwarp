@@ -47,7 +47,7 @@ BuiltinPost BuiltinLibc::atexit(Process& proc, Thread& thread,
   // 終了処理時に呼び出す関数一覧
   proc.calls_at_exit.push(func);
 
-  thread.memory->set<vm_int_t>(dst, 0);
+  thread.memory->write<vm_int_t>(dst, 0);
 
   return BP_NORMAL;
 }
@@ -62,9 +62,9 @@ BuiltinPost BuiltinLibc::calloc(Process& proc, Thread& thread,
   assert(static_cast<signed>(src.size()) == seek);
 
   vaddr_t allocated = thread.memory->alloc(count * size);
-  thread.memory->set_fill(allocated, 0, count * size);
+  thread.memory->write_fill(allocated, 0, count * size);
 
-  thread.memory->set<vaddr_t>(dst, allocated);
+  thread.memory->write<vaddr_t>(dst, allocated);
 
   return BP_NORMAL;
 }
@@ -78,7 +78,7 @@ BuiltinPost BuiltinLibc::exit(Process& proc, Thread& thread, BuiltinFuncParam p,
   assert(static_cast<signed>(src.size()) == seek);
 
   // 終了コードを設定する
-  thread.memory->set<uint32_t>(thread.stackinfos.at(0)->stack, ret);
+  thread.memory->write<uint32_t>(thread.stackinfos.at(0)->stack, ret);
 
   // スタックを1段残して開放する
   while (thread.stackinfos.size() > 1) {
@@ -115,7 +115,7 @@ BuiltinPost BuiltinLibc::longjmp(Process& proc, Thread& thread,
 
   int seek2 = 0;
   // stack_count
-  vm_uint_t stack_count = thread.memory->get<vm_uint_t>(env + seek2);
+  vm_uint_t stack_count = thread.memory->read<vm_uint_t>(env + seek2);
   seek2 += sizeof(vm_int_t);
   // setjmpした時よりスタックが少ない場合エラー
   if (thread.stackinfos.size() < stack_count) {
@@ -136,33 +136,33 @@ BuiltinPost BuiltinLibc::longjmp(Process& proc, Thread& thread,
   }
   StackInfo& si = thread.get_stackinfo(-1);
   // ret_addrのアドレスにvalで指定された値を設定
-  thread.memory->set<uint32_t>(thread.memory->get<vaddr_t>(env + seek2), val);
+  thread.memory->write<uint32_t>(thread.memory->read<vaddr_t>(env + seek2), val);
   seek2 += sizeof(vaddr_t);
   // レジスタの値を戻す。
   // pc
-  si.pc = thread.memory->get<vm_uint_t>(env + seek2);
+  si.pc = thread.memory->read<vm_uint_t>(env + seek2);
   seek2 += sizeof(vm_uint_t);
   // phi
-  si.phi0 = thread.memory->get<vm_uint_t>(env + seek2);
+  si.phi0 = thread.memory->read<vm_uint_t>(env + seek2);
   seek2 += sizeof(vm_uint_t);
-  si.phi1 = thread.memory->get<vm_uint_t>(env + seek2);
+  si.phi1 = thread.memory->read<vm_uint_t>(env + seek2);
   seek2 += sizeof(vm_uint_t);
   // type
-  si.type = thread.memory->get<vaddr_t>(env + seek2);
+  si.type = thread.memory->read<vaddr_t>(env + seek2);
   seek2 += sizeof(vaddr_t);
   si.type_operator = nullptr;
   si.type_store.reset(nullptr);
   // alignment
-  si.alignment = thread.memory->get<vm_uint_t>(env + seek2);
+  si.alignment = thread.memory->read<vm_uint_t>(env + seek2);
   seek2 += sizeof(vm_int_t);
   // output
-  si.output = thread.memory->get<vaddr_t>(env + seek2);
+  si.output = thread.memory->read<vaddr_t>(env + seek2);
   seek2 += sizeof(vaddr_t);
   // value
-  si.value = thread.memory->get<vaddr_t>(env + seek2);
+  si.value = thread.memory->read<vaddr_t>(env + seek2);
   seek2 += sizeof(vaddr_t);
   // address
-  si.address = thread.memory->get<vaddr_t>(env + seek2);
+  si.address = thread.memory->read<vaddr_t>(env + seek2);
   seek2 += sizeof(vaddr_t);
 
   return BP_RE_ENTRY;
@@ -176,7 +176,7 @@ BuiltinPost BuiltinLibc::malloc(Process& proc, Thread& thread,
   uint64_t size = Process::read_builtin_param_size(src, &seek);
   assert(static_cast<signed>(src.size()) == seek);
 
-  thread.memory->set<vaddr_t>(dst, thread.memory->alloc(size));
+  thread.memory->write<vaddr_t>(dst, thread.memory->alloc(size));
 
   return BP_NORMAL;
 }
@@ -200,7 +200,7 @@ BuiltinPost BuiltinLibc::memcpy(Process& proc, Thread& thread,
 
   // 読み込んだパラメタ長と渡されたパラメタ長は同じはず
   assert(static_cast<signed>(src.size()) == seek);
-  thread.memory->set_copy(p_dst, p_src, p_size);
+  thread.memory->write_copy(p_dst, p_src, p_size);
 
   return BP_NORMAL;
 }
@@ -225,7 +225,7 @@ BuiltinPost BuiltinLibc::memmove(Process& proc, Thread& thread,
 
   // 読み込んだパラメタ長と渡されたパラメタ長は同じはず
   assert(static_cast<signed>(src.size()) == seek);
-  thread.memory->set_copy(p_dst, p_src, p_size);
+  thread.memory->write_copy(p_dst, p_src, p_size);
 
   return BP_NORMAL;
 }
@@ -249,7 +249,7 @@ BuiltinPost BuiltinLibc::memset(Process& proc, Thread& thread,
 
   // 読み込んだパラメタ長と渡されたパラメタ長は同じはず
   assert(static_cast<signed>(src.size()) == seek);
-  thread.memory->set_fill(p_dst, p_val, p_len);
+  thread.memory->write_fill(p_dst, p_val, p_len);
 
   return BP_NORMAL;
 }
@@ -263,7 +263,7 @@ BuiltinPost BuiltinLibc::realloc(Process& proc, Thread& thread,
   uint64_t size = Process::read_builtin_param_size(src, &seek);
   assert(static_cast<signed>(src.size()) == seek);
 
-  thread.memory->set<vaddr_t>(dst, thread.memory->realloc(ptr, size));
+  thread.memory->write<vaddr_t>(dst, thread.memory->realloc(ptr, size));
 
   return BP_NORMAL;
 }
@@ -313,37 +313,37 @@ BuiltinPost BuiltinLibc::setjmp(Process& proc, Thread& thread,
   int seek2 = 0;
   const StackInfo& si = thread.get_stackinfo(-1);
   // stack_count
-  thread.memory->set<vm_uint_t>(env + seek2, thread.stackinfos.size());
+  thread.memory->write<vm_uint_t>(env + seek2, thread.stackinfos.size());
   seek2 += sizeof(vm_int_t);
   // ret_addr
-  thread.memory->set<vaddr_t>(env + seek2, dst);
+  thread.memory->write<vaddr_t>(env + seek2, dst);
   seek2 += sizeof(vaddr_t);
   // pc
-  thread.memory->set<vm_uint_t>(env + seek2, si.pc + 1);
+  thread.memory->write<vm_uint_t>(env + seek2, si.pc + 1);
   seek2 += sizeof(vm_uint_t);
   // phi
-  thread.memory->set<vm_uint_t>(env + seek2, si.phi0);
+  thread.memory->write<vm_uint_t>(env + seek2, si.phi0);
   seek2 += sizeof(vm_uint_t);
-  thread.memory->set<vm_uint_t>(env + seek2, si.phi1);
+  thread.memory->write<vm_uint_t>(env + seek2, si.phi1);
   seek2 += sizeof(vm_uint_t);
   // type
-  thread.memory->set<vaddr_t>(env + seek2, si.type);
+  thread.memory->write<vaddr_t>(env + seek2, si.type);
   seek2 += sizeof(vaddr_t);
   // alignment
-  thread.memory->set<vm_uint_t>(env + seek2, si.alignment);
+  thread.memory->write<vm_uint_t>(env + seek2, si.alignment);
   seek2 += sizeof(vm_int_t);
   // output
-  thread.memory->set<vaddr_t>(env + seek2, si.output);
+  thread.memory->write<vaddr_t>(env + seek2, si.output);
   seek2 += sizeof(vaddr_t);
   // value
-  thread.memory->set<vaddr_t>(env + seek2, si.value);
+  thread.memory->write<vaddr_t>(env + seek2, si.value);
   seek2 += sizeof(vaddr_t);
   // address
-  thread.memory->set<vaddr_t>(env + seek2, si.address);
+  thread.memory->write<vaddr_t>(env + seek2, si.address);
   seek2 += sizeof(vaddr_t);
 
   // setjmp自体の戻り値は0
-  thread.memory->set<int32_t>(dst, 0);
+  thread.memory->write<int32_t>(dst, 0);
 
   return BP_RE_ENTRY;
 }
@@ -359,21 +359,21 @@ BuiltinPost BuiltinLibc::strtol(Process& proc, Thread& thread,
   vm_int_t base = static_cast<vm_int_t>(Process::read_builtin_param_i(src, &seek));
   assert(static_cast<signed>(src.size()) == seek);
 
-  const char* raw_ptr = reinterpret_cast<const char*>(thread.memory->get_raw(nptr));
+  const char* raw_ptr = reinterpret_cast<const char*>(thread.memory->read_raw(nptr));
   if (endptr == VADDR_NULL) {
     // endptrがnullの場合は、戻り値をそのまま渡すだけ
-    thread.memory->set<int64_t>(dst, std::strtol(raw_ptr, nullptr, base));
+    thread.memory->write<int64_t>(dst, std::strtol(raw_ptr, nullptr, base));
 
   } else {
     // endptrが指定されている場合、ポインタの書き換えが必要
     char *work_ptr;
-    thread.memory->set<int64_t>(dst, std::strtol(raw_ptr, &work_ptr, base));
+    thread.memory->write<int64_t>(dst, std::strtol(raw_ptr, &work_ptr, base));
 
     if (work_ptr == nullptr) {
-      thread.memory->set<vaddr_t>(endptr, VADDR_NULL);
+      thread.memory->write<vaddr_t>(endptr, VADDR_NULL);
 
     } else {
-      thread.memory->set<vaddr_t>(endptr, nptr + (work_ptr - raw_ptr));
+      thread.memory->write<vaddr_t>(endptr, nptr + (work_ptr - raw_ptr));
     }
   }
 

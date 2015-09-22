@@ -373,7 +373,7 @@ class VMemory {
     /**
      *
      */
-    void set_fill(vaddr_t dst, uint8_t c, uint64_t size) {
+    void write_fill(vaddr_t dst, uint8_t c, uint64_t size) {
       Page& page = get_page(get_upper_addr(dst), false);
 
       switch (page.type) {
@@ -405,7 +405,7 @@ class VMemory {
      * @param dst Target address.
      * @param val Value to be set.
      */
-    template <typename T> void set(vaddr_t dst, T val) {
+    template <typename T> void write(vaddr_t dst, T val) {
       Page& page = get_page(get_upper_addr(dst), false);
       switch (page.type) {
         case PT_MASTER: {
@@ -435,7 +435,7 @@ class VMemory {
      * @param src Target address.
      * @return Saved value.
      */
-    template <typename T> T get(vaddr_t src) {
+    template <typename T> T read(vaddr_t src) {
       Page& page = get_page(get_upper_addr(src), true);
       assert(page.size >= get_lower_addr(src) + sizeof(T));
       return *reinterpret_cast<const T*>(page.value.get() + get_lower_addr(src));
@@ -443,7 +443,7 @@ class VMemory {
 
     /**
      */
-    const uint8_t* get_raw(vaddr_t src) {
+    const uint8_t* read_raw(vaddr_t src) {
       Page& page = get_page(get_upper_addr(src), true);
       assert(page.size >= get_lower_addr(src));
 
@@ -452,7 +452,7 @@ class VMemory {
 
     /**
      */
-    uint8_t* get_raw_writable(vaddr_t src) {
+    uint8_t* read_writable(vaddr_t src) {
       vaddr_t upper = get_upper_addr(src);
       vaddr_t lower = get_lower_addr(src);
 
@@ -473,7 +473,7 @@ class VMemory {
 
     /**
      */
-    void set_copy(vaddr_t dst, vaddr_t src, uint64_t size) {
+    void write_copy(vaddr_t dst, vaddr_t src, uint64_t size) {
       Page& src_page = get_page(get_upper_addr(src), true);
       Page& dst_page = get_page(get_upper_addr(dst), false);
 
@@ -499,7 +499,7 @@ class VMemory {
       }
     }
 
-    void set_copy(vaddr_t dst, const uint8_t* src, uint64_t size) {
+    void write_copy(vaddr_t dst, const uint8_t *src, uint64_t size) {
       Page& dst_page = get_page(get_upper_addr(dst), false);
 
       switch (dst_page.type) {

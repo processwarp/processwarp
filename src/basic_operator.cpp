@@ -22,7 +22,7 @@ void BasicOperator::bit_cast(uint8_t* dst, size_t size, uint8_t* src) const {
 }
 
 // 値をコピーする。
-void BasicOperator::copy(uint8_t* dst, uint8_t* src) const {
+void BasicOperator::copy_value(uint8_t* dst, uint8_t* src) const {
   throw_error(Error::INST_VIOLATION);
 }
 
@@ -78,9 +78,9 @@ void PrimitiveOperator<T>::bit_cast(uint8_t* dst, size_t size, uint8_t* src) con
 
 // 値をコピーする。
 template <typename T>
-void PrimitiveOperator<T>::copy(uint8_t* dst, uint8_t* src) const {
+void PrimitiveOperator<T>::copy_value(uint8_t* dst, uint8_t* src) const {
   *reinterpret_cast<T*>(dst) = *reinterpret_cast<T*>(src);
-  print_debug("copy %s (%p <- %p)\n",
+  print_debug("copy_value %s (%p <- %p)\n",
               Util::numptr2str(dst, sizeof(T)).c_str(), dst, src);
 }
 
@@ -295,9 +295,9 @@ void PointerOperator::bit_cast(uint8_t* dst, size_t size, uint8_t* src) const {
 }
 
 // 値をコピーする。
-void PointerOperator::copy(uint8_t* dst, uint8_t* src) const {
+void PointerOperator::copy_value(uint8_t* dst, uint8_t* src) const {
   *reinterpret_cast<vaddr_t*>(dst) = *reinterpret_cast<vaddr_t*>(src);
-  print_debug("copy %s (%p <- %p)\n",
+  print_debug("copy_value %s (%p <- %p)\n",
               Util::numptr2str(dst, sizeof(vaddr_t)).c_str(), dst, src);
 }
 

@@ -248,7 +248,7 @@ LlvmAsmLoader::ValueDest LlvmAsmLoader::get_loaded_ptr(FunctionContext& fc,
   if (map_global.find(src) != map_global.end()) {
     // グローバル変数
     dest.is_k = false;
-    dest.addr.ptr = memory.get_raw_writable(map_global.at(src));
+    dest.addr.ptr = memory.read_writable(map_global.at(src));
 
   } else {
     // ローカル定数
@@ -912,7 +912,7 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
     prop.stack_size = fc.stack_sum;
     // 定数領域を作成
     prop.k = memory.alloc(k.size());
-    memory.set_copy(prop.k, k.data(), k.size());
+    memory.write_copy(prop.k, k.data(), k.size());
 
     // 定数、変数の数がオペランドで表現可能な上限を超えた場合エラー
     if (stack_values.size() > ((FILL_OPERAND >> 1) - 1) ||
@@ -986,7 +986,7 @@ void LlvmAsmLoader::load_globals
     if (gl->hasInitializer()) {
       ValueDest dst;
       dst.is_k = false;
-      dst.addr.ptr = memory.get_raw_writable(it->second);
+      dst.addr.ptr = memory.read_writable(it->second);
       load_constant(fc, dst, gl->getInitializer());
     }
   }
@@ -1044,7 +1044,7 @@ void LlvmAsmLoader::load_module(llvm::Module* module) {
       vaddr_t func_addr = map_func.at(it.second.first);
       std::unique_ptr<FuncStore> func =
           FuncStore::read(proc, *proc.proc_memory, func_addr);
-      memory.set<vaddr_t>
+      memory.write<vaddr_t>
           (func->normal_prop.k + it.first.addr.k,
            static_cast<vaddr_t>(block_addrs_start.at(it.second)));
 
