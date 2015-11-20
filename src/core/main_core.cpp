@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-#include "lib/picojson.h"
+#include <picojson.h>
 
 #include "socketio.hpp"
 #include "error.hpp"

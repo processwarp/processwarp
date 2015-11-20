@@ -7,7 +7,7 @@
 #include <utility>
 #include <vector>
 
-#include "lib/picojson.h"
+#include <picojson.h>
 
 #include "process.hpp"
 #include "vmemory.hpp"

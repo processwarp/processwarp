@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "lib/picojson.h"
+#include <picojson.h>
 #include "definitions.hpp"
 #include "util.hpp"
 

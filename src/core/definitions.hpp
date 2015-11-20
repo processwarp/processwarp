@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-#include "../include/processwarp/processwarp.h"
+#include "../../include/processwarp/processwarp.h"
 
 namespace processwarp {
 class Process;

@@ -2,7 +2,8 @@
 #include <string>
 #include <utility>
 
-#include "lib/picojson.h"
+#include <picojson.h>
+
 #include "convert.hpp"
 #include "func_store.hpp"
 #include "process.hpp"

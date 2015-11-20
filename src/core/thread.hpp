@@ -5,8 +5,9 @@
 #include <memory>
 #include <utility>
 
+#include <picojson.h>
+
 #include "definitions.hpp"
-#include "lib/picojson.h"
 #include "stackinfo.hpp"
 #include "type_store.hpp"
 #include "wrapped_operator.hpp"

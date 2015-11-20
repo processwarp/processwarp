@@ -8,7 +8,8 @@
 #include <set>
 #include <string>
 
-#include "lib/picojson.h"
+#include <picojson.h>
+
 #include "convert.hpp"
 #include "definitions.hpp"
 #include "interrupt_memory_require.hpp"
