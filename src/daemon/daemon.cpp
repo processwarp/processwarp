@@ -18,11 +18,11 @@ namespace processwarp {
 /** Daemon run mode. */
 static DaemonRunMode::Type run_mode = DaemonRunMode::DAEMON;
 
-/*
+/**
  * Daemonize the process.
- * http://draft.scyphus.co.jp/series/daemon.ja/01_daemonize.html
+ * Reference: http://draft.scyphus.co.jp/series/daemon.ja/01_daemonize.html<br>
  * This function get process to daemon.
- *  Existing process will be fork and parent process will be exit.
+ * Existing process will be fork and parent process will be exit.
  * And daemon (child) process will be continue. 
  * @return 0 if daemonize was success.
  */
@@ -127,9 +127,9 @@ void show_help(bool is_error, const std::string& command) {
 
 /**
  * Read command line arguments and set option values.
- * c(console) option was set, change run mode to {@link DaemonRunMode::Type::CONSOLE}.
- * d(daemon) option was set, change run mode to {@link DaemonRunMode::Type::DAEMON}.
- * h(help) option was set, change run mode to {@link DaemonRunMode::Type::HELP}.
+ * c(console) option was set, change run mode to DaemonRunMode::CONSOLE.<br>
+ * d(daemon) option was set, change run mode to DaemonRunMode::DAEMON.<br>
+ * h(help) option was set, change run mode to DaemonRunMode::HELP.<br>
  * @param argc Argc passed by entry function.
  * @param argv Argv passed by entry function.
  * @return False if options was wrong.
