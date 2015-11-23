@@ -1,5 +1,7 @@
 #pragma once
 
+#include <picojson.h>
+
 #include <cassert>
 #include <deque>
 #include <map>
@@ -7,8 +9,6 @@
 #include <random>
 #include <set>
 #include <string>
-
-#include <picojson.h>
 
 #include "convert.hpp"
 #include "definitions.hpp"

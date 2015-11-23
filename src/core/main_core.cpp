@@ -2,6 +2,8 @@
 #include <dlfcn.h>
 #include <getopt.h>
 
+#include <picojson.h>
+
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -9,8 +11,6 @@
 #include <regex>
 #include <string>
 #include <vector>
-
-#include <picojson.h>
 
 #include "socketio.hpp"
 #include "error.hpp"

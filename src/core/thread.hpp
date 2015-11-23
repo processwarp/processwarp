@@ -1,11 +1,11 @@
 #pragma once
 
+#include <picojson.h>
+
 #include <vector>
 #include <map>
 #include <memory>
 #include <utility>
-
-#include <picojson.h>
 
 #include "definitions.hpp"
 #include "stackinfo.hpp"

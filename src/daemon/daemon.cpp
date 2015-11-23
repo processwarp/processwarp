@@ -10,6 +10,7 @@
 #include <csignal>
 #include <cstdlib>
 #include <iostream>
+#include <string>
 
 #include "daemon.hpp"
 
@@ -107,7 +108,6 @@ int daemonize() {
       close(fd);
     }
   }
-  
   return 0;
 }
 
@@ -156,7 +156,7 @@ bool read_options(int argc, char* argv[]) {
       case 'h': {
         run_mode = DaemonRunMode::HELP;
       } break;
-        
+
       case ':':
       case '?': {
         return false;
@@ -166,7 +166,7 @@ bool read_options(int argc, char* argv[]) {
   return true;
 }
 
-} // namespace processwarp
+}  // namespace processwarp
 
 /**
  * Entry point.
@@ -181,7 +181,7 @@ int main(int argc, char* argv[]) {
     processwarp::show_help(true, argv[0]);
     return EXIT_FAILURE;
   }
-  
+
   switch (processwarp::run_mode) {
     case processwarp::DaemonRunMode::CONSOLE: {
       // Do nothing.
@@ -202,6 +202,5 @@ int main(int argc, char* argv[]) {
       assert(false);
     } break;
   }
-  
   return EXIT_SUCCESS;
 }
