@@ -1,13 +1,13 @@
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunused-local-typedef"
-#include <safeint3.hpp>
-#pragma clang diagnostic pop
-
 #include <vector>
 
 #include "builtin_overflow.hpp"
 #include "process.hpp"
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-local-typedef"
+#include "safeint3.hpp"
+#pragma clang diagnostic pop
 
 namespace processwarp {
 
