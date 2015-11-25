@@ -18,6 +18,9 @@ before_install:
   - make
   - make install
   - cd $TRAVIS_BUILD_DIR
+  - curl https://raw.githubusercontent.com/google/styleguide/gh-pages/cpplint/cpplint.py > /tmp/cpplint.py
+  - sudo mv /tmp/cpplint.py /usr/local/bin/
+  - sudo chmod 755 /usr/local/bin/cpplint.py
 script:
   - mkdir build
   - cd build
