@@ -17,7 +17,8 @@ add_custom_target(cpplint
   --extensions=cpp,h,hpp
   --linelength=100
   --filter=-legal/copyright,-runtime/references,-build/c++11
-  ${PROJECT_SOURCE_DIR}/src/{core,daemon}/*.{cpp,hpp}
+  ${PROJECT_SOURCE_DIR}/src/core/*.cpp ${PROJECT_SOURCE_DIR}/src/core/*.hpp
+  ${PROJECT_SOURCE_DIR}/src/daemon/*.cpp ${PROJECT_SOURCE_DIR}/src/daemon/*.hpp
   )
 
 # include_directories(include)
