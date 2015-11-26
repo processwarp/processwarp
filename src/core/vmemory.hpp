@@ -91,7 +91,7 @@ class VMemory {
   }
 
   static bool is_program(vaddr_t addr) {
-    return (addr & AD_MASK) == AD_PROGRAM;
+    return (addr & AddrType::MASK) == AddrType::PROGRAM;
   }
 
   /** Bundle pages in memory space. */
@@ -121,7 +121,7 @@ class VMemory {
      * Get a new address to allocate a new memory.
      * @param type Address-type of memory.
      */
-    vaddr_t assign_addr(AddrType type);
+    vaddr_t assign_addr(AddrType::Type type);
 
     /**
      * Release a binded address for be used memory to be unused.
@@ -148,16 +148,16 @@ class VMemory {
   /**
    *
    */
-  static AddrType get_addr_type(uint64_t size) {
-    if (size <= 0x0000000000FF) return AD_VALUE_08;
-    if (size <= 0x00000000FFFF) return AD_VALUE_16;
-    if (size <= 0x000000FFFFFF) return AD_VALUE_24;
-    if (size <= 0x0000FFFFFFFF) return AD_VALUE_32;
-    if (size <= 0x00FFFFFFFFFF) return AD_VALUE_40;
-    if (size <= 0xFFFFFFFFFFFF) return AD_VALUE_48;
+  static AddrType::Type get_addr_type(uint64_t size) {
+    if (size <= 0x0000000000FF) return AddrType::VALUE_08;
+    if (size <= 0x00000000FFFF) return AddrType::VALUE_16;
+    if (size <= 0x000000FFFFFF) return AddrType::VALUE_24;
+    if (size <= 0x0000FFFFFFFF) return AddrType::VALUE_32;
+    if (size <= 0x00FFFFFFFFFF) return AddrType::VALUE_40;
+    if (size <= 0xFFFFFFFFFFFF) return AddrType::VALUE_48;
     /// @todo error
     assert(false);
-    return AD_VALUE_08;
+    return AddrType::VALUE_08;
   }
 
   /**

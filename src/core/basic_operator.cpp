@@ -149,11 +149,11 @@ M_BINARY_OPERATOR_TYPE_EXTENDED(op_xor, ^);     // xor
   void PrimitiveOperator<T>::op(uint8_t* dst, uint8_t* a, uint8_t* b) const { \
     *reinterpret_cast<uint8_t*>(dst) = (*reinterpret_cast<T*>(a) infix *reinterpret_cast<T*>(b)) ? \
                                        0x01 : 0x00;                     \
-  print_debug("%p : %s = %s %s %s\n", dst,                              \
-              Util::numptr2str(dst, 1).c_str(),                        \
-              Util::numptr2str(a, sizeof(T)).c_str(), #infix,           \
-              Util::numptr2str(b, sizeof(T)).c_str());                  \
-}
+    print_debug("%p : %s = %s %s %s\n", dst,                            \
+                Util::numptr2str(dst, 1).c_str(),                       \
+                Util::numptr2str(a, sizeof(T)).c_str(), #infix,         \
+                Util::numptr2str(b, sizeof(T)).c_str());                \
+  }
 
 M_COMP_OPERATOR_TYPE_EXTENDED(op_equal,         ==);    // a==b
 M_COMP_OPERATOR_TYPE_EXTENDED(op_greater,       >);     // a>b
@@ -254,25 +254,25 @@ void PrimitiveOperator<T>::op_shr(uint8_t* dst, uint8_t* a, uint8_t* b) const {
 template <typename T>
 void PrimitiveOperator<T>::type_cast(uint8_t* dst, vaddr_t type, uint8_t* src)  const {
   switch (type) {
-    case BasicType::TY_POINTER:
+    case BasicTypeAddress::POINTER:
       *reinterpret_cast<vaddr_t*>(dst) = static_cast<unsigned>(*reinterpret_cast<T*>(src));
       break;
 
-#define M_CASE_TYPE_CAST(VM_TYPE, REAL_TYPE)                    \
-      case (VM_TYPE):                                           \
-        *reinterpret_cast<REAL_TYPE*>(dst) =  static_cast<REAL_TYPE>(*reinterpret_cast<T*>(src)); \
+#define M_CASE_TYPE_CAST(VM_TYPE, REAL_TYPE)                            \
+      case (VM_TYPE):                                                   \
+        *reinterpret_cast<REAL_TYPE*>(dst) = static_cast<REAL_TYPE>(*reinterpret_cast<T*>(src)); \
         break;
 
-      M_CASE_TYPE_CAST(BasicType::TY_UI8,  uint8_t);
-      M_CASE_TYPE_CAST(BasicType::TY_UI16, uint16_t);
-      M_CASE_TYPE_CAST(BasicType::TY_UI32, uint32_t);
-      M_CASE_TYPE_CAST(BasicType::TY_UI64, uint64_t);
-      M_CASE_TYPE_CAST(BasicType::TY_SI8,  int8_t);
-      M_CASE_TYPE_CAST(BasicType::TY_SI16, int16_t);
-      M_CASE_TYPE_CAST(BasicType::TY_SI32, int32_t);
-      M_CASE_TYPE_CAST(BasicType::TY_SI64, int64_t);
-      M_CASE_TYPE_CAST(BasicType::TY_F32,  float);
-      M_CASE_TYPE_CAST(BasicType::TY_F64,  double);
+      M_CASE_TYPE_CAST(BasicTypeAddress::UI8,  uint8_t);
+      M_CASE_TYPE_CAST(BasicTypeAddress::UI16, uint16_t);
+      M_CASE_TYPE_CAST(BasicTypeAddress::UI32, uint32_t);
+      M_CASE_TYPE_CAST(BasicTypeAddress::UI64, uint64_t);
+      M_CASE_TYPE_CAST(BasicTypeAddress::SI8,  int8_t);
+      M_CASE_TYPE_CAST(BasicTypeAddress::SI16, int16_t);
+      M_CASE_TYPE_CAST(BasicTypeAddress::SI32, int32_t);
+      M_CASE_TYPE_CAST(BasicTypeAddress::SI64, int64_t);
+      M_CASE_TYPE_CAST(BasicTypeAddress::F32,  float);
+      M_CASE_TYPE_CAST(BasicTypeAddress::F64,  double);
 #undef M_CASE_TYPE_CAST
 
     default: {
@@ -356,26 +356,26 @@ void PointerOperator::op_not_equal(uint8_t* dst, uint8_t* a, uint8_t* b) const {
 // type_cast命令に対応したキャスト演算を行う。
 void PointerOperator::type_cast(uint8_t* dst, vaddr_t type, uint8_t* src) const {
   switch (type) {
-    case BasicType::TY_UI8:
-    case BasicType::TY_SI8:
+    case BasicTypeAddress::UI8:
+    case BasicTypeAddress::SI8:
       *reinterpret_cast<uint8_t*>(dst) =
           static_cast<uint8_t>(*reinterpret_cast<vaddr_t*>(src));
       break;
 
-    case BasicType::TY_UI16:
-    case BasicType::TY_SI16:
+    case BasicTypeAddress::UI16:
+    case BasicTypeAddress::SI16:
       *reinterpret_cast<uint16_t*>(dst) =
           static_cast<uint16_t>(*reinterpret_cast<vaddr_t*>(src));
       break;
 
-    case BasicType::TY_UI32:
-    case BasicType::TY_SI32:
+    case BasicTypeAddress::UI32:
+    case BasicTypeAddress::SI32:
       *reinterpret_cast<uint32_t*>(dst) =
           static_cast<uint32_t>(*reinterpret_cast<vaddr_t*>(src));
       break;
 
-    case BasicType::TY_UI64:
-    case BasicType::TY_SI64:
+    case BasicTypeAddress::UI64:
+    case BasicTypeAddress::SI64:
       *reinterpret_cast<uint64_t*>(dst) =
           static_cast<uint64_t>(*reinterpret_cast<vaddr_t*>(src));
       break;

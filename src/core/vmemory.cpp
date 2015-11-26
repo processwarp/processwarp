@@ -590,7 +590,7 @@ VMemory::Accessor::MasterKey VMemory::Accessor::keep_master(vaddr_t addr) {
 // Set meta data.
 vaddr_t VMemory::Accessor::set_meta_area(const std::string& data, vaddr_t addr) {
   if (addr == VADDR_NULL) {
-    addr = space.assign_addr(AD_META);
+    addr = space.assign_addr(AddrType::META);
   }
   assert(space.pages.find(addr) == space.pages.end());
   space.pages.insert(std::make_pair(addr, Page(PT_MASTER, true, data,
@@ -712,8 +712,8 @@ vaddr_t VMemory::Accessor::realloc(vaddr_t addr, uint64_t size) {
   Page& page = get_page(addr, false);
   switch (page.type) {
     case PT_MASTER: {
-      AddrType old_type = static_cast<AddrType>(addr & AD_MASK);
-      AddrType new_type = get_addr_type(size);
+      AddrType::Type old_type = static_cast<AddrType::Type>(addr & AddrType::MASK);
+      AddrType::Type new_type = get_addr_type(size);
       if (old_type == new_type) {
         std::unique_ptr<uint8_t[]> tmp(new uint8_t[size]);
         if (page.size < size) {
@@ -772,7 +772,7 @@ vaddr_t VMemory::Accessor::reserve_program_area() {
   vaddr_t new_addr;
 
   do {
-    new_addr = AD_PROGRAM | (~AD_MASK & space.rnd());
+    new_addr = AddrType::PROGRAM | (~AddrType::MASK & space.rnd());
   } while (space.pages.find(new_addr) != space.pages.end());
 
   space.pages.insert(std::make_pair(new_addr, Page(PT_PROGRAM, true, std::set<dev_id_t>())));
@@ -864,7 +864,7 @@ VMemory::Space::Space(const std::string& name_, std::mt19937_64& rnd_, VMemory& 
 }
 
 // Get a new address to allocate a new memory.
-vaddr_t VMemory::Space::assign_addr(AddrType type) {
+vaddr_t VMemory::Space::assign_addr(AddrType::Type type) {
   std::deque<vaddr_t>& reserved_que = reserved[type >> 60];
   std::set<vaddr_t> new_reserve;
   Finally finally;
@@ -878,9 +878,9 @@ vaddr_t VMemory::Space::assign_addr(AddrType type) {
     for (unsigned int retry = 0;
          reserved_que.size() + new_reserve.size() < VMEMORY_RESERVE_BASE &&
                               retry < VMEMORY_RESERVE_BASE * 2; retry ++) {
-      vaddr_t new_addr = get_upper_addr(type | (~AD_MASK & rnd()));
+      vaddr_t new_addr = get_upper_addr(type | (~AddrType::MASK & rnd()));
 
-      if (type == AD_META && new_addr <= 0xFF) {
+      if (type == AddrType::META && new_addr <= 0xFF) {
         continue;
       }
 

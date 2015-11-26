@@ -310,7 +310,7 @@ re_entry: {
             std::unique_ptr<TypeStore> type(std::move(get_type(type_inst, op_param)));
             vaddr_t value = get_operand(value_inst, op_param);
 
-            if (new_func->type == FuncType::FC_NORMAL && args < new_func->arg_num) {
+            if (new_func->type == FunctionType::NORMAL && args < new_func->arg_num) {
               // 通常の引数はスタックの先頭にコピー
               memory.write_copy(new_stackinfo->stack + written_size, value, type->size);
               written_size += type->size;
@@ -327,7 +327,7 @@ re_entry: {
           }
 
           print_debug("call %s\n", new_func->name.str().c_str());
-          if (new_func->type == FuncType::FC_NORMAL) {
+          if (new_func->type == FunctionType::NORMAL) {
             // 可変長引数でない場合、引数の数をチェック
             if (args < new_func->arg_num ||
                 (!new_func->is_var_arg && args != new_func->arg_num))
@@ -365,19 +365,19 @@ re_entry: {
             }
             goto re_entry;
 
-          } else if (new_func->type == FuncType::FC_BUILTIN) {
+          } else if (new_func->type == FunctionType::BUILTIN) {
             // VM組み込み関数の呼び出し
             assert(new_func->builtin != nullptr);
-            BuiltinPost bp = new_func->builtin(*this, thread, new_func->builtin_param,
-                                               stackinfo.output, work);
+            BuiltinPostProc::Type bp = new_func->builtin(*this, thread, new_func->builtin_param,
+                                                         stackinfo.output, work);
             switch (bp) {
-              case BP_NORMAL: stackinfo.pc += args * 2 + 2; break;
-              case BP_RE_ENTRY: stackinfo.pc += args * 2 + 2; goto re_entry;
-              case BP_RETRY_LATER: return;
+              case BuiltinPostProc::NORMAL: stackinfo.pc += args * 2 + 2; break;
+              case BuiltinPostProc::RE_ENTRY: stackinfo.pc += args * 2 + 2; goto re_entry;
+              case BuiltinPostProc::RETRY_LATER: return;
               default: assert(false);
             }
 
-          } else {  // func.type == FuncType::EXTERNAL
+          } else {  // func.type == FunctionType::EXTERNAL
             if (new_func->external == nullptr) {
               new_func->external = get_external_func(new_func->name);
             }
@@ -442,7 +442,7 @@ re_entry: {
           M_BINARY_OPERATOR(OR,  op_or);   // or
           M_BINARY_OPERATOR(XOR, op_xor);  // xor
 
-        case SET_OV_PTR: {
+        case Opcode::SET_OV_PTR: {
           stackinfo.value        = memory.read<vaddr_t>(get_operand(code, op_param));
           stackinfo.type_operator->copy_value(stackinfo.output, stackinfo.value);
           stackinfo.output       = stackinfo.value;
@@ -682,18 +682,18 @@ void Process::call_external(Thread& thread,
   // 戻り値の型変換
   ffi_type* ffi_ret_type = nullptr;
   switch (func.ret_type) {
-    case BasicType::TY_VOID: ffi_ret_type = &ffi_type_void;   break;
-      // case BasicType::TY_POINTER: ffi_ret_type = &ffi_type_pointer; break;
-    case BasicType::TY_UI8:  ffi_ret_type = &ffi_type_uint8;  break;
-    case BasicType::TY_UI16: ffi_ret_type = &ffi_type_uint16; break;
-    case BasicType::TY_UI32: ffi_ret_type = &ffi_type_uint32; break;
-    case BasicType::TY_UI64: ffi_ret_type = &ffi_type_uint64; break;
-    case BasicType::TY_SI8:  ffi_ret_type = &ffi_type_sint8;  break;
-    case BasicType::TY_SI16: ffi_ret_type = &ffi_type_sint16; break;
-    case BasicType::TY_SI32: ffi_ret_type = &ffi_type_sint32; break;
-    case BasicType::TY_SI64: ffi_ret_type = &ffi_type_sint64; break;
-    case BasicType::TY_F32:  ffi_ret_type = &ffi_type_float;  break;
-    case BasicType::TY_F64:  ffi_ret_type = &ffi_type_double; break;
+    case BasicTypeAddress::VOID: ffi_ret_type = &ffi_type_void;   break;
+      // case BasicTypeAddress::POINTER: ffi_ret_type = &ffi_type_pointer; break;
+    case BasicTypeAddress::UI8:  ffi_ret_type = &ffi_type_uint8;  break;
+    case BasicTypeAddress::UI16: ffi_ret_type = &ffi_type_uint16; break;
+    case BasicTypeAddress::UI32: ffi_ret_type = &ffi_type_uint32; break;
+    case BasicTypeAddress::UI64: ffi_ret_type = &ffi_type_uint64; break;
+    case BasicTypeAddress::SI8:  ffi_ret_type = &ffi_type_sint8;  break;
+    case BasicTypeAddress::SI16: ffi_ret_type = &ffi_type_sint16; break;
+    case BasicTypeAddress::SI32: ffi_ret_type = &ffi_type_sint32; break;
+    case BasicTypeAddress::SI64: ffi_ret_type = &ffi_type_sint64; break;
+    case BasicTypeAddress::F32:  ffi_ret_type = &ffi_type_float;  break;
+    case BasicTypeAddress::F64:  ffi_ret_type = &ffi_type_double; break;
 
     default: {
       fixme(Util::vaddr2str(func.ret_type));
@@ -711,7 +711,7 @@ void Process::call_external(Thread& thread,
         TypeStore::read(memory, *reinterpret_cast<vaddr_t*>(args.data() + seek));
 
     switch (type->addr) {
-      case BasicType::TY_POINTER: {
+      case BasicTypeAddress::POINTER: {
         ffi_arg_types.push_back(&ffi_type_pointer);
         vaddr_t addr = *reinterpret_cast<vaddr_t*>(args.data() + seek + sizeof(vaddr_t));
         auto native = native_ptr.find(addr);
@@ -725,52 +725,52 @@ void Process::call_external(Thread& thread,
         ffi_args.push_back(args.data() + seek + sizeof(vaddr_t));
       } break;
 
-      case BasicType::TY_UI8: {
+      case BasicTypeAddress::UI8: {
         ffi_arg_types.push_back(&ffi_type_uint8);
         ffi_args.push_back(args.data() + seek + sizeof(vaddr_t));
       } break;
 
-      case BasicType::TY_UI16: {
+      case BasicTypeAddress::UI16: {
         ffi_arg_types.push_back(&ffi_type_uint16);
         ffi_args.push_back(args.data() + seek + sizeof(vaddr_t));
       } break;
 
-      case BasicType::TY_UI32: {
+      case BasicTypeAddress::UI32: {
         ffi_arg_types.push_back(&ffi_type_uint32);
         ffi_args.push_back(args.data() + seek + sizeof(vaddr_t));
       } break;
 
-      case BasicType::TY_UI64: {
+      case BasicTypeAddress::UI64: {
         ffi_arg_types.push_back(&ffi_type_uint64);
         ffi_args.push_back(args.data() + seek + sizeof(vaddr_t));
       } break;
 
-      case BasicType::TY_SI8: {
+      case BasicTypeAddress::SI8: {
         ffi_arg_types.push_back(&ffi_type_sint8);
         ffi_args.push_back(args.data() + seek + sizeof(vaddr_t));
       } break;
 
-      case BasicType::TY_SI16: {
+      case BasicTypeAddress::SI16: {
         ffi_arg_types.push_back(&ffi_type_sint16);
         ffi_args.push_back(args.data() + seek + sizeof(vaddr_t));
       } break;
 
-      case BasicType::TY_SI32: {
+      case BasicTypeAddress::SI32: {
         ffi_arg_types.push_back(&ffi_type_sint32);
         ffi_args.push_back(args.data() + seek + sizeof(vaddr_t));
       } break;
 
-      case BasicType::TY_SI64: {
+      case BasicTypeAddress::SI64: {
         ffi_arg_types.push_back(&ffi_type_sint64);
         ffi_args.push_back(args.data() + seek + sizeof(vaddr_t));
       } break;
 
-      case BasicType::TY_F32: {
+      case BasicTypeAddress::F32: {
         ffi_arg_types.push_back(&ffi_type_float);
         ffi_args.push_back(args.data() + seek + sizeof(vaddr_t));
       } break;
 
-      case BasicType::TY_F64: {
+      case BasicTypeAddress::F64: {
         ffi_arg_types.push_back(&ffi_type_double);
         ffi_args.push_back(args.data() + seek + sizeof(vaddr_t));
       } break;
@@ -817,7 +817,7 @@ void Process::call_external(Thread& thread,
   std::stringstream asm_code;
   std::stringstream asm_param;
   std::vector<uint32_t> vararg_buf;
-  if (func.ret_type != BasicType::TY_VOID) {
+  if (func.ret_type != BasicTypeAddress::VOID) {
     asm_code << "setValue(" << static_cast<void*>(ret_buf.data()) << ","
              << "ccall('" << func.name.str() << "', 'number', [";
 
@@ -837,7 +837,7 @@ void Process::call_external(Thread& thread,
     std::unique_ptr<TypeStore>
         type(TypeStore::read(memory, *reinterpret_cast<vaddr_t*>(args.data() + seek)));
     switch (type->addr) {
-      case BasicType::TY_POINTER: {
+      case BasicTypeAddress::POINTER: {
         vaddr_t addr = *reinterpret_cast<vaddr_t*>(args.data() + seek + sizeof(vaddr_t));
         auto native = native_ptr.find(addr);
         if (native != native_ptr.end()) {
@@ -848,36 +848,36 @@ void Process::call_external(Thread& thread,
         }
       } break;
 
-      case BasicType::TY_UI8:
-      case BasicType::TY_SI8: {
+      case BasicTypeAddress::UI8:
+      case BasicTypeAddress::SI8: {
         asm_param << "getValue(" <<
             static_cast<void*>(args.data() + seek + sizeof(vaddr_t)) << ",'i8')";
       } break;
 
-      case BasicType::TY_UI16:
-      case BasicType::TY_SI16: {
+      case BasicTypeAddress::UI16:
+      case BasicTypeAddress::SI16: {
         asm_param << "getValue(" <<
             static_cast<void*>(args.data() + seek + sizeof(vaddr_t)) << ",'i16')";
       } break;
 
-      case BasicType::TY_UI32:
-      case BasicType::TY_SI32: {
+      case BasicTypeAddress::UI32:
+      case BasicTypeAddress::SI32: {
         asm_param << "getValue(" <<
             static_cast<void*>(args.data() + seek + sizeof(vaddr_t)) << ",'i32')";
       } break;
 
-      case BasicType::TY_UI64:
-      case BasicType::TY_SI64: {
+      case BasicTypeAddress::UI64:
+      case BasicTypeAddress::SI64: {
         asm_param << "getValue(" <<
             static_cast<void*>(args.data() + seek + sizeof(vaddr_t)) << ",'i64')";
       } break;
 
-      case BasicType::TY_F32: {
+      case BasicTypeAddress::F32: {
         asm_param << "getValue(" <<
             static_cast<void*>(args.data() + seek + sizeof(vaddr_t)) << ",'float')";
       } break;
 
-      case BasicType::TY_F64: {
+      case BasicTypeAddress::F64: {
         asm_param << "getValue(" <<
             static_cast<void*>(args.data() + seek + sizeof(vaddr_t)) << ",'double')";
       } break;
@@ -896,7 +896,7 @@ void Process::call_external(Thread& thread,
       std::unique_ptr<TypeStore>
           type(TypeStore::read(memory, *reinterpret_cast<vaddr_t*>(args.data() + seek)));
       switch (type->addr) {
-        case BasicType::TY_POINTER: {
+        case BasicTypeAddress::POINTER: {
           vaddr_t addr = *reinterpret_cast<vaddr_t*>(args.data() + seek + sizeof(vaddr_t));
           auto native = native_ptr.find(addr);
           void* raw_ptr;
@@ -910,8 +910,8 @@ void Process::call_external(Thread& thread,
           std::memcpy(&vararg_buf.back(), &raw_ptr, sizeof(void*));
         } break;
 
-        case BasicType::TY_UI8:
-        case BasicType::TY_SI8: {
+        case BasicTypeAddress::UI8:
+        case BasicTypeAddress::SI8: {
           int32_t raw_val =
               static_cast<int32_t>
               (*reinterpret_cast<int8_t*>(args.data() + seek + sizeof(vaddr_t)));
@@ -919,8 +919,8 @@ void Process::call_external(Thread& thread,
           std::memcpy(&vararg_buf.back(), &raw_val, sizeof(raw_val));
         } break;
 
-        case BasicType::TY_UI16:
-        case BasicType::TY_SI16: {
+        case BasicTypeAddress::UI16:
+        case BasicTypeAddress::SI16: {
           int32_t raw_val =
               static_cast<int32_t>
               (*reinterpret_cast<int16_t*>(args.data() + seek + sizeof(vaddr_t)));
@@ -928,28 +928,28 @@ void Process::call_external(Thread& thread,
           std::memcpy(&vararg_buf.back(), &raw_val, sizeof(raw_val));
         } break;
 
-        case BasicType::TY_UI32:
-        case BasicType::TY_SI32: {
+        case BasicTypeAddress::UI32:
+        case BasicTypeAddress::SI32: {
           int32_t raw_val = *reinterpret_cast<int32_t*>(args.data() + seek + sizeof(vaddr_t));
           vararg_buf.resize(vararg_buf.size() + 1);
           std::memcpy(&vararg_buf.back(), &raw_val, sizeof(raw_val));
         } break;
 
-        case BasicType::TY_UI64:
-        case BasicType::TY_SI64: {
+        case BasicTypeAddress::UI64:
+        case BasicTypeAddress::SI64: {
           uint64_t raw_val = *reinterpret_cast<uint64_t*>(args.data() + seek + sizeof(vaddr_t));
           vararg_buf.resize(vararg_buf.size() + 2 + (vararg_buf.size() % 2));
           std::memcpy(&vararg_buf.at(vararg_buf.size() - 2), &raw_val, sizeof(raw_val));
         } break;
 
-        case BasicType::TY_F32: {
+        case BasicTypeAddress::F32: {
           double raw_val =
               static_cast<double>(*reinterpret_cast<float*>(args.data() + seek + sizeof(vaddr_t)));
           vararg_buf.resize(vararg_buf.size() + 2 + (vararg_buf.size() % 2));
           std::memcpy(&vararg_buf.at(vararg_buf.size() - 2), &raw_val, sizeof(raw_val));
         } break;
 
-        case BasicType::TY_F64: {
+        case BasicTypeAddress::F64: {
           double raw_val = *reinterpret_cast<double*>(args.data() + seek + sizeof(vaddr_t));
           vararg_buf.resize(vararg_buf.size() + 2 + (vararg_buf.size() % 2));
           std::memcpy(&vararg_buf.at(vararg_buf.size() - 2), &raw_val, sizeof(raw_val));
@@ -965,18 +965,18 @@ void Process::call_external(Thread& thread,
 
   // 戻り値の型を合成する。
   switch (func.ret_type) {
-    case BasicType::TY_VOID: asm_code << ";";   break;
-      // case BasicType::TY_POINTER: ffi_ret_type = &ffi_type_pointer; break;
-    case BasicType::TY_UI8:  asm_code << ", 'i8');";  break;
-    case BasicType::TY_UI16: asm_code << ", 'i16');"; break;
-    case BasicType::TY_UI32: asm_code << ", 'i32');"; break;
-    case BasicType::TY_UI64: asm_code << ", 'i64');"; break;
-    case BasicType::TY_SI8:  asm_code << ", 'i8');";  break;
-    case BasicType::TY_SI16: asm_code << ", 'i16');"; break;
-    case BasicType::TY_SI32: asm_code << ", 'i32');"; break;
-    case BasicType::TY_SI64: asm_code << ", 'i64');"; break;
-    case BasicType::TY_F32:  asm_code << ", 'float');";  break;
-    case BasicType::TY_F64:  asm_code << ", 'double');"; break;
+    case BasicTypeAddress::VOID: asm_code << ";";   break;
+      // case BasicTypeAddress::POINTER: ffi_ret_type = &ffi_type_pointer; break;
+    case BasicTypeAddress::UI8:  asm_code << ", 'i8');";  break;
+    case BasicTypeAddress::UI16: asm_code << ", 'i16');"; break;
+    case BasicTypeAddress::UI32: asm_code << ", 'i32');"; break;
+    case BasicTypeAddress::UI64: asm_code << ", 'i64');"; break;
+    case BasicTypeAddress::SI8:  asm_code << ", 'i8');";  break;
+    case BasicTypeAddress::SI16: asm_code << ", 'i16');"; break;
+    case BasicTypeAddress::SI32: asm_code << ", 'i32');"; break;
+    case BasicTypeAddress::SI64: asm_code << ", 'i64');"; break;
+    case BasicTypeAddress::F32:  asm_code << ", 'float');";  break;
+    case BasicTypeAddress::F64:  asm_code << ", 'double');"; break;
 
     default: {
       fixme(Util::vaddr2str(func.ret_type));
@@ -988,7 +988,7 @@ void Process::call_external(Thread& thread,
   // JavaScript経由でEMSCRIPTENの関数を利用する
   emscripten_run_script(asm_code.str().c_str());
 
-  if (func.ret_type != BasicType::TY_VOID) {
+  if (func.ret_type != BasicTypeAddress::VOID) {
     // 戻り値格納用領域から戻り値を取り出し。
     memory.write_copy(ret_addr, reinterpret_cast<const uint8_t*>(ret_buf.data()), ret_size);
   }
@@ -1003,7 +1003,7 @@ void Process::call_setup_voidfunc(Thread& thread, vaddr_t func_addr) {
   std::unique_ptr<FuncStore> func(FuncStore::read(*this, *thread.memory, func_addr));
 
   // 関数の型に合わせて呼び出す。
-  if (func->type == FuncType::FC_NORMAL) {
+  if (func->type == FunctionType::NORMAL) {
     vaddr_t stackaddr =
         StackInfo::alloc(*thread.memory,
                          func->addr,
@@ -1015,7 +1015,7 @@ void Process::call_setup_voidfunc(Thread& thread, vaddr_t func_addr) {
     std::unique_ptr<StackInfo> stackinfo(StackInfo::read(*thread.memory, stackaddr));
     thread.push_stack(stackaddr, std::move(stackinfo));
 
-  } else if (func->type == FuncType::FC_BUILTIN) {
+  } else if (func->type == FunctionType::BUILTIN) {
     // VM組み込み関数の呼び出し
     assert(func->builtin != nullptr);
     std::vector<uint8_t> work;
@@ -1063,7 +1063,7 @@ vtid_t Process::create_thread(vaddr_t func_addr, vaddr_t arg_addr) {
   std::unique_ptr<FuncStore> func(std::move(FuncStore::read(*this, *proc_memory, func_addr)));
 
   // check function type
-  if (func->type != FC_NORMAL) {
+  if (func->type != FunctionType::NORMAL) {
     throw_error_message(Error::SPEC_VIOLATION, func->name.str());
   }
 
@@ -1225,7 +1225,7 @@ external_func_t Process::get_external_func(const Symbols::Symbol& name) {
       throw_error(Error::SEGMENT_FAULT);                                \
     }                                                                   \
     /* 型チェック */                                                    \
-    if (*reinterpret_cast<const vaddr_t*>(src.data() + *seek) != BasicType::basic_type) { \
+    if (*reinterpret_cast<const vaddr_t*>(src.data() + *seek) != basic_type) { \
       throw_error(Error::TYPE_VIOLATION);                               \
     }                                                                   \
     /* seekをずらす & 読み取り */                                       \
@@ -1234,11 +1234,11 @@ external_func_t Process::get_external_func(const Symbols::Symbol& name) {
     return *reinterpret_cast<const vaddr_t*>(src.data() + tmp_seek);    \
   }
 
-M_READ_BUILTIN_PARAM(read_builtin_param_ptr, vaddr_t, TY_POINTER);
-M_READ_BUILTIN_PARAM(read_builtin_param_i8,  uint8_t,  TY_UI8);
-M_READ_BUILTIN_PARAM(read_builtin_param_i16, uint16_t, TY_UI16);
-M_READ_BUILTIN_PARAM(read_builtin_param_i32, uint32_t, TY_UI32);
-M_READ_BUILTIN_PARAM(read_builtin_param_i64, uint64_t, TY_UI64);
+M_READ_BUILTIN_PARAM(read_builtin_param_ptr, vaddr_t,  BasicTypeAddress::POINTER);
+M_READ_BUILTIN_PARAM(read_builtin_param_i8,  uint8_t,  BasicTypeAddress::UI8);
+M_READ_BUILTIN_PARAM(read_builtin_param_i16, uint16_t, BasicTypeAddress::UI16);
+M_READ_BUILTIN_PARAM(read_builtin_param_i32, uint32_t, BasicTypeAddress::UI32);
+M_READ_BUILTIN_PARAM(read_builtin_param_i64, uint64_t, BasicTypeAddress::UI64);
 
 #undef M_READ_BUILTIN_PARAM
 
@@ -1381,26 +1381,26 @@ void Process::setup() {
   builtin_addrs.insert(t)
 
   // 基本型を登録
-  M_ALLOC_BASIC_TYPE(0,  0,  BasicType::TY_VOID);
-  M_ALLOC_BASIC_TYPE(8,  8,  BasicType::TY_POINTER);
-  M_ALLOC_BASIC_TYPE(8,  8,  BasicType::TY_FUNCTION);
-  M_ALLOC_BASIC_TYPE(1,  1,  BasicType::TY_UI8);
-  M_ALLOC_BASIC_TYPE(2,  2,  BasicType::TY_UI16);
-  M_ALLOC_BASIC_TYPE(4,  4,  BasicType::TY_UI32);
-  M_ALLOC_BASIC_TYPE(8,  8,  BasicType::TY_UI64);
-  M_ALLOC_BASIC_TYPE(16, 16, BasicType::TY_UI128);
-  M_ALLOC_BASIC_TYPE(32, 32, BasicType::TY_UI256);
-  M_ALLOC_BASIC_TYPE(64, 64, BasicType::TY_UI512);
-  M_ALLOC_BASIC_TYPE(1,  1,  BasicType::TY_SI8);
-  M_ALLOC_BASIC_TYPE(2,  2,  BasicType::TY_SI16);
-  M_ALLOC_BASIC_TYPE(4,  4,  BasicType::TY_SI32);
-  M_ALLOC_BASIC_TYPE(8,  8,  BasicType::TY_SI64);
-  M_ALLOC_BASIC_TYPE(16, 16, BasicType::TY_SI128);
-  M_ALLOC_BASIC_TYPE(32, 32, BasicType::TY_SI256);
-  M_ALLOC_BASIC_TYPE(64, 64, BasicType::TY_SI512);
-  M_ALLOC_BASIC_TYPE(4,  4,  BasicType::TY_F32);
-  M_ALLOC_BASIC_TYPE(8,  8,  BasicType::TY_F64);
-  M_ALLOC_BASIC_TYPE(16, 16, BasicType::TY_F128);
+  M_ALLOC_BASIC_TYPE(0,  0,  BasicTypeAddress::VOID);
+  M_ALLOC_BASIC_TYPE(8,  8,  BasicTypeAddress::POINTER);
+  M_ALLOC_BASIC_TYPE(8,  8,  BasicTypeAddress::FUNCTION);
+  M_ALLOC_BASIC_TYPE(1,  1,  BasicTypeAddress::UI8);
+  M_ALLOC_BASIC_TYPE(2,  2,  BasicTypeAddress::UI16);
+  M_ALLOC_BASIC_TYPE(4,  4,  BasicTypeAddress::UI32);
+  M_ALLOC_BASIC_TYPE(8,  8,  BasicTypeAddress::UI64);
+  M_ALLOC_BASIC_TYPE(16, 16, BasicTypeAddress::UI128);
+  M_ALLOC_BASIC_TYPE(32, 32, BasicTypeAddress::UI256);
+  M_ALLOC_BASIC_TYPE(64, 64, BasicTypeAddress::UI512);
+  M_ALLOC_BASIC_TYPE(1,  1,  BasicTypeAddress::SI8);
+  M_ALLOC_BASIC_TYPE(2,  2,  BasicTypeAddress::SI16);
+  M_ALLOC_BASIC_TYPE(4,  4,  BasicTypeAddress::SI32);
+  M_ALLOC_BASIC_TYPE(8,  8,  BasicTypeAddress::SI64);
+  M_ALLOC_BASIC_TYPE(16, 16, BasicTypeAddress::SI128);
+  M_ALLOC_BASIC_TYPE(32, 32, BasicTypeAddress::SI256);
+  M_ALLOC_BASIC_TYPE(64, 64, BasicTypeAddress::SI512);
+  M_ALLOC_BASIC_TYPE(4,  4,  BasicTypeAddress::F32);
+  M_ALLOC_BASIC_TYPE(8,  8,  BasicTypeAddress::F64);
+  M_ALLOC_BASIC_TYPE(16, 16, BasicTypeAddress::F128);
 
 #undef M_ALLOC_BASIC_TYPE
 

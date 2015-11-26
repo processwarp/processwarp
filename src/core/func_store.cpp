@@ -15,7 +15,7 @@ static const BuiltinFuncParam DUMMY_BUILTIN_PARAM = {.ptr = nullptr};
 
 //
 FuncStore::FuncStore(vaddr_t addr_,
-                     FuncType type_,
+                     FunctionType::Type type_,
                      const Symbols::Symbol& name_,
                      vaddr_t ret_type_,
                      unsigned int arg_num_,
@@ -46,7 +46,7 @@ void FuncStore::alloc_normal(VMemory::Accessor& memory,
   picojson::object js_func;
   picojson::array js_code;
 
-  js_func.insert(std::make_pair("program_type", Convert::int2json<uint8_t>(PT_NORMAL)));
+  js_func.insert(std::make_pair("program_type", Convert::int2json<uint8_t>(ProgramType::NORMAL)));
   js_func.insert(std::make_pair("name", picojson::value(name.str())));
   js_func.insert(std::make_pair("ret_type", Convert::vaddr2json(ret_type)));
   js_func.insert(std::make_pair("arg_num", Convert::int2json<unsigned int>(arg_num)));
@@ -71,7 +71,7 @@ void FuncStore::alloc_external(VMemory::Accessor& memory,
                                bool is_var_arg) {
   picojson::object js_func;
 
-  js_func.insert(std::make_pair("program_type", Convert::int2json<uint8_t>(PT_EXTERNAL)));
+  js_func.insert(std::make_pair("program_type", Convert::int2json<uint8_t>(ProgramType::EXTERNAL)));
   js_func.insert(std::make_pair("name", picojson::value(name.str())));
   js_func.insert(std::make_pair("ret_type", Convert::vaddr2json(ret_type)));
   js_func.insert(std::make_pair("arg_num", Convert::int2json<unsigned int>(arg_num)));
@@ -93,13 +93,14 @@ std::unique_ptr<FuncStore> FuncStore::read(Process& proc,
   }
   picojson::object& js_func = js_tmp.get<picojson::object>();
 
-  ProgramType pt = static_cast<ProgramType>(Convert::json2int<uint8_t>(js_func.at("program_type")));
+  ProgramType::Type pt =
+      static_cast<ProgramType::Type>(Convert::json2int<uint8_t>(js_func.at("program_type")));
   std::string name = js_func.at("name").get<std::string>();
   vaddr_t ret_type = Convert::json2vaddr(js_func.at("ret_type"));
   unsigned int arg_num = Convert::json2int<unsigned int>(js_func.at("arg_num"));
   bool is_var_arg = Convert::json2bool(js_func.at("is_var_arg"));
 
-  if (pt == PT_NORMAL) {
+  if (pt == ProgramType::NORMAL) {
     picojson::array& js_code = js_func.at("code").get<picojson::array>();
     NormalProp prop;
 
@@ -112,7 +113,7 @@ std::unique_ptr<FuncStore> FuncStore::read(Process& proc,
 
     return std::unique_ptr<FuncStore>
         (new FuncStore(addr,
-                       FC_NORMAL,
+                       FunctionType::NORMAL,
                        proc.symbols.get(name),
                        ret_type,
                        arg_num,
@@ -120,14 +121,14 @@ std::unique_ptr<FuncStore> FuncStore::read(Process& proc,
                        prop,
                        nullptr,
                        DUMMY_BUILTIN_PARAM));
-  } else if (pt == PT_EXTERNAL) {
+  } else if (pt == ProgramType::EXTERNAL) {
     if (proc.builtin_funcs.find(name) != proc.builtin_funcs.end()) {
       const std::pair<builtin_func_t, BuiltinFuncParam>& bi_info =
           proc.builtin_funcs.at(name);
 
       return std::unique_ptr<FuncStore>
           (new FuncStore(addr,
-                         FC_BUILTIN,
+                         FunctionType::BUILTIN,
                          proc.symbols.get(name),
                          ret_type,
                          arg_num,
@@ -138,7 +139,7 @@ std::unique_ptr<FuncStore> FuncStore::read(Process& proc,
     } else {
       return std::unique_ptr<FuncStore>
           (new FuncStore(addr,
-                         FC_NATIVE,
+                         FunctionType::NATIVE,
                          proc.symbols.get(name),
                          ret_type,
                          arg_num,

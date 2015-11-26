@@ -14,25 +14,25 @@ class BuiltinWarp {
    * parameter from src;
    * vaddr_t function
    */
-  static BuiltinPost at_after_warp(Process& proc, Thread& thread,
-                                   BuiltinFuncParam p, vaddr_t dst,
-                                   std::vector<uint8_t>& src);
+  static BuiltinPostProc::Type at_after_warp(Process& proc, Thread& thread,
+                                             BuiltinFuncParam p, vaddr_t dst,
+                                             std::vector<uint8_t>& src);
 
   /**
    * This function register function that will be called at befor warp.
    * parameter from src;
    * vaddr_t function
    */
-  static BuiltinPost at_befor_warp(Process& proc, Thread& thread,
-                                   BuiltinFuncParam p, vaddr_t dst,
-                                   std::vector<uint8_t>& src);
+  static BuiltinPostProc::Type at_befor_warp(Process& proc, Thread& thread,
+                                             BuiltinFuncParam p, vaddr_t dst,
+                                             std::vector<uint8_t>& src);
 
   /**
    * This function check to warp is requested.
    */
-  static BuiltinPost poll_warp_request(Process& proc, Thread& thread,
-                                       BuiltinFuncParam p, vaddr_t dst,
-                                       std::vector<uint8_t>& src);
+  static BuiltinPostProc::Type poll_warp_request(Process& proc, Thread& thread,
+                                                 BuiltinFuncParam p, vaddr_t dst,
+                                                 std::vector<uint8_t>& src);
 
   /**
    * This function set a parameter to warp function.
@@ -40,9 +40,9 @@ class BuiltinWarp {
    * vm_int_t key
    * vm_int_t value
    */
-  static BuiltinPost set_processwarp_param(Process& proc, Thread& thread,
-                                           BuiltinFuncParam p, vaddr_t dst,
-                                           std::vector<uint8_t>& src);
+  static BuiltinPostProc::Type set_processwarp_param(Process& proc, Thread& thread,
+                                                     BuiltinFuncParam p, vaddr_t dst,
+                                                     std::vector<uint8_t>& src);
 
   /**
    * This function register library functions in virtual machine.

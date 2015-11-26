@@ -34,9 +34,9 @@ namespace processwarp {
  * @param I64 64bit幅の計算のベースになる整数型
  */
 #define M_FUNC_PER_METHOD(FNAME, SFUNC, I16, I32, I64)                  \
-  BuiltinPost BuiltinOverflow::FNAME(Process& proc, Thread& thread,     \
-                                     BuiltinFuncParam p, vaddr_t dst,   \
-                                     std::vector<uint8_t>& src) {       \
+  BuiltinPostProc::Type BuiltinOverflow::FNAME(Process& proc, Thread& thread, \
+                                               BuiltinFuncParam p, vaddr_t dst, \
+                                               std::vector<uint8_t>& src) { \
     int seek = 0;                                                       \
     switch (p.i64) {                                                    \
       M_CASE_PER_WIDTH(SFUNC, I16, 16);                                 \
@@ -44,7 +44,7 @@ namespace processwarp {
       M_CASE_PER_WIDTH(SFUNC, I64, 64);                                 \
       default: assert(false); break;                                    \
     }                                                                   \
-    return BP_NORMAL;                                                   \
+    return BuiltinPostProc::NORMAL;                                     \
   }
 
 M_FUNC_PER_METHOD(sadd, SafeAdd,      int16_t, int32_t, int64_t)

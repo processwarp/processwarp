@@ -9,9 +9,9 @@
 namespace processwarp {
 
 // __builtin_va_arg関数。
-BuiltinPost BuiltinVaArg::bi_arg(Process& proc, Thread& thread,
-                                 BuiltinFuncParam p, vaddr_t dst,
-                                 std::vector<uint8_t>& src) {
+BuiltinPostProc::Type BuiltinVaArg::bi_arg(Process& proc, Thread& thread,
+                                           BuiltinFuncParam p, vaddr_t dst,
+                                           std::vector<uint8_t>& src) {
   int seek = 0;
   // i8* arglistを取り出す。
   vaddr_t arglist = Process::read_builtin_param_ptr(src, &seek);
@@ -41,13 +41,13 @@ BuiltinPost BuiltinVaArg::bi_arg(Process& proc, Thread& thread,
   vaddr_t tmp_addr = va_arg + sizeof(vaddr_t) + type_store->size;
   thread.memory->write<vaddr_t>(arglist, tmp_addr);
 
-  return BP_NORMAL;
+  return BuiltinPostProc::NORMAL;
 }
 
 // llvm.va_copy関数。
-BuiltinPost BuiltinVaArg::bi_copy(Process& proc, Thread& thread,
-                                  BuiltinFuncParam p, vaddr_t dst,
-                                  std::vector<uint8_t>& src) {
+BuiltinPostProc::Type BuiltinVaArg::bi_copy(Process& proc, Thread& thread,
+                                            BuiltinFuncParam p, vaddr_t dst,
+                                            std::vector<uint8_t>& src) {
   int seek = 0;
   // i8* destarglistを取り出す。
   vaddr_t dstarglist = Process::read_builtin_param_ptr(src, &seek);
@@ -58,21 +58,21 @@ BuiltinPost BuiltinVaArg::bi_copy(Process& proc, Thread& thread,
   vaddr_t src_addr = thread.memory->read<vaddr_t>(srcarglist);
   thread.memory->write<vaddr_t>(dstarglist, src_addr);
 
-  return BP_NORMAL;
+  return BuiltinPostProc::NORMAL;
 }
 
 // llvm.va_end関数。
-BuiltinPost BuiltinVaArg::bi_end(Process& proc, Thread& thread,
-                                 BuiltinFuncParam p, vaddr_t dst,
-                                 std::vector<uint8_t>& src) {
+BuiltinPostProc::Type BuiltinVaArg::bi_end(Process& proc, Thread& thread,
+                                           BuiltinFuncParam p, vaddr_t dst,
+                                           std::vector<uint8_t>& src) {
   // 資源の解放などは無いので、何もしなくて良い。
-  return BP_NORMAL;
+  return BuiltinPostProc::NORMAL;
 }
 
 // llvm.va_start関数。
-BuiltinPost BuiltinVaArg::bi_start(Process& proc, Thread& thread,
-                                   BuiltinFuncParam p, vaddr_t dst,
-                                   std::vector<uint8_t>& src) {
+BuiltinPostProc::Type BuiltinVaArg::bi_start(Process& proc, Thread& thread,
+                                             BuiltinFuncParam p, vaddr_t dst,
+                                             std::vector<uint8_t>& src) {
   int seek = 0;
   // i8* arglistを取り出す
   vaddr_t arglist = Process::read_builtin_param_ptr(src, &seek);
@@ -80,7 +80,7 @@ BuiltinPost BuiltinVaArg::bi_start(Process& proc, Thread& thread,
   // arglistで指定したアドレスに可変長引数の先頭アドレスを格納しておく
   thread.memory->write<vaddr_t>(arglist, thread.get_stackinfo(-1).var_arg);
 
-  return BP_NORMAL;
+  return BuiltinPostProc::NORMAL;
 }
 
 // VMにライブラリを登録する。

@@ -16,7 +16,7 @@ class TypeStore {
   /// アドレス
   const vaddr_t addr;
   /// 型の種類
-  const TypeKind kind;
+  const TypeKind::Type kind;
   /// 構造のサイズ(Byte)
   const size_t size;
   /// アライメント(Byte)
@@ -96,7 +96,7 @@ class TypeStore {
    *
    */
   TypeStore(vaddr_t addr,
-            TypeKind kind,
+            TypeKind::Type kind,
             size_t size,
             unsigned int alignment,
             const std::vector<vaddr_t>& member,

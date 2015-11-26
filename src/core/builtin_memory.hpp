@@ -19,9 +19,9 @@ class BuiltinMemory {
    * i64 サイズ
    * i8* ポインタ
    */
-  static BuiltinPost lifetime_start(Process& proc, Thread& thread,
-                                    BuiltinFuncParam p, vaddr_t dst,
-                                    std::vector<uint8_t>& src);
+  static BuiltinPostProc::Type lifetime_start(Process& proc, Thread& thread,
+                                              BuiltinFuncParam p, vaddr_t dst,
+                                              std::vector<uint8_t>& src);
 
   /**
    * llvm.lifetime.end関数。
@@ -30,9 +30,9 @@ class BuiltinMemory {
    * i64 サイズ
    * i8* ポインタ
    */
-  static BuiltinPost lifetime_end(Process& proc, Thread& thread,
-                                  BuiltinFuncParam p, vaddr_t dst,
-                                  std::vector<uint8_t>& src);
+  static BuiltinPostProc::Type lifetime_end(Process& proc, Thread& thread,
+                                            BuiltinFuncParam p, vaddr_t dst,
+                                            std::vector<uint8_t>& src);
 
   /**
    * llvm.invariant.start関数。
@@ -41,9 +41,9 @@ class BuiltinMemory {
    * i64 サイズ
    * i8* ポインタ
    */
-  static BuiltinPost invariant_start(Process& proc, Thread& thread,
-                                     BuiltinFuncParam p, vaddr_t dst,
-                                     std::vector<uint8_t>& src);
+  static BuiltinPostProc::Type invariant_start(Process& proc, Thread& thread,
+                                               BuiltinFuncParam p, vaddr_t dst,
+                                               std::vector<uint8_t>& src);
 
   /**
    * llvm.invariant.end関数。
@@ -52,9 +52,9 @@ class BuiltinMemory {
    * i64 サイズ
    * i8* ポインタ
    */
-  static BuiltinPost invariant_end(Process& proc, Thread& thread,
-                                   BuiltinFuncParam p, vaddr_t dst,
-                                   std::vector<uint8_t>& src);
+  static BuiltinPostProc::Type invariant_end(Process& proc, Thread& thread,
+                                             BuiltinFuncParam p, vaddr_t dst,
+                                             std::vector<uint8_t>& src);
 
   /**
    * VMにライブラリを登録する。

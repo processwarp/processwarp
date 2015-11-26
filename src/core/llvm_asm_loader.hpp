@@ -296,7 +296,7 @@ class LlvmAsmLoader {
    * @param opcode  オペコード
    * @param operand オペランド
    */
-  void push_code(FunctionContext& fc, Opcode opcode, int operand);
+  void push_code(FunctionContext& fc, Opcode::Type opcode, int operand);
 
   /**
    * 現在あるValueDestを元に、相対位置を変化させたValueDestを作成する。

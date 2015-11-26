@@ -1193,32 +1193,32 @@ vaddr_t LlvmAsmLoader::load_type(const llvm::Type* type, bool sign) {
   }
 
   // 基本型の判定
-  BasicType addr;
+  vaddr_t addr;
   switch (type->getTypeID()) {
     // 1:1t対応するもの
-    case llvm::Type::VoidTyID:        addr = BasicType::TY_VOID;      break;
-    case llvm::Type::FloatTyID:       addr = BasicType::TY_F32;       break;
-    case llvm::Type::DoubleTyID:      addr = BasicType::TY_F64;       break;
-    case llvm::Type::FunctionTyID:    addr = BasicType::TY_FUNCTION;  break;
-    case llvm::Type::PointerTyID:     addr = BasicType::TY_POINTER;   break;
+    case llvm::Type::VoidTyID:        addr = BasicTypeAddress::VOID;      break;
+    case llvm::Type::FloatTyID:       addr = BasicTypeAddress::F32;       break;
+    case llvm::Type::DoubleTyID:      addr = BasicTypeAddress::F64;       break;
+    case llvm::Type::FunctionTyID:    addr = BasicTypeAddress::FUNCTION;  break;
+    case llvm::Type::PointerTyID:     addr = BasicTypeAddress::POINTER;   break;
 
     case llvm::Type::IntegerTyID: {
       // intはサイズごとに切り替え
       if (sign) {
         if (type->getIntegerBitWidth() <= 8) {
-          addr = BasicType::TY_SI8;
+          addr = BasicTypeAddress::SI8;
         } else if (type->getIntegerBitWidth() <= 16) {
-          addr = BasicType::TY_SI16;
+          addr = BasicTypeAddress::SI16;
         } else if (type->getIntegerBitWidth() <= 32) {
-          addr = BasicType::TY_SI32;
+          addr = BasicTypeAddress::SI32;
         } else if (type->getIntegerBitWidth() <= 64) {
-          addr = BasicType::TY_SI64;
+          addr = BasicTypeAddress::SI64;
         } else if (type->getIntegerBitWidth() <= 128) {
-          addr = BasicType::TY_SI128;
+          addr = BasicTypeAddress::SI128;
         } else if (type->getIntegerBitWidth() <= 256) {
-          addr = BasicType::TY_SI256;
+          addr = BasicTypeAddress::SI256;
         } else if (type->getIntegerBitWidth() <= 512) {
-          addr = BasicType::TY_SI512;
+          addr = BasicTypeAddress::SI512;
         } else {
           throw_error_message(Error::UNSUPPORT,
                               "integer bit-width:" +
@@ -1226,19 +1226,19 @@ vaddr_t LlvmAsmLoader::load_type(const llvm::Type* type, bool sign) {
         }
       } else {
         if (type->getIntegerBitWidth() <= 8) {
-          addr = BasicType::TY_UI8;
+          addr = BasicTypeAddress::UI8;
         } else if (type->getIntegerBitWidth() <= 16) {
-          addr = BasicType::TY_UI16;
+          addr = BasicTypeAddress::UI16;
         } else if (type->getIntegerBitWidth() <= 32) {
-          addr = BasicType::TY_UI32;
+          addr = BasicTypeAddress::UI32;
         } else if (type->getIntegerBitWidth() <= 64) {
-          addr = BasicType::TY_UI64;
+          addr = BasicTypeAddress::UI64;
         } else if (type->getIntegerBitWidth() <= 128) {
-          addr = BasicType::TY_UI128;
+          addr = BasicTypeAddress::UI128;
         } else if (type->getIntegerBitWidth() <= 256) {
-          addr = BasicType::TY_UI256;
+          addr = BasicTypeAddress::UI256;
         } else if (type->getIntegerBitWidth() <= 512) {
-          addr = BasicType::TY_UI512;
+          addr = BasicTypeAddress::UI512;
         } else {
           throw_error_message(Error::UNSUPPORT,
                               "integer bit-width:" +
@@ -1320,7 +1320,7 @@ void LlvmAsmLoader::load_zero(FunctionContext& fc, ValueDest dst,
 }
 
 // 現在解析中の関数の命令配列に命令を追記する。
-void LlvmAsmLoader::push_code(FunctionContext& fc, Opcode opcode, int operand) {
+void LlvmAsmLoader::push_code(FunctionContext& fc, Opcode::Type opcode, int operand) {
   fc.code.push_back(Instruction::make_instruction(opcode, operand));
 }
 

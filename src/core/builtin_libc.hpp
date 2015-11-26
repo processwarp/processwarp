@@ -20,8 +20,8 @@ class BuiltinLibc {
    * dstへ書き込む値は以下のとおり。
    * i32 成功時0 失敗時-1
    */
-  static BuiltinPost atexit(Process& proc, Thread& thread, BuiltinFuncParam p,
-                            vaddr_t dst, std::vector<uint8_t>& src);
+  static BuiltinPostProc::Type atexit(Process& proc, Thread& thread, BuiltinFuncParam p,
+                                      vaddr_t dst, std::vector<uint8_t>& src);
 
   /**
    * calloc関数。データ領域の確保とクリアを行う。
@@ -31,24 +31,24 @@ class BuiltinLibc {
    * 戻り値は以下のとおり。
    * void* 確保した領域のアドレス
    */
-  static BuiltinPost calloc(Process& proc, Thread& thread, BuiltinFuncParam p,
-                            vaddr_t dst, std::vector<uint8_t>& src);
+  static BuiltinPostProc::Type calloc(Process& proc, Thread& thread, BuiltinFuncParam p,
+                                      vaddr_t dst, std::vector<uint8_t>& src);
 
   /**
    * exit関数。
    * srcから取り出すパラメタは以下のとおり。
    * i32 終了コード。
    */
-  static BuiltinPost exit(Process& proc, Thread& thread, BuiltinFuncParam p,
-                          vaddr_t dst, std::vector<uint8_t>& src);
+  static BuiltinPostProc::Type exit(Process& proc, Thread& thread, BuiltinFuncParam p,
+                                    vaddr_t dst, std::vector<uint8_t>& src);
 
   /**
    * free関数。指定データ領域を開放する。
    * srcから取り出すパラメタは以下のとおり。
    * vaddr_t ptr 開放するデータ領域。
    */
-  static BuiltinPost free(Process& proc, Thread& thread, BuiltinFuncParam p,
-                          vaddr_t dst, std::vector<uint8_t>& src);
+  static BuiltinPostProc::Type free(Process& proc, Thread& thread, BuiltinFuncParam p,
+                                    vaddr_t dst, std::vector<uint8_t>& src);
 
   /**
    * longjmp関数。保存されたスタックコンテキストへの非局所的なジャンプ。
@@ -56,8 +56,8 @@ class BuiltinLibc {
    * jmp_buf env
    * int val setjmpの返り値として戻す値。
    */
-  static BuiltinPost longjmp(Process& proc, Thread& thread, BuiltinFuncParam p,
-                             vaddr_t dst, std::vector<uint8_t>& src);
+  static BuiltinPostProc::Type longjmp(Process& proc, Thread& thread, BuiltinFuncParam p,
+                                       vaddr_t dst, std::vector<uint8_t>& src);
 
   /**
    * malloc関数。データ領域の確保を行う。
@@ -66,8 +66,8 @@ class BuiltinLibc {
    * 戻り値は以下のとおり。
    * void* 確保した領域のアドレス
    */
-  static BuiltinPost malloc(Process& proc, Thread& thread, BuiltinFuncParam p,
-                            vaddr_t dst, std::vector<uint8_t>& src);
+  static BuiltinPostProc::Type malloc(Process& proc, Thread& thread, BuiltinFuncParam p,
+                                      vaddr_t dst, std::vector<uint8_t>& src);
 
   /**
    * memcpy関数。
@@ -78,8 +78,8 @@ class BuiltinLibc {
    * int32_t align アライメント。
    * int8_t isvolation 実行順番の制約(VMでは実行順番を入れ替えないので無視する)。
    */
-  static BuiltinPost memcpy(Process& proc, Thread& thread, BuiltinFuncParam p,
-                            vaddr_t dst, std::vector<uint8_t>& src);
+  static BuiltinPostProc::Type memcpy(Process& proc, Thread& thread, BuiltinFuncParam p,
+                                      vaddr_t dst, std::vector<uint8_t>& src);
 
   /**
    * memmove関数。
@@ -90,8 +90,8 @@ class BuiltinLibc {
    * int32_t align アライメント。
    * int8_t isvolation 実行順番の制約(VMでは実行順番を入れ替えないので無視する)。
    */
-  static BuiltinPost memmove(Process& proc, Thread& thread, BuiltinFuncParam p,
-                             vaddr_t dst, std::vector<uint8_t>& src);
+  static BuiltinPostProc::Type memmove(Process& proc, Thread& thread, BuiltinFuncParam p,
+                                       vaddr_t dst, std::vector<uint8_t>& src);
 
   /**
    * memset関数。
@@ -102,8 +102,8 @@ class BuiltinLibc {
    * int32_t align アライメント。
    * int8_t isvolation 実行順番の制約(VMでは実行順番を入れ替えないので無視する)。
    */
-  static BuiltinPost memset(Process& proc, Thread& thread, BuiltinFuncParam p,
-                            vaddr_t dst, std::vector<uint8_t>& src);
+  static BuiltinPostProc::Type memset(Process& proc, Thread& thread, BuiltinFuncParam p,
+                                      vaddr_t dst, std::vector<uint8_t>& src);
 
   /**
    * realloc関数。データ領域の再確保を行う。
@@ -113,8 +113,8 @@ class BuiltinLibc {
    * 戻り値は以下のとおり。
    * void* 確保した領域のアドレス
    */
-  static BuiltinPost realloc(Process& proc, Thread& thread, BuiltinFuncParam p,
-                             vaddr_t dst, std::vector<uint8_t>& src);
+  static BuiltinPostProc::Type realloc(Process& proc, Thread& thread, BuiltinFuncParam p,
+                                       vaddr_t dst, std::vector<uint8_t>& src);
 
   /**
    * setjmp関数。非局所的なジャンプのために、スタックコンテキストを保存する。
@@ -123,8 +123,8 @@ class BuiltinLibc {
    * 戻り値は以下のとおり
    * int 直接の戻り値は0、longjmpが呼び出された場合はlongjmpの引数に渡した値。
    */
-  static BuiltinPost setjmp(Process& proc, Thread& thread, BuiltinFuncParam p,
-                            vaddr_t dst, std::vector<uint8_t>& src);
+  static BuiltinPostProc::Type setjmp(Process& proc, Thread& thread, BuiltinFuncParam p,
+                                      vaddr_t dst, std::vector<uint8_t>& src);
 
   /**
    * strtol関数。文字列を数値に変換する。
@@ -135,8 +135,8 @@ class BuiltinLibc {
    * 戻り値は以下のとおり
    * i64
    */
-  static BuiltinPost strtol(Process& proc, Thread& thread, BuiltinFuncParam p,
-                            vaddr_t dst, std::vector<uint8_t>& src);
+  static BuiltinPostProc::Type strtol(Process& proc, Thread& thread, BuiltinFuncParam p,
+                                      vaddr_t dst, std::vector<uint8_t>& src);
 
   /**
    * VMにライブラリを登録する。

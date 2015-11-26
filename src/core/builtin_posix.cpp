@@ -11,9 +11,9 @@
 namespace processwarp {
 
 // __assert_fail(assertの内部実装)関数。
-BuiltinPost BuiltinPosix::bi_assert_fail(Process& proc, Thread& thread,
-                                         BuiltinFuncParam p, vaddr_t dst,
-                                         std::vector<uint8_t>& src) {
+BuiltinPostProc::Type BuiltinPosix::bi_assert_fail(Process& proc, Thread& thread,
+                                                   BuiltinFuncParam p, vaddr_t dst,
+                                                   std::vector<uint8_t>& src) {
   // パタメタを読み取り
   int seek = 0;
   vaddr_t p_assertion = Process::read_builtin_param_ptr(src, &seek);
@@ -34,13 +34,13 @@ BuiltinPost BuiltinPosix::bi_assert_fail(Process& proc, Thread& thread,
   // VMを異常終了させる
   thread.status = Thread::ERROR;
 
-  return BP_RE_ENTRY;
+  return BuiltinPostProc::RE_ENTRY;
 }
 
 // Implement for pthread_create.
-BuiltinPost BuiltinPosix::bi_pthread_create(Process& proc, Thread& thread,
-                                            BuiltinFuncParam p, vaddr_t dst,
-                                            std::vector<uint8_t>& src) {
+BuiltinPostProc::Type BuiltinPosix::bi_pthread_create(Process& proc, Thread& thread,
+                                                      BuiltinFuncParam p, vaddr_t dst,
+                                                      std::vector<uint8_t>& src) {
   int seek = 0;
   vaddr_t p_thread = Process::read_builtin_param_ptr(src, &seek);
   /// @todo: apply attr
@@ -52,26 +52,26 @@ BuiltinPost BuiltinPosix::bi_pthread_create(Process& proc, Thread& thread,
   thread.memory->write<vtid_t>(p_thread, proc.create_thread(p_start, p_arg));
   thread.memory->write<vm_int_t>(dst, 0);
 
-  return BP_NORMAL;
+  return BuiltinPostProc::NORMAL;
 }
 
 // Implement for pthread_exit.
-BuiltinPost BuiltinPosix::bi_pthread_exit(Process& proc, Thread& thread,
-                                          BuiltinFuncParam p, vaddr_t dst,
-                                          std::vector<uint8_t>& src) {
+BuiltinPostProc::Type BuiltinPosix::bi_pthread_exit(Process& proc, Thread& thread,
+                                                    BuiltinFuncParam p, vaddr_t dst,
+                                                    std::vector<uint8_t>& src) {
   int seek = 0;
   vaddr_t p_retval = Process::read_builtin_param_ptr(src, &seek);
   assert(static_cast<signed>(src.size()) == seek);
 
   proc.exit_thread(thread, p_retval);
 
-  return BP_RE_ENTRY;
+  return BuiltinPostProc::RE_ENTRY;
 }
 
 // Implement for pthread_join.
-BuiltinPost BuiltinPosix::bi_pthread_join(Process& proc, Thread& thread,
-                                          BuiltinFuncParam p, vaddr_t dst,
-                                          std::vector<uint8_t>& src) {
+BuiltinPostProc::Type BuiltinPosix::bi_pthread_join(Process& proc, Thread& thread,
+                                                    BuiltinFuncParam p, vaddr_t dst,
+                                                    std::vector<uint8_t>& src) {
   int seek = 0;
   vtid_t  p_thread = Process::read_builtin_param_ptr(src, &seek);
   vaddr_t p_retval = Process::read_builtin_param_ptr(src, &seek);
@@ -80,15 +80,15 @@ BuiltinPost BuiltinPosix::bi_pthread_join(Process& proc, Thread& thread,
   try {
     if (proc.join_thread(thread.tid, p_thread, p_retval)) {
       thread.memory->write<vm_int_t>(dst, 0);
-      return BP_NORMAL;
+      return BuiltinPostProc::NORMAL;
 
     } else {
       thread.memory->write<vm_int_t>(dst, 0);
-      return BP_RETRY_LATER;
+      return BuiltinPostProc::RETRY_LATER;
     }
   } catch(StdError& e) {
     thread.memory->write<vm_int_t>(dst, e.std_errno);
-    return BP_NORMAL;
+    return BuiltinPostProc::NORMAL;
   }
 }
 

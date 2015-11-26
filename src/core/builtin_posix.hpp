@@ -20,9 +20,9 @@ class BuiltinPosix {
    * i32 line
    * vaddr_t(const) function
    */
-  static BuiltinPost bi_assert_fail(Process& proc, Thread& thread,
-                                    BuiltinFuncParam p, vaddr_t dst,
-                                    std::vector<uint8_t>& src);
+  static BuiltinPostProc::Type bi_assert_fail(Process& proc, Thread& thread,
+                                              BuiltinFuncParam p, vaddr_t dst,
+                                              std::vector<uint8_t>& src);
 
   /**
    * Implement for pthread_create.
@@ -32,18 +32,18 @@ class BuiltinPosix {
    * vaddr_t start
    * vaddr_t arg
    */
-  static BuiltinPost bi_pthread_create(Process& proc, Thread& thread,
-                                       BuiltinFuncParam p, vaddr_t dst,
-                                       std::vector<uint8_t>& src);
+  static BuiltinPostProc::Type bi_pthread_create(Process& proc, Thread& thread,
+                                                 BuiltinFuncParam p, vaddr_t dst,
+                                                 std::vector<uint8_t>& src);
 
   /**
    * Implement for pthread_exit.
    * parameter:
    * vaddr_t retval
    */
-  static BuiltinPost bi_pthread_exit(Process& proc, Thread& thread,
-                                     BuiltinFuncParam p, vaddr_t dst,
-                                     std::vector<uint8_t>& src);
+  static BuiltinPostProc::Type bi_pthread_exit(Process& proc, Thread& thread,
+                                               BuiltinFuncParam p, vaddr_t dst,
+                                               std::vector<uint8_t>& src);
 
   /**
    * Implement for pthread_join.
@@ -51,9 +51,9 @@ class BuiltinPosix {
    * i32 thread
    * vaddr_t ret_addr
    */
-  static BuiltinPost bi_pthread_join(Process& proc, Thread& thread,
-                                     BuiltinFuncParam p, vaddr_t dst,
-                                     std::vector<uint8_t>& src);
+  static BuiltinPostProc::Type bi_pthread_join(Process& proc, Thread& thread,
+                                               BuiltinFuncParam p, vaddr_t dst,
+                                               std::vector<uint8_t>& src);
 
   /**
    * VMにライブラリを登録する。

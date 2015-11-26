@@ -8,9 +8,9 @@
 namespace processwarp {
 
 // byte-swap関数。
-BuiltinPost BuiltinBit::bswap(Process& proc, Thread& thread,
-                              BuiltinFuncParam p, vaddr_t dst,
-                              std::vector<uint8_t>& src) {
+BuiltinPostProc::Type BuiltinBit::bswap(Process& proc, Thread& thread,
+                                        BuiltinFuncParam p, vaddr_t dst,
+                                        std::vector<uint8_t>& src) {
   int seek = 0;
   switch (p.i64) {
     case 16: {
@@ -38,7 +38,7 @@ BuiltinPost BuiltinBit::bswap(Process& proc, Thread& thread,
   }
 
   assert(static_cast<signed>(src.size()) == seek);
-  return BP_NORMAL;
+  return BuiltinPostProc::NORMAL;
 }
 
 // PROCにライブラリを登録する。

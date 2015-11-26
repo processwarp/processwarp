@@ -18,9 +18,9 @@ class BuiltinBit {
    * srcから取り出すパラメタは以下のとおり。
    * T 変換元の数値。
    */
-  static BuiltinPost bswap(Process& proc, Thread& thread,
-                           BuiltinFuncParam p, vaddr_t dst,
-                           std::vector<uint8_t>& src);
+  static BuiltinPostProc::Type bswap(Process& proc, Thread& thread,
+                                     BuiltinFuncParam p, vaddr_t dst,
+                                     std::vector<uint8_t>& src);
 
   /**
    * VMにライブラリを登録する。

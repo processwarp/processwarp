@@ -284,37 +284,37 @@ void WrappedPrimitiveOperator<T>::op_shr(vaddr_t dst, vaddr_t a, vaddr_t b) {
 template <typename T>
 void WrappedPrimitiveOperator<T>::type_cast(vaddr_t dst, vaddr_t type, vaddr_t src) {
   switch (type) {
-    case BasicType::TY_POINTER:
+    case BasicTypeAddress::POINTER:
       memory.write<vaddr_t>(dst, static_cast<unsigned>(memory.read<T>(src))); break;
 
-    case BasicType::TY_UI8:
+    case BasicTypeAddress::UI8:
       memory.write<uint8_t>(dst, static_cast<uint8_t>(memory.read<T>(src))); break;
 
-    case BasicType::TY_UI16:
+    case BasicTypeAddress::UI16:
       memory.write<uint16_t>(dst, static_cast<uint16_t>(memory.read<T>(src))); break;
 
-    case BasicType::TY_UI32:
+    case BasicTypeAddress::UI32:
       memory.write<uint32_t>(dst, static_cast<uint32_t>(memory.read<T>(src))); break;
 
-    case BasicType::TY_UI64:
+    case BasicTypeAddress::UI64:
       memory.write<uint64_t>(dst, static_cast<uint64_t>(memory.read<T>(src))); break;
 
-    case BasicType::TY_SI8:
+    case BasicTypeAddress::SI8:
       memory.write<int8_t>(dst, static_cast<int8_t>(memory.read<T>(src))); break;
 
-    case BasicType::TY_SI16:
+    case BasicTypeAddress::SI16:
       memory.write<int16_t>(dst, static_cast<int16_t>(memory.read<T>(src))); break;
 
-    case BasicType::TY_SI32:
+    case BasicTypeAddress::SI32:
       memory.write<int32_t>(dst, static_cast<int32_t>(memory.read<T>(src))); break;
 
-    case BasicType::TY_SI64:
+    case BasicTypeAddress::SI64:
       memory.write<int64_t>(dst, static_cast<int64_t>(memory.read<T>(src))); break;
 
-    case BasicType::TY_F32:
+    case BasicTypeAddress::F32:
       memory.write<float>(dst, static_cast<float>(memory.read<T>(src))); break;
 
-    case BasicType::TY_F64:
+    case BasicTypeAddress::F64:
       memory.write<double>(dst, static_cast<double>(memory.read<T>(src))); break;
 
     default: {
@@ -412,23 +412,23 @@ void WrappedPointerOperator::op_not_equal(vaddr_t dst, vaddr_t a, vaddr_t b) {
 // type_cast命令に対応したキャスト演算を行う。
 void WrappedPointerOperator::type_cast(vaddr_t dst, vaddr_t type, vaddr_t src) {
   switch (type) {
-    case BasicType::TY_UI8:
-    case BasicType::TY_SI8:
+    case BasicTypeAddress::UI8:
+    case BasicTypeAddress::SI8:
       memory.write<uint8_t>(dst, static_cast<uint8_t>(memory.read<vaddr_t>(src)));
       break;
 
-    case BasicType::TY_UI16:
-    case BasicType::TY_SI16:
+    case BasicTypeAddress::UI16:
+    case BasicTypeAddress::SI16:
       memory.write<uint16_t>(dst, static_cast<uint16_t>(memory.read<vaddr_t>(src)));
       break;
 
-    case BasicType::TY_UI32:
-    case BasicType::TY_SI32:
+    case BasicTypeAddress::UI32:
+    case BasicTypeAddress::SI32:
       memory.write<uint32_t>(dst, static_cast<uint32_t>(memory.read<vaddr_t>(src)));
       break;
 
-    case BasicType::TY_UI64:
-    case BasicType::TY_SI64:
+    case BasicTypeAddress::UI64:
+    case BasicTypeAddress::SI64:
       memory.write<uint64_t>(dst, static_cast<uint64_t>(memory.read<vaddr_t>(src)));
       break;
 

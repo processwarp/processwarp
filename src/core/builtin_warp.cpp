@@ -8,9 +8,9 @@
 namespace processwarp {
 
 // this function register function that will be called at after warp.
-BuiltinPost BuiltinWarp::at_after_warp(Process& proc, Thread& thread,
-                                       BuiltinFuncParam p, vaddr_t dst,
-                                       std::vector<uint8_t>& src) {
+BuiltinPostProc::Type BuiltinWarp::at_after_warp(Process& proc, Thread& thread,
+                                                 BuiltinFuncParam p, vaddr_t dst,
+                                                 std::vector<uint8_t>& src) {
   int seek = 0;
   vaddr_t func = Process::read_builtin_param_ptr(src, &seek);
   assert(static_cast<signed>(src.size()) == seek);
@@ -19,13 +19,13 @@ BuiltinPost BuiltinWarp::at_after_warp(Process& proc, Thread& thread,
 
   thread.memory->write<vm_int_t>(dst, 0);
 
-  return BP_NORMAL;
+  return BuiltinPostProc::NORMAL;
 }
 
 // This function register function that will be called at befor warp.
-BuiltinPost BuiltinWarp::at_befor_warp(Process& proc, Thread& thread,
-                                       BuiltinFuncParam p, vaddr_t dst,
-                                       std::vector<uint8_t>& src) {
+BuiltinPostProc::Type BuiltinWarp::at_befor_warp(Process& proc, Thread& thread,
+                                                 BuiltinFuncParam p, vaddr_t dst,
+                                                 std::vector<uint8_t>& src) {
   int seek = 0;
   vaddr_t func = Process::read_builtin_param_ptr(src, &seek);
   assert(static_cast<signed>(src.size()) == seek);
@@ -34,13 +34,13 @@ BuiltinPost BuiltinWarp::at_befor_warp(Process& proc, Thread& thread,
 
   thread.memory->write<vm_int_t>(dst, 0);
 
-  return BP_NORMAL;
+  return BuiltinPostProc::NORMAL;
 }
 
 // This function check to warp is requested.
-BuiltinPost BuiltinWarp::poll_warp_request(Process& proc, Thread& thread,
-                                           BuiltinFuncParam p, vaddr_t dst,
-                                           std::vector<uint8_t>& src) {
+BuiltinPostProc::Type BuiltinWarp::poll_warp_request(Process& proc, Thread& thread,
+                                                     BuiltinFuncParam p, vaddr_t dst,
+                                                     std::vector<uint8_t>& src) {
   assert(static_cast<signed>(src.size()) == 0);
 
   if (thread.status == Thread::WAIT_WARP) {
@@ -49,17 +49,17 @@ BuiltinPost BuiltinWarp::poll_warp_request(Process& proc, Thread& thread,
     thread.status = Thread::BEFOR_WARP;
     thread.get_stackinfo(-1).pc++;
 
-    return BP_RE_ENTRY;
+    return BuiltinPostProc::RE_ENTRY;
 
   } else {
-    return BP_NORMAL;
+    return BuiltinPostProc::NORMAL;
   }
 }
 
 // This function set a parameter to warp function.
-BuiltinPost BuiltinWarp::set_processwarp_param(Process& proc, Thread& thread,
-                                               BuiltinFuncParam p, vaddr_t dst,
-                                               std::vector<uint8_t>& src) {
+BuiltinPostProc::Type BuiltinWarp::set_processwarp_param(Process& proc, Thread& thread,
+                                                         BuiltinFuncParam p, vaddr_t dst,
+                                                         std::vector<uint8_t>& src) {
   int seek = 0;
   vm_uint_t key = Process::read_builtin_param_i(src, &seek);
   vm_uint_t val = Process::read_builtin_param_i(src, &seek);
@@ -70,7 +70,7 @@ BuiltinPost BuiltinWarp::set_processwarp_param(Process& proc, Thread& thread,
 
   thread.memory->write<vm_int_t>(dst, 0);
 
-  return BP_NORMAL;
+  return BuiltinPostProc::NORMAL;
 }
 
 // This function register library functions in virtual machine.

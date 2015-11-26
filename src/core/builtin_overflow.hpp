@@ -18,8 +18,8 @@ class BuiltinOverflow {
    * T 計算結果
    * i1 overflowを検出した場合1が設定される
    */
-  static BuiltinPost sadd(Process& proc, Thread& thread, BuiltinFuncParam p,
-                          vaddr_t dst, std::vector<uint8_t>& src);
+  static BuiltinPostProc::Type sadd(Process& proc, Thread& thread, BuiltinFuncParam p,
+                                    vaddr_t dst, std::vector<uint8_t>& src);
 
   /**
    * overflowが検出可能な符号あり乗算関数。
@@ -30,8 +30,8 @@ class BuiltinOverflow {
    * T 計算結果
    * i1 overflowを検出した場合1が設定される
    */
-  static BuiltinPost smul(Process& proc, Thread& thread, BuiltinFuncParam p,
-                          vaddr_t dst, std::vector<uint8_t>& src);
+  static BuiltinPostProc::Type smul(Process& proc, Thread& thread, BuiltinFuncParam p,
+                                    vaddr_t dst, std::vector<uint8_t>& src);
 
   /**
    * overflowが検出可能な符号あり減算関数。
@@ -42,8 +42,8 @@ class BuiltinOverflow {
    * T 計算結果
    * i1 overflowを検出した場合1が設定される
    */
-  static BuiltinPost ssub(Process& proc, Thread& thread, BuiltinFuncParam p,
-                          vaddr_t dst, std::vector<uint8_t>& src);
+  static BuiltinPostProc::Type ssub(Process& proc, Thread& thread, BuiltinFuncParam p,
+                                    vaddr_t dst, std::vector<uint8_t>& src);
 
   /**
    * overflowが検出可能な符号なし加算関数。
@@ -54,8 +54,8 @@ class BuiltinOverflow {
    * T 計算結果
    * i1 overflowを検出した場合1が設定される
    */
-  static BuiltinPost uadd(Process& proc, Thread& thread, BuiltinFuncParam p,
-                          vaddr_t dst, std::vector<uint8_t>& src);
+  static BuiltinPostProc::Type uadd(Process& proc, Thread& thread, BuiltinFuncParam p,
+                                    vaddr_t dst, std::vector<uint8_t>& src);
 
   /**
    * overflowが検出可能な符号なし乗算関数。
@@ -66,8 +66,8 @@ class BuiltinOverflow {
    * T 計算結果
    * i1 overflowを検出した場合1が設定される
    */
-  static BuiltinPost umul(Process& proc, Thread& thread, BuiltinFuncParam p,
-                          vaddr_t dst, std::vector<uint8_t>& src);
+  static BuiltinPostProc::Type umul(Process& proc, Thread& thread, BuiltinFuncParam p,
+                                    vaddr_t dst, std::vector<uint8_t>& src);
 
   /**
    * overflowが検出可能な符号なし減算関数。
@@ -78,8 +78,8 @@ class BuiltinOverflow {
    * T 計算結果
    * i1 overflowを検出した場合1が設定される
    */
-  static BuiltinPost usub(Process& proc, Thread& thread, BuiltinFuncParam p,
-                          vaddr_t dst, std::vector<uint8_t>& src);
+  static BuiltinPostProc::Type usub(Process& proc, Thread& thread, BuiltinFuncParam p,
+                                    vaddr_t dst, std::vector<uint8_t>& src);
 
   /**
    * VMにライブラリを登録する。

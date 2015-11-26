@@ -45,7 +45,7 @@ class Instruction {
    * @param operand オペランド
    * @return 命令
    */
-  static inline instruction_t make_instruction(Opcode opcode, int operand) {
+  static inline instruction_t make_instruction(Opcode::Type opcode, int operand) {
     assert((static_cast<instruction_t>(operand)    & ~FILL_OPERAND) == 0 ||
            (static_cast<instruction_t>(-operand-1) & ~FILL_OPERAND) == 0);
 

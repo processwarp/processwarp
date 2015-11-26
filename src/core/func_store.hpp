@@ -26,7 +26,7 @@ class FuncStore {
   /// アドレス
   const vaddr_t addr;
   /// 関数のタイプ
-  const FuncType type;
+  const FunctionType::Type type;
   /// 関数名称
   const Symbols::Symbol& name;
   /// 戻り値の型
@@ -97,7 +97,7 @@ class FuncStore {
    *
    */
   FuncStore(vaddr_t addr,
-            FuncType type,
+            FunctionType::Type type,
             const Symbols::Symbol& name,
             vaddr_t ret_type,
             unsigned int arg_num,

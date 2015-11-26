@@ -12,7 +12,7 @@ namespace processwarp {
 static const std::vector<vaddr_t> DUMMY_MEMBER;
 
 TypeStore::TypeStore(vaddr_t addr_,
-                     TypeKind kind_,
+                     TypeKind::Type kind_,
                      size_t size_,
                      unsigned int alignment_,
                      const std::vector<vaddr_t>& member_,
@@ -32,8 +32,8 @@ vaddr_t TypeStore::alloc_basic(VMemory::Accessor& memory, unsigned int size,
                                unsigned int alignment, vaddr_t addr) {
   picojson::object js_type;
 
-  js_type.insert(std::make_pair("program_type", Convert::int2json<uint8_t>(PT_TYPE)));
-  js_type.insert(std::make_pair("kind", Convert::int2json<uint8_t>(TK_BASIC)));
+  js_type.insert(std::make_pair("program_type", Convert::int2json<uint8_t>(ProgramType::TYPE)));
+  js_type.insert(std::make_pair("kind", Convert::int2json<uint8_t>(TypeKind::BASIC)));
   js_type.insert(std::make_pair("size", Convert::int2json<unsigned int>(size)));
   js_type.insert(std::make_pair("alignment", Convert::int2json<unsigned int>(alignment)));
 
@@ -48,8 +48,8 @@ vaddr_t TypeStore::alloc_struct(VMemory::Accessor& memory, const std::vector<vad
   picojson::array js_member;
   std::pair<size_t, unsigned int> type_size = TypeStore::calc_type_size(memory, member);
 
-  js_type.insert(std::make_pair("program_type", Convert::int2json<uint8_t>(PT_TYPE)));
-  js_type.insert(std::make_pair("kind", Convert::int2json<uint8_t>(TK_STRUCT)));
+  js_type.insert(std::make_pair("program_type", Convert::int2json<uint8_t>(ProgramType::TYPE)));
+  js_type.insert(std::make_pair("kind", Convert::int2json<uint8_t>(TypeKind::STRUCT)));
   js_type.insert(std::make_pair("size", Convert::int2json<unsigned int>(type_size.first)));
   js_type.insert(std::make_pair("alignment", Convert::int2json<unsigned int>(type_size.second)));
 
@@ -69,8 +69,8 @@ vaddr_t TypeStore::alloc_array(VMemory::Accessor& memory, vaddr_t element, unsig
   picojson::object js_type;
   std::pair<size_t, unsigned int> type_size = calc_type_size(memory, element);
 
-  js_type.insert(std::make_pair("program_type", Convert::int2json<uint8_t>(PT_TYPE)));
-  js_type.insert(std::make_pair("kind", Convert::int2json<uint8_t>(TK_ARRAY)));
+  js_type.insert(std::make_pair("program_type", Convert::int2json<uint8_t>(ProgramType::TYPE)));
+  js_type.insert(std::make_pair("kind", Convert::int2json<uint8_t>(TypeKind::ARRAY)));
   js_type.insert(std::make_pair("size", Convert::int2json<unsigned int>(type_size.first * num)));
   js_type.insert(std::make_pair("alignment", Convert::int2json<unsigned int>(type_size.second)));
   js_type.insert(std::make_pair("element", Convert::vaddr2json(element)));
@@ -87,8 +87,8 @@ vaddr_t TypeStore::alloc_vector(VMemory::Accessor& memory, vaddr_t element, unsi
   picojson::object js_type;
   std::pair<size_t, unsigned int> type_size = calc_type_size(memory, element);
 
-  js_type.insert(std::make_pair("program_type", Convert::int2json<uint8_t>(PT_TYPE)));
-  js_type.insert(std::make_pair("kind", Convert::int2json<uint8_t>(TK_VECTOR)));
+  js_type.insert(std::make_pair("program_type", Convert::int2json<uint8_t>(ProgramType::TYPE)));
+  js_type.insert(std::make_pair("kind", Convert::int2json<uint8_t>(TypeKind::VECTOR)));
   js_type.insert(std::make_pair("size", Convert::int2json<unsigned int>(type_size.first * num)));
   js_type.insert(std::make_pair("alignment", Convert::int2json<unsigned int>(type_size.second)));
   js_type.insert(std::make_pair("element", Convert::vaddr2json(element)));
@@ -111,23 +111,24 @@ std::unique_ptr<TypeStore> TypeStore::read(VMemory::Accessor& memory, vaddr_t ad
   }
   picojson::object& js_type = js_tmp.get<picojson::object>();
 
-  ProgramType pt = static_cast<ProgramType>(Convert::json2int<uint8_t>(js_type.at("program_type")));
-  if (pt != PT_TYPE) {
+  ProgramType::Type pt =
+      static_cast<ProgramType::Type>(Convert::json2int<uint8_t>(js_type.at("program_type")));
+  if (pt != ProgramType::TYPE) {
     /// @todo error
     assert(false);
   }
 
-  TypeKind kind = static_cast<TypeKind>(Convert::json2int<uint8_t>(js_type.at("kind")));
+  TypeKind::Type kind = static_cast<TypeKind::Type>(Convert::json2int<uint8_t>(js_type.at("kind")));
   unsigned int size = Convert::json2int<unsigned int>(js_type.at("size"));
   unsigned int alignment = Convert::json2int<unsigned int>(js_type.at("alignment"));
 
   switch (kind) {
-    case TK_BASIC: {
+    case TypeKind::BASIC: {
       return std::unique_ptr<TypeStore>
           (new TypeStore(addr, kind, size, alignment, DUMMY_MEMBER, VADDR_NULL, 0));
     } break;
 
-    case TK_STRUCT: {
+    case TypeKind::STRUCT: {
       picojson::array& js_member = js_type.at("member").get<picojson::array>();
       std::vector<vaddr_t> member;
       for (auto it : js_member) {
@@ -138,8 +139,8 @@ std::unique_ptr<TypeStore> TypeStore::read(VMemory::Accessor& memory, vaddr_t ad
           (new TypeStore(addr, kind, size, alignment, member, VADDR_NULL, 0));
     } break;
 
-    case TK_ARRAY:
-    case TK_VECTOR: {
+    case TypeKind::ARRAY:
+    case TypeKind::VECTOR: {
       vaddr_t element = Convert::json2vaddr(js_type.at("element"));
       unsigned int num = Convert::json2int<unsigned int>(js_type.at("num"));
 
