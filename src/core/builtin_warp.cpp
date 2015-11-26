@@ -75,9 +75,9 @@ BuiltinPost BuiltinWarp::set_processwarp_param(Process& proc, Thread& thread,
 
 // This function register library functions in virtual machine.
 void BuiltinWarp::regist(VMachine& vm) {
-  vm.regist_builtin_func("at_befor_warp", BuiltinWarp::at_befor_warp, 0);
-  vm.regist_builtin_func("at_after_warp", BuiltinWarp::at_after_warp, 0);
-  vm.regist_builtin_func("poll_warp_request", BuiltinWarp::poll_warp_request, 0);
-  vm.regist_builtin_func("set_processwarp_param", BuiltinWarp::set_processwarp_param, 0);
+  vm.regist_builtin_func("pw_at_befor_warp", BuiltinWarp::at_befor_warp, 0);
+  vm.regist_builtin_func("pw_at_after_warp", BuiltinWarp::at_after_warp, 0);
+  vm.regist_builtin_func("pw_poll_warp_request", BuiltinWarp::poll_warp_request, 0);
+  vm.regist_builtin_func("pw_set_processwarp_param", BuiltinWarp::set_processwarp_param, 0);
 }
 }  // namespace processwarp

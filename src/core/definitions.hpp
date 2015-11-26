@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-#include "../../include/processwarp/processwarp.h"
+#include "processwarp/processwarp.h"
 
 namespace processwarp {
 class Process;
@@ -19,7 +19,7 @@ static const int PROTOCOL_MAJOR_VERSION = 0;
 static const int PROTOCOL_MINOR_VERSION = 1;
 
 /** 仮想アドレス */
-typedef __pw_vm_ptr_t vaddr_t;
+typedef pw_ptr_t vaddr_t;
 
 static const unsigned int VMEMORY_RESERVE_MIN  = 8;
 static const unsigned int VMEMORY_RESERVE_BASE = 16;
@@ -80,9 +80,9 @@ static const instruction_t FILL_OPERAND = 0x03FFFFFF;
 static const instruction_t HEAD_OPERAND = 0x02000000;
 
 /** VM内のint相当のint型 */
-typedef __pw_vm_int_t vm_int_t;
+typedef pw_int_t vm_int_t;
 /** VM内のint相当のint型 */
-typedef __pw_vm_uint_t vm_uint_t;
+typedef pw_uint_t vm_uint_t;
 
 /** メモリの内容ごとに割り当てるアドレスの判定フラグ */
 enum AddrType : vaddr_t {

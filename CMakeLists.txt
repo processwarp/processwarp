@@ -19,6 +19,7 @@ add_custom_target(cpplint
   --filter=-legal/copyright,-runtime/references,-build/c++11
   ${PROJECT_SOURCE_DIR}/src/core/*.cpp ${PROJECT_SOURCE_DIR}/src/core/*.hpp
   ${PROJECT_SOURCE_DIR}/src/daemon/*.cpp ${PROJECT_SOURCE_DIR}/src/daemon/*.hpp
+  ${PROJECT_SOURCE_DIR}/include/processwarp/*.h ${PROJECT_SOURCE_DIR}/include/processwarp/*.hpp
   )
 
 # Generate develop document.
@@ -37,6 +38,6 @@ if (DOXYGEN_FOUND)
     )
 endif (DOXYGEN_FOUND)
 
-# include_directories(include)
-
+# Compile.
+include_directories(include)
 add_subdirectory(src)
