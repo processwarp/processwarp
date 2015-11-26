@@ -21,6 +21,22 @@ add_custom_target(cpplint
   ${PROJECT_SOURCE_DIR}/src/daemon/*.cpp ${PROJECT_SOURCE_DIR}/src/daemon/*.hpp
   )
 
+# Generate develop document.
+find_package(Doxygen)
+
+if (DOXYGEN_FOUND)
+  set(DOXYGEN_INPUT "Doxyfile")
+  set(DOXYGEN_OUTPUT "doc")
+    
+  add_custom_target(doc
+    COMMAND ${CMAKE_COMMAND} -E echo_append "Building API Documentation..."
+    COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_INPUT}
+    COMMAND ${CMAKE_COMMAND} -E echo "Done."
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    DEPENDS ${DOXYGEN_INPUT}
+    )
+endif (DOXYGEN_FOUND)
+
 # include_directories(include)
 
 add_subdirectory(src)

@@ -2,7 +2,7 @@
 .idea/
 build/
 conf/conf.json
-src/doc/
+doc/
 tmp/
 
 # Compiled Object files
