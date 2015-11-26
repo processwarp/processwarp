@@ -1,3 +1,6 @@
+
+#include <picojson.h>
+
 #include <cerrno>
 #include <cstring>
 #include <iostream>
@@ -7,8 +10,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-
-#include "lib/picojson.h"
 
 #include "convert.hpp"
 #include "definitions.hpp"
