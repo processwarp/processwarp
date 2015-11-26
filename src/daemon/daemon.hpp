@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 namespace processwarp {
 namespace DaemonRunMode {
 /**
@@ -11,4 +13,19 @@ enum Type {
   HELP,     ///< Show help.
 };
 }  // namespace DaemonRunMode
+
+class Daemon {
+ public:
+  Daemon();
+  int entry(int argc, char* argv[]);
+
+ private:
+  /** Daemon run mode. */
+  DaemonRunMode::Type run_mode;
+
+  int daemonize();
+  bool read_options(int argc, char* argv[]);
+  void show_help(bool is_error, const std::string& command);
+};
+
 }  // namespace processwarp

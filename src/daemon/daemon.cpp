@@ -12,12 +12,57 @@
 #include <iostream>
 #include <string>
 
+namespace processwarp {
+class Daemon;
+};  // namespace processwarp
+
 #include "daemon.hpp"
 
 namespace processwarp {
 
-/** Daemon run mode. */
-static DaemonRunMode::Type run_mode = DaemonRunMode::DAEMON;
+/**
+ * Constructor, set default parameters value.
+ */
+Daemon::Daemon() {
+  run_mode = DaemonRunMode::DAEMON;
+}
+
+/**
+ * Actual entry process, passed by main.
+ * Scan command line options and change run mode by option,
+ * and pass the process to main loop.
+ * @param argc Count of command line option.
+ * @param argv Strings of command line options.
+ * @return Exit status.
+ */
+int Daemon::entry(int argc, char* argv[]) {
+  if (!read_options(argc, argv)) {
+    show_help(true, argv[0]);
+    return EXIT_FAILURE;
+  }
+
+  switch (run_mode) {
+    case processwarp::DaemonRunMode::CONSOLE: {
+      // Do nothing.
+    } break;
+
+    case processwarp::DaemonRunMode::DAEMON: {
+      if (daemonize() != 0) {
+        return EXIT_FAILURE;
+      }
+    } break;
+
+    case processwarp::DaemonRunMode::HELP: {
+      show_help(false, argv[0]);
+      return EXIT_SUCCESS;
+    } break;
+
+    default: {
+      assert(false);
+    } break;
+  }
+  return EXIT_SUCCESS;
+}
 
 /**
  * Daemonize the process.
@@ -27,7 +72,7 @@ static DaemonRunMode::Type run_mode = DaemonRunMode::DAEMON;
  * And daemon (child) process will be continue. 
  * @return 0 if daemonize was success.
  */
-int daemonize() {
+int Daemon::daemonize() {
   /* Saved sigaction  */
   struct sigaction saved_sa;
   /* Sigaction for signal configuration */
@@ -117,7 +162,7 @@ int daemonize() {
  * @param is_error Output help message to stderr if set it true.
  * @param command Command string.
  */
-void show_help(bool is_error, const std::string& command) {
+void Daemon::show_help(bool is_error, const std::string& command) {
   std::ostream& out = (is_error ? std::cerr : std::cout);
   out << "usage: " << command << " [options]" << std::endl;
   out << "  -c --console      Run process warp node as console application." << std::endl;
@@ -134,7 +179,7 @@ void show_help(bool is_error, const std::string& command) {
  * @param argv Argv passed by entry function.
  * @return False if options was wrong.
  */
-bool read_options(int argc, char* argv[]) {
+bool Daemon::read_options(int argc, char* argv[]) {
   int opt, option_index;
   option long_options[] = {
     {"console", no_argument, nullptr, 'c'},
@@ -169,38 +214,13 @@ bool read_options(int argc, char* argv[]) {
 }  // namespace processwarp
 
 /**
- * Entry point.
- * Scan command line options and change run mode by option,
- * and pass the process to main loop.
+ * Entry point, call actual entry process.
  * @param argc Count of command line option.
  * @param argv Strings of command line options.
  * @return Exit status.
  */
 int main(int argc, char* argv[]) {
-  if (!processwarp::read_options(argc, argv)) {
-    processwarp::show_help(true, argv[0]);
-    return EXIT_FAILURE;
-  }
+  processwarp::Daemon THIS;
 
-  switch (processwarp::run_mode) {
-    case processwarp::DaemonRunMode::CONSOLE: {
-      // Do nothing.
-    } break;
-
-    case processwarp::DaemonRunMode::DAEMON: {
-      if (processwarp::daemonize() != 0) {
-        return EXIT_FAILURE;
-      }
-    } break;
-
-    case processwarp::DaemonRunMode::HELP: {
-      processwarp::show_help(false, argv[0]);
-      return EXIT_SUCCESS;
-    } break;
-
-    default: {
-      assert(false);
-    } break;
-  }
-  return EXIT_SUCCESS;
+  return THIS.entry(argc, argv);
 }
