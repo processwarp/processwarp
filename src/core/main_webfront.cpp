@@ -2,6 +2,8 @@
 #include <emscripten.h>
 #include <emscripten/bind.h>
 
+#include <picojson.h>
+
 #include <cstdio>
 #include <cstdlib>
 #include <exception>
@@ -10,8 +12,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-
-#include "lib/picojson.h"
 
 #include "convert.hpp"
 #include "vmachine.hpp"

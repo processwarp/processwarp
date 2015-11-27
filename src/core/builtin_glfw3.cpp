@@ -12,9 +12,9 @@ namespace processwarp {
 /* this function creates a window and
  * its associated OpenGL or OpenGL ES context.
  */
-BuiltinPost BuiltinGlfw3::createWindow(Process& proc, Thread& thread,
-                                       BuiltinFuncParam p, vaddr_t dst,
-                                       std::vector<uint8_t>& src) {
+BuiltinPostProc::Type BuiltinGlfw3::createWindow(Process& proc, Thread& thread,
+                                                 BuiltinFuncParam p, vaddr_t dst,
+                                                 std::vector<uint8_t>& src) {
   int seek = 0;
   uint32_t width = Process::read_builtin_param_i32(src, &seek);
   uint32_t height = Process::read_builtin_param_i32(src, &seek);
@@ -36,13 +36,13 @@ BuiltinPost BuiltinGlfw3::createWindow(Process& proc, Thread& thread,
   /// @todo ネイティブのアドレスとのペアを作成。
   // thread.memory.set<vaddr_t>(dst, proc.create_native_ptr(window));
 
-  return BP_NORMAL;
+  return BuiltinPostProc::NORMAL;
 }
 
 // This function destroys the specified window and its context.
-BuiltinPost BuiltinGlfw3::destroyWindow(Process& proc, Thread& thread,
-                                        BuiltinFuncParam p, vaddr_t dst,
-                                        std::vector<uint8_t>& src) {
+BuiltinPostProc::Type BuiltinGlfw3::destroyWindow(Process& proc, Thread& thread,
+                                                  BuiltinFuncParam p, vaddr_t dst,
+                                                  std::vector<uint8_t>& src) {
   int seek = 0;
   vaddr_t window = Process::read_builtin_param_ptr(src, &seek);
   assert(static_cast<signed>(src.size()) == seek);
@@ -53,7 +53,7 @@ BuiltinPost BuiltinGlfw3::destroyWindow(Process& proc, Thread& thread,
   /// @todo ネイティブのアドレスとのペアを解消。
   // proc.destory_native_ptr(window);
 
-  return BP_NORMAL;
+  return BuiltinPostProc::NORMAL;
 }
 
 void BuiltinGlfw3::regist(VMachine& vm) {

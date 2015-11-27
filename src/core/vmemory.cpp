@@ -612,7 +612,7 @@ vaddr_t VMemory::Accessor::set_meta_area(const std::string& data, vaddr_t addr,
 
 // Get meta data.
 std::string VMemory::Accessor::get_meta_area(vaddr_t addr) {
-  assert((AD_MASK & addr) == AD_META);
+  assert((AddrType::MASK & addr) == AddrType::META);
   Page& page = get_page(addr, true);
 
   return std::string(reinterpret_cast<char*>(page.value.get()), page.size);
@@ -620,7 +620,7 @@ std::string VMemory::Accessor::get_meta_area(vaddr_t addr) {
 
 // Change meta data.
 void VMemory::Accessor::update_meta_area(vaddr_t addr, const std::string& data) {
-  assert((AD_MASK & addr) == AD_META);
+  assert((AddrType::MASK & addr) == AddrType::META);
   Page& page = get_page(addr, true);
 
   if (page.size == data.size() &&
@@ -782,7 +782,7 @@ vaddr_t VMemory::Accessor::reserve_program_area() {
 
 // Set program data to be selected address.
 void VMemory::Accessor::set_program_area(vaddr_t addr, const std::string& data) {
-  assert((AD_MASK & addr) == AD_PROGRAM);
+  assert((AddrType::MASK & addr) == AddrType::PROGRAM);
   auto it_page = space.pages.find(addr);
   if (it_page == space.pages.end()) {
     space.pages.insert(std::make_pair(addr, Page(PT_PROGRAM, true, data,

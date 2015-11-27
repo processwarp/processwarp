@@ -263,8 +263,8 @@ class VMemory {
      */
     Page& get_page(vaddr_t addr, bool readable) {
       assert(addr != VADDR_NULL);
-      assert((addr & AD_MASK) == AD_META ||
-             (addr & AD_MASK) == AD_PROGRAM ||
+      assert((addr & AddrType::MASK) == AddrType::META ||
+             (addr & AddrType::MASK) == AddrType::PROGRAM ||
              addr == get_upper_addr(addr));
       auto page = space.pages.find(addr);
 
@@ -529,7 +529,7 @@ class VMemory {
         vaddr_t addr = it_page.first;
         Page& page = it_page.second;
         print_debug("addr:%s\n", Convert::vaddr2str(addr).c_str());
-        if ((addr & AD_MASK) == AD_META) {
+        if ((addr & AddrType::MASK) == AddrType::META) {
           print_debug("value:%s\n",
                       std::string(reinterpret_cast<const char*>(page.value.get()), page.size).
                       c_str());

@@ -23,18 +23,18 @@ class BuiltinGlfw3 {
    * return into dst;
    * vaddr_t
    */
-  static BuiltinPost createWindow(Process& proc, Thread& thread,
-                                  BuiltinFuncParam p, vaddr_t dst,
-                                  std::vector<uint8_t>& src);
+  static BuiltinPostProc::Type createWindow(Process& proc, Thread& thread,
+                                            BuiltinFuncParam p, vaddr_t dst,
+                                            std::vector<uint8_t>& src);
 
   /**
    * This function destroys the specified window and its context.
    * paramter from src;
    * vaddr_t window
    */
-  static BuiltinPost destroyWindow(Process& proc, Thread& thread,
-                                   BuiltinFuncParam p, vaddr_t dst,
-                                   std::vector<uint8_t>& src);
+  static BuiltinPostProc::Type destroyWindow(Process& proc, Thread& thread,
+                                             BuiltinFuncParam p, vaddr_t dst,
+                                             std::vector<uint8_t>& src);
 
   /**
    * VMにライブラリを登録する。
