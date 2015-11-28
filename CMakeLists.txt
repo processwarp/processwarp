@@ -20,6 +20,7 @@ add_custom_target(cpplint
   ${PROJECT_SOURCE_DIR}/src/core/*.cpp ${PROJECT_SOURCE_DIR}/src/core/*.hpp
   ${PROJECT_SOURCE_DIR}/src/daemon/*.cpp ${PROJECT_SOURCE_DIR}/src/daemon/*.hpp
   ${PROJECT_SOURCE_DIR}/include/processwarp/*.h ${PROJECT_SOURCE_DIR}/include/processwarp/*.hpp
+  ${PROJECT_SOURCE_DIR}/test/unit/core/*.cpp ${PROJECT_SOURCE_DIR}/test/unit/core/*.hpp
   )
 
 # Generate develop document.
@@ -41,3 +42,7 @@ endif (DOXYGEN_FOUND)
 # Compile.
 include_directories(include)
 add_subdirectory(src)
+
+# Test
+enable_testing()
+add_subdirectory(test)
