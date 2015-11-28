@@ -31,14 +31,14 @@ const vaddr_t VMemory::UPPER_MASKS[]  = {
   0xFFFFFFFFFFFFFFFF,  // Function, Type
 };
 
-// Constructor with device-id.
-VMemory::VMemory(VMemoryDelegate& delegate_, const dev_id_t& dev_id_) :
-    dev_id(dev_id_),
+// Constructor with node-id.
+VMemory::VMemory(VMemoryDelegate& delegate_, const nid_t& nid_) :
+    nid(nid_),
     rnd(std::random_device()()),
     delegate(delegate_) {
 }
 
-// Recv and decode data from other device.
+// Recv and decode data from other node.
 void VMemory::recv_memory_data(const std::string& name, const std::string& data) {
   picojson::value v;
   std::istringstream is(data);
@@ -85,7 +85,7 @@ void VMemory::recv_memory_data(const std::string& name, const std::string& data)
 void VMemory::recv_copy(const std::string& name, picojson::object& json) {
   vaddr_t addr = Convert::json2vaddr(json.at("addr"));
   const std::string& value = Convert::json2bin(json.at("value"));
-  dev_id_t src = Convert::json2devid(json.at("src"));
+  nid_t src = Convert::json2nid(json.at("src"));
   if (get_upper_addr(addr) != addr) {
     /// @todo error
     assert(false);
@@ -104,7 +104,7 @@ void VMemory::recv_copy(const std::string& name, picojson::object& json) {
 
     auto it_ri = space.requiring.find(addr);
     if (it_ri != space.requiring.end()) {
-      std::set<dev_id_t> hint;
+      std::set<nid_t> hint;
       hint.insert(src);
       space.pages.insert(std::make_pair
                          (addr, Page(is_program(addr) ? PT_PROGRAM : PT_COPY,
@@ -186,15 +186,15 @@ void VMemory::recv_free(const std::string& name, picojson::object& json) {
 void VMemory::recv_give(const std::string& name, picojson::object& json) {
   vaddr_t addr = Convert::json2vaddr(json.at("addr"));
   const std::string& value = Convert::json2bin(json.at("value"));
-  dev_id_t src = Convert::json2devid(json.at("src"));
-  dev_id_t dst = Convert::json2devid(json.at("dst"));
+  nid_t src = Convert::json2nid(json.at("src"));
+  nid_t dst = Convert::json2nid(json.at("dst"));
   picojson::array js_hint = json.at("hint").get<picojson::array>();
   assert(addr == get_upper_addr(addr));
 
   auto it_space = spaces.find(name);
   if (it_space == spaces.end()) {
-    if (dst == dev_id) {
-      /// @todo Give master to this device but this device is't binded selected name space.
+    if (dst == nid) {
+      /// @todo Give master to this node but this node is't binded selected name space.
       assert(false);
 
     } else {
@@ -207,15 +207,15 @@ void VMemory::recv_give(const std::string& name, picojson::object& json) {
 
   Space& space = *it_space->second;
   auto it_page = space.pages.find(addr);
-  if (dst == dev_id) {
-    std::set<dev_id_t> hint;
+  if (dst == nid) {
+    std::set<nid_t> hint;
     for (auto& js_h : js_hint) {
-      const dev_id_t& hint_dev = Convert::json2devid(js_h);
-      if (hint_dev != dev_id) {
-        hint.insert(hint_dev);
+      const nid_t& hint_node = Convert::json2nid(js_h);
+      if (hint_node != nid) {
+        hint.insert(hint_node);
       }
     }
-    if (src != DEV_SERVER) {
+    if (src != SpecialNID::SERVER) {
       hint.insert(src);
     }
 
@@ -263,19 +263,19 @@ void VMemory::recv_give(const std::string& name, picojson::object& json) {
 
 void VMemory::recv_require(const std::string& name, picojson::object& json) {
   vaddr_t addr = Convert::json2vaddr(json.at("addr"));
-  dev_id_t src = Convert::json2devid(json.at("src"));
+  nid_t src = Convert::json2nid(json.at("src"));
   assert(addr == get_upper_addr(addr));
-  assert(src != dev_id);
+  assert(src != nid);
 
   auto it_space = spaces.find(name);
   if (it_space == spaces.end()) {
-    if (src != DEV_BROADCAST && src != dev_id) {
+    if (src != SpecialNID::BROADCAST && src != nid) {
       picojson::object packet;
 
       packet.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
-      packet.insert(std::make_pair("src", Convert::devid2json(src)));
+      packet.insert(std::make_pair("src", Convert::nid2json(src)));
 
-      send_packet(name, DEV_BROADCAST, "require", packet);
+      send_packet(name, SpecialNID::BROADCAST, "require", packet);
     }
     return;
   }
@@ -283,13 +283,13 @@ void VMemory::recv_require(const std::string& name, picojson::object& json) {
   Space& space = *it_space->second;
   auto it_page = space.pages.find(addr);
   if (it_page == space.pages.end()) {
-    if (src != DEV_BROADCAST && src != dev_id) {
+    if (src != SpecialNID::BROADCAST && src != nid) {
       picojson::object packet;
 
       packet.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
-      packet.insert(std::make_pair("src", Convert::devid2json(src)));
+      packet.insert(std::make_pair("src", Convert::nid2json(src)));
 
-      send_packet(name, DEV_BROADCAST, "require", packet);
+      send_packet(name, SpecialNID::BROADCAST, "require", packet);
     }
     return;
   }
@@ -302,7 +302,7 @@ void VMemory::recv_require(const std::string& name, picojson::object& json) {
     picojson::object packet;
 
     packet.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
-    packet.insert(std::make_pair("src", Convert::devid2json(src)));
+    packet.insert(std::make_pair("src", Convert::nid2json(src)));
 
     send_packet(name, *page.hint.begin(), "require", packet);
   }
@@ -329,9 +329,9 @@ void VMemory::recv_reserve(const std::string& name, picojson::object& json) {
 
 void VMemory::recv_stand(const std::string& name, picojson::object& json) {
   vaddr_t addr = Convert::json2vaddr(json.at("addr"));
-  dev_id_t src_device = Convert::json2devid(json.at("src"));
+  nid_t src_node = Convert::json2nid(json.at("src"));
   assert(addr == get_upper_addr(addr));
-  assert(src_device != dev_id);
+  assert(src_node != nid);
 
   auto it_space = spaces.find(name);
   if (it_space == spaces.end()) {
@@ -347,11 +347,11 @@ void VMemory::recv_stand(const std::string& name, picojson::object& json) {
   Page& page = it_page->second;
   if (page.type == PT_MASTER && page.master_count == 0) {
     assert(page.flg_update == true);
-    send_give(space, page, addr, src_device);
+    send_give(space, page, addr, src_node);
 
     page.type = PT_COPY;
     page.hint.clear();
-    page.hint.insert(src_device);
+    page.hint.insert(src_node);
   }
 
   space.requiring.erase(addr);
@@ -420,39 +420,39 @@ void VMemory::set_loading(const std::string& name, bool flg) {
 }
 
 // Send packet.
-void VMemory::send_packet(const std::string& name, const dev_id_t& dev_id,
+void VMemory::send_packet(const std::string& name, const nid_t& nid,
                           const std::string& cmd, picojson::object& data) {
-  assert(dev_id != this->dev_id);
+  assert(nid != this->nid);
   data.insert(std::make_pair("cmd", picojson::value(cmd)));
-  data.insert(std::make_pair("src", Convert::devid2json(this->dev_id)));
+  data.insert(std::make_pair("src", Convert::nid2json(this->nid)));
 
-  delegate.send_memory_data(name, dev_id, picojson::value(data).serialize());
+  delegate.send_memory_data(name, nid, picojson::value(data).serialize());
 }
 
 // This request means to update memory for copy data.
-void VMemory::send_copy(const dev_id_t& dev_id, Space& space, Page& page, vaddr_t addr) {
+void VMemory::send_copy(const nid_t& nid, Space& space, Page& page, vaddr_t addr) {
   assert(page.type != PT_COPY);
-  assert(dev_id != this->dev_id);
+  assert(nid != this->nid);
   assert(get_upper_addr(addr) == addr);
   picojson::object packet;
 
   packet.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
   packet.insert(std::make_pair("value", Convert::bin2json(page.value.get(), page.size)));
 
-  send_packet(space.name, dev_id, "copy", packet);
+  send_packet(space.name, nid, "copy", packet);
 }
 
 // This request means to selected memory isn't able to use.
-void VMemory::send_free(const dev_id_t& dev_id, Space& space, vaddr_t addr) {
+void VMemory::send_free(const nid_t& nid, Space& space, vaddr_t addr) {
   picojson::object packet;
 
   packet.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
 
-  send_packet(space.name, dev_id, "free", packet);
+  send_packet(space.name, nid, "free", packet);
 }
 
 // This request means to give right of master.
-void VMemory::send_give(Space& space, Page& page, vaddr_t addr, const dev_id_t& dst) {
+void VMemory::send_give(Space& space, Page& page, vaddr_t addr, const nid_t& dst) {
   assert(page.type == PT_MASTER && page.master_count == 0);
   assert(addr == get_upper_addr(addr));
   picojson::object packet;
@@ -460,9 +460,9 @@ void VMemory::send_give(Space& space, Page& page, vaddr_t addr, const dev_id_t& 
 
   packet.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
   packet.insert(std::make_pair("value", Convert::bin2json(page.value.get(), page.size)));
-  packet.insert(std::make_pair("dst", Convert::devid2json(dst)));
+  packet.insert(std::make_pair("dst", Convert::nid2json(dst)));
   for (auto& h : page.hint) {
-    hint.push_back(Convert::devid2json(h));
+    hint.push_back(Convert::nid2json(h));
   }
   packet.insert(std::make_pair("hint", picojson::value(hint)));
 
@@ -479,21 +479,21 @@ void VMemory::send_release(Space& space, std::set<vaddr_t> addrs) {
   }
   packet.insert(std::make_pair("addrs", picojson::value(js_addrs)));
 
-  send_packet(space.name, DEV_BROADCAST, "release", packet);
+  send_packet(space.name, SpecialNID::BROADCAST, "release", packet);
 }
 
 // This request means to need a data of copy.
-void VMemory::send_require(Space& space, vaddr_t addr, const dev_id_t& dev_id) {
+void VMemory::send_require(Space& space, vaddr_t addr, const nid_t& nid) {
   assert(get_upper_addr(addr) == addr);
   space.requiring.insert(addr);
   picojson::object packet;
 
   packet.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
 
-  send_packet(space.name, dev_id, "require", packet);
+  send_packet(space.name, nid, "require", packet);
 }
 
-// This request means to broadcast some reserve address for this device.
+// This request means to broadcast some reserve address for this node.
 void VMemory::send_reserve(Space& space, std::set<vaddr_t> addrs) {
   picojson::object packet;
   picojson::array js_addrs;
@@ -503,7 +503,7 @@ void VMemory::send_reserve(Space& space, std::set<vaddr_t> addrs) {
   }
   packet.insert(std::make_pair("addrs", picojson::value(js_addrs)));
 
-  send_packet(space.name, DEV_BROADCAST, "reserve", packet);
+  send_packet(space.name, SpecialNID::BROADCAST, "reserve", packet);
 }
 
 // This request means to stand as master.
@@ -519,19 +519,19 @@ void VMemory::send_stand(Space& space, Page& page, vaddr_t addr) {
 }
 
 // This request means tell unwant copy packet to sender.
-void VMemory::send_unwant(const std::string name, const dev_id_t& dev_id, vaddr_t addr) {
+void VMemory::send_unwant(const std::string name, const nid_t& nid, vaddr_t addr) {
   picojson::object packet;
   packet.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
-  send_packet(name, dev_id, "unwant", packet);
+  send_packet(name, nid, "unwant", packet);
 }
 
 // Send update packet.
-void VMemory::send_update(const dev_id_t& dev_id, Space& space, vaddr_t addr,
+void VMemory::send_update(const nid_t& nid, Space& space, vaddr_t addr,
                           const uint8_t* data, uint64_t size) {
   picojson::object packet;
   packet.insert(std::make_pair("value", Convert::bin2json(data, size)));
   packet.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
-  send_packet(space.name, dev_id, "update", packet);
+  send_packet(space.name, nid, "update", packet);
 }
 
 // Constructor with memory space.
@@ -540,13 +540,13 @@ VMemory::Accessor::Accessor(VMemory& vmemory_, Space& space_) :
     space(space_) {
 }
 
-// Get master device-id for target address.
-const dev_id_t& VMemory::Accessor::get_master(vaddr_t addr) {
+// Get master node-id for target address.
+const nid_t& VMemory::Accessor::get_master(vaddr_t addr) {
   Page& page = get_page(addr, false);
 
   switch (page.type) {
     case PT_MASTER: {
-      return vmemory.dev_id;
+      return vmemory.nid;
     } break;
 
     case PT_COPY: {
@@ -557,7 +557,7 @@ const dev_id_t& VMemory::Accessor::get_master(vaddr_t addr) {
     default: {
       /// @todo error
       assert(false);
-      return DEV_BROADCAST;
+      return SpecialNID::BROADCAST;
     } break;
   }
 }
@@ -594,16 +594,16 @@ vaddr_t VMemory::Accessor::set_meta_area(const std::string& data, vaddr_t addr) 
   }
   assert(space.pages.find(addr) == space.pages.end());
   space.pages.insert(std::make_pair(addr, Page(PT_MASTER, true, data,
-                                               std::set<dev_id_t>())));
+                                               std::set<nid_t>())));
 
   return addr;
 }
 
 vaddr_t VMemory::Accessor::set_meta_area(const std::string& data, vaddr_t addr,
-                                         const dev_id_t& master) {
+                                         const nid_t& master) {
   assert(addr != VADDR_NULL);
   assert(space.pages.find(addr) == space.pages.end());
-  std::set<dev_id_t> hint;
+  std::set<nid_t> hint;
   hint.insert(master);
   space.pages.insert(std::make_pair(addr, Page(PT_COPY, true, data, hint)));
 
@@ -659,7 +659,7 @@ vaddr_t VMemory::Accessor::alloc(uint64_t size) {
   vaddr_t addr = space.assign_addr(get_addr_type(size));
 
   Page& page = space.pages.insert
-               (std::make_pair(addr, Page(PT_MASTER, true, std::set<dev_id_t>()))).first->second;
+               (std::make_pair(addr, Page(PT_MASTER, true, std::set<nid_t>()))).first->second;
   page.size = size;
   page.value.reset(new uint8_t[size]);
 
@@ -775,7 +775,7 @@ vaddr_t VMemory::Accessor::reserve_program_area() {
     new_addr = AddrType::PROGRAM | (~AddrType::MASK & space.rnd());
   } while (space.pages.find(new_addr) != space.pages.end());
 
-  space.pages.insert(std::make_pair(new_addr, Page(PT_PROGRAM, true, std::set<dev_id_t>())));
+  space.pages.insert(std::make_pair(new_addr, Page(PT_PROGRAM, true, std::set<nid_t>())));
 
   return new_addr;
 }
@@ -786,7 +786,7 @@ void VMemory::Accessor::set_program_area(vaddr_t addr, const std::string& data) 
   auto it_page = space.pages.find(addr);
   if (it_page == space.pages.end()) {
     space.pages.insert(std::make_pair(addr, Page(PT_PROGRAM, true, data,
-                                                 std::set<dev_id_t>())));
+                                                 std::set<nid_t>())));
 
   } else {
     Page& page = it_page->second;
@@ -836,7 +836,7 @@ void VMemory::Accessor::write_out() {
 
 // Constructor with value by string.
 VMemory::Page::Page(PageType type_, bool flg_update_,
-                    const std::string& value_str, const std::set<dev_id_t>& hint_) :
+                    const std::string& value_str, const std::set<nid_t>& hint_) :
     type(type_),
     flg_update(flg_update_),
     value(new uint8_t[value_str.size()]),
@@ -847,7 +847,7 @@ VMemory::Page::Page(PageType type_, bool flg_update_,
 }
 
 // Constructor without initialize value.
-VMemory::Page::Page(PageType type_, bool flg_update_, const std::set<dev_id_t>& hint_) :
+VMemory::Page::Page(PageType type_, bool flg_update_, const std::set<nid_t>& hint_) :
     type(type_),
     flg_update(flg_update_),
     size(0),

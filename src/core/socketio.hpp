@@ -44,19 +44,19 @@ class SocketIoDelegate {
   virtual void recv_login(int result) = 0;
 
   /**
-   * Call when recv list device message from server.
+   * Call when recv list node message from server.
    * @param result Set 0 when succeed or else error code when error.
-   * @param devices Map of device-id and device-name.
+   * @param nodes Map of node-id and node-name.
    */
-  virtual void recv_list_device(int result,
-                                const std::map<dev_id_t, std::string>& devices) = 0;
+  virtual void recv_list_node(int result,
+                                const std::map<nid_t, std::string>& nodes) = 0;
 
   /**
-   * Call when recv bind device message from server.
+   * Call when recv bind node message from server.
    * @param result Set 0 when succeed or else error code when error.
-   * @param device_id Device id bound this device.
+   * @param nid Node id bound this node.
    */
-  virtual void recv_bind_device(int result, const dev_id_t& device_id) = 0;
+  virtual void recv_bind_node(int result, const nid_t& nid) = 0;
 
   /**
    * Call when recv sync proc list message from server.
@@ -65,29 +65,29 @@ class SocketIoDelegate {
   virtual void recv_sync_proc_list(const std::vector<ProcessTree>& procs) = 0;
 
   /**
-   * Call when recieve virtual-machine data packet from other device.
-   * Packet isn't filterd. It contain packet that destination is other device.
+   * Call when recieve virtual-machine data packet from other node.
+   * Packet isn't filterd. It contain packet that destination is other node.
    * @param pid Target pid.
-   * @param src Source device-id (Contain DEV_SERVER and this device).
-   * @param dst Destination device-id (Contain DEV_BROADCAST and NOT this device).
+   * @param src Source node-id (Contain SpecialNode::SERVER and this node).
+   * @param dst Destination node-id (Contain SpecialNode::BROADCAST and NOT this node).
    * @param data Load data.
    */
   virtual void recv_machine_data(const vpid_t& pid,
-                                 const dev_id_t& src,
-                                 const dev_id_t& dst,
+                                 const nid_t& src,
+                                 const nid_t& dst,
                                  const std::string& data) = 0;
 
   /**
-   * Call when recieve virtual-memory data packet from other device.
-   * Packet isn't filterd. It contain packet that destination is other device.
+   * Call when recieve virtual-memory data packet from other node.
+   * Packet isn't filterd. It contain packet that destination is other node.
    * @param pid Target pid.
-   * @param src Source device-id (Contain DEV_SERVER and this device).
-   * @param dst Destination device-id (Contain DEV_BROADCAST and NOT this device).
+   * @param src Source node-id (Contain SpecialNode::SERVER and this node).
+   * @param dst Destination node-id (Contain SpecialNode::BROADCAST and NOT this node).
    * @param data Load data.
    */
   virtual void recv_memory_data(const std::string& name,
-                                const dev_id_t& src,
-                                const dev_id_t& dst,
+                                const nid_t& src,
+                                const nid_t& dst,
                                 const std::string& data) = 0;
 
   /**
@@ -95,12 +95,12 @@ class SocketIoDelegate {
    * @param pid Source pid.
    * @param dev Device name (stdout/stderr).
    * @param payload output stream or text.
-   * @param from_device_id Source deice-id.
+   * @param from_nid Source deice-id.
    */
   virtual void recv_test_console(const vpid_t& pid,
-                                 const std::string& dev_name,
+                                 const std::string& dev,
                                  const std::string& payload,
-                                 const dev_id_t& from_device_id) = 0;
+                                 const nid_t& from_nid) = 0;
 };
 
 /**
@@ -136,17 +136,17 @@ class SocketIo {
    *   name: <Application name>,
    *   file: <File content(binary)>,
    *   args: [<arg1>, <arg2>,...]
-   *   dest_device_id: <Destination device-id>
+   *   dest_nid: <Destination node-id>
    * }
    * @param name Application name.
    * @param file File content(binary).
    * @param args List of arguments for program.
-   * @param dst_device_id Destination device-id.
+   * @param dst_nid Destination node-id.
    */
   void send_load_llvm(const std::string& name,
                       const std::string& file,
                       const std::vector<std::string>& args,
-                      const dev_id_t& dst_device_id);
+                      const nid_t& dst_nid);
 
   /**
    * Send login command.
@@ -161,23 +161,23 @@ class SocketIo {
                   const std::string& password);
 
   /**
-   * Send request of device list.
+   * Send request of node list.
    * Packet format: {
    * }
    */
-  void send_list_device();
+  void send_list_node();
 
 
   /**
-   * Send device bind command.
+   * Send node bind command.
    * Packet format: {
    *   id: <id>,
    *   name: <name>
    * }
-   * @param id Just using device-id.
-   * @param name Name of device.
+   * @param id Just using node-id.
+   * @param name Name of node.
    */
-  void send_bind_device(const dev_id_t& id,
+  void send_bind_node(const nid_t& id,
                         const std::string& name);
 
   /**
@@ -187,7 +187,7 @@ class SocketIo {
    *     pid: <pid>,
    *     name: <name of process>,
    *     threads: {
-   *       <tid>: <device_id>
+   *       <tid>: <nid>
    *     }
    *   }, ...
    * }
@@ -198,26 +198,26 @@ class SocketIo {
    * Send virtual-machine data packet.
    * Packet format: {
    *   pid: <pid>
-   *   dst: <destination device-id>
-   *   src: <this device-id, added by server>
+   *   dst: <destination node-id>
+   *   src: <this node-id, added by server>
    *   data: <load data>
    * }
    */
   void send_machine_data(const vpid_t& pid,
-                         const dev_id_t& dst,
+                         const nid_t& dst,
                          const std::string& data);
 
   /**
    * Send virtual-memory data packet.
    * Packet format: {
    *   name: <name of memory space>
-   *   dst: <target device_id>
-   *   src: <this device-id, added by server>
+   *   dst: <target nid>
+   *   src: <this node-id, added by server>
    *   data: <load data>
    * }
    */
   void send_memory_data(const std::string& name,
-                        const dev_id_t& dst,
+                        const nid_t& dst,
                         const std::string& data);
 
   /**
@@ -227,7 +227,7 @@ class SocketIo {
    * @param payload output stream or text.
    */
   void send_test_console(const vpid_t& pid,
-                         const std::string& dev_name,
+                         const std::string& dev,
                          const std::string& payload);
 
  private:

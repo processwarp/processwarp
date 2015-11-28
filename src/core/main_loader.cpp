@@ -35,9 +35,9 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
   ///
   std::string in_name;
   ///
-  dev_id_t in_dst_device;
+  nid_t in_dst_node;
   ///
-  dev_id_t in_src_device;
+  nid_t in_src_node;
   ///
   std::string in_src_account;
   ///
@@ -50,7 +50,7 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
    * Constructor, initialize virtual-memory instance.
    */
   Loader() :
-      vmemory(*this, DEV_SERVER) {
+      vmemory(*this, SpecialNID::SERVER) {
   }
 
   /**
@@ -66,12 +66,12 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
   void on_change_thread_set(Process& proc) override {
   }
 
-  // Call when send memory data to other device.
+  // Call when send memory data to other node.
   void send_memory_data(const std::string& name,
-                        const dev_id_t& dev_id,
+                        const nid_t& nid,
                         const std::string& data) override {
     print_debug("send memory data (%s@%s):%s\n",
-                name.c_str(), dev_id.c_str(), data.c_str());
+                name.c_str(), nid.c_str(), data.c_str());
     assert(false);
   }
 
@@ -141,16 +141,16 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
                                    Convert::vtid2json(proc->root_tid)));
       packet.insert(std::make_pair("proc_addr",
                                    Convert::vaddr2json(proc->addr)));
-      packet.insert(std::make_pair("master_device",
-                                   Convert::devid2json(DEV_SERVER)));
+      packet.insert(std::make_pair("master_node",
+                                   Convert::nid2json(SpecialNID::SERVER)));
       packet.insert(std::make_pair("name",
                                    picojson::value(in_name)));
       packet.insert(std::make_pair("tid",
                                    Convert::vtid2json(proc->root_tid)));
-      packet.insert(std::make_pair("dst_device",
-                                   Convert::devid2json(in_dst_device)));
-      packet.insert(std::make_pair("src_device",
-                                   Convert::devid2json(in_src_device)));
+      packet.insert(std::make_pair("dst_node",
+                                   Convert::nid2json(in_dst_node)));
+      packet.insert(std::make_pair("src_node",
+                                   Convert::nid2json(in_src_node)));
       packet.insert(std::make_pair("src_account",
                                    picojson::value(in_src_account)));
       js_machine.push_back(picojson::value
@@ -174,9 +174,9 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
                                    Convert::bin2json(it.second.value.get(),
                                                      it.second.size)));
       packet.insert(std::make_pair("src",
-                                   Convert::devid2json(DEV_SERVER)));
+                                   Convert::nid2json(SpecialNID::SERVER)));
       packet.insert(std::make_pair("dst",
-                                   Convert::devid2json(in_dst_device)));
+                                   Convert::nid2json(in_dst_node)));
       packet.insert(std::make_pair("hint",
                                    picojson::value(picojson::array())));
       js_memory.push_back(picojson::value(picojson::value(packet).serialize()));
@@ -211,10 +211,10 @@ int main(int argc, char* argv[]) {
       // Read information from json.
       loader.in_pid  = processwarp::Convert::json2vpid(result.at("pid"));
       loader.in_name = result.at("name").get<std::string>();
-      loader.in_dst_device =
-          processwarp::Convert::json2devid(result.at("dst_device"));
-      loader.in_src_device =
-          processwarp::Convert::json2devid(result.at("src_device"));
+      loader.in_dst_node =
+          processwarp::Convert::json2nid(result.at("dst_node"));
+      loader.in_src_node =
+          processwarp::Convert::json2nid(result.at("src_node"));
       loader.in_src_account = result.at("src_account").get<std::string>();
       loader.in_type       = result.at("type").get<std::string>();
 

@@ -48,12 +48,12 @@ inline std::string vaddr2str(const vaddr_t& addr) {
 }
 
 /**
- * Convert device-id to string.
- * @param dev_id Source device-id.
+ * Convert node-id to string.
+ * @param nid Source node-id.
  * @return Converted value as string.
  */
-inline std::string devid2str(const dev_id_t& dev_id) {
-  return dev_id;
+inline std::string nid2str(const nid_t& nid) {
+  return nid;
 }
 
 /**
@@ -93,11 +93,11 @@ inline vaddr_t str2vaddr(const std::string& str) {
 }
 
 /**
- * Convert device-id to string.
+ * Convert node-id to string.
  * @param str Source string value.
- * @param Converted value as dev_id_t.
+ * @param Converted value as nid_t.
  */
-inline dev_id_t str2devid(const std::string& str) {
+inline nid_t str2nid(const std::string& str) {
   return str;
 }
 
@@ -169,12 +169,12 @@ inline instruction_t json2code(const picojson::value& json) {
 }
 
 /**
- * Convert a device-id from JSON
+ * Convert a node-id from JSON
  * @param json Source JSON.
- * @return A device-id.
+ * @return A node-id.
  */
-inline dev_id_t json2devid(const picojson::value& json) {
-  return str2devid(json.get<std::string>());
+inline nid_t json2nid(const picojson::value& json) {
+  return str2nid(json.get<std::string>());
 }
 
 /**
@@ -253,12 +253,12 @@ inline picojson::value code2json(instruction_t code) {
 }
 
 /**
- * Convert device-id to JSON.
- * @param dev_id Source device-id.
- * @return Device-id as JSON.
+ * Convert node-id to JSON.
+ * @param nid Source node-id.
+ * @return node-id as JSON.
  */
-inline picojson::value devid2json(const dev_id_t& dev_id) {
-  return picojson::value(devid2str(dev_id));
+inline picojson::value nid2json(const nid_t& nid) {
+  return picojson::value(nid2str(nid));
 }
 
 /**

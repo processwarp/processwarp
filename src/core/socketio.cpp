@@ -108,22 +108,22 @@ sio::message::ptr get_sio_by_addr(vaddr_t addr) {
 }
 
 /**
- * Get device-id value by key from Socket.IO map.
+ * Get node-id value by key from Socket.IO map.
  * @param data Pointer to Socket.IO map.
  * @param key Key in map.
- * @return Value as device-id in map.
+ * @return Value as node-id in map.
  */
-dev_id_t get_dev_id_by_map(sio::message::ptr data, const std::string& key) {
-  return Convert::str2devid(get_str_by_map(data, key));
+nid_t get_nid_by_map(sio::message::ptr data, const std::string& key) {
+  return Convert::str2nid(get_str_by_map(data, key));
 }
 
 /**
- * Convert device-id to Socket.IO value.
- * @param pid device-id.
+ * Convert node-id to Socket.IO value.
+ * @param pid node-id.
  * @return Socket.IO value.
  */
-sio::message::ptr get_sio_by_dev_id(dev_id_t dev_id) {
-  return get_sio_by_str(Convert::devid2str(dev_id));
+sio::message::ptr get_sio_by_nid(nid_t nid) {
+  return get_sio_by_str(Convert::nid2str(nid));
 }
 
 // Constractor with delegate.
@@ -173,8 +173,8 @@ void SocketIo::connect(const std::string& url) {
   M_BIND_SOCKETIO_EVENT("sys_error");
   M_BIND_SOCKETIO_EVENT("app_error");
   M_BIND_SOCKETIO_EVENT("login");
-  M_BIND_SOCKETIO_EVENT("list_device");
-  M_BIND_SOCKETIO_EVENT("bind_device");
+  M_BIND_SOCKETIO_EVENT("list_node");
+  M_BIND_SOCKETIO_EVENT("bind_node");
   M_BIND_SOCKETIO_EVENT("sync_proc_list");
   M_BIND_SOCKETIO_EVENT("machine_data");
   M_BIND_SOCKETIO_EVENT("memory_data");
@@ -209,21 +209,21 @@ void SocketIo::pool() {
       //
       delegate.recv_login(data->get_map().at("result")->get_int());
 
-    } else if (name == "list_device") {
+    } else if (name == "list_node") {
       //
-      std::map<dev_id_t, std::string> devices;
+      std::map<nid_t, std::string> nodes;
 
-      for (auto it : data->get_map().at("devices")->get_vector()) {
-        devices.insert(std::make_pair(get_dev_id_by_map(it, "id"),
+      for (auto it : data->get_map().at("nodes")->get_vector()) {
+        nodes.insert(std::make_pair(get_nid_by_map(it, "id"),
                                       it->get_map().at("name")->get_string()));
       }
 
-      delegate.recv_list_device(data->get_map().at("result")->get_int(), devices);
+      delegate.recv_list_node(data->get_map().at("result")->get_int(), nodes);
 
-    } else if (name == "bind_device") {
+    } else if (name == "bind_node") {
       //
-      delegate.recv_bind_device(data->get_map().at("result")->get_int(),
-                                get_dev_id_by_map(data, "id"));
+      delegate.recv_bind_node(data->get_map().at("result")->get_int(),
+                                get_nid_by_map(data, "id"));
 
     } else if (name == "sync_proc_list") {
       std::vector<ProcessTree> procs;
@@ -238,7 +238,7 @@ void SocketIo::pool() {
         for (auto& it_thread : threads) {
           proc.threads.insert(std::make_pair
                               (Convert::str2vtid(it_thread.first),
-                               Convert::str2devid(it_thread.second->get_string())));
+                               Convert::str2nid(it_thread.second->get_string())));
         }
         procs.push_back(proc);
       }
@@ -246,14 +246,14 @@ void SocketIo::pool() {
 
     } else if (name == "machine_data") {
       delegate.recv_machine_data(get_pid_by_map(data, "pid"),
-                                 get_dev_id_by_map(data, "src"),
-                                 get_dev_id_by_map(data, "dst"),
+                                 get_nid_by_map(data, "src"),
+                                 get_nid_by_map(data, "dst"),
                                  get_str_by_map(data, "data"));
 
     } else if (name == "memory_data") {
       delegate.recv_memory_data(get_str_by_map(data, "name"),
-                                get_dev_id_by_map(data, "src"),
-                                get_dev_id_by_map(data, "dst"),
+                                get_nid_by_map(data, "src"),
+                                get_nid_by_map(data, "dst"),
                                 get_str_by_map(data, "data"));
 
     } else if (name == "test_console") {
@@ -261,7 +261,7 @@ void SocketIo::pool() {
       delegate.recv_test_console(get_pid_by_map(data, "pid"),
                                  get_str_by_map(data, "dev"),
                                  *data->get_map().at("payload")->get_binary(),
-                                 get_dev_id_by_map(data, "from_device_id"));
+                                 get_nid_by_map(data, "from_nid"));
 #endif
 
     } else {
@@ -274,7 +274,7 @@ void SocketIo::pool() {
 void SocketIo::send_load_llvm(const std::string& name,
                               const std::string& file,
                               const std::vector<std::string>& args,
-                              const dev_id_t& dst_device_id) {
+                              const nid_t& dst_nid) {
   sio::message::ptr data(sio::object_message::create());
   sio::message::ptr args_ptr(sio::array_message::create());
   std::map<std::string, sio::message::ptr>& map = data->get_map();
@@ -287,7 +287,7 @@ void SocketIo::send_load_llvm(const std::string& name,
     args_vtr.push_back(sio::string_message::create(arg));
   }
   map.insert(std::make_pair("args", args_ptr));
-  map.insert(std::make_pair("dst_device_id", get_sio_by_dev_id(dst_device_id)));
+  map.insert(std::make_pair("dst_nid", get_sio_by_nid(dst_nid)));
 
   socket->emit("load_llvm", data);
 }
@@ -304,25 +304,25 @@ void SocketIo::send_login(const std::string& account,
   socket->emit("login", data);
 }
 
-// Send request of device list.
-void SocketIo::send_list_device() {
+// Send request of node list.
+void SocketIo::send_list_node() {
   sio::message::ptr data(sio::object_message::create());
 
-  socket->emit("list_device", data);
+  socket->emit("list_node", data);
 }
 
-// Send device bind command.
-void SocketIo::send_bind_device(const dev_id_t& id,
+// Send node bind command.
+void SocketIo::send_bind_node(const nid_t& id,
                                 const std::string& name) {
   sio::message::ptr data(sio::object_message::create());
   std::map<std::string, sio::message::ptr>& map = data->get_map();
 
   if (!id.empty()) {
-    map.insert(std::make_pair("id", get_sio_by_dev_id(id)));
+    map.insert(std::make_pair("id", get_sio_by_nid(id)));
   }
   map.insert(std::make_pair("name", sio::string_message::create(name)));
 
-  socket->emit("bind_device", data);
+  socket->emit("bind_node", data);
 }
 
 // Send process list for synchronize.
@@ -342,7 +342,7 @@ void SocketIo::send_sync_proc_list(const std::vector<ProcessTree>& procs) {
 
     for (auto& it_thread : it_proc.threads) {
       threads_map.insert(std::make_pair(Convert::vtid2str(it_thread.first),
-                                        get_sio_by_dev_id(it_thread.second)));
+                                        get_sio_by_nid(it_thread.second)));
     }
 
     procs_vector.push_back(sio_proc);
@@ -353,13 +353,13 @@ void SocketIo::send_sync_proc_list(const std::vector<ProcessTree>& procs) {
 
 // Send virtual-machine data packet.
 void SocketIo::send_machine_data(const vpid_t& pid,
-                                 const dev_id_t& dst,
+                                 const nid_t& dst,
                                  const std::string& data) {
   sio::message::ptr sio_data(sio::object_message::create());
   std::map<std::string, sio::message::ptr>& map = sio_data->get_map();
 
   map.insert(std::make_pair("pid", get_sio_by_pid(pid)));
-  map.insert(std::make_pair("dst", get_sio_by_dev_id(dst)));
+  map.insert(std::make_pair("dst", get_sio_by_nid(dst)));
   map.insert(std::make_pair("data", get_sio_by_str(data)));
 
   socket->emit("machine_data", sio_data);
@@ -367,13 +367,13 @@ void SocketIo::send_machine_data(const vpid_t& pid,
 
 // Send virtual-memory data packet.
 void SocketIo::send_memory_data(const std::string& name,
-                                const dev_id_t& dst,
+                                const nid_t& dst,
                                 const std::string& data) {
   sio::message::ptr sio_data(sio::object_message::create());
   std::map<std::string, sio::message::ptr>& map = sio_data->get_map();
 
   map.insert(std::make_pair("name", get_sio_by_str(name)));
-  map.insert(std::make_pair("dst", get_sio_by_dev_id(dst)));
+  map.insert(std::make_pair("dst", get_sio_by_nid(dst)));
   map.insert(std::make_pair("data", get_sio_by_str(data)));
 
   socket->emit("memory_data", sio_data);

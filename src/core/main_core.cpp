@@ -30,10 +30,10 @@ class Main :
   SocketIo socket;
   /** Login account. */
   std::string account;
-  /** Device name. */
-  std::string device_name;
-  /** Device ID. */
-  dev_id_t device_id;
+  /** Node name. */
+  std::string node_name;
+  /** Node ID. */
+  nid_t nid;
   /** Virtual machine. */
   std::unique_ptr<VMachine> vm;
 
@@ -45,8 +45,8 @@ class Main :
   /** List of process and threads. */
   std::vector<ProcessTree> procs;
 
-  /** Map of device-id and device-name. */
-  std::map<dev_id_t, std::string> devices;
+  /** Map of node-id and node-name. */
+  std::map<nid_t, std::string> nodes;
 
   /**
    * Constructor.
@@ -109,32 +109,32 @@ class Main :
         }
       }
 
-      // Search device.
-      dev_id_t dst_device_id;
-      if (app.find("device") == app.end()) {
-        dst_device_id = device_id;
+      // Search node.
+      nid_t dst_nid;
+      if (app.find("node") == app.end()) {
+        dst_nid = nid;
 
       } else {
-        std::string device_name = app.at("device").get<std::string>();
-        for (auto it : devices) {
-          if (it.second == device_name) {
-            dst_device_id = it.first;
+        std::string node_name = app.at("node").get<std::string>();
+        for (auto it : nodes) {
+          if (it.second == node_name) {
+            dst_nid = it.first;
             break;
           }
         }
-        if (dst_device_id.empty()) {
-          throw_error_message(Error::CONFIGURE, "Unknown device name.");
+        if (dst_nid.empty()) {
+          throw_error_message(Error::CONFIGURE, "Unknown node name.");
         }
       }
 
       // Send request.
-      socket.send_load_llvm(name, file.str(), args, dst_device_id);
+      socket.send_load_llvm(name, file.str(), args, dst_nid);
     }
   }
 
-  // Call when send data to other device.
+  // Call when send data to other node.
   void send_machine_data(const vpid_t& pid,
-                         const dev_id_t& dst,
+                         const nid_t& dst,
                          const std::string& data) override {
     socket.send_machine_data(pid, dst, data);
   }
@@ -145,7 +145,7 @@ class Main :
   }
 
   void send_memory_data(const std::string& name,
-                        const dev_id_t& dst,
+                        const nid_t& dst,
                         const std::string& data) override {
     socket.send_memory_data(name, dst, data);
   }
@@ -173,9 +173,9 @@ class Main :
 
   // Call when new process is arrive.
   bool judge_new_process(const std::string& name,
-                         const dev_id_t& src_device,
+                         const nid_t& src_node,
                          const std::string& src_account) override {
-    if (src_device == DEV_SERVER ||
+    if (src_node == SpecialNID::SERVER ||
         src_account == account) {
       return true;
 
@@ -204,41 +204,41 @@ class Main :
     if (result != 0) {
       throw_error(Error::SERVER_APP);
     }
-    socket.send_list_device();
+    socket.send_list_node();
   }
 
-  // Call when recv list device message from server.
-  void recv_list_device
-  (int result, const std::map<dev_id_t, std::string>& devices) override {
+  // Call when recv list node message from server.
+  void recv_list_node
+  (int result, const std::map<nid_t, std::string>& nodes) override {
     if (result != 0) {
       throw_error(Error::SERVER_APP);
     }
 
-    // Keep last devices.
-    this->devices = devices;
+    // Keep last nodes.
+    this->nodes = nodes;
 
-    bool is_new_device = true;
-    for (auto it : devices) {
-      if (it.second == device_name) {
-        is_new_device = false;
-        socket.send_bind_device(it.first, it.second);
+    bool is_new_node = true;
+    for (auto it : nodes) {
+      if (it.second == node_name) {
+        is_new_node = false;
+        socket.send_bind_node(it.first, it.second);
         break;
       }
     }
 
-    if (is_new_device) {
-      socket.send_bind_device("", device_name);
+    if (is_new_node) {
+      socket.send_bind_node("", node_name);
     }
   }
 
-  // Call when recv bind device message from server.
-  void recv_bind_device(int result, const dev_id_t& device_id) override {
+  // Call when recv bind node message from server.
+  void recv_bind_node(int result, const nid_t& nid) override {
     if (result != 0) {
       throw_error(Error::SERVER_APP);
     }
 
-    this->device_id = device_id;
-    this->vm.reset(new VMachine(*this, *this, device_id, libs, lib_filter));
+    this->nid = nid;
+    this->vm.reset(new VMachine(*this, *this, nid, libs, lib_filter));
     this->vm->setup_builtin();
 
     // Syncronize processes empty
@@ -255,25 +255,25 @@ class Main :
     vm->recv_sync_proc_list(procs);
   }
 
-  // Call when recv warp data from warp source device.
+  // Call when recv warp data from warp source node.
   void recv_machine_data(const vpid_t& pid,
-                         const dev_id_t& src,
-                         const dev_id_t& dst,
+                         const nid_t& src,
+                         const nid_t& dst,
                          const std::string& data) override {
-    if (dst == device_id ||
-        (dst == DEV_BROADCAST && src != device_id)) {
-      assert(src != device_id);
+    if (dst == nid ||
+        (dst == SpecialNID::BROADCAST && src != nid)) {
+      assert(src != nid);
       vm->recv_machine_data(pid, data);
     }
   }
 
   void recv_memory_data(const std::string& name,
-                        const dev_id_t& src,
-                        const dev_id_t& dst,
+                        const nid_t& src,
+                        const nid_t& dst,
                         const std::string& data) override {
-    if (dst == device_id ||
-        (dst == DEV_BROADCAST && src != device_id)) {
-      assert(src != device_id);
+    if (dst == nid ||
+        (dst == SpecialNID::BROADCAST && src != nid)) {
+      assert(src != nid);
       vm->vmemory.recv_memory_data(name, data);
     }
   }
@@ -282,7 +282,7 @@ class Main :
   void recv_test_console(const vpid_t& pid,
                          const std::string& dev,
                          const std::string& payload,
-                         const dev_id_t& from_device_id) override {
+                         const nid_t& from_nid) override {
 #ifndef NDEBUG
     if (dev == "stdout") {
       std::cout << payload;
@@ -329,8 +329,8 @@ class Main :
       }
     }
 
-    // Get device-name.
-    device_name = conf.at("device-name").get<std::string>();
+    // Get node-name.
+    node_name = conf.at("node-name").get<std::string>();
     account = conf.at("account").get<std::string>();
 
     // Connect to server by using Socket.IO.
@@ -380,7 +380,7 @@ void show_usage(std::ostream& stream, const std::string& command) {
       std::endl <<
       "  -c, --config FILENAME    read configurations from FILENAME." <<
       std::endl <<
-      "  -d, --device DEVICENAME  set DEVICENAME to device name." <<
+      "  -n, --node NODENAME      set NODENAME to node name." <<
       std::endl <<
       "  -h, --help               display this help and exit." <<
       std::endl <<
@@ -401,7 +401,7 @@ int main(int argc, char* argv[]) {
   option long_options[] = {
     {"config", required_argument, nullptr, 'c'},
     {"llvm",   required_argument, nullptr, 'l'},
-    {"device", required_argument, nullptr, 'd'},
+    {"node", required_argument, nullptr, 'n'},
     {"help",   no_argument,       nullptr, 'h'},
     {0, 0, 0, 0}  // terminate
   };
@@ -448,14 +448,14 @@ int main(int argc, char* argv[]) {
         apps.push_back(picojson::value(app));
       } break;
 
-      case 'd': {
+      case 'n': {
         if (conf.find("apps") == conf.end()) goto on_error;
         picojson::array& apps = conf.at("apps").get<picojson::array>();
 
         for (auto& it : apps) {
           picojson::object& app = it.get<picojson::object>();
-          if (app.find("device") == app.end()) {
-            app.insert(std::make_pair("device",
+          if (app.find("node") == app.end()) {
+            app.insert(std::make_pair("node",
                                       picojson::value(std::string(optarg))));
           }
         }

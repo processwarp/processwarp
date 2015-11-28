@@ -44,7 +44,7 @@ class Thread {
   /** */
   WrappedComplexOperator complex_operator;
   /** */
-  dev_id_t owner;
+  nid_t owner;
   /// status of vm
   Status status;
   /// thread-id to join(0:none, 1:detached)
@@ -65,7 +65,7 @@ class Thread {
   vm_uint_t warp_stack_size;
   vm_uint_t warp_call_count;
   ///
-  dev_id_t warp_dst;
+  nid_t warp_dst;
 
   WrappedOperator* const OPERATORS[0x36];
 
@@ -134,9 +134,9 @@ class Thread {
 
   /**
    * Prepare to warp in.
-   * @param dst Destination device-id.
+   * @param dst Destination node-id.
    */
-  bool setup_warpin(const dev_id_t& dst_device);
+  bool setup_warpin(const nid_t& dst);
 
  private:
   /**

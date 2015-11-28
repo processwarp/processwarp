@@ -24,13 +24,13 @@ class VMachineDelegate {
   virtual ~VMachineDelegate();
 
   /**
-   * Call when send data to other device.
+   * Call when send data to other node.
    * @param pid Target pid.
-   * @param dst Destination device-id.
+   * @param dst Destination node-id.
    * @param data Load data.
    */
   virtual void send_machine_data(const vpid_t& pid,
-                                 const dev_id_t& dst,
+                                 const nid_t& dst,
                                  const std::string& data) = 0;
 
   /**
@@ -69,11 +69,11 @@ class VMachineDelegate {
   /**
    * Call when new process is arrive.
    * @param name Program name.
-   * @param src_device
+   * @param src_node
    * @param src_account
    */
   virtual bool judge_new_process(const std::string& name,
-                                 const dev_id_t& src_device,
+                                 const nid_t& src_node,
                                  const std::string& src_account) = 0;
 
   /**
@@ -87,20 +87,20 @@ class VMachineDelegate {
  */
 class VMachine : private ProcessDelegate {
  public:
-  /** This virtual machine's device-id. */
-  const dev_id_t device_id;
+  /** This virtual machine's node-id. */
+  const nid_t nid;
 
   /**
    * Constractor with delegate.
    * @param delegate Events assignee.
    * @param memory_delegate 
-   * @param device_id This virtual machine's device-id.
+   * @param nid This virtual machine's node-id.
    * @param libs Loaded external libraries for ffi.
    * @param lib_filter Map of API name call from and call for that can access.
    */
   VMachine(VMachineDelegate& delegate,
            VMemoryDelegate& memory_delegate,
-           const dev_id_t& device_id,
+           const nid_t& nid,
            const std::vector<void*>& libs,
            const std::map<std::string, std::string>& lib_filter);
 
@@ -117,7 +117,7 @@ class VMachine : private ProcessDelegate {
   void on_recv_update(const vpid_t& pid, vaddr_t addr);
 
   /**
-   * Pass data from other device.
+   * Pass data from other node.
    * @param pid Target pid.
    * @param data Received load data.
    */
@@ -136,7 +136,7 @@ class VMachine : private ProcessDelegate {
    * @param addr 
    */
   void join_process(const vpid_t& pid, const vtid_t& root_tid,
-                    vaddr_t proc_addr, const dev_id_t& master_dev_id);
+                    vaddr_t proc_addr, const nid_t& master_node);
 
   /**
    * Change status of process in order to terminate.
@@ -153,7 +153,7 @@ class VMachine : private ProcessDelegate {
   Process& get_process(const vpid_t& pid);
 
   /**
-   * Check whether process has contain in this device.
+   * Check whether process has contain in this node.
    * @param pid Target process-id.
    * @return True if process has contain.
    */
@@ -190,11 +190,11 @@ class VMachine : private ProcessDelegate {
    * Change thread status to warp thread.
    * @param pid Target process-id.
    * @param tid Target thread-id.
-   * @param dst_device Warp destination device-id.
+   * @param dst_node Warp destination node-id.
    */
   void request_warp_thread(const vpid_t& pid,
                            const vtid_t tid,
-                           const dev_id_t& dst_device);
+                           const nid_t& dst_node);
 
  protected:
   /**
@@ -252,19 +252,19 @@ class VMachine : private ProcessDelegate {
   void clean_defunct_memoryspace(const std::vector<ProcessTree>& sv_procs);
 
   /**
-   * Convert json to machine data packet and send to destination device.
+   * Convert json to machine data packet and send to destination node.
    * @param name
-   * @param dst_device
+   * @param dst_node
    * @param cmd
    * @param data
    */
-  void send_packet(const std::string& name, const dev_id_t& dst_device,
+  void send_packet(const std::string& name, const nid_t& dst_node,
                    const std::string& cmd, picojson::object& data);
 
   void recv_warp(const vpid_t& pid, picojson::object& json);
 
   /**
-   * If recv this packet and this device contain target process and thread,
+   * If recv this packet and this node contain target process and thread,
    * change status to warp thread.
    * @param pid
    * @param json
@@ -279,7 +279,7 @@ class VMachine : private ProcessDelegate {
   void recv_terminate(const vpid_t& pid, picojson::object& json);
 
   /**
-   * This request means to warp thread to target device.
+   * This request means to warp thread to target node.
    * This method regist thread-id to pool and loop method check
    * target thread's status to change.
    * @param proc
@@ -291,10 +291,10 @@ class VMachine : private ProcessDelegate {
    * This request means to broadcast request of warp a thread.
    * @param pid
    * @param tid
-   * @param dst_device
+   * @param dst_node
    */
   void send_warp_request(const vpid_t& pid, const vtid_t tid,
-                         const dev_id_t& dst_device);
+                         const nid_t& dst_node);
 
   /**
    * This request means to broadcast request of terminateing process.

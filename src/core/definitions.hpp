@@ -127,12 +127,13 @@ static const vtid_t JOIN_WAIT_NONE     = 0x0;
 static const vtid_t JOIN_WAIT_ROOT     = 0x1;
 static const vtid_t JOIN_WAIT_DETACHED = 0x2;
 
-/** device-id */
-typedef std::string dev_id_t;
-/** To set when broadcast. */
-static const dev_id_t DEV_BROADCAST = "";
-/** Server's device-id */
-static const dev_id_t DEV_SERVER = "";
+/** Node-id is assigned for each node process run in any devices. */
+typedef std::string nid_t;
+/** Special node-id those are used to send data. */
+namespace SpecialNID {
+static const nid_t BROADCAST = "";        ///< Send data to any node with the same account.
+static const nid_t SERVER    = "server";  ///< Server is a special node.
+}
 
 /** trueを表す値 */
 static const uint8_t I8_TRUE = 0x1;
@@ -260,6 +261,6 @@ static const clock_t MEMORY_REQUIRE_INTERVAL = 5 * CLOCKS_PER_SEC;
 struct ProcessTree {
   vpid_t pid;
   std::string name;
-  std::map<vtid_t, dev_id_t> threads;
+  std::map<vtid_t, nid_t> threads;
 };
 }  // namespace processwarp

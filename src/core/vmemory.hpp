@@ -27,10 +27,10 @@ class VMemoryDelegate {
   virtual ~VMemoryDelegate() {}
 
   /**
-   * Call when send memory data to other device.
+   * Call when send memory data to other node.
    */
   virtual void send_memory_data(const std::string& name,
-                                const dev_id_t& dev_id,
+                                const nid_t& nid,
                                 const std::string& data) = 0;
 
   /**
@@ -42,7 +42,7 @@ class VMemoryDelegate {
 };
 
 /**
- * Bundle all of memory spaces using this device.
+ * Bundle all of memory spaces using this node.
  */
 class VMemory {
  public:
@@ -64,7 +64,7 @@ class VMemory {
     /** */
     uint64_t size;
     /** */
-    std::set<dev_id_t> hint;
+    std::set<nid_t> hint;
     /** Reference count to use to master. */
     int master_count;
 
@@ -72,12 +72,12 @@ class VMemory {
      * Constructor with value by string.
      */
     Page(PageType type, bool flg_update,
-         const std::string& value_str, const std::set<dev_id_t>& hint);
+         const std::string& value_str, const std::set<nid_t>& hint);
 
     /**
      * Constructor without initialize value.
      */
-    Page(PageType type, bool flg_update, const std::set<dev_id_t>& hint);
+    Page(PageType type, bool flg_update, const std::set<nid_t>& hint);
   };
 
   static const vaddr_t UPPER_MASKS[];
@@ -105,7 +105,7 @@ class VMemory {
     VMemory& vmemory;
     /** Switch of loading mode. */
     bool is_loading;
-    /** Map of page name and page space having on this device. */
+    /** Map of page name and page space having on this node. */
     std::map<vaddr_t, Page> pages;
     std::set<vaddr_t> requiring;
 
@@ -161,7 +161,7 @@ class VMemory {
   }
 
   /**
-   * This request means to broadcast some reserve address for this device.
+   * This request means to broadcast some reserve address for this node.
    * If the same address was used yet, must reply collision request immediately.
    * @param space
    * @param addrs
@@ -177,27 +177,27 @@ class VMemory {
 
   /**
    * This request means to need a data of copy.
-   * If device having the data of copy, should send copy packet. 
+   * If node having the data of copy, should send copy packet. 
    * @param spec
    * @param addr
-   * @param dev-id Device-id having the master data or DEV_BROADCAST.
+   * @param nid Node-id having the master data or BROADCAST.
    */
-  void send_require(Space& space, vaddr_t addr, const dev_id_t& dev_id);
+  void send_require(Space& space, vaddr_t addr, const nid_t& nid);
 
   /**
    * This request means to update memory for copy data.
    * @param space
    * @param page
    */
-  void send_copy(const dev_id_t& dev_id, Space& space, Page& page, vaddr_t addr);
+  void send_copy(const nid_t& nid, Space& space, Page& page, vaddr_t addr);
 
   /**
    * This request means tell unwant copy packet to sender.
    * @param name
-   * @param dev_id
+   * @param nid
    * @param addr
    */
-  void send_unwant(const std::string name, const dev_id_t& dev_id, vaddr_t addr);
+  void send_unwant(const std::string name, const nid_t& nid, vaddr_t addr);
 
   /**
    * This request means to stand as master.
@@ -212,7 +212,7 @@ class VMemory {
    * @param page
    * @param target
    */
-  void send_give(Space& space, Page& page, vaddr_t addr, const dev_id_t& dst);
+  void send_give(Space& space, Page& page, vaddr_t addr, const nid_t& dst);
 
   /**
    * Send update packet.
@@ -220,24 +220,24 @@ class VMemory {
    * @param addr
    * @param data
    * @param size
-   * @param dev_id
+   * @param nid
    */
-  void send_update(const dev_id_t& dev_id, Space& space, vaddr_t addr,
+  void send_update(const nid_t& nid, Space& space, vaddr_t addr,
                    const uint8_t* data, uint64_t size);
 
   /**
    * This request means to selected memory isn't able to use.
-   * The devices recv this devices are release page binded address.
-   * The address is NOT released, The master device of address has right of owner.
-   * @param dev_id
+   * The nodes recv this nodes are release page binded address.
+   * The address is NOT released, The master node of address has right of owner.
+   * @param nid
    * @param space
    * @param addr
    */
-  void send_free(const dev_id_t& dev_id, Space& space, vaddr_t addr);
+  void send_free(const nid_t& nid, Space& space, vaddr_t addr);
 
  public:
-  /** This device's device-id. */
-  const dev_id_t dev_id;
+  /** This node's node-id. */
+  const nid_t nid;
   /** Random value generator to use for generating address. */
   std::mt19937_64 rnd;
   /** Memory spaces. Space name and Space map. */
@@ -256,7 +256,7 @@ class VMemory {
 
     /**
      * Get a memory page by a address.
-     * Raise exception of require if data is old or don't exist in this device.
+     * Raise exception of require if data is old or don't exist in this node.
      * @param addr
      * @param readable
      * @return
@@ -269,7 +269,7 @@ class VMemory {
       auto page = space.pages.find(addr);
 
       if (page == space.pages.end()) {
-        vmemory.send_require(space, addr, DEV_BROADCAST);
+        vmemory.send_require(space, addr, SpecialNID::BROADCAST);
         throw InterruptMemoryRequire(addr);
 
       } else if (readable && page->second.flg_update == false) {
@@ -290,11 +290,11 @@ class VMemory {
     Accessor(VMemory& vmemory, Space& space);
 
     /**
-     * Get master device-id for target address.
+     * Get master node-id for target address.
      * @param addr
      * @return
      */
-    const dev_id_t& get_master(vaddr_t addr);
+    const nid_t& get_master(vaddr_t addr);
 
     typedef std::unique_ptr<int, std::function<void(int*)>> MasterKey;
     MasterKey keep_master(vaddr_t addr);
@@ -309,7 +309,7 @@ class VMemory {
      */
     vaddr_t set_meta_area(const std::string& data, vaddr_t addr);
 
-    vaddr_t set_meta_area(const std::string& data, vaddr_t addr, const dev_id_t& master);
+    vaddr_t set_meta_area(const std::string& data, vaddr_t addr, const nid_t& master);
 
     /**
      * Get meta data.
@@ -328,7 +328,7 @@ class VMemory {
     /**
      * Reserve address in program area.
      * This method must use when loading program only.
-     * Each address is avoied collision (Only this device but enough when load).
+     * Each address is avoied collision (Only this node but enough when load).
      * @return A reserved address.
      */
     vaddr_t reserve_program_area();
@@ -560,14 +560,14 @@ class VMemory {
   };
 
   /**
-   * Constructor with device-id.
+   * Constructor with node-id.
    * @param delegate Delegate for controller.
-   * @param dev_id Using device-id.
+   * @param nid Using node-id.
    */
-  VMemory(VMemoryDelegate& delegate, const dev_id_t& dev_id);
+  VMemory(VMemoryDelegate& delegate, const nid_t& nid);
 
   /**
-   * Recv and decode data from other device.
+   * Recv and decode data from other node.
    * @param name
    * @param data
    */
@@ -606,11 +606,11 @@ class VMemory {
   /**
    * Send packet.
    * @param name Memory space name.
-   * @param dev_id Target device-id.
+   * @param nid Target node-id.
    * @param cmd Command name.
    * @param data Load data.
    */
-  void send_packet(const std::string& name, const dev_id_t& dev_id,
+  void send_packet(const std::string& name, const nid_t& nid,
                    const std::string& cmd, picojson::object& data);
 
 

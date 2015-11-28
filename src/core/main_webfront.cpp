@@ -56,17 +56,17 @@ class MainWebfront : public VMachineDelegate, public VMemoryDelegate {
   }
 
   /**
-   * Setup instance of virtual machine with device-id.
+   * Setup instance of virtual machine with node-id.
    */
-  void set_device_id(const dev_id_t& device_id) {
-    vm.reset(new VMachine(*this, *this, device_id, LIBS, lib_filter));
+  void set_nid(const nid_t& nid) {
+    vm.reset(new VMachine(*this, *this, nid, LIBS, lib_filter));
     vm->setup_builtin();
   }
 
 
-  // Call when send data to other device.
+  // Call when send data to other node.
   void send_machine_data(const vpid_t& pid,
-                         const dev_id_t& dst,
+                         const nid_t& dst,
                          const std::string& data) override {
     std::stringstream asm_code;
     asm_code << "send_machine_data('" << pid << "',"
@@ -76,9 +76,9 @@ class MainWebfront : public VMachineDelegate, public VMemoryDelegate {
     emscripten_run_script(asm_code.str().c_str());
   }
 
-  // Call when send memory data to other device.
+  // Call when send memory data to other node.
   void send_memory_data(const std::string& name,
-                        const dev_id_t& dst,
+                        const nid_t& dst,
                         const std::string& data) override {
     std::stringstream asm_code;
     asm_code << "send_memory_data('" << name << "',"
@@ -100,7 +100,7 @@ class MainWebfront : public VMachineDelegate, public VMemoryDelegate {
       picojson::object js_threads;
       for (auto& thread : proc.threads) {
         js_threads.insert(std::make_pair(Convert::vtid2str(thread.first),
-                                         Convert::devid2json(thread.second)));
+                                         Convert::nid2json(thread.second)));
       }
       js_proc.insert(std::make_pair("threads", picojson::value(js_threads)));
       js_procs.push_back(picojson::value(js_proc));
@@ -150,11 +150,11 @@ class MainWebfront : public VMachineDelegate, public VMemoryDelegate {
 
   // Call when new process is arrive.
   bool judge_new_process(const std::string& name,
-                         const dev_id_t& src_device,
+                         const nid_t& src_node,
                          const std::string& src_account) override {
     std::stringstream asm_code;
     asm_code << "judge_new_process('" << name
-             << "', '" << src_device
+             << "', '" << src_node
              << "', '" << src_account << "');";
     int r = emscripten_run_script_int(asm_code.str().c_str());
     return r != 0;
@@ -179,23 +179,23 @@ static void ems_loop() {
 }
 
 void recv_machine_data(const vpid_t& pid,
-                       const dev_id_t& src,
-                       const dev_id_t& dst,
+                       const nid_t& src,
+                       const nid_t& dst,
                        const std::string& data) {
-  if (dst == webfront.vm->device_id ||
-      (dst == DEV_BROADCAST && src != webfront.vm->device_id)) {
-    assert(src != webfront.vm->device_id);
+  if (dst == webfront.vm->nid ||
+      (dst == SpecialNID::BROADCAST && src != webfront.vm->nid)) {
+    assert(src != webfront.vm->nid);
     webfront.vm->recv_machine_data(pid, data);
   }
 }
 
 void recv_memory_data(const std::string& name,
-                      const dev_id_t& src,
-                      const dev_id_t& dst,
+                      const nid_t& src,
+                      const nid_t& dst,
                       const std::string& data) {
-  if (dst == webfront.vm->device_id ||
-      (dst == DEV_BROADCAST && src != webfront.vm->device_id)) {
-    assert(src != webfront.vm->device_id);
+  if (dst == webfront.vm->nid ||
+      (dst == SpecialNID::BROADCAST && src != webfront.vm->nid)) {
+    assert(src != webfront.vm->nid);
     webfront.vm->vmemory.recv_memory_data(name, data);
   }
 }
@@ -222,7 +222,7 @@ void recv_sync_proc_list(const std::string& js_str) {
     for (auto& it_thread : js_threads) {
       proc.threads.insert
           (std::make_pair(Convert::str2vtid(it_thread.first),
-                          Convert::json2devid(it_thread.second)));
+                          Convert::json2nid(it_thread.second)));
     }
     procs.push_back(proc);
   }
@@ -230,8 +230,8 @@ void recv_sync_proc_list(const std::string& js_str) {
   webfront.vm->recv_sync_proc_list(procs);
 }
 
-void set_device_id(const dev_id_t& device_id) {
-  webfront.set_device_id(device_id);
+void set_nid(const nid_t& nid) {
+  webfront.set_nid(nid);
 }
 
 void quit_process(const vpid_t& pid) {
@@ -240,10 +240,10 @@ void quit_process(const vpid_t& pid) {
 
 void request_warp_thread(const std::string& pid,
                          const std::string& tid,
-                         const dev_id_t& dst_device) {
+                         const nid_t& dst_node) {
   webfront.vm->request_warp_thread(Convert::str2vpid(pid),
                                    Convert::str2vtid(tid),
-                                   Convert::str2devid(dst_device));
+                                   Convert::str2nid(dst_node));
 }
 }  // namespace processwarp
 
@@ -265,6 +265,6 @@ EMSCRIPTEN_BINDINGS(mod) {
   emscripten::function("recv_memory_data",  &processwarp::recv_memory_data);
   emscripten::function("recv_sync_proc_list", &processwarp::recv_sync_proc_list);
   emscripten::function("request_warp_thread", &processwarp::request_warp_thread);
-  emscripten::function("set_device_id",  &processwarp::set_device_id);
+  emscripten::function("set_nid",  &processwarp::set_nid);
   emscripten::function("quit_process",   &processwarp::quit_process);
 }

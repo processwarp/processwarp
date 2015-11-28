@@ -218,9 +218,9 @@ void Thread::setup_warpout() {
 }
 
 // Prepare to warp in.
-bool Thread::setup_warpin(const dev_id_t& dst_device) {
+bool Thread::setup_warpin(const nid_t& dst_node) {
   if (status == BEFOR_WARP || status == WAIT_WARP) {
-    warp_dst = dst_device;
+    warp_dst = dst_node;
     return true;
 
   } else if (status != NORMAL) {
@@ -237,7 +237,7 @@ bool Thread::setup_warpin(const dev_id_t& dst_device) {
     status = WAIT_WARP;
   }
 
-  warp_dst = dst_device;
+  warp_dst = dst_node;
 
   return true;
 }
