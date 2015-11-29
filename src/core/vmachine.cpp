@@ -8,9 +8,6 @@
 #include <vector>
 
 #include "builtin_bit.hpp"
-#ifdef ENABLE_GLFW3
-#include "builtin_glfw3.hpp"
-#endif
 #include "builtin_libc.hpp"
 #include "builtin_memory.hpp"
 #include "builtin_overflow.hpp"
@@ -585,9 +582,6 @@ void VMachine::send_terminate(const vpid_t& pid) {
 void VMachine::setup_builtin() {
   // VMの組み込み関数をロード
   BuiltinBit::regist(*this);
-#ifdef ENABLE_GLFW3
-  BuiltinGlfw3::regist(*this);
-#endif
   BuiltinLibc::regist(*this);
   BuiltinMemory::regist(*this);
   BuiltinOverflow::regist(*this);

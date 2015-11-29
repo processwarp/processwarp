@@ -14,16 +14,6 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D ENABLE_LLVM")
   endif()
 
-  # GLFW
-  pkg_search_module(GLFW glfw3)
-  if(GLFW_FOUND)
-    include_directories(${GLFW_INCLUDE_DIRS})
-    string(REPLACE ";" " " GLFW_CFLAGS_STR "${GLFW_CFLAGS}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GLFW_CFLAGS_STR}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D ENABLE_GLFW3")
-    list(APPEND extra_libs ${GLFW_LIBRARIES})
-  endif()
-
   # libffi
   pkg_search_module(FFI libffi)
   if(FFI_FOUND)
@@ -116,9 +106,6 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     vmemory.cpp
     wrapped_operator.cpp
     )
-if(GLFW_FOUND)
-  list(APPEND CORE_FILES builtin_glfw3.cpp)
-endif()
 
   add_executable(core ${CORE_FILES} ${HEADER_FILES})
   target_link_libraries(core ${extra_libs})
@@ -156,7 +143,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     finally.cpp
     basic_operator.cpp
     builtin_bit.cpp
-    builtin_glfw3.cpp
     builtin_libc.cpp
     builtin_memory.cpp
     builtin_overflow.cpp
