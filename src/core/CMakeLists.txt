@@ -76,93 +76,66 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   list(APPEND extra_libs dl)
 endif()
 
+# Core files
 file(GLOB HEADER_FILES "*.hpp")
-
+set(PWCORE_FILES
+  convert.cpp
+  error.cpp
+  func_store.cpp
+  finally.cpp
+  basic_operator.cpp
+  builtin_bit.cpp
+  builtin_libc.cpp
+  builtin_memory.cpp
+  builtin_overflow.cpp
+  builtin_posix.cpp
+  builtin_va_arg.cpp
+  builtin_warp.cpp
+  interrupt_memory_require.cpp
+  process.cpp
+  stackinfo.cpp
+  std_error.cpp
+  symbols.cpp
+  thread.cpp
+  type_store.cpp
+  util.cpp
+  vmachine.cpp
+  vmemory.cpp
+  wrapped_operator.cpp
+  )
+  
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
-  set(CORE_FILES
-    convert.cpp
-    error.cpp
-    func_store.cpp
-    finally.cpp
-    basic_operator.cpp
-    builtin_bit.cpp
-    builtin_libc.cpp
-    builtin_memory.cpp
-    builtin_overflow.cpp
-    builtin_posix.cpp
-    builtin_va_arg.cpp
-    builtin_warp.cpp
-    main_core.cpp
-    interrupt_memory_require.cpp
-    process.cpp
+  add_library(pwcore STATIC
+    ${HEADER_FILES}
+    ${PWCORE_FILES}
+    )
+  
+  add_executable(core
     socketio.cpp
-    stackinfo.cpp
-    std_error.cpp
-    symbols.cpp
-    thread.cpp
-    type_store.cpp
-    util.cpp
-    vmachine.cpp
-    vmemory.cpp
-    wrapped_operator.cpp
+    main_core.cpp
+    )
+  target_link_libraries(core
+    ${extra_libs}
+    pwcore
     )
 
-  add_executable(core ${CORE_FILES} ${HEADER_FILES})
-  target_link_libraries(core ${extra_libs})
-endif()
-
-if(LLVM_FOUND AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
-  set(LOADER_FILES
-    convert.cpp
-    error.cpp
-    func_store.cpp
-    finally.cpp
-    basic_operator.cpp
-    llvm_asm_loader.cpp
-    main_loader.cpp
-    interrupt_memory_require.cpp
-    process.cpp
-    stackinfo.cpp
-    std_error.cpp
-    symbols.cpp
-    thread.cpp
-    type_store.cpp
-    util.cpp
-    vmemory.cpp
-    wrapped_operator.cpp
-    )
-  add_executable(loader ${LOADER_FILES} ${HEADER_FILES})
-  target_link_libraries(loader ${extra_libs})
+  if(LLVM_FOUND)
+    add_executable(loader
+      llvm_asm_loader.cpp
+      main_loader.cpp
+      )
+    target_link_libraries(loader
+      ${extra_libs}
+      pwcore
+      )
+  endif()
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
-  set(WEBFRONT_FILES
-    convert.cpp
-    error.cpp
-    func_store.cpp
-    finally.cpp
-    basic_operator.cpp
-    builtin_bit.cpp
-    builtin_libc.cpp
-    builtin_memory.cpp
-    builtin_overflow.cpp
-    builtin_posix.cpp
-    builtin_va_arg.cpp
-    builtin_warp.cpp
+  add_executable(webfront
+    ${HEADER_FILES}
+    ${PWCORE_FILES}
     main_webfront.cpp
-    interrupt_memory_require.cpp
-    process.cpp
-    stackinfo.cpp
-    std_error.cpp
-    symbols.cpp
-    thread.cpp
-    type_store.cpp
-    util.cpp
-    vmachine.cpp
-    vmemory.cpp
-    wrapped_operator.cpp
     )
-
-  add_executable(webfront ${WEBFRONT_FILES})
   target_link_libraries(webfront)
 endif()

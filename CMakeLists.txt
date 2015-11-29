@@ -44,5 +44,7 @@ include_directories(include)
 add_subdirectory(src)
 
 # Test
-enable_testing()
-add_subdirectory(test)
+if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
+  enable_testing()
+  add_subdirectory(test)
+endif()

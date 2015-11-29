@@ -11,9 +11,9 @@ include_directories(${PROJECT_SOURCE_DIR}/src/third_party/safeint)
 # convert
 add_executable(test_convert_0
   test_convert.cpp
-  ${SRC_CORE_DIR}/convert.cpp
   )
 target_link_libraries(test_convert_0
+  pwcore
   gtest
   gtest_main
   pthread
