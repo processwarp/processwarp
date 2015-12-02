@@ -1,6 +1,11 @@
 #pragma once
 
+#include <uv.h>
+
 #include <string>
+
+#include "controller_listener.hpp"
+#include "worker_listener.hpp"
 
 namespace processwarp {
 namespace DaemonRunMode {
@@ -22,8 +27,15 @@ class Daemon {
  private:
   /** Daemon run mode. */
   DaemonRunMode::Type run_mode;
+  /** Main loop of libuv. */
+  uv_loop_t* loop;
+  /** Controller listener. */
+  ControllerListener controller_listener;
+  /** Worker listener. */
+  WorkerListener worker_listener;
 
   int daemonize();
+  int main_loop();
   bool read_options(int argc, char* argv[]);
   void show_help(bool is_error, const std::string& command);
 };

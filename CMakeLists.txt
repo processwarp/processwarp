@@ -41,6 +41,10 @@ endif (DOXYGEN_FOUND)
 
 # Compile.
 include_directories(include)
+include_directories(${PROJECT_SOURCE_DIR}/src/core)
+include_directories(${PROJECT_SOURCE_DIR}/src/third_party/picojson)
+include_directories(${PROJECT_SOURCE_DIR}/src/third_party/safeint)
+
 add_subdirectory(src)
 
 # Test

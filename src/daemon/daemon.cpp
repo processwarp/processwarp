@@ -12,14 +12,10 @@
 #include <iostream>
 #include <string>
 
-namespace processwarp {
-class Daemon;
-};  // namespace processwarp
-
 #include "daemon.hpp"
+#include "pipe_bundler.hpp"
 
 namespace processwarp {
-
 /**
  * Constructor, set default parameters value.
  */
@@ -61,6 +57,9 @@ int Daemon::entry(int argc, char* argv[]) {
       assert(false);
     } break;
   }
+
+  main_loop();
+
   return EXIT_SUCCESS;
 }
 
@@ -157,6 +156,23 @@ int Daemon::daemonize() {
 }
 
 /**
+ * Main loop of daemon process.
+ * Initialize libuv, PipeBundler, ControllerListener, WorkerListener and start event loop.
+ * @return Return code of uv_run.
+ */
+int Daemon::main_loop() {
+  loop = uv_default_loop();
+  PipeBundler& bundler = PipeBundler::get_instance();
+
+  bundler.initialize(loop);
+  controller_listener.initialize(loop);
+  worker_listener.initialize(loop);
+
+  // Start libuv loop.
+  return uv_run(loop, UV_RUN_DEFAULT);
+}
+
+/**
  * Show help messages to console.
  * You can choice output device stdout or stderr.
  * @param is_error Output help message to stderr if set it true.
@@ -210,7 +226,6 @@ bool Daemon::read_options(int argc, char* argv[]) {
   }
   return true;
 }
-
 }  // namespace processwarp
 
 /**
