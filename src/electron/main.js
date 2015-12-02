@@ -21,7 +21,7 @@ app.on('window-all-closed', function() {
  * On start application, create new window.
  */
 app.on('ready', function() {
-  mainWindow = new BrowserWindow({width: 800, height: 600});
+  mainWindow = new BrowserWindow({width: 480, height: 480});
   mainWindow.loadURL('file://' + __dirname + '/index.html');
 
   // Open development and debug tool.
@@ -38,7 +38,7 @@ app.on('ready', function() {
  */
 app.on('activate', function() {
   if (!mainWindow) {
-    mainWindow = new BrowserWindow({width: 800, height: 600});
+    mainWindow = new BrowserWindow({width: 480, height: 480});
     mainWindow.loadURL('file://' + __dirname + '/index.html');
 
     // Unlink BrowserWindow object when catch closed event.
