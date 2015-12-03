@@ -9,6 +9,7 @@
   <script>
   const electron = require('electron');
   const shell = electron.shell;
+  const ipc   = electron.ipcRenderer;
 
   window.onload = function() {
     curtainUp();
@@ -114,7 +115,8 @@
 	  </div>
 	  <div class="mdl-grid mdl-grid--no-spacing">
 	    <button id="connect-quit" style="margin-left: auto;"
-		    class="mdl-button mdl-js-button mdl-button--primary">
+		    class="mdl-button mdl-js-button mdl-button--primary"
+		    onClick="connectOnQuit();">
 	      QUIT
 	    </button>
 	    <button id="connect-connect"
@@ -131,6 +133,14 @@
        */
       function connectOnSignUp() {
 	shell.openExternal('https://prev.processwarp.org');
+      }
+
+      /**
+       * Send quit event to main process when 'QUIT' button was touch.
+       * @return {void}
+       */
+      function connectOnQuit() {
+	ipc.send('quit');
       }
       </script>
     </div><!-- end of connect -->

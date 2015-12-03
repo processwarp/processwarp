@@ -47,3 +47,12 @@ app.on('activate', function() {
     });
   }
 });
+
+/**
+ * On receive quit command from window, quit main process.
+ * @return {void}
+ */
+function onQuit() {
+  app.quit();
+}
+ipc.on('quit', onQuit);
