@@ -6,6 +6,11 @@
     <link rel="stylesheet" href="node_modules/material-design-lite/material.min.css"/>
     <script src="node_modules/material-design-lite/material.min.js"></script>
   </head>
+  <script>
+  window.onload = function() {
+    curtainUp();
+  };
+  </script>
   <body>
     <style>
     html {
@@ -18,6 +23,54 @@
 	    width: 100%;
     }
     </style>
+    <div id="curtain">
+      <style>
+      #curtain {
+	      box-pack: center;
+	      box-align: center;
+	      display: -webkit-box;
+	      display: box;
+	      height: 100%;
+	      position: fixed;
+	      width: 100%;
+	      z-index: 9;
+	      -webkit-box-align: center;
+	      -webkit-box-pack: center;
+      }
+      #curtain-layer {
+	      background: #FFF;
+	      height: 100%;
+	      left: 0;
+	      opacity: 0.5;
+	      position: absolute;
+	      top: 0;
+	      width: 100%;
+	      -moz-opacity: 0.5;
+      }
+      </style>
+      <div id="curtain-layer"></div>
+      <div class="mdl-spinner mdl-spinner--single-color mdl-js-spinner is-active"></div>
+      <script>
+      /**
+       * Allow input by clearing the curtain.
+       * @return {void}
+       */
+      function curtainUp() {
+	var curtain = document.getElementById('curtain');
+	curtain.style.display = 'none';
+      }
+
+      /**
+       * Block input by clossing the curtain.
+       * @return {void}
+       */
+      function curtainDown() {
+	var curtain = document.getElementById('curtain');
+	curtain.style.display = '';
+      }
+      </script>
+    </div><!-- end of curtain -->
+
     <div id="connect">
       <style>
       #connect {
