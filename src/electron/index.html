@@ -120,7 +120,8 @@
 	      QUIT
 	    </button>
 	    <button id="connect-connect"
-		    class="mdl-button mdl-js-button mdl-button--primary">
+		    class="mdl-button mdl-js-button mdl-button--primary"
+		    onClick="connectOnConnect();">
 	      CONNECT
 	    </button>
 	  </div>
@@ -141,6 +142,23 @@
        */
       function connectOnQuit() {
 	ipc.send('quit');
+      }
+
+      /**
+       * Get account and password from input form and
+       * send connect event to main process when 'CONNECT' button was touch.
+       * @return {void}
+       */
+      function connectOnConnect() {
+	var account  = document.getElementById('connect-account').value;
+	var password = document.getElementById('connect-password').value;	
+
+	curtainDown();
+
+	ipc.send('connect', {
+	  account: account,
+	  password: password
+	});
       }
       </script>
     </div><!-- end of connect -->
