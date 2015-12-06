@@ -39,5 +39,5 @@ script:
   - make doc
   - make cpplint
   - make test
-  - ls -l src/core/core
-  - src/core/core --help
+  - ls -l src/daemon/daemon
+  - src/daemon/daemon --help

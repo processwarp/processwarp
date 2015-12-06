@@ -13,7 +13,6 @@
 #include <string>
 
 #include "daemon.hpp"
-#include "pipe_bundler.hpp"
 
 namespace processwarp {
 /**
@@ -157,16 +156,14 @@ int Daemon::daemonize() {
 
 /**
  * Main loop of daemon process.
- * Initialize libuv, PipeBundler, ControllerListener, WorkerListener and start event loop.
+ * Initialize libuv, Router, ControllerListener, WorkerListener and start event loop.
  * @return Return code of uv_run.
  */
 int Daemon::main_loop() {
   loop = uv_default_loop();
-  PipeBundler& bundler = PipeBundler::get_instance();
 
-  bundler.initialize(loop);
-  controller_listener.initialize(loop);
-  worker_listener.initialize(loop);
+  frontend_connector.initialize(loop);
+  worker_connector.initialize(loop);
 
   // Start libuv loop.
   return uv_run(loop, UV_RUN_DEFAULT);

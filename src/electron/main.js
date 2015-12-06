@@ -109,7 +109,7 @@ function connectDaemon() {
   daemonSocket.on('close',   onCloseConnection);
   daemonSocket.on('error',   onErrorConnection);
 
-  daemonSocket.connect('/tmp/pw.controller.pipe');
+  daemonSocket.connect('/tmp/pw.frontend.pipe');
 }
 
 /**

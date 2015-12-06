@@ -41,15 +41,12 @@ file(GLOB DAEMON_FILES "*.cpp")
 
 add_executable(daemon
   ${HEADER_FILES}
-  controller_listener.cpp
-  controller_pipe.cpp
+  connector.cpp
   daemon.cpp
-  listener.cpp
-  pipe.cpp
-  pipe_bundler.cpp
+  frontend_connector.cpp
+  router.cpp
   socketio.cpp
-  worker_listener.cpp
-  worker_pipe.cpp
+  worker_connector.cpp
   )
 target_link_libraries(daemon
   ${extra_libs}
