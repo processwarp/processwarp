@@ -4,6 +4,7 @@ compiler:
   - clang
 
 before_install:
+  - sudo apt-get update -y
   - sudo apt-get install -y clang git doxygen libssl-dev cmake libuv-dev libedit-dev
   # install llvm
   - sudo apt-get install -y llvm-3.6 llvm-3.6-dev llvm-3.6-runtime llvm-3.6-tools
