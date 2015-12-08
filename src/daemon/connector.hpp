@@ -15,13 +15,17 @@ class Connector {
 
  protected:
   void initialize(uv_loop_t* loop_, const std::string& path);
-  virtual void on_connect(const uv_pipe_t& client) = 0;
-  virtual void on_receive(const uv_pipe_t& client, picojson::object& packet) = 0;
-  virtual void on_close(const uv_pipe_t& client) = 0;
+  void send_packet(uv_pipe_t& client, const picojson::object& packet);
+  void close(uv_pipe_t& client);
+  virtual void on_connect(uv_pipe_t& client) = 0;
+  virtual void on_recv_packet(uv_pipe_t& client, picojson::object& packet) = 0;
+  virtual void on_close(uv_pipe_t& client) = 0;
 
- private:
+ protected:
   /** Main loop of libuv. */
   uv_loop_t* loop;
+
+ private:
   /** Listener pipe of libuv. */
   uv_pipe_t listener;
   /** Map of pipe and buffer that read by pipe yet. */
@@ -31,7 +35,8 @@ class Connector {
   Connector& operator=(const Connector&);
 
   static void on_connect(uv_stream_t* server, int status);
-  static void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf);
+  static void on_recv(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf);
+  static void on_send(uv_write_t *req, int status);
   static void on_close(uv_handle_t* handle);
 };
 }  // namespace processwarp

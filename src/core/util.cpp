@@ -1,4 +1,8 @@
 
+#include <openssl/sha.h>
+
+#include <iomanip>
+#include <sstream>
 #include <string>
 
 #include "util.hpp"
@@ -61,6 +65,29 @@ static const char* OPCODE_STR[] = {
 #if defined(ENABLE_LLVM) && !defined(NDEBUG) && !defined(EMSCRIPTEN)
 const llvm::Instruction* Util::llvm_instruction;
 #endif
+
+/**
+ * Calculate SHA256 from a data.
+ * @param src Target data.
+ * @return SHA256 hex string.
+ */
+std::string Util::calc_sha256(const std::string& src) {
+  unsigned char bin_hash[SHA256_DIGEST_LENGTH];
+  SHA256_CTX sha256;
+  std::ostringstream os;
+
+  SHA256_Init(&sha256);
+  SHA256_Update(&sha256, src.c_str(), src.size());
+  SHA256_Final(bin_hash, &sha256);
+
+  int i = 0;
+  for (i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+    os << std::hex << std::setfill('0') << std::setw(2)
+       << static_cast<uint32_t>(bin_hash[i]);
+  }
+
+  return os.str();
+}
 
 // Show alert to fix function when NDEBUG isn't defined.
 void Util::_fixme(int line, const char* file, std::string mesg) {

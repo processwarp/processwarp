@@ -9,10 +9,15 @@
 #include <cerrno>
 #include <csignal>
 #include <cstdlib>
+#include <fstream>
 #include <iostream>
 #include <string>
 
 #include "daemon.hpp"
+#include "frontend_connector.hpp"
+#include "router.hpp"
+#include "server_connector.hpp"
+#include "worker_connector.hpp"
 
 namespace processwarp {
 /**
@@ -156,14 +161,25 @@ int Daemon::daemonize() {
 
 /**
  * Main loop of daemon process.
- * Initialize libuv, Router, ControllerListener, WorkerListener and start event loop.
+ * Initialize libuv, Router, ServerConnector, FrontendConnector, WorkerConector
+ * and start libuv's event loop.
  * @return Return code of uv_run.
  */
 int Daemon::main_loop() {
   loop = uv_default_loop();
+  FrontendConnector& frontend = FrontendConnector::get_instance();
+  Router& router = Router::get_instance();
+  ServerConnector& server = ServerConnector::get_instance();
+  WorkerConnector& worker = WorkerConnector::get_instance();
 
-  frontend_connector.initialize(loop);
-  worker_connector.initialize(loop);
+  server.initialize(loop,
+                    config.at("server").get<std::string>());
+  router.initialize(loop, config);
+  frontend.initialize(loop);
+  worker.initialize(loop);
+
+  server.send_connect_node(config.at("account").get<std::string>(),
+                           config.at("password").get<std::string>());
 
   // Start libuv loop.
   return uv_run(loop, UV_RUN_DEFAULT);
@@ -180,13 +196,39 @@ void Daemon::show_help(bool is_error, const std::string& command) {
   out << "usage: " << command << " [options]" << std::endl;
   out << "  -c --console      Run process warp node as console application." << std::endl;
   out << "  -d --daemon       Run process warp node as daemon (default)." << std::endl;
+  out << "  -f <config>       Uses the configure in the file config on run." << std::endl;
   out << "  -h --help         Show available options." << std::endl;
+}
+
+/**
+ * Read config from selected file as JSON.
+ * @param file Config file name.
+ * @return False if couldn't read the file or wrong format.
+ */
+bool Daemon::read_config(const std::string& file) {
+  std::ifstream conf_file(file);
+  if (!conf_file.is_open()) {
+    std::cerr << "Can't open configure file." << std::endl;
+    return false;
+  }
+
+  picojson::value v;
+  std::string err = picojson::parse(v, conf_file);
+  conf_file.close();
+  if (!err.empty()) {
+    std::cerr << err << std::endl;
+    return false;
+  }
+
+  config = v.get<picojson::object>();
+  return true;
 }
 
 /**
  * Read command line arguments and set option values.
  * c(console) option was set, change run mode to DaemonRunMode::CONSOLE.<br>
  * d(daemon) option was set, change run mode to DaemonRunMode::DAEMON.<br>
+ * f option was set, read config file from file selected by argument.<br>
  * h(help) option was set, change run mode to DaemonRunMode::HELP.<br>
  * @param argc Argc passed by entry function.
  * @param argv Argv passed by entry function.
@@ -201,7 +243,7 @@ bool Daemon::read_options(int argc, char* argv[]) {
     {0, 0, 0, 0}
   };
 
-  while ((opt = getopt_long(argc, argv, "dc", long_options, &option_index)) != -1) {
+  while ((opt = getopt_long(argc, argv, "cdf:h", long_options, &option_index)) != -1) {
     switch (opt) {
       case 'c': {
         run_mode = DaemonRunMode::CONSOLE;
@@ -209,6 +251,11 @@ bool Daemon::read_options(int argc, char* argv[]) {
 
       case 'd': {
         run_mode = DaemonRunMode::DAEMON;
+      } break;
+
+      case 'f': {
+        std::string file(optarg);
+        if (!read_config(file)) return false;
       } break;
 
       case 'h': {

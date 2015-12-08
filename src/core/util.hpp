@@ -23,6 +23,8 @@
 
 namespace processwarp {
 namespace Util {
+std::string calc_sha256(const std::string& src);
+
 /**
  * Convert instruction code to readable string.
  * @param code Instruction code.

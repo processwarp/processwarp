@@ -57,6 +57,34 @@ void Connector::initialize(uv_loop_t* loop_, const std::string& path) {
 }
 
 /**
+ * Send packet to client.
+ * Packet format is the same to on_recv method.
+ * @param client Distination client's pipe.
+ * @param packet Packet that formated json.
+ */
+void Connector::send_packet(uv_pipe_t& client, const picojson::object& packet) {
+  std::string str_packet = picojson::value(packet).serialize();
+  std::unique_ptr<char[]> buffer(new char[4 + str_packet.size() + 1]);
+
+  *reinterpret_cast<uint32_t*>(buffer.get()) = htonl(str_packet.size());
+  memcpy(buffer.get() + 4, str_packet.c_str(), str_packet.size());
+  buffer[4 + str_packet.size()] = '\0';
+
+  uv_write_t* write_req = new uv_write_t();
+  write_req->data = reinterpret_cast<void*>(&client);
+  uv_buf_t write_buf = uv_buf_init(buffer.get(), 4 + str_packet.size() + 1);
+  uv_write(write_req, reinterpret_cast<uv_stream_t*>(&client), &write_buf, 1, on_send);
+}
+
+/**
+ * Close pipe and set clean-up.
+ * @param client Target pipe.
+ */
+void Connector::close(uv_pipe_t& client) {
+  uv_close(reinterpret_cast<uv_handle_t*>(&client), Connector::on_close);
+}
+
+/**
  * Method that is call by libuv when client is connect.
  * Accept client and push it to the set of clients and the queue of receive event.
  * @param listener
@@ -76,7 +104,7 @@ void Connector::on_connect(uv_stream_t *listener, int status) {
   if (r == 0) {
     client->data = &THIS;
     THIS.buffers.insert(std::make_pair(client, std::vector<uint8_t>()));
-    uv_read_start(reinterpret_cast<uv_stream_t*>(client), connector_alloc, Connector::on_read);
+    uv_read_start(reinterpret_cast<uv_stream_t*>(client), connector_alloc, Connector::on_recv);
     THIS.on_connect(*client);
 
   } else {
@@ -93,7 +121,7 @@ void Connector::on_connect(uv_stream_t *listener, int status) {
  * Packet:<br/>
  * [packet size (json length 4Byte big endian)][packet body (json)][\0]...(repeat)<br/>
  */
-void Connector::on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
+void Connector::on_recv(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
   Connector& THIS = *reinterpret_cast<Connector*>(stream->data);
   uv_pipe_t* client = reinterpret_cast<uv_pipe_t*>(stream);
   std::vector<uint8_t>& client_buffer = THIS.buffers.at(client);
@@ -134,10 +162,26 @@ void Connector::on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf)
     return;
   }
 
-  THIS.on_receive(*client, v.get<picojson::object>());
+  THIS.on_recv_packet(*client, v.get<picojson::object>());
   uint32_t rest_size = client_buffer.size() - 4 - psize - 1;
   memmove(client_buffer.data(), client_buffer.data() + 4 + psize + 1, rest_size);
   client_buffer.resize(rest_size);
+}
+
+/**
+ * When send is finished, clean-up hundler.
+ * If error is occurred, close target pipe.
+ * @param req Hundler.
+ * @param status Status code.
+ */
+void Connector::on_send(uv_write_t *req, int status) {
+  std::unique_ptr<uv_write_t> x(req);
+
+  if (status < 0) {
+    /// @todo err
+    fprintf(stderr, "error on uv_write\n");
+    uv_close(reinterpret_cast<uv_handle_t*>(req->data), Connector::on_close);
+  }
 }
 
 /**

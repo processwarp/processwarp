@@ -11,9 +11,12 @@
 namespace processwarp {
 class FrontendConnector : public Connector {
  public:
-  void initialize(uv_loop_t* loop);
+  static FrontendConnector& get_instance();
 
- protected:
+  void initialize(uv_loop_t* loop);
+  void send_connect_frontend(uv_pipe_t& client, int result);
+
+ private:
   struct FrontendProperty {
     PipeStatus::Type status;
     FrontendType::Type type;
@@ -22,8 +25,13 @@ class FrontendConnector : public Connector {
   /** Map of pipe and propertiy. */
   std::map<const uv_pipe_t*, FrontendProperty> properties;
 
-  void on_connect(const uv_pipe_t& client) override;
-  void on_receive(const uv_pipe_t& client, picojson::object& packet) override;
-  void on_close(const uv_pipe_t& client) override;
+  FrontendConnector();
+  FrontendConnector(const FrontendConnector&);
+  FrontendConnector& operator=(const FrontendConnector&);
+
+  void on_connect(uv_pipe_t& client) override;
+  void on_recv_packet(uv_pipe_t& client, picojson::object& packet) override;
+  void on_close(uv_pipe_t& client) override;
+  void recv_connect_frontend(uv_pipe_t& client, picojson::object& packet);
 };
 }  // namespace processwarp

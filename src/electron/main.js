@@ -8,28 +8,17 @@ var net = require('net');
 require('crash-reporter').start();
 
 const CONNECT_STATUS = {
-  NONE:    0,  ///< Not connected, contain error, disconnect.
-  SIGNIN:  1,  ///< Send account info, but not response yet.
-  CONNECT: 2,  ///< Sign in was success and able to use.
+  SETUP:    0,  ///< Goint to open socket.
+  APPROACH: 1,  ///< Send account info, but not response yet.
+  CONNECT:  2,  ///< Approach was success, able to use.
+  CLOSE:    3,  ///< Disconnect from backend.
 };
 
 var mainWindow    = null;
-var daemonSocket  = null;
+var backendSocket = null;
+var backendBuffer = new Buffer(0);
 var accountInfo   = {};
-var connectStatus = CONNECT_STATUS.NONE;
-
-/**
- * C assertion like function.
- * Quit main process when condition is not true.
- * @param condition {bool}
- * @return {void}
- */
-function assert(condition) {
-  if (!condition) {
-    console.log('assertion failed!');
-    app.quit();
-  }
-}
+var connectStatus = CONNECT_STATUS.CLOSE;
 
 /**
  * Quit main process when all window was closed.
@@ -72,57 +61,59 @@ app.on('activate', function() {
 });
 
 /**
- * On receive quit command from window, quit main process.
+ * When quit action is done in the interface, quit main process.
  * @return {void}
  */
-function onQuit() {
+function onActionQuit() {
   app.quit();
 }
-ipc.on('quit', onQuit);
+ipc.on('action_quit', onActionQuit);
 
 /**
- * On receive connect command from window, connect with daemon and send account infromation to sign-in.
+ * When connect action is done in the interface,
+ * store account infromation to connect and start connecting to the backend.
  * @param param.account {string} Accoutn ID.
  * @param param.password {string} Password.
  * @return {void}
  */
-function onConnect(sender, param) {
-  assert(connectStatus == CONNECT_STATUS.NONE);
+function onActionConnect(sender, param) {
+  console.assert(connectStatus == CONNECT_STATUS.CLOSE, connectStatus);
 
   accountInfo.account  = param.account;
   accountInfo.password = param.password;
 
-  connectDaemon();
+  connectBackend();
 }
-ipc.on('connect', onConnect);
+ipc.on('action_connect', onActionConnect);
 
 /**
- * Connect to the daemon using pipe and set event emitter.
+ * Connect to the backend by socket and set event emitter.
+ * Change connect status to SETUP.
  * @return {void}
  */
-function connectDaemon() {
-  assert(connectStatus == CONNECT_STATUS.NONE);
+function connectBackend() {
+  console.assert(connectStatus == CONNECT_STATUS.CLOSE, connectStatus);
 
-  daemonSocket = new net.Socket();
+  connectStatus = CONNECT_STATUS.APPROACH;
+  backendSocket = new net.Socket();
 
-  daemonSocket.on('connect', onConnectDaemon);
-  daemonSocket.on('close',   onCloseConnection);
-  daemonSocket.on('error',   onErrorConnection);
+  backendSocket.on('connect', onBackendConnect);
+  backendSocket.on('close',   onBackendClose);
+  backendSocket.on('data',    onBackendRecv);
+  backendSocket.on('error',   onBackendError);
 
-  daemonSocket.connect('/tmp/pw.frontend.pipe');
+  backendSocket.connect('/tmp/pw.frontend.pipe');
 }
 
 /**
- * On connecting with daemon, send signin command and change status to SINGIN.
- * Change status before call sendToDaemon, because sendToDaemon raise error if status is NONE.
+ * When connect to the backend by socket is success, send connect command with account information.
  * @return {void}
  */
-function onConnectDaemon() {
-  assert(connectStatus == CONNECT_STATUS.NONE);
+function onBackendConnect() {
+  console.assert(connectStatus == CONNECT_STATUS.APPROACH, connectStatus);
   
-  connectStatus = CONNECT_STATUS.SIGNIN;
-  sendToDaemon({
-    command:  'signin',
+  sendToBackend({
+    command:  'connect_frontend',
     account:  accountInfo.account,
     password: accountInfo.password,
     type:     'gui',
@@ -130,39 +121,66 @@ function onConnectDaemon() {
 }
 
 /**
- * On closeing connection with daemon, release socket and change status to NONE.
+ * When disconnect socket to backend, release socket and change status to CLOSE.
  * @return {void}
  */
-function onCloseConnection() {
-  assert(connectStatus != CONNECT_STATUS.NONE);
-  
-  daemonSocket  = null;
-  connectStatus = CONNECT_STATUS.NONE;
+function onBackendClose() {
+  backendSocket = null;
+  connectStatus = CONNECT_STATUS.CLOSE;
 }
 
 /**
- * On error was happen, close socket.
+ * When receive data from backend, clip packet and call capable method.
+ * Concaenate stream data received yet with just now as buffer.
+ * Packet format is the same to sendToBackend method.
+ * @param data {Buffer} Received data.
  * @return {void}
  */
-function onErrorConnection() {
-  assert(connectStatus != CONNECT_STATUS.NONE);
+function onBackendRecv(data) {
+  backendBuffer = Buffer.concat([backendBuffer, data]);
 
-  daemonSocket.destroy();
-  daemonSocket  = null;
-  connectStatus = CONNECT_STATUS.NONE;
+  if (backendBuffer.length < 4) return;
+
+  var psize = backendBuffer.readUInt32BE(0);  
+  if (backendBuffer.length < 4 + psize + 1) return;
+  if (backendBuffer.readUInt8(4 + psize) != 0) {
+    /// @todo error
+    console.assert(false, 'todo');
+  }
+
+  var packet = JSON.parse(backendBuffer.toString('utf8', 4, 4 + psize));
+  backendBuffer = backendBuffer.slice(4 + psize + 1);
+
+  switch (packet.command) {
+    case 'connect_frontend': recvConnectFrontend(packet); break;
+    default: {
+      /// @todo eror
+      console.assert(false, 'todo');
+    } break;
+  }
+}
+
+/**
+ * When error is occurred on socket, close socket and change status to CLOSE.
+ * @return {void}
+ */
+function onBackendError() {
+  backendSocket.destroy();
+  backendSocket = null;
+  connectStatus = CONNECT_STATUS.CLOSE;
 
   console.log('connection error.');
 }
 
 /**
- * Send packet to daemon.
+ * Send packet to backend.
  * Convert packet format json to string.
  * Send length, string, and '\0' as terminater.
- * @param packet {json} Packet to send to daemon.
+ * @param packet {json} Packet to send to backend.
  * @return {void}
  */
-function sendToDaemon(packet) {
-  assert(connectStatus != CONNECT_STATUS.NONE);
+function sendToBackend(packet) {
+  console.assert(connectStatus != CONNECT_STATUS.CLOSE, connectStatus);
 
   var str = JSON.stringify(packet);
   var len = Buffer.byteLength(str, 'utf8');
@@ -171,7 +189,21 @@ function sendToDaemon(packet) {
   buf.write(str, 4);
   buf.writeInt8(0, 4 + len);
 
-  if (!daemonSocket.write(buf)) {
-    onErrorConnection();
+  if (!backendSocket.write(buf)) {
+    onBackendError();
+  }
+}
+
+/**
+ * When receive connect-frontend reply, send result to window.
+ * If result code is 0, send action_connect_success, otherwise action_connect_failure.
+ * @param packet.result {number} Result code.
+ */
+function recvConnectFrontend(packet) {
+  if (packet.result == 0) {
+    mainWindow.webContents.send('action_connect_success');
+
+  } else {
+    mainWindow.webContents.send('action_connect_failure', packet.result);
   }
 }

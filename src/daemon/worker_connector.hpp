@@ -8,11 +8,17 @@
 namespace processwarp {
 class WorkerConnector : public Connector {
  public:
+  static WorkerConnector& get_instance();
+
   void initialize(uv_loop_t* loop);
 
- protected:
-  void on_connect(const uv_pipe_t& client) override;
-  void on_receive(const uv_pipe_t& client, picojson::object& packet) override;
-  void on_close(const uv_pipe_t& client) override;
+ private:
+  WorkerConnector();
+  WorkerConnector(const WorkerConnector&);
+  WorkerConnector& operator=(const WorkerConnector&);
+
+  void on_connect(uv_pipe_t& client) override;
+  void on_recv_packet(uv_pipe_t& client, picojson::object& packet) override;
+  void on_close(uv_pipe_t& client) override;
 };
 }  // namespace processwarp

@@ -45,7 +45,7 @@ add_executable(daemon
   daemon.cpp
   frontend_connector.cpp
   router.cpp
-  socketio.cpp
+  server_connector.cpp
   worker_connector.cpp
   )
 target_link_libraries(daemon

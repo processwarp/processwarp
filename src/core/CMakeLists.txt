@@ -25,6 +25,11 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     find_library(FFI_LIBRARY NAMES ffi)
     set(extra_libs ${extra_libs} ${FFI_LIBRARY})
   endif()
+
+  # OpenSSL
+  find_package(OpenSSL)
+  include_directories(${OPENSSL_INCLUDE_DIR})
+  list(APPEND extra_libs ${OPENSSL_LIBRARIES})
 endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wno-unused-parameter")

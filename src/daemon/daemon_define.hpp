@@ -23,13 +23,26 @@ enum Type {
 }  // namespace FrontendType
 
 /**
- * @todo
+ * Pipe connection status used in frontend.
  */
 namespace PipeStatus {
 enum Type {
-  SETUP,
-  CONNECT,
-  ERROR,
+  SETUP,    ///< Opend pipe but not received connect-frontend command.
+  CONNECT,  ///< Successed connect-frontend command, can pass other packets.
 };
 }  // namespace PipeStatus
+
+/**
+ * Server connection status.
+ */
+namespace ServerStatus {
+enum Type {
+  SETUP,      ///< Going to open pipe.
+  APPROACH1,  ///< Opened pipe but not replied connect-node command.
+  APPROACH2,  ///< Replied connect-node command but not replied bind-node command.
+  CONNECT,    ///< Success both connect-node and bind-node command, can pass other packets.
+  CLOSE,      ///< Disconnect from server.
+  ERROR,      ///< Error was occurred.
+};
+};
 }  // namespace processwarp

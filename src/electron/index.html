@@ -141,7 +141,7 @@
        * @return {void}
        */
       function connectOnQuit() {
-	ipc.send('quit');
+	ipc.send('action_quit');
       }
 
       /**
@@ -155,11 +155,33 @@
 
 	curtainDown();
 
-	ipc.send('connect', {
+	ipc.send('action_connect', {
 	  account: account,
 	  password: password
 	});
       }
+
+      /**
+       * When connecting to backend is succeed, turn connect card off and curtain up.
+       * @return {void}
+       */
+      function connectOnSuccess() {
+	var connect = document.getElementById('connect');
+	connect.style.display = 'none';
+	curtainUp();
+      }
+      ipc.on('action_connect_success', connectOnSuccess);
+
+      /**
+       * When connecting to backend is failed, show alert and curtain up.
+       * @param result {number} Error code.
+       * @return {void}
+       */
+      function connectOnFailure(result) {
+	curtainUp();
+	alert('Connection failure : ' + result);
+      }
+      ipc.on('action_connect_failure', connectOnFailure);
       </script>
     </div><!-- end of connect -->
 
