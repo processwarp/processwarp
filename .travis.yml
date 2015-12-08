@@ -4,12 +4,11 @@ compiler:
   - clang
 
 before_install:
-  - sudo apt-get install -y clang git doxygen libssl-dev
-  - sudo add-apt-repository -y ppa:boost-latest/ppa
-  - sudo add-apt-repository -y ppa:kubuntu-ppa/backports
-  - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-  - sudo apt-get update -yqq
-  - sudo apt-get install cmake g++-4.8
+  - sudo apt-get install -y clang git doxygen libssl-dev cmake libuv-dev libedit-dev
+  # install llvm
+  - sudo apt-get install -y llvm-3.6 llvm-3.6-dev llvm-3.6-runtime llvm-3.6-tools
+  - sudo mkdir -p /usr/lib/llvm-3.6/share/llvm
+  - sudo ln -s /usr/share/llvm-3.6/cmake /usr/lib/llvm-3.6/share/llvm/cmake
   # install socket.io
   - sudo apt-get install -y libboost1.55-dev libboost-system1.55-dev libboost-date-time1.55-dev libboost-random1.55-dev
   - git clone --recurse-submodules https://github.com/socketio/socket.io-client-cpp.git
