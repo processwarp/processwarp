@@ -21,7 +21,7 @@ before_install:
   - cd $TRAVIS_BUILD_DIR
   # install libuv
   - sudo apt-get install -y automake libtool
-  - wet http://dist.libuv.org/dist/v1.7.5/libuv-v1.7.5.tar.gz
+  - curl http://dist.libuv.org/dist/v1.7.5/libuv-v1.7.5.tar.gz > libuv-v1.7.5.tar.gz
   - tar zxf libuv-v1.7.5.tar.gz
   - cd libuv-v1.7.5/
   - sh autogen.sh
