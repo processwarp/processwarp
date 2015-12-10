@@ -5,6 +5,7 @@
     <title>PROCESS WARP</title>
     <link rel="stylesheet" href="node_modules/material-design-lite/material.min.css"/>
     <script src="node_modules/material-design-lite/material.min.js"></script>
+    <link rel="stylesheet" href="icon.css">
   </head>
   <script>
   const electron = require('electron');
@@ -184,6 +185,66 @@
       ipc.on('action_connect_failure', connectOnFailure);
       </script>
     </div><!-- end of connect -->
-
+    <div id="main">
+      <style>
+      #main {
+	      height: 100%;
+	      width: 100%;
+      }
+      #processes-table {
+	      width: 100%;
+      }
+      .mdl-layout__header-row {
+	      padding: 0 16px;
+      }
+      .mdl-layout__header-row button {
+	      margin-right: 16px;
+      }
+      </style>
+      <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
+	<header class="mdl-layout__header">
+	  <div class="mdl-layout__header-row">
+	    <button class="mdl-button mdl-js-button mdl-button--icon"
+		    onClick="mainOnOpenFile();">
+	      <i class="material-icons">unarchive</i>
+	    </button>
+	    <!--
+	    <button class="mdl-button mdl-js-button mdl-button--icon">
+	      <i class="material-icons">highlight_off</i>
+	    </button>
+	    -->
+	    <div class="mdl-layout-spacer"></div>
+	  </div>
+	</header>
+	<main class="mdl-layout__content">
+	  <div class="page-content">
+	    <!-- List of processes. -->
+	    <table class="mdl-data-table mdl-js-data-table mdl-shadow--2dp"
+		    id="processes-table">
+	      <tbody>
+		<tr>
+		  <td class="mdl-data-table__cell--non-numeric">Acrylic (Transparent)</td>
+		</tr>
+		<tr>
+		  <td class="mdl-data-table__cell--non-numeric">Plywood (Birch)</td>
+		</tr>
+		<tr>
+		  <td class="mdl-data-table__cell--non-numeric">Laminate (Gold on Blue)</td>
+		</tr>
+	      </tbody>
+	    </table><!-- End of list. -->
+	  </div>
+	</main>
+      </div>
+      <script>
+      /**
+       * Send action_open_file event to main process when open file button is touch.
+       * @return {void}
+       */
+      function mainOnOpenFile() {
+	ipc.send('action_open_file');
+      }
+      </script>
+    </div><!-- end of main -->
   </body>
 </html>

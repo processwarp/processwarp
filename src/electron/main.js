@@ -2,6 +2,7 @@
 
 var app = require('app');
 var BrowserWindow = require('browser-window');
+var dialog = require('dialog');
 var ipc = require('electron').ipcMain;
 var net = require('net');
 
@@ -85,6 +86,33 @@ function onActionConnect(sender, param) {
   connectBackend();
 }
 ipc.on('action_connect', onActionConnect);
+
+/**
+ * When open file action is done in the interface, show dialog and let user select file.
+ * @return {void}
+ */
+function onActionOpenFile() {
+  dialog.showOpenDialog(
+    mainWindow,
+    {
+      title: 'Open and execute.',
+      filters: [{
+	name: 'LLVM-IR',
+	extensions: ['ll', 'bc']
+      }],
+      properties: ['openFile']
+    },
+    function(filename) {
+      if (filename && filename.length) {
+	sendToBackend({
+	  command: 'open_file',
+	  filename: filename[0],
+	});
+      }
+    }
+  );
+}
+ipc.on('action_open_file', onActionOpenFile);
 
 /**
  * Connect to the backend by socket and set event emitter.

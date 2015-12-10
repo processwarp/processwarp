@@ -17,6 +17,7 @@ class Router {
 
   void initialize(uv_loop_t* loop_, const picojson::object& config_);
   bool check_account(const std::string& account_, const std::string& password_);
+  void load_llvm(const std::string& filename, const std::vector<std::string>& args);
   void on_connect_node();
   void on_bind_node(const nid_t& nid);
 

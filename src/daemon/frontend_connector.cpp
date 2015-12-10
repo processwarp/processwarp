@@ -3,6 +3,7 @@
 
 #include <cassert>
 #include <string>
+#include <vector>
 
 #include "daemon_define.hpp"
 #include "router.hpp"
@@ -76,6 +77,9 @@ void FrontendConnector::on_recv_packet(uv_pipe_t& client, picojson::object& pack
   if (command == "connect_frontend") {
     recv_connect_frontend(client, packet);
 
+  } else if (command == "open_file") {
+    recv_open_file(client, packet);
+
   } else {
     /// @todo error
     assert(false);
@@ -124,5 +128,16 @@ void FrontendConnector::recv_connect_frontend(uv_pipe_t& client, picojson::objec
     send_connect_frontend(client, -1);
     close(client);
   }
+}
+
+/**
+ * When receive open-file command from frontend, pass capable method on Router.
+ * @param client Frontend that passed this request.
+ * @param packet Account information contain account, passord, type.
+ */
+void FrontendConnector::recv_open_file(uv_pipe_t& client, picojson::object& packet) {
+  Router& router = Router::get_instance();
+
+  router.load_llvm(packet.at("filename").get<std::string>(), std::vector<std::string>());
 }
 }  // namespace processwarp

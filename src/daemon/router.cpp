@@ -1,6 +1,9 @@
 
 #include <cassert>
+#include <fstream>
+#include <iostream>
 #include <string>
+#include <vector>
 
 #include "router.hpp"
 #include "server_connector.hpp"
@@ -61,6 +64,35 @@ bool Router::check_account(const std::string& account_, const std::string& passw
   } else {
     return false;
   }
+}
+
+/**
+ * Open the LLVM-IR file and send load-llvm command to server.
+ * @param filename Filename of LLVM-IR.
+ * @param args Arguments to pass application's entry point.
+ */
+void Router::load_llvm(const std::string& filename, const std::vector<std::string>& args) {
+  ServerConnector& server = ServerConnector::get_instance();
+
+  if (server.get_status() != ServerStatus::CONNECT) {
+    /// @todo error
+    assert(false);
+  }
+
+  std::ifstream ifs(filename);
+  std::stringstream file;
+  std::string line;
+
+  if (!ifs.is_open()) {
+    /// @todo errro
+    assert(false);
+  }
+  while (std::getline(ifs, line, '\n')) {
+    file << line << '\n';
+  }
+  ifs.close();
+
+  server.send_load_llvm(Util::file_basename(filename, "\\.[^\\.]"), file.str(), args, my_nid);
 }
 
 /**
