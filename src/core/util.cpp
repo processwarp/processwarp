@@ -2,6 +2,7 @@
 #include <openssl/sha.h>
 
 #include <iomanip>
+#include <regex>
 #include <sstream>
 #include <string>
 
@@ -87,6 +88,34 @@ std::string Util::calc_sha256(const std::string& src) {
   }
 
   return os.str();
+}
+
+/**
+ * Get the last component of a pathname.
+ * If suffix is matched to last of the pathname, remove it from return value.
+ * @param path Pathname.
+ * @param suffix Suffix regex you want remove from last of the pathname.
+ * @return The last component of a pathname.
+ */
+std::string Util::file_basename(const std::string& path, const std::string& suffix) {
+  std::string basename;
+  std::string::size_type pos = path.find_last_of('/');
+
+  if (pos == std::string::npos) {
+    basename = path;
+  } else {
+    basename = path.substr(pos + 1);
+  }
+
+  if (suffix.empty()) return basename;
+
+  std::regex exp("^(.*)" + suffix + "$");
+
+  if (std::regex_match(basename, exp)) {
+    return std::regex_replace(basename, exp, "$1");
+  } else {
+    return basename;
+  }
 }
 
 // Show alert to fix function when NDEBUG isn't defined.
