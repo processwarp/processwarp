@@ -112,7 +112,7 @@ std::string Util::file_basename(const std::string& path, const std::string& suff
   std::regex exp("^(.*)" + suffix + "$");
 
   if (std::regex_match(basename, exp)) {
-    return std::regex_replace(basename, exp, "$1");
+    return std::regex_replace(basename, exp, std::string("$1"));
   } else {
     return basename;
   }
