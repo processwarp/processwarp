@@ -34,7 +34,12 @@ app.on('window-all-closed', function() {
  * On start application, create new window.
  */
 app.on('ready', function() {
-  mainWindow = new BrowserWindow({width: 480, height: 480});
+  mainWindow = new BrowserWindow({
+    minHeight: 400,
+    minWidth: 340,
+    height: 480,
+    width: 480
+  });
   mainWindow.loadURL('file://' + __dirname + '/index.html');
 
   // Open development and debug tool.
