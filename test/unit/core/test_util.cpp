@@ -21,7 +21,8 @@ TEST_F(UtilTest, file_basename) {
   EXPECT_EQ(std::string("ab"), Util::file_basename("ab"));
   EXPECT_EQ(std::string(""), Util::file_basename(""));
   EXPECT_EQ(std::string("cd.ef"), Util::file_basename("/ab/cd.ef"));
-  EXPECT_EQ(std::string("cd"), Util::file_basename("/ab/cd.ef", ".ef"));
-  EXPECT_EQ(std::string("cd.ef"), Util::file_basename("/ab/cd.ef", ".gh"));
+  EXPECT_EQ(std::string("cd"), Util::file_basename("/ab/cd", true));
+  EXPECT_EQ(std::string("cd"), Util::file_basename("/ab/cd.ef", true));
+  EXPECT_EQ(std::string("cd.ef"), Util::file_basename("/ab/cd.ef.gh", true));
 }
 }  // namespace processwarp

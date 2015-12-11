@@ -2,7 +2,6 @@
 #include <openssl/sha.h>
 
 #include <iomanip>
-#include <regex>
 #include <sstream>
 #include <string>
 
@@ -94,10 +93,10 @@ std::string Util::calc_sha256(const std::string& src) {
  * Get the last component of a pathname.
  * If suffix is matched to last of the pathname, remove it from return value.
  * @param path Pathname.
- * @param suffix Suffix regex you want remove from last of the pathname.
+ * @param cutoff_ext Cut off the extension from basename if the basename have a externsion and option is true.
  * @return The last component of a pathname.
  */
-std::string Util::file_basename(const std::string& path, const std::string& suffix) {
+std::string Util::file_basename(const std::string& path, bool cutoff_ext) {
   std::string basename;
   std::string::size_type pos = path.find_last_of('/');
 
@@ -107,12 +106,14 @@ std::string Util::file_basename(const std::string& path, const std::string& suff
     basename = path.substr(pos + 1);
   }
 
-  if (suffix.empty()) return basename;
+  if (cutoff_ext) {
+    pos = basename.find_last_of('.');
+    if (pos == std::string::npos) {
+      return basename;
+    } else {
+      return basename.substr(0, pos);
+    }
 
-  std::regex exp("^(.*)" + suffix + "$");
-
-  if (std::regex_match(basename, exp)) {
-    return std::regex_replace(basename, exp, std::string("$1"));
   } else {
     return basename;
   }

@@ -24,7 +24,7 @@
 namespace processwarp {
 namespace Util {
 std::string calc_sha256(const std::string& src);
-std::string file_basename(const std::string& path, const std::string& suffix = "");
+std::string file_basename(const std::string& path, bool cutoff_ext = false);
 
 /**
  * Convert instruction code to readable string.
