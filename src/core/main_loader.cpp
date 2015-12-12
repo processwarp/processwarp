@@ -35,9 +35,9 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
   ///
   std::string in_name;
   ///
-  nid_t in_dst_node;
+  nid_t in_dst_nid;
   ///
-  nid_t in_src_node;
+  nid_t in_src_nid;
   ///
   std::string in_src_account;
   ///
@@ -147,10 +147,10 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
                                    picojson::value(in_name)));
       packet.insert(std::make_pair("tid",
                                    Convert::vtid2json(proc->root_tid)));
-      packet.insert(std::make_pair("dst_node",
-                                   Convert::nid2json(in_dst_node)));
-      packet.insert(std::make_pair("src_node",
-                                   Convert::nid2json(in_src_node)));
+      packet.insert(std::make_pair("dst_nid",
+                                   Convert::nid2json(in_dst_nid)));
+      packet.insert(std::make_pair("src_nid",
+                                   Convert::nid2json(in_src_nid)));
       packet.insert(std::make_pair("src_account",
                                    picojson::value(in_src_account)));
       js_machine.push_back(picojson::value
@@ -176,7 +176,7 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
       packet.insert(std::make_pair("src",
                                    Convert::nid2json(SpecialNID::SERVER)));
       packet.insert(std::make_pair("dst",
-                                   Convert::nid2json(in_dst_node)));
+                                   Convert::nid2json(in_dst_nid)));
       packet.insert(std::make_pair("hint",
                                    picojson::value(picojson::array())));
       js_memory.push_back(picojson::value(picojson::value(packet).serialize()));
@@ -211,10 +211,10 @@ int main(int argc, char* argv[]) {
       // Read information from json.
       loader.in_pid  = processwarp::Convert::json2vpid(result.at("pid"));
       loader.in_name = result.at("name").get<std::string>();
-      loader.in_dst_node =
-          processwarp::Convert::json2nid(result.at("dst_node"));
-      loader.in_src_node =
-          processwarp::Convert::json2nid(result.at("src_node"));
+      loader.in_dst_nid =
+          processwarp::Convert::json2nid(result.at("dst_nid"));
+      loader.in_src_nid =
+          processwarp::Convert::json2nid(result.at("src_nid"));
       loader.in_src_account = result.at("src_account").get<std::string>();
       loader.in_type       = result.at("type").get<std::string>();
 
