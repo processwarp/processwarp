@@ -83,9 +83,10 @@ class Process {
    * if master_nid is "" then allocate memory as master otherwise copy.
    * @param delegate
    * @param pid
+   * @param root_tid
    * @param libs
    * @param lib_filter
-   * @param proc_addr
+   * @param builtin_funcs
    */
   static std::unique_ptr<Process>
   alloc(ProcessDelegate& delegate,

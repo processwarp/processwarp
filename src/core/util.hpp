@@ -111,7 +111,7 @@ void _fixme(int line, const char* file, std::string mesg);
 
 /**
  * Show debug message when NEBUG isn't defined.
- * @param mesg Message to show (format is the same to printf).
+ * @param ... Messages to show (format is the same to printf).
  */
 #ifdef NDEBUG
 #define print_debug(...)  //

@@ -31,9 +31,9 @@ class BasicOperator {
 
   /**
    * 比較命令(isnan(a) || isnan(b))に対応した演算を行う。
-   * @param dst 出力先
    * @param a
    * @param b
+   * @return
    */
   virtual bool is_or_nans(uint8_t* a, uint8_t* b) const;
 
