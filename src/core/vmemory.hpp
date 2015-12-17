@@ -16,29 +16,18 @@
 #include "util.hpp"
 
 namespace processwarp {
+class VMemory;
+
 /**
  * Delegate interface of VMemory for controller.
  */
 class VMemoryDelegate {
  public:
-  /**
-   * Destructor for virtual.
-   */
-  virtual ~VMemoryDelegate() {}
+  virtual ~VMemoryDelegate();
 
-  /**
-   * Call when send memory data to other node.
-   */
-  virtual void send_memory_data(const std::string& name,
-                                const nid_t& nid,
-                                const std::string& data) = 0;
-
-  /**
-   * Call when memory is update by other node.
-   * @param name Space name.
-   * @param addr Updated page address.
-   */
-  virtual void on_recv_update(const std::string& name, vaddr_t addr) = 0;
+  virtual void vmemory_send_packet(VMemory& memory, const nid_t& dst_nid,
+                                   const std::string& packet) = 0;
+  virtual void vmemory_recv_update(VMemory& memory, vaddr_t addr) = 0;
 };
 
 /**

@@ -15,6 +15,18 @@ include_directories(${Boost_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
 list(APPEND extra_libs ${Boost_LIBRARIES})
 
+# libffi
+pkg_search_module(FFI libffi)
+if(FFI_FOUND)
+  include_directories(${FFI_INCLUDE_DIRS})
+  string(REPLACE ";" " " FFI_CFLAGS_STR "${FFI_CFLAGS}")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${FFI_CFLAGS_STR}")
+  list(APPEND extra_libs ${FFI_LIBRARIES})
+else()
+  find_library(FFI_LIBRARY NAMES ffi)
+  set(extra_libs ${extra_libs} ${FFI_LIBRARY})
+endif()
+
 # OpenSSL
 find_package(OpenSSL)
 include_directories(${OPENSSL_INCLUDE_DIR})

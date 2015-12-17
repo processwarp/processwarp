@@ -176,7 +176,7 @@ int Daemon::main_loop() {
                     config.at("server").get<std::string>());
   router.initialize(loop, config);
   frontend.initialize(loop);
-  worker.initialize(loop);
+  worker.initialize(loop, config_file);
 
   server.send_connect_node(config.at("account").get<std::string>(),
                            config.at("password").get<std::string>());
@@ -254,8 +254,8 @@ bool Daemon::read_options(int argc, char* argv[]) {
       } break;
 
       case 'f': {
-        std::string file(optarg);
-        if (!read_config(file)) return false;
+        config_file = std::string(optarg);
+        if (!read_config(config_file)) return false;
       } break;
 
       case 'h': {

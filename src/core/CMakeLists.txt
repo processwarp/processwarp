@@ -78,6 +78,7 @@ set(PWCORE_FILES
   builtin_warp.cpp
   interrupt_memory_require.cpp
   process.cpp
+  scheduler.cpp
   stackinfo.cpp
   std_error.cpp
   symbols.cpp

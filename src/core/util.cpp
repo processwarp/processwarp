@@ -1,5 +1,13 @@
 
+#include <libgen.h>
 #include <openssl/sha.h>
+#if defined(__APPLE__) && defined(__MACH__)
+#include <mach-o/dyld.h>
+#include <sys/param.h>
+#endif
+#ifdef __linux__
+#include <unistd.h>
+#endif
 
 #include <iomanip>
 #include <sstream>
@@ -118,6 +126,47 @@ std::string Util::file_basename(const std::string& path, bool cutoff_ext) {
     return basename;
   }
 }
+
+/**
+ * Split path to dirname and basename, and get dirname.
+ * @param path A target path to split.
+ * @return A string of dirname.
+ */
+std::string Util::file_dirname(const std::string& path) {
+  std::unique_ptr<char[]> buffer(new char[path.size() + 1]);
+
+  memcpy(buffer.get(), path.c_str(), path.size());
+  buffer[path.size()] = '\0';
+
+  return std::string(dirname(buffer.get()));
+}
+
+/**
+ * Get a fullpath of executable-file just now running.
+ * @return A full path of executable-file.
+ */
+std::string Util::get_my_fullpath() {
+#if defined(__APPLE__) && defined(__MACH__)
+  char buffer[MAXPATHLEN];
+  uint32_t len = sizeof(buffer);
+
+  if (_NSGetExecutablePath(buffer, &len)) {
+    /// @todo error
+    assert(false);
+  }
+  return std::string(buffer);
+#elif defined(__linux__)
+  char buffer[MAX_PATHLEN];
+  if (readlink("/proc/self/exe", buffer, sizeof(buffer)) < 0) {
+    /// @todo error
+    assert(false);
+  }
+  return std::string(buffer);
+#else
+#error Unexpected platform.
+#endif
+}
+
 
 // Show alert to fix function when NDEBUG isn't defined.
 void Util::_fixme(int line, const char* file, std::string mesg) {

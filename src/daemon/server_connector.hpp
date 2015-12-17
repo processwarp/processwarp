@@ -26,6 +26,10 @@ class ServerConnector {
 
   void initialize(uv_loop_t* loop_, const std::string& url);
   ServerStatus::Type get_status();
+  void relay_packet(const vpid_t& pid,
+                    const nid_t& dst_nid,
+                    const std::string& type,
+                    const std::string& packet);
   void send_connect_node(const std::string& account,
                          const std::string& password);
   void send_load_llvm(const std::string& name,
@@ -36,12 +40,6 @@ class ServerConnector {
   void send_bind_node(const nid_t& nid,
                       const std::string& node_name);
   void send_sync_proc_list(const std::vector<ProcessTree>& procs);
-  void send_machine_data(const vpid_t& pid,
-                         const nid_t& dst_nid,
-                         const std::string& data);
-  void send_memory_data(const std::string& name,
-                        const nid_t& dst_nid,
-                        const std::string& data);
   void send_test_console(const vpid_t& pid,
                          const std::string& dev,
                          const std::string& payload);
@@ -74,6 +72,7 @@ class ServerConnector {
   void on_open();
   void recv_connect_node(sio::message::ptr data);
   void recv_bind_node(sio::message::ptr data);
+  void recv_relay(sio::message::ptr data);
 
   static void on_recv(uv_async_t* handle);
 };

@@ -77,6 +77,12 @@ inline std::unique_ptr<TypeStore> get_type(instruction_t code,
   return std::move(TypeStore::read(param.memory, addr));
 }
 
+/**
+ * Simple destructor for vtable.
+ */
+ProcessDelegate::~ProcessDelegate() {
+}
+
 // Constructor.
 Process::Process(ProcessDelegate& delegate_,
                  std::unique_ptr<VMemory::Accessor> proc_memory_,
@@ -106,7 +112,7 @@ std::unique_ptr<Process> Process::alloc(ProcessDelegate& delegate,
                                         const std::map<std::string, std::pair
                                         <builtin_func_t, BuiltinFuncParam>>& builtin_funcs) {
   picojson::object js_proc;
-  std::unique_ptr<VMemory::Accessor> memory(delegate.assign_accessor(pid));
+  std::unique_ptr<VMemory::Accessor> memory(delegate.process_assign_accessor(pid));
 
   js_proc.insert(std::make_pair("pid", Convert::vpid2json(pid)));
   js_proc.insert(std::make_pair("root_tid", Convert::vtid2json(root_tid)));
@@ -129,7 +135,7 @@ std::unique_ptr<Process> Process::alloc(ProcessDelegate& delegate,
                                         vaddr_t proc_addr,
                                         const nid_t& master_nid) {
   picojson::object js_proc;
-  std::unique_ptr<VMemory::Accessor> memory(delegate.assign_accessor(pid));
+  std::unique_ptr<VMemory::Accessor> memory(delegate.process_assign_accessor(pid));
 
   js_proc.insert(std::make_pair("pid", Convert::vpid2json(pid)));
   js_proc.insert(std::make_pair("root_tid", Convert::vtid2json(root_tid)));
@@ -1041,7 +1047,7 @@ Thread& Process::get_thread(vtid_t tid) {
   auto it = threads.find(tid);
   if (it == threads.end() || it->second.get() == nullptr) {
     return *threads.insert
-        (std::make_pair(tid, Thread::read(tid, delegate.assign_accessor(pid)))).
+        (std::make_pair(tid, Thread::read(tid, delegate.process_assign_accessor(pid)))).
         first->second.get();
 
   } else {
@@ -1055,7 +1061,7 @@ Thread& Process::get_thread(vtid_t tid) {
 void Process::warp_out_thread(vtid_t tid) {
   active_threads.insert(tid);
   waiting_warp_setup.insert(tid);
-  delegate.on_change_thread_set(*this);
+  delegate.process_change_thread_set(*this);
 }
 
 // Create a new thread.
@@ -1068,7 +1074,7 @@ vtid_t Process::create_thread(vaddr_t func_addr, vaddr_t arg_addr) {
   }
 
   Thread& thread =
-      *threads.insert(Thread::alloc(delegate.assign_accessor(pid))).first->second.get();
+      *threads.insert(Thread::alloc(delegate.process_assign_accessor(pid))).first->second.get();
 
   vaddr_t root_stack = thread.memory->alloc(sizeof(vaddr_t));
   vaddr_t root_stackaddr =
@@ -1094,7 +1100,7 @@ vtid_t Process::create_thread(vaddr_t func_addr, vaddr_t arg_addr) {
   thread.write();
 
   active_threads.insert(thread.tid);
-  delegate.on_change_thread_set(*this);
+  delegate.process_change_thread_set(*this);
 
   return thread.tid;
 }
@@ -1266,7 +1272,7 @@ void Process::run(const std::vector<std::string>& args,
                   const std::map<std::string, std::string>& envs) {
   // make root thread
   Thread& root_thread =
-      *threads.insert(Thread::alloc(delegate.assign_accessor(pid), root_tid)).
+      *threads.insert(Thread::alloc(delegate.process_assign_accessor(pid), root_tid)).
       first->second.get();
   active_threads.insert(root_thread.tid);
 

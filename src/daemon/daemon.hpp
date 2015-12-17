@@ -16,6 +16,7 @@ class Daemon {
  private:
   /** Daemon run mode. */
   DaemonRunMode::Type run_mode;
+  std::string config_file;
   /** Configuration. */
   picojson::object config;
   /** Main loop of libuv. */

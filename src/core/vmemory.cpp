@@ -31,6 +31,12 @@ const vaddr_t VMemory::UPPER_MASKS[]  = {
   0xFFFFFFFFFFFFFFFF,  // Function, Type
 };
 
+/**
+ * Simple destructor for vtable.
+ */
+VMemoryDelegate::~VMemoryDelegate() {
+}
+
 // Constructor with node-id.
 VMemory::VMemory(VMemoryDelegate& delegate_, const nid_t& nid_) :
     nid(nid_),
@@ -50,7 +56,7 @@ void VMemory::recv_memory_data(const std::string& name, const std::string& data)
   }
   picojson::object& json = v.get<picojson::object>();
 
-  std::string cmd = json.at("cmd").get<std::string>();
+  std::string cmd = json.at("command").get<std::string>();
   if (cmd == "copy") {
     recv_copy(name, json);
 
@@ -85,7 +91,7 @@ void VMemory::recv_memory_data(const std::string& name, const std::string& data)
 void VMemory::recv_copy(const std::string& name, picojson::object& json) {
   vaddr_t addr = Convert::json2vaddr(json.at("addr"));
   const std::string& value = Convert::json2bin(json.at("value"));
-  nid_t src = Convert::json2nid(json.at("src"));
+  nid_t src = Convert::json2nid(json.at("src_nid"));
   if (get_upper_addr(addr) != addr) {
     /// @todo error
     assert(false);
@@ -136,7 +142,7 @@ void VMemory::recv_copy(const std::string& name, picojson::object& json) {
     }
   }
 
-  delegate.on_recv_update(name, addr);
+  delegate.vmemory_recv_update(*this, addr);
 }
 
 void VMemory::recv_free(const std::string& name, picojson::object& json) {
@@ -186,9 +192,9 @@ void VMemory::recv_free(const std::string& name, picojson::object& json) {
 void VMemory::recv_give(const std::string& name, picojson::object& json) {
   vaddr_t addr = Convert::json2vaddr(json.at("addr"));
   const std::string& value = Convert::json2bin(json.at("value"));
-  nid_t src = Convert::json2nid(json.at("src"));
-  nid_t dst = Convert::json2nid(json.at("dst"));
-  picojson::array js_hint = json.at("hint").get<picojson::array>();
+  nid_t src = Convert::json2nid(json.at("src_nid"));
+  nid_t dst = Convert::json2nid(json.at("dst_nid"));
+  picojson::array js_hint = json.at("hint_nid").get<picojson::array>();
   assert(addr == get_upper_addr(addr));
 
   auto it_space = spaces.find(name);
@@ -243,7 +249,7 @@ void VMemory::recv_give(const std::string& name, picojson::object& json) {
       space.requiring.erase(it_ri);
     }
 
-    delegate.on_recv_update(name, addr);
+    delegate.vmemory_recv_update(*this, addr);
 
   } else {
     if (it_page == space.pages.end()) {
@@ -263,7 +269,7 @@ void VMemory::recv_give(const std::string& name, picojson::object& json) {
 
 void VMemory::recv_require(const std::string& name, picojson::object& json) {
   vaddr_t addr = Convert::json2vaddr(json.at("addr"));
-  nid_t src = Convert::json2nid(json.at("src"));
+  nid_t src = Convert::json2nid(json.at("src_nid"));
   assert(addr == get_upper_addr(addr));
   assert(src != nid);
 
@@ -273,7 +279,7 @@ void VMemory::recv_require(const std::string& name, picojson::object& json) {
       picojson::object packet;
 
       packet.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
-      packet.insert(std::make_pair("src", Convert::nid2json(src)));
+      packet.insert(std::make_pair("src_nid", Convert::nid2json(src)));
 
       send_packet(name, SpecialNID::BROADCAST, "require", packet);
     }
@@ -287,7 +293,7 @@ void VMemory::recv_require(const std::string& name, picojson::object& json) {
       picojson::object packet;
 
       packet.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
-      packet.insert(std::make_pair("src", Convert::nid2json(src)));
+      packet.insert(std::make_pair("src_nid", Convert::nid2json(src)));
 
       send_packet(name, SpecialNID::BROADCAST, "require", packet);
     }
@@ -302,7 +308,7 @@ void VMemory::recv_require(const std::string& name, picojson::object& json) {
     picojson::object packet;
 
     packet.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
-    packet.insert(std::make_pair("src", Convert::nid2json(src)));
+    packet.insert(std::make_pair("src_nid", Convert::nid2json(src)));
 
     send_packet(name, *page.hint.begin(), "require", packet);
   }
@@ -329,7 +335,7 @@ void VMemory::recv_reserve(const std::string& name, picojson::object& json) {
 
 void VMemory::recv_stand(const std::string& name, picojson::object& json) {
   vaddr_t addr = Convert::json2vaddr(json.at("addr"));
-  nid_t src_node = Convert::json2nid(json.at("src"));
+  nid_t src_node = Convert::json2nid(json.at("src_nid"));
   assert(addr == get_upper_addr(addr));
   assert(src_node != nid);
 
@@ -384,7 +390,7 @@ void VMemory::recv_update(const std::string& name, picojson::object& json) {
       return;
     }
     std::memcpy(page.value.get() + get_lower_addr(addr), value.data(), value.size());
-    delegate.on_recv_update(name, get_upper_addr(addr));
+    delegate.vmemory_recv_update(*this, get_upper_addr(addr));
 
   } else if (page.type == PT_COPY) {
     send_update(*page.hint.begin(), space, addr,
@@ -423,10 +429,10 @@ void VMemory::set_loading(const std::string& name, bool flg) {
 void VMemory::send_packet(const std::string& name, const nid_t& nid,
                           const std::string& cmd, picojson::object& data) {
   assert(nid != this->nid);
-  data.insert(std::make_pair("cmd", picojson::value(cmd)));
-  data.insert(std::make_pair("src", Convert::nid2json(this->nid)));
+  data.insert(std::make_pair("command", picojson::value(cmd)));
+  data.insert(std::make_pair("src_nid", Convert::nid2json(this->nid)));
 
-  delegate.send_memory_data(name, nid, picojson::value(data).serialize());
+  delegate.vmemory_send_packet(*this, nid, picojson::value(data).serialize());
 }
 
 // This request means to update memory for copy data.
@@ -460,11 +466,11 @@ void VMemory::send_give(Space& space, Page& page, vaddr_t addr, const nid_t& dst
 
   packet.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
   packet.insert(std::make_pair("value", Convert::bin2json(page.value.get(), page.size)));
-  packet.insert(std::make_pair("dst", Convert::nid2json(dst)));
+  packet.insert(std::make_pair("dst_nid", Convert::nid2json(dst)));
   for (auto& h : page.hint) {
     hint.push_back(Convert::nid2json(h));
   }
-  packet.insert(std::make_pair("hint", picojson::value(hint)));
+  packet.insert(std::make_pair("hint_nid", picojson::value(hint)));
 
   send_packet(space.name, dst, "give", packet);
 }

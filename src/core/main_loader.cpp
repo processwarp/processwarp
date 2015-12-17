@@ -23,27 +23,26 @@ namespace processwarp {
 static const std::string pool_path("/tmp/");
 
 /**
- * Load program from LLVM-IR and write dump file.
+ * Load program from LLVM-IR and write a dump file.
  */
 class Loader : public ProcessDelegate, public VMemoryDelegate {
  public:
-  /// Virtual memory for this loader.
+  /** Virtual memory for this loader. */
   VMemory vmemory;
-
-  /// Assigned process-id.
+  /** Process-id assigned for loading process. */
   vpid_t in_pid;
-  ///
+  /** Application name. */
   std::string in_name;
-  ///
+  /** Node-id warp to after loading. */
   nid_t in_dst_nid;
-  ///
+  /** Node-id that issued an order to load this process. */
   nid_t in_src_nid;
-  ///
+  /** Account-id that issued an order to load this process. */
   std::string in_src_account;
-  ///
+  /** LLVM-IR type LL or BC. */
   std::string in_type;
 
-  ///
+  /** The root thread-id assigned by loader. */
   vtid_t out_root_tid;
 
   /**
@@ -54,37 +53,50 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
   }
 
   /**
+   * Override a delegater method that assign memory accessor for Process class.
+   * Get a acccessor by VMemory class and return this instance.
+   * @param pid Process-id that is use assigned accessor.
+   * @return A memory accessor instance.
    */
-  std::unique_ptr<VMemory::Accessor> assign_accessor
-  (const vpid_t& pid) override {
+  std::unique_ptr<VMemory::Accessor> process_assign_accessor(const vpid_t& pid) override {
     assert(!in_pid.empty());
     return std::move(vmemory.get_accessor(Convert::vpid2str(pid)));
   }
 
   /**
+   * Override a delegater method that do noting.
+   * @param process
    */
-  void on_change_thread_set(Process& proc) override {
+  void process_change_thread_set(Process& process) override {
   }
 
-  // Call when send memory data to other node.
-  void send_memory_data(const std::string& name,
-                        const nid_t& nid,
-                        const std::string& data) override {
-    print_debug("send memory data (%s@%s):%s\n",
-                name.c_str(), nid.c_str(), data.c_str());
+  /**
+   * Override a delegater method that send any packet to other node.
+   * Must not use in loader.
+   * @param memory
+   * @param dst_nid
+   * @param data
+   */
+  void vmemory_send_packet(VMemory& memory, const nid_t& dst_nid,
+                           const std::string& data) override {
     assert(false);
   }
 
   /**
-   * Call when memory is update by other node.
-   * Should not call.
+   * Override a delegter method that call when memory data was update.
+   * Must not use in loader.
+   * @param memory
+   * @param addr
    */
-  void on_recv_update(const std::string& name, vaddr_t addr) override {
+  void vmemory_recv_update(VMemory& memory, vaddr_t addr) override {
     assert(false);
   }
 
   /**
-   * 
+   * Main routine of loader.
+   * Allocate Process class instance and load LLVM-IR file.
+   * At last, write dump of pages in memory to output file.
+   * @param args Command line arguments for loading process.
    */
   void load(const std::vector<std::string>& args) {
     // Setup virtual-memory.
@@ -130,35 +142,24 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
     picojson::object body;
     body.insert(std::make_pair("pid", Convert::vpid2json(in_pid)));
 
-    picojson::array js_machine;
+    picojson::array js_sched_packet;
     {
       picojson::object packet;
-      packet.insert(std::make_pair("cmd",
-                                   picojson::value(std::string("warp"))));
-      packet.insert(std::make_pair("pid",
-                                   Convert::vpid2json(in_pid)));
-      packet.insert(std::make_pair("root_tid",
-                                   Convert::vtid2json(proc->root_tid)));
-      packet.insert(std::make_pair("proc_addr",
-                                   Convert::vaddr2json(proc->addr)));
-      packet.insert(std::make_pair("master_node",
-                                   Convert::nid2json(SpecialNID::SERVER)));
-      packet.insert(std::make_pair("name",
-                                   picojson::value(in_name)));
-      packet.insert(std::make_pair("tid",
-                                   Convert::vtid2json(proc->root_tid)));
-      packet.insert(std::make_pair("dst_nid",
-                                   Convert::nid2json(in_dst_nid)));
-      packet.insert(std::make_pair("src_nid",
-                                   Convert::nid2json(in_src_nid)));
-      packet.insert(std::make_pair("src_account",
-                                   picojson::value(in_src_account)));
-      js_machine.push_back(picojson::value
-                           (picojson::value(packet).serialize()));
+      packet.insert(std::make_pair("command", picojson::value(std::string("warp"))));
+      packet.insert(std::make_pair("pid", Convert::vpid2json(in_pid)));
+      packet.insert(std::make_pair("root_tid", Convert::vtid2json(proc->root_tid)));
+      packet.insert(std::make_pair("proc_addr", Convert::vaddr2json(proc->addr)));
+      packet.insert(std::make_pair("master_nid", Convert::nid2json(SpecialNID::SERVER)));
+      packet.insert(std::make_pair("name", picojson::value(in_name)));
+      packet.insert(std::make_pair("tid", Convert::vtid2json(proc->root_tid)));
+      packet.insert(std::make_pair("dst_nid", Convert::nid2json(in_dst_nid)));
+      packet.insert(std::make_pair("src_nid", Convert::nid2json(in_src_nid)));
+      packet.insert(std::make_pair("src_account", picojson::value(in_src_account)));
+      js_sched_packet.push_back(picojson::value(picojson::value(packet).serialize()));
     }
-    body.insert(std::make_pair("machine_data", picojson::value(js_machine)));
+    body.insert(std::make_pair("sched_packet", picojson::value(js_sched_packet)));
 
-    picojson::array js_memory;
+    picojson::array js_memory_packet;
     for (auto& it : vmemory.get_space(Convert::vpid2str(in_pid)).pages) {
       // Don't export builtin variables.
       if (proc->builtin_addrs.find(it.first) != proc->builtin_addrs.end()) {
@@ -166,22 +167,16 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
       }
 
       picojson::object packet;
-      packet.insert(std::make_pair("cmd",
-                                   picojson::value(std::string("give"))));
-      packet.insert(std::make_pair("addr",
-                                   Convert::vaddr2json(it.first)));
+      packet.insert(std::make_pair("command", picojson::value(std::string("give"))));
+      packet.insert(std::make_pair("addr", Convert::vaddr2json(it.first)));
       packet.insert(std::make_pair("value",
-                                   Convert::bin2json(it.second.value.get(),
-                                                     it.second.size)));
-      packet.insert(std::make_pair("src",
-                                   Convert::nid2json(SpecialNID::SERVER)));
-      packet.insert(std::make_pair("dst",
-                                   Convert::nid2json(in_dst_nid)));
-      packet.insert(std::make_pair("hint",
-                                   picojson::value(picojson::array())));
-      js_memory.push_back(picojson::value(picojson::value(packet).serialize()));
+                                   Convert::bin2json(it.second.value.get(), it.second.size)));
+      packet.insert(std::make_pair("dst_nid", Convert::nid2json(in_dst_nid)));
+      packet.insert(std::make_pair("src_nid", Convert::nid2json(SpecialNID::SERVER)));
+      packet.insert(std::make_pair("hint_nid", picojson::value(picojson::array())));
+      js_memory_packet.push_back(picojson::value(picojson::value(packet).serialize()));
     }
-    body.insert(std::make_pair("memory_data", picojson::value(js_memory)));
+    body.insert(std::make_pair("memory_packet", picojson::value(js_memory_packet)));
 
     std::ofstream ofs(pool_path + Convert::vpid2str(in_pid) + ".out");
     ofs << picojson::value(body).serialize();
@@ -189,6 +184,14 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
 };
 }  // namespace processwarp
 
+/**
+ * Entry point of loader.
+ * At first of loop read load instruction json by stdin stream, and launch loader instance.
+ * At last of loop, write result json for stdout stream.
+ * @param argc
+ * @param argv
+ * @return Exit code of loader.
+ */
 int main(int argc, char* argv[]) {
   // Read stdin and separate by '\0'.
   std::string line;

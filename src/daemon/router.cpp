@@ -6,8 +6,10 @@
 #include <vector>
 
 #include "router.hpp"
+#include "scheduler.hpp"
 #include "server_connector.hpp"
 #include "util.hpp"
+#include "worker_connector.hpp"
 
 namespace processwarp {
 
@@ -29,7 +31,7 @@ Router& Router::get_instance() {
 }
 
 /**
- * Initiazlie Router with libuv loop and configuration.
+ * Initiazlie Router with libuv loop, configuration, scheduler.
  * Store both of parameters.
  * @param loop_ Loop for Router.
  * @param config_ Configuration.
@@ -37,6 +39,8 @@ Router& Router::get_instance() {
 void Router::initialize(uv_loop_t* loop_, const picojson::object& config_) {
   loop   = loop_;
   config = config_;
+
+  scheduler.initialize(*this);
 }
 
 /**
@@ -96,6 +100,16 @@ void Router::load_llvm(const std::string& filename, const std::vector<std::strin
 }
 
 /**
+ * Get this node's node-id.
+ * @return This node's node-id.
+ */
+const nid_t& Router::get_my_nid() {
+  assert(!my_nid.empty());
+
+  return my_nid;
+}
+
+/**
  * When connect is success, send bind_node packet with my-nid and node-name.
  */
 void Router::on_connect_node() {
@@ -110,5 +124,90 @@ void Router::on_connect_node() {
  */
 void Router::on_bind_node(const nid_t& nid) {
   my_nid = nid;
+}
+
+/**
+ * When receive a packet, and relay it to capable module.
+ * Packet type is 'sched', relay this packet to Scheduler.
+ * Packet type is 'meory' or 'vm', relay this packet to WorkerConnector.
+ * @param pid Target process-id.
+ * @param type Packet type.
+ * @param packet Packet content.
+ */
+void Router::on_recv_relay(const vpid_t& pid, const std::string& type, const std::string& packet) {
+  if (type == "memory" || type == "vm") {
+    WorkerConnector& worker = WorkerConnector::get_instance();
+    worker.relay_packet(pid, type, packet);
+
+  } else if (type == "sched") {
+    scheduler.on_recv_packet(pid, packet);
+
+  } else {
+    /// @todo error
+    assert(false);
+  }
+}
+
+/**
+ * When scheduler require create vm, call Worker's method to do it.
+ * @param scheduler Caller instance.
+ * @param pid Process-id for new vm.
+ * @param root_tid Root thread-id for new vm.
+ * @param proc_addr Address of process information for new vm.
+ * @param master_nid Node-id of master node for new vm.
+ */
+void Router::scheduler_create_vm(Scheduler& scheduler, const vpid_t& pid, vtid_t root_tid,
+                                 vaddr_t proc_addr, const nid_t& master_nid) {
+  WorkerConnector& worker = WorkerConnector::get_instance();
+
+  worker.create_vm(pid, root_tid, proc_addr, master_nid);
+}
+
+/**
+ * When scheduler require this node's node-id, return it.
+ * @param scheduler Caller instance.
+ */
+nid_t Router::scheduler_get_my_nid(Scheduler& scheduler) {
+  return my_nid;
+}
+
+/**
+ * When scheduler require execute vm command, call Worke's method to do it.
+ * @param scheduler Caller instance.
+ * @param pid Target process-id to execute vm.
+ * @param command Command string.
+ * @param param Parameter JSON object.
+ */
+void Router::scheduler_vm_command(Scheduler& scheduler, const vpid_t& pid,
+                                  const std::string& command, const picojson::object& param) {
+  WorkerConnector& worker = WorkerConnector::get_instance();
+
+  worker.send_scheduler_command(pid, command, param);
+}
+
+/**
+ * When scheduler require check process is having process, call Worke's method to do it.
+ * @param scheduler Caller instance.
+ * @param pid Target process-id to check.
+ * @return True if process instance was exist in thid node.
+ */
+bool Router::scheduler_have_process(Scheduler& scheduler, const vpid_t& pid) {
+  WorkerConnector& worker = WorkerConnector::get_instance();
+
+  return worker.have_process(pid);
+}
+
+/**
+ * When scheduler require send packet to other node, call ServerConnector's method to do it.
+ * @param scheduler Caller instance.
+ * @param pid Process-id bundling packet.
+ * @param dst_nid Destination node-id.
+ * @param packet Packet to send.
+ */
+void Router::scheduler_send_packet(Scheduler& scheduler, const vpid_t& pid,
+                                   const nid_t& dst_nid, const std::string& packet) {
+  ServerConnector& server = ServerConnector::get_instance();
+
+  server.relay_packet(pid, dst_nid, "sched", packet);
 }
 }  // namespace processwarp

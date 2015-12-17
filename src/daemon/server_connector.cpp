@@ -219,8 +219,7 @@ void ServerConnector::initialize_socketio(const std::string& url) {
   M_BIND_SOCKETIO_EVENT("list_node");
   M_BIND_SOCKETIO_EVENT("bind_node");
   M_BIND_SOCKETIO_EVENT("sync_proc_list");
-  M_BIND_SOCKETIO_EVENT("machine_data");
-  M_BIND_SOCKETIO_EVENT("memory_data");
+  M_BIND_SOCKETIO_EVENT("relay");
   M_BIND_SOCKETIO_EVENT("test_console");
 
 #undef M_BIND_SOCKETIO_EVENT
@@ -268,6 +267,9 @@ void ServerConnector::on_recv(uv_async_t* handle) {
     } else if (name == "bind_node") {
       THIS.recv_bind_node(data);
 
+    } else if (name == "relay") {
+      THIS.recv_relay(data);
+
       /*
         } else if (name == "list_node") {
         //
@@ -298,18 +300,6 @@ void ServerConnector::on_recv(uv_async_t* handle) {
         procs.push_back(proc);
         }
         delegate.recv_sync_proc_list(procs);
-
-        } else if (name == "machine_data") {
-        delegate.recv_machine_data(get_pid_by_map(data, "pid"),
-        get_nid_by_map(data, "src"),
-        get_nid_by_map(data, "dst"),
-        get_str_by_map(data, "data"));
-
-        } else if (name == "memory_data") {
-        delegate.recv_memory_data(get_str_by_map(data, "name"),
-        get_nid_by_map(data, "src"),
-        get_nid_by_map(data, "dst"),
-        get_str_by_map(data, "data"));
 
         } else if (name == "test_console") {
         #ifndef NDEBUG
@@ -375,6 +365,27 @@ void ServerConnector::recv_connect_node(sio::message::ptr data) {
   }
 }
 
+/**
+ * When receive packet from server, check if me should receive it, and relay to router.
+ * @param data Recieve data.
+ */
+void ServerConnector::recv_relay(sio::message::ptr data) {
+  Router& router = Router::get_instance();
+  const nid_t& dst_nid = get_nid_by_map(data, "dst_nid");
+  const nid_t& src_nid = get_nid_by_map(data, "src_nid");
+  const nid_t& my_nid  = router.get_my_nid();
+
+  assert(status == ServerStatus::CONNECT);
+
+  if (dst_nid == my_nid ||
+      (dst_nid == SpecialNID::BROADCAST && src_nid != my_nid)) {
+    const vpid_t& pid = get_pid_by_map(data, "pid");
+    const std::string& type = get_str_by_map(data, "type", true);
+    const std::string& packet = get_str_by_map(data, "packet", true);
+
+    router.on_recv_relay(pid, type, packet);
+  }
+}
 
 /**
  * Send connect-node command.
@@ -506,53 +517,32 @@ void ServerConnector::send_sync_proc_list(const std::vector<ProcessTree>& procs)
 }
 
 /**
- * Send virtual-machine data packet.
+ * Relay packet to other node.
  * Packet format: {
  *   pid: &lt;Target process-id&gt;
+ *   type: &lt;Packet type&gt;
  *   dst_nid: &lt;Destination node-id&gt;
  *   src_nid: &lt;This node-id, added by server&gt;
- *   data: &lt;Load data&gt;
+ *   packet: &lt;Load data&gt;
  * }
  * @param pid Target process-id.
+ * @param type Packet type.
  * @param dst_nid Destination node-id.
- * @param data Load data.
+ * @param packet Content of packet.
  */
-void ServerConnector::send_machine_data(const vpid_t& pid,
-                                        const nid_t& dst_nid,
-                                        const std::string& data) {
-  sio::message::ptr sio_data(sio::object_message::create());
-  std::map<std::string, sio::message::ptr>& map = sio_data->get_map();
+void ServerConnector::relay_packet(const vpid_t& pid,
+                                   const std::string& type,
+                                   const nid_t& dst_nid,
+                                   const std::string& packet) {
+  sio::message::ptr sio_packet(sio::object_message::create());
+  std::map<std::string, sio::message::ptr>& map = sio_packet->get_map();
 
   map.insert(std::make_pair("pid", get_sio_by_pid(pid)));
   map.insert(std::make_pair("dst_nid", get_sio_by_nid(dst_nid)));
-  map.insert(std::make_pair("data", get_sio_by_str(data)));
+  map.insert(std::make_pair("type", get_sio_by_str(type)));
+  map.insert(std::make_pair("packet", get_sio_by_str(packet)));
 
-  socket->emit("machine_data", sio_data);
-}
-
-/**
- * Send virtual-memory data packet.
- * Packet format: {
- *   name: &lt;Name of memory space&gt;
- *   dst_nid: &lt;Destination node-id&gt;
- *   src_nid: &lt;This node-id, added by server&gt;
- *   data: &lt;Load data&gt;
- * }
- * @param name Name of memory space.
- * @param dst_nid Destination node-id.
- * @param data Load data.
- */
-void ServerConnector::send_memory_data(const std::string& name,
-                                       const nid_t& dst_nid,
-                                       const std::string& data) {
-  sio::message::ptr sio_data(sio::object_message::create());
-  std::map<std::string, sio::message::ptr>& map = sio_data->get_map();
-
-  map.insert(std::make_pair("name", get_sio_by_str(name)));
-  map.insert(std::make_pair("dst_nid", get_sio_by_nid(dst_nid)));
-  map.insert(std::make_pair("data", get_sio_by_str(data)));
-
-  socket->emit("memory_data", sio_data);
+  socket->emit("relay", sio_packet);
 }
 
 /**

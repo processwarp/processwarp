@@ -52,7 +52,7 @@ inline std::string vaddr2str(const vaddr_t& addr) {
  * @param nid Source node-id.
  * @return Converted value as string.
  */
-inline std::string nid2str(const nid_t& nid) {
+inline const std::string& nid2str(const nid_t& nid) {
   return nid;
 }
 
@@ -97,7 +97,7 @@ inline vaddr_t str2vaddr(const std::string& str) {
  * @param str Source string value.
  * @param Converted value as nid_t.
  */
-inline nid_t str2nid(const std::string& str) {
+inline const nid_t& str2nid(const std::string& str) {
   return str;
 }
 
@@ -173,7 +173,7 @@ inline instruction_t json2code(const picojson::value& json) {
  * @param json Source JSON.
  * @return A node-id.
  */
-inline nid_t json2nid(const picojson::value& json) {
+inline const nid_t& json2nid(const picojson::value& json) {
   return str2nid(json.get<std::string>());
 }
 

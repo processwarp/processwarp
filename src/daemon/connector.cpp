@@ -74,7 +74,7 @@ void Connector::send_packet(uv_pipe_t& client, const picojson::object& packet) {
   uv_write_t* write_req = new uv_write_t();
   write_req->data = reinterpret_cast<void*>(&client);
   uv_buf_t write_buf = uv_buf_init(buffer.get(), 4 + str_packet.size() + 1);
-  uv_write(write_req, reinterpret_cast<uv_stream_t*>(&client), &write_buf, 1, on_send);
+  uv_write(write_req, reinterpret_cast<uv_stream_t*>(&client), &write_buf, 1, Connector::on_send);
 }
 
 /**
@@ -141,32 +141,33 @@ void Connector::on_recv(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf)
   client_buffer.resize(idx_dst + nread);
   std::memcpy(client_buffer.data() + idx_dst, recv_buffer.get(), nread);
 
-  if (client_buffer.size() < 4) return;
+  while (client_buffer.size() >= 4) {
+    uint32_t psize = ntohl(*reinterpret_cast<uint32_t*>(client_buffer.data()));
+    if (client_buffer.size() < 4 + psize + 1) return;
 
-  uint32_t psize = ntohl(*reinterpret_cast<uint32_t*>(client_buffer.data()));
-  if (client_buffer.size() < 4 + psize + 1) return;
+    if (client_buffer.data()[4 + psize] != 0) {
+      /// @todo error
+      fprintf(stderr, "Wrong packet terminate.");
+      uv_close(reinterpret_cast<uv_handle_t*>(client), Connector::on_close);
+      return;
+    }
 
-  if (client_buffer.data()[4 + psize] != 0) {
-    /// @todo error
-    fprintf(stderr, "Wrong packet terminate.");
-    uv_close(reinterpret_cast<uv_handle_t*>(client), Connector::on_close);
-    return;
+    picojson::value v;
+    std::string err;
+    picojson::parse(v, client_buffer.data() + 4, client_buffer.data() + 4 + psize, &err);
+    printf("recv connector:%s\n", client_buffer.data() + 4);
+    if (!err.empty()) {
+      /// @todo err
+      fprintf(stderr, "on_read:%s\n", err.c_str());
+      uv_close(reinterpret_cast<uv_handle_t*>(client), Connector::on_close);
+      return;
+    }
+
+    THIS.on_recv_packet(*client, v.get<picojson::object>());
+    uint32_t rest_size = client_buffer.size() - 4 - psize - 1;
+    memmove(client_buffer.data(), client_buffer.data() + 4 + psize + 1, rest_size);
+    client_buffer.resize(rest_size);
   }
-
-  picojson::value v;
-  std::string err;
-  picojson::parse(v, client_buffer.data() + 4, client_buffer.data() + 4 + psize, &err);
-  if (!err.empty()) {
-    /// @todo err
-    fprintf(stderr, "on_read:%s\n", err.c_str());
-    uv_close(reinterpret_cast<uv_handle_t*>(client), Connector::on_close);
-    return;
-  }
-
-  THIS.on_recv_packet(*client, v.get<picojson::object>());
-  uint32_t rest_size = client_buffer.size() - 4 - psize - 1;
-  memmove(client_buffer.data(), client_buffer.data() + 4 + psize + 1, rest_size);
-  client_buffer.resize(rest_size);
 }
 
 /**

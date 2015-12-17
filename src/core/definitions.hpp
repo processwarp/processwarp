@@ -256,7 +256,6 @@ static const clock_t MEMORY_REQUIRE_INTERVAL = 5 * CLOCKS_PER_SEC;
 
 /**
  * Structure of process and thread.
- * Used by sync_proc_list.
  */
 struct ProcessTree {
   vpid_t pid;

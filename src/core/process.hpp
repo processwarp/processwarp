@@ -23,18 +23,10 @@ class Process;
  */
 class ProcessDelegate {
  public:
-  /**
-   * Destructor for virtual.
-   */
-  virtual ~ProcessDelegate() {}
+  virtual ~ProcessDelegate();
 
-  /**
-   */
-  virtual std::unique_ptr<VMemory::Accessor> assign_accessor(const vpid_t& pid) = 0;
-
-  /**
-   */
-  virtual void on_change_thread_set(Process& proc) = 0;
+  virtual std::unique_ptr<VMemory::Accessor> process_assign_accessor(const vpid_t& pid) = 0;
+  virtual void process_change_thread_set(Process& process) = 0;
 };
 
 /**
