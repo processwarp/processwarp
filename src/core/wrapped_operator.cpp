@@ -77,7 +77,7 @@ bool WrappedOperator::is_equal(vaddr_t a, vaddr_t b) {
 
 // type_cast命令に対応したキャスト演算を行う。
 void WrappedOperator::type_cast(vaddr_t dst, vaddr_t type, vaddr_t src) {
-  print_llvm_instruction();
+  // print_llvm_instruction();
   throw_error(Error::INST_VIOLATION);
 }
 
