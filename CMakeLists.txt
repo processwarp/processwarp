@@ -47,6 +47,11 @@ include_directories(${PROJECT_SOURCE_DIR}/src/third_party/safeint)
 
 add_subdirectory(src)
 
+# Sample
+add_custom_target(sample
+  COMMAND python ${PROJECT_SOURCE_DIR}/script/compile.py -s ${PROJECT_SOURCE_DIR}/include/libc -I {PROJECT_SOURCE_DIR}/include/processwarp ${PROJECT_SOURCE_DIR}/sample
+  )
+
 # Test
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   enable_testing()

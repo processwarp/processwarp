@@ -1,0 +1,3 @@
+# Compiled LLVM-IR
+*.bc
+*.ll
