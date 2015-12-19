@@ -1,26 +1,26 @@
 
-#include <stdlib.h>
+#include <stdio.h>
 
 void func0() {
-  puts("func0");
+  printf("func0\n");
 }
 
-int func1(int p1) {
-  if (p1) puts("func1");
+void func1(int p1) {
+  if (p1) printf("func1\n");
 }
 
-int func2(int *p1) {
-  if (*p1) puts("func2");
+void func2(int *p1) {
+  if (*p1) printf("func2\n");
 }
 
-int func3(double p1) {
-  if ((int)p1) puts("func3");
+void func3(double p1) {
+  if ((int)p1) printf("func3\n");
 }
 
 void (*fp0)() = func0;
-int  (*fp1)(int) = func1;
-int  (*fp2)(int*) = func2;
-int  (*fp3)(double) = func3;
+void (*fp1)(int) = func1;
+void (*fp2)(int*) = func2;
+void (*fp3)(double) = func3;
 
 int main(int argc, char* argv[]) {
   if (argc > 0) {
