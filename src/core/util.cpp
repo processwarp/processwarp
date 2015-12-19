@@ -3,13 +3,14 @@
 #include <openssl/sha.h>
 #if defined(__APPLE__) && defined(__MACH__)
 #include <mach-o/dyld.h>
-#include <sys/param.h>
 #endif
 #ifdef __linux__
 #include <unistd.h>
 #endif
+#include <sys/param.h>
 
 #include <iomanip>
+#include <memory>
 #include <sstream>
 #include <string>
 
@@ -156,7 +157,7 @@ std::string Util::get_my_fullpath() {
   }
   return std::string(buffer);
 #elif defined(__linux__)
-  char buffer[MAX_PATHLEN];
+  char buffer[MAXPATHLEN];
   if (readlink("/proc/self/exe", buffer, sizeof(buffer)) < 0) {
     /// @todo error
     assert(false);
