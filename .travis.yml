@@ -8,9 +8,8 @@ before_install:
   - sudo add-apt-repository -y ppa:kubuntu-ppa/backports
   - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
   - sudo apt-get update -yqq
-  - sudo apt-get install -y doxygen libssl-dev cmake g++-4.8
+  - sudo apt-get install -y pkg-config cmake libgtest-dev doxygen libssl-dev g++-4.8 clang-3.4 libboost1.55-dev libboost-system1.55-dev libboost-date-time1.55-dev libboost-random1.55-dev automake libtool
   # install socket.io
-  - sudo apt-get install -y libboost1.55-dev libboost-system1.55-dev libboost-date-time1.55-dev libboost-random1.55-dev
   - git clone --recurse-submodules https://github.com/socketio/socket.io-client-cpp.git
   - cd socket.io-client-cpp
   - sed -i -e 's/cmake_minimum_required(VERSION 3.1.0/cmake_minimum_required(VERSION 2.8.12/' ./CMakeLists.txt
@@ -18,8 +17,17 @@ before_install:
   - make
   - make install
   - cd $TRAVIS_BUILD_DIR
+  # install cpplint
+  - curl https://raw.githubusercontent.com/google/styleguide/gh-pages/cpplint/cpplint.py > /tmp/cpplint.py
+  - sudo mv /tmp/cpplint.py /usr/local/bin/
+  - sudo chmod 755 /usr/local/bin/cpplint.py
+  # install Google Test
+  - cd /usr/src/gtest
+  - sudo cmake .
+  - sudo make
+  - sudo mv libgtest* /usr/local/lib/
+  - cd $TRAVIS_BUILD_DIR
   # install libuv
-  - sudo apt-get install -y automake libtool
   - curl http://dist.libuv.org/dist/v1.7.5/libuv-v1.7.5.tar.gz > libuv-v1.7.5.tar.gz
   - tar zxf libuv-v1.7.5.tar.gz
   - cd libuv-v1.7.5/
@@ -28,16 +36,6 @@ before_install:
   - make
   - sudo make install
   - cd $TRAVIS_BUILD_DIR
-  # install cpplint
-  - curl https://raw.githubusercontent.com/google/styleguide/gh-pages/cpplint/cpplint.py > /tmp/cpplint.py
-  - sudo mv /tmp/cpplint.py /usr/local/bin/
-  - sudo chmod 755 /usr/local/bin/cpplint.py
-  # install Google Test
-  - sudo apt-get install libgtest-dev
-  - cd /usr/src/gtest
-  - sudo cmake .
-  - sudo make
-  - sudo mv libgtest* /usr/local/lib/
   # finish before
   - sudo ldconfig
   - cd $TRAVIS_BUILD_DIR
