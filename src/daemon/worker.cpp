@@ -180,17 +180,20 @@ void Worker::on_recv(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
 }
 
 /**
- * When send was finished, deallocate buffer.
- * @param req
- * @param status
+ * When uv_write is finished, clean-up hundler.
+ * If error is occurred in this method, close target pipe.
+ * @param req Hundler.
+ * @param status Status code.
  */
-void Worker::on_send(uv_write_t *req, int status) {
-  std::unique_ptr<uv_write_t> x(req);
+void Worker::on_write_end(uv_write_t *req, int status) {
+  std::unique_ptr<uv_write_t> write_req(req);
+  std::unique_ptr<WriteHandler> handler(reinterpret_cast<WriteHandler*>(write_req->data));
+  std::unique_ptr<char[]> buffer(handler->buffer);
 
   if (status < 0) {
     /// @todo error
     fprintf(stderr, "error on uv_write\n");
-    uv_close(reinterpret_cast<uv_handle_t*>(req->data), Worker::on_close);
+    uv_close(reinterpret_cast<uv_handle_t*>(&handler->THIS->pipe), Worker::on_close);
   }
 }
 
@@ -391,16 +394,25 @@ void Worker::relay_packet(const nid_t& dst_nid, const std::string& type,
  */
 void Worker::send_packet(const picojson::object& packet) {
   std::string str_packet = picojson::value(packet).serialize();
+  std::unique_ptr<uv_write_t> write_req(new uv_write_t());
+  std::unique_ptr<WriteHandler> handler(new WriteHandler());
   std::unique_ptr<char[]> buffer(new char[4 + str_packet.size() + 1]);
+
+  assert(str_packet.size() != 0);
 
   *reinterpret_cast<uint32_t*>(buffer.get()) = htonl(str_packet.size());
   memcpy(buffer.get() + 4, str_packet.c_str(), str_packet.size());
   buffer[4 + str_packet.size()] = '\0';
 
-  uv_write_t* write_req = new uv_write_t();
-  write_req->data = reinterpret_cast<void*>(&pipe);
+  handler->THIS = this;
+  handler->buffer = buffer.get();
+  write_req->data = reinterpret_cast<void*>(handler.get());
   uv_buf_t write_buf = uv_buf_init(buffer.get(), 4 + str_packet.size() + 1);
-  uv_write(write_req, reinterpret_cast<uv_stream_t*>(&pipe), &write_buf, 1, Worker::on_send);
+  uv_write(write_req.get(), reinterpret_cast<uv_stream_t*>(&pipe),
+           &write_buf, 1, Worker::on_write_end);
+  buffer.release();
+  handler.release();
+  write_req.release();
 }
 }  // namespace processwarp
 

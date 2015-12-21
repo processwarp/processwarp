@@ -25,6 +25,11 @@ class Worker : public VMachineDelegate, public VMemoryDelegate {
     nid_t my_nid;
   };
 
+  struct WriteHandler {
+    Worker* THIS;
+    char* buffer;
+  };
+
   WorkerParameter parameter;
   /** Main loop of libuv. */
   uv_loop_t* loop;
@@ -55,7 +60,7 @@ class Worker : public VMachineDelegate, public VMemoryDelegate {
   static void on_connect(uv_connect_t* connect, int status);
   static void on_idle(uv_idle_t* handle);
   static void on_recv(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf);
-  static void on_send(uv_write_t *req, int status);
+  static void on_write_end(uv_write_t *req, int status);
 
   WorkerParameter read_options(int argc, char* argv[]);
   void read_config(const std::string& config_file);

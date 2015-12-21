@@ -65,16 +65,26 @@ void Connector::initialize(uv_loop_t* loop_, const std::string& path) {
  */
 void Connector::send_packet(uv_pipe_t& client, const picojson::object& packet) {
   std::string str_packet = picojson::value(packet).serialize();
+  std::unique_ptr<uv_write_t> write_req(new uv_write_t());
+  std::unique_ptr<WriteHandler> handler(new WriteHandler());
   std::unique_ptr<char[]> buffer(new char[4 + str_packet.size() + 1]);
+
+  assert(str_packet.size() != 0);
 
   *reinterpret_cast<uint32_t*>(buffer.get()) = htonl(str_packet.size());
   memcpy(buffer.get() + 4, str_packet.c_str(), str_packet.size());
   buffer[4 + str_packet.size()] = '\0';
 
-  uv_write_t* write_req = new uv_write_t();
-  write_req->data = reinterpret_cast<void*>(&client);
+  handler->THIS = this;
+  handler->pipe = &client;
+  handler->buffer = buffer.get();
+  write_req->data = reinterpret_cast<void*>(handler.get());
   uv_buf_t write_buf = uv_buf_init(buffer.get(), 4 + str_packet.size() + 1);
-  uv_write(write_req, reinterpret_cast<uv_stream_t*>(&client), &write_buf, 1, Connector::on_send);
+  uv_write(write_req.get(), reinterpret_cast<uv_stream_t*>(&client),
+           &write_buf, 1, Connector::on_write_end);
+  buffer.release();
+  handler.release();
+  write_req.release();
 }
 
 /**
@@ -171,18 +181,20 @@ void Connector::on_recv(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf)
 }
 
 /**
- * When send is finished, clean-up hundler.
- * If error is occurred, close target pipe.
+ * When uv_write is finished, clean-up hundler.
+ * If error is occurred in this method, close target pipe.
  * @param req Hundler.
  * @param status Status code.
  */
-void Connector::on_send(uv_write_t *req, int status) {
-  std::unique_ptr<uv_write_t> x(req);
+void Connector::on_write_end(uv_write_t *req, int status) {
+  std::unique_ptr<uv_write_t> write_req(req);
+  std::unique_ptr<WriteHandler> handler(reinterpret_cast<WriteHandler*>(write_req->data));
+  std::unique_ptr<char[]> buffer(handler->buffer);
 
   if (status < 0) {
     /// @todo err
     fprintf(stderr, "error on uv_write\n");
-    uv_close(reinterpret_cast<uv_handle_t*>(req->data), Connector::on_close);
+    uv_close(reinterpret_cast<uv_handle_t*>(handler->pipe), Connector::on_close);
   }
 }
 
