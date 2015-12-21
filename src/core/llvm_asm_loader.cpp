@@ -604,7 +604,6 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
          arg != function->getArgumentList().end(); arg ++) {
       stack_values.insert(std::make_pair(arg, fc.stack_sum));
 
-      assert(data_layout->getTypeAllocSize(arg->getType()) != 0);
       assert(data_layout->getTypeStoreSize(arg->getType()) <=
              data_layout->getTypeAllocSize(arg->getType()));
       fc.stack_sum += data_layout->getTypeAllocSize(arg->getType());
@@ -1638,7 +1637,6 @@ void LlvmAsmLoader::convert_inst_get_element_ptr
       // set_value <idx>
       push_code(fc, Opcode::SET_VALUE, assign_operand(fc, inst.getOperand(i)));
       // mul_adr <>
-      assert(data_layout->getTypeAllocSize(op_type) != 0);
       assert(data_layout->getTypeStoreSize(op_type) <=
              data_layout->getTypeAllocSize(op_type));
       push_code(fc, Opcode::MUL_ADR, data_layout->getTypeAllocSize(op_type));
@@ -1652,7 +1650,6 @@ void LlvmAsmLoader::convert_inst_get_element_ptr
       // set_value <idx>
       push_code(fc, Opcode::SET_VALUE, assign_operand(fc, inst.getOperand(i)));
       // mul_adr <>
-      assert(data_layout->getTypeAllocSize(op_type) != 0);
       assert(data_layout->getTypeStoreSize(op_type) <=
              data_layout->getTypeAllocSize(op_type));
       push_code(fc, Opcode::MUL_ADR, data_layout->getTypeAllocSize(op_type));
