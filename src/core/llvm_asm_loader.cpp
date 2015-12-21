@@ -202,7 +202,7 @@ int LlvmAsmLoader::assign_operand(FunctionContext& fc, const llvm::Value* v) {
   int align = data_layout->getPrefTypeAlignment(v->getType());
 
   // 割り当てサイズの確認
-  assert(data_layout->getTypeStoreSize(v->getType()) ==
+  assert(data_layout->getTypeStoreSize(v->getType()) <=
          data_layout->getTypeAllocSize(v->getType()));
 
   if (llvm::Constant::classof(v)) {
@@ -451,24 +451,24 @@ void LlvmAsmLoader::load_expr(FunctionContext& fc, ValueDest dst,
         assert(llvm::ConstantInt::classof(src->getOperand(i)));
         const llvm::ConstantInt* op =
             static_cast<const llvm::ConstantInt*>(src->getOperand(i));
-        assert(data_layout->getTypeStoreSize(op_type) ==
+        assert(data_layout->getTypeStoreSize(op_type) <=
                data_layout->getTypeAllocSize(op_type));
 
         if (i == 1) {
           // 先頭の番号は最初のポインタを基準としたアドレスの計算
-          delta += (uint32_t)data_layout->getTypeStoreSize(op_type) * op->getSExtValue();
+          delta += (uint32_t)data_layout->getTypeAllocSize(op_type) * op->getSExtValue();
 
         } else if (llvm::SequentialType::classof(op_type)) {
           // pointer, array, vectorの場合、中身の型を見る。
           op_type = static_cast<const llvm::SequentialType*>(op_type)->getElementType();
-          delta += (uint32_t)data_layout->getTypeStoreSize(op_type) * op->getSExtValue();
+          delta += (uint32_t)data_layout->getTypeAllocSize(op_type) * op->getSExtValue();
 
         } else if (llvm::StructType::classof(op_type)) {
           // 構造体型の中身を見る。
           unsigned int j = 0;
           for (j = 0; j < op->getZExtValue(); j ++) {
             llvm::Type* in_type = static_cast<const llvm::StructType*>(op_type)->getElementType(j);
-            delta += (uint32_t)data_layout->getTypeStoreSize(in_type);
+            delta += (uint32_t)data_layout->getTypeAllocSize(in_type);
           }
           op_type = static_cast<const llvm::StructType*>(op_type)->getElementType(j);
 
@@ -605,7 +605,7 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
       stack_values.insert(std::make_pair(arg, fc.stack_sum));
 
       assert(data_layout->getTypeAllocSize(arg->getType()) != 0);
-      assert(data_layout->getTypeStoreSize(arg->getType()) ==
+      assert(data_layout->getTypeStoreSize(arg->getType()) <=
              data_layout->getTypeAllocSize(arg->getType()));
       fc.stack_sum += data_layout->getTypeAllocSize(arg->getType());
     }
@@ -941,8 +941,8 @@ void LlvmAsmLoader::load_globals
     if (size == 0) size = 1;
 
     // 割り当てサイズの確認
-    assert(data_layout->getTypeAllocSize(gl->getType()->getElementType()) ==
-           data_layout->getTypeStoreSize(gl->getType()->getElementType()));
+    assert(data_layout->getTypeStoreSize(gl->getType()->getElementType()) <=
+           data_layout->getTypeAllocSize(gl->getType()->getElementType()));
 
     if (gl->isConstant()) {
       // 定数の場合、仮のアドレスを割り当てる
@@ -1311,7 +1311,7 @@ void LlvmAsmLoader::load_vector(FunctionContext& fc, ValueDest dst,
 void LlvmAsmLoader::load_zero(FunctionContext& fc, ValueDest dst,
                               const llvm::ConstantAggregateZero* src) {
   // 領域サイズを取得
-  assert(data_layout->getTypeStoreSize(src->getType()) ==
+  assert(data_layout->getTypeStoreSize(src->getType()) <=
          data_layout->getTypeAllocSize(src->getType()));
   unsigned int size = data_layout->getTypeAllocSize(src->getType());
 
@@ -1752,7 +1752,7 @@ void LlvmAsmLoader::convert_inst_get_element_ptr
       push_code(fc, Opcode::SET_VALUE, assign_operand(fc, inst.getOperand(i)));
       // mul_adr <>
       assert(data_layout->getTypeAllocSize(op_type) != 0);
-      assert(data_layout->getTypeStoreSize(op_type) ==
+      assert(data_layout->getTypeStoreSize(op_type) <=
              data_layout->getTypeAllocSize(op_type));
       push_code(fc, Opcode::MUL_ADR, data_layout->getTypeAllocSize(op_type));
 
@@ -1766,7 +1766,7 @@ void LlvmAsmLoader::convert_inst_get_element_ptr
       push_code(fc, Opcode::SET_VALUE, assign_operand(fc, inst.getOperand(i)));
       // mul_adr <>
       assert(data_layout->getTypeAllocSize(op_type) != 0);
-      assert(data_layout->getTypeStoreSize(op_type) ==
+      assert(data_layout->getTypeStoreSize(op_type) <=
              data_layout->getTypeAllocSize(op_type));
       push_code(fc, Opcode::MUL_ADR, data_layout->getTypeAllocSize(op_type));
 
@@ -1781,7 +1781,7 @@ void LlvmAsmLoader::convert_inst_get_element_ptr
            j ++) {
         llvm::Type* in_type =
             static_cast<const llvm::StructType*>(op_type)->getElementType(j);
-        size_sum += data_layout->getTypeStoreSize(in_type);
+        size_sum += data_layout->getTypeAllocSize(in_type);
       }
       // add_adr <>
       op_type =
