@@ -138,6 +138,9 @@ class BuiltinLibc {
   static BuiltinPostProc::Type strtol(Process& proc, Thread& thread, BuiltinFuncParam p,
                                       vaddr_t dst, std::vector<uint8_t>& src);
 
+  static BuiltinPostProc::Type time(Process& proc, Thread& thread, BuiltinFuncParam p,
+                                    vaddr_t dst, std::vector<uint8_t>& src);
+
   /**
    * VMにライブラリを登録する。
    * @param vm 登録対象のVM

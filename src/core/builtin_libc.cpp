@@ -284,6 +284,8 @@ void BuiltinLibc::regist(VMachine& vm) {
   vm.regist_builtin_func("strtol", BuiltinLibc::strtol, 0);
   vm.regist_builtin_func("strtoll", BuiltinLibc::strtol, 0);
 
+  vm.regist_builtin_func("time", BuiltinLibc::time, 0);
+
   vm.regist_builtin_func("llvm.memcpy.p0i8.p0i8.i8",  BuiltinLibc::memcpy, 8);
   vm.regist_builtin_func("llvm.memcpy.p0i8.p0i8.i16", BuiltinLibc::memcpy, 16);
   vm.regist_builtin_func("llvm.memcpy.p0i8.p0i8.i32", BuiltinLibc::memcpy, 32);
@@ -375,6 +377,29 @@ BuiltinPostProc::Type BuiltinLibc::strtol(Process& proc, Thread& thread,
     } else {
       thread.memory->write<vaddr_t>(endptr, nptr + (work_ptr - raw_ptr));
     }
+  }
+
+  return BuiltinPostProc::NORMAL;
+}
+
+/**
+ * Implementation of time in C standard library.
+ * Parameters get from src are below.
+ * vaddrt tloc_ptr
+ * Return value set to dst is below.
+ * i64
+ */
+BuiltinPostProc::Type BuiltinLibc::time(Process& proc, Thread& thread, BuiltinFuncParam p,
+                                        vaddr_t dst, std::vector<uint8_t>& src) {
+  int seek = 0;
+  vaddr_t tloc_ptr = Process::read_builtin_param_ptr(src, &seek);
+  assert(static_cast<signed>(src.size()) == seek);
+
+  std::time_t native_time = std::time(nullptr);
+
+  thread.memory->write<int64_t>(dst, static_cast<int64_t>(native_time));
+  if (tloc_ptr != VADDR_NULL) {
+    thread.memory->write<int64_t>(tloc_ptr, static_cast<int64_t>(native_time));
   }
 
   return BuiltinPostProc::NORMAL;
