@@ -512,30 +512,7 @@ class VMemory {
       }
     }
 
-#ifndef NDEBUG
-    void print_dump() {
-      for (auto& it_page : space.pages) {
-        vaddr_t addr = it_page.first;
-        Page& page = it_page.second;
-        print_debug("addr:%s\n", Convert::vaddr2str(addr).c_str());
-        if ((addr & AddrType::MASK) == AddrType::META) {
-          print_debug("value:%s\n",
-                      std::string(reinterpret_cast<const char*>(page.value.get()), page.size).
-                      c_str());
-
-        } else {
-          print_debug("value:");
-          for (unsigned int i = 0; i < page.size; i ++) {
-            if (i % 16 == 0) fprintf(stderr, "\n%016llx : ", addr + i);
-            fprintf(stderr, "%02x ", 0xFF & page.value[i]);
-          }
-          fprintf(stderr, "\n");
-        }
-      }
-    }
-#else
-    void print_dump() {}
-#endif
+    void print_dump();
 
    private:
     /** Map of upper address and copy of raw writable area.  */

@@ -840,6 +840,43 @@ void VMemory::Accessor::write_out() {
   }
 }
 
+/**
+ * For debug, show all memory dump there are store in this node.
+ * This method is usable when compiled by debug mode, otherwise, this method do nothing.
+ */
+void VMemory::Accessor::print_dump() {
+#ifndef NDEBUG
+  for (auto& it_page : space.pages) {
+    vaddr_t addr = it_page.first;
+    Page& page = it_page.second;
+    print_debug("addr:%s\n", Convert::vaddr2str(addr).c_str());
+    if ((addr & AddrType::MASK) == AddrType::META) {
+      print_debug("value:%s\n",
+                  std::string(reinterpret_cast<const char*>(page.value.get()), page.size).
+                  c_str());
+
+    } else if ((addr & AddrType::MASK) == AddrType::PROGRAM) {
+      picojson::value v;
+      picojson::parse(v, std::string(reinterpret_cast<char*>(page.value.get()), page.size));
+      std::cerr << v.serialize(true) << std::endl;;
+      if (v.get<picojson::object>().at("program_type").get<std::string>() == "01") {
+        std::cerr << "code:" << std::endl;
+        for (auto& code : v.get<picojson::object>().at("code").get<picojson::array>()) {
+          std::cerr << "  " << Util::code2str(Convert::json2code(code)) << std::endl;;
+        }
+      }
+    } else {
+      print_debug("value(size=%llu):", page.size);
+      for (unsigned int i = 0; i < page.size; i ++) {
+        if (i % 16 == 0) fprintf(stderr, "\n%016llx : ", addr + i);
+        fprintf(stderr, "%02x ", 0xFF & page.value[i]);
+      }
+      fprintf(stderr, "\n");
+    }
+  }
+#endif
+}
+
 // Constructor with value by string.
 VMemory::Page::Page(PageType type_, bool flg_update_,
                     const std::string& value_str, const std::set<nid_t>& hint_) :
