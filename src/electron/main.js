@@ -245,7 +245,7 @@ function recvConnectFrontend(packet) {
 
 /**
  * When receive GUI command, call capable method to do it.
- * @param packet Packet contain command string, process-id send from, and parameter.
+ * @param packet {object} Packet contain command string, process-id send from, and parameter.
  */
 function recvGuiCommand(packet) {
   switch (packet.gui_command) {
@@ -260,8 +260,8 @@ function recvGuiCommand(packet) {
 /**
  * When receive 'create' GUI command, create a new frame and load default HTML.
  * The frame created is regist for guiFrames set with process-id.
- * @param pid Process-id bundled for frame.
- * @param param Not used.
+ * @param pid {string} Process-id bundled for frame.
+ * @param param {object} Not used.
  */
 function guiCommandCreate(pid, param) {
   if (pid in guiFrames) {
