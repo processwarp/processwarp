@@ -6,11 +6,12 @@
 #include <string>
 #include <vector>
 
+#include "builtin_gui.hpp"
 #include "vmachine.hpp"
 #include "vmemory.hpp"
 
 namespace processwarp {
-class Worker : public VMachineDelegate, public VMemoryDelegate {
+class Worker : public VMachineDelegate, public VMemoryDelegate, public BuiltinGuiDelegate {
  public:
   int entry(int argc, char* argv[]);
 
@@ -54,6 +55,9 @@ class Worker : public VMachineDelegate, public VMemoryDelegate {
   void vmemory_send_packet(VMemory& memory, const nid_t& dst_nid,
                            const std::string& packet) override;
   void vmemory_recv_update(VMemory& memory, vaddr_t addr) override;
+
+  void builtin_gui_command(Process& proc, const std::string& command,
+                           const picojson::object& param) override;
 
   static void on_alloc(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf);
   static void on_close(uv_handle_t* handle);

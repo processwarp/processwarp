@@ -78,6 +78,23 @@ void Worker::vmemory_recv_update(VMemory& memory, vaddr_t addr) {
 }
 
 /**
+ * When GUI API require send command, relay this packet to frontend through backend.
+ * @param proc Caller instance.
+ * @param command GUI command string.
+ * @param param Parameter for command.
+ */
+void Worker::builtin_gui_command(Process& proc, const std::string& command,
+                                 const picojson::object& param) {
+  picojson::object packet;
+
+  packet.insert(std::make_pair("command", picojson::value(std::string("gui_command"))));
+  packet.insert(std::make_pair("gui_command", picojson::value(command)));
+  packet.insert(std::make_pair("param", picojson::value(param)));
+
+  send_packet(packet);
+}
+
+/**
  * Memory allocator for pipe that is created by libuv.
  * @param handle
  * @param suggested_size
@@ -307,6 +324,7 @@ void Worker::initialize_vm(WorkerParameter& parameter) {
                  parameter.root_tid,
                  parameter.proc_addr,
                  parameter.master_nid);
+  vm->initialize_gui(*this);
 }
 
 /**

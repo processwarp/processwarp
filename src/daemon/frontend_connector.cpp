@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "convert.hpp"
 #include "daemon_define.hpp"
 #include "router.hpp"
 #include "frontend_connector.hpp"
@@ -21,10 +22,12 @@ FrontendConnector& FrontendConnector::get_instance() {
 
 /**
  * Constructor for singleton pattern.
+ * Set default value to instance members.
  * This class is singleton.
  * This method is private.
  */
-FrontendConnector::FrontendConnector() {
+FrontendConnector::FrontendConnector() :
+    gui_pipe(nullptr) {
 }
 
 /**
@@ -52,6 +55,34 @@ void FrontendConnector::send_connect_frontend(uv_pipe_t& client, int result) {
   packet.insert(std::make_pair("result",  picojson::value(static_cast<double>(result))));
 
   send_packet(client, packet);
+}
+
+/**
+ * Send GUI command to frontend.
+ * Packet format: {<br/>
+ *   command: 'gui_command',
+ *   pid: &lt;Process-id send from&gt;
+ *   gui_command: &lt;GUI command string&gt;
+ *   param: &lt;Parameter for command&gt;
+ * }
+ * @param pid Process-id send from.
+ * @param command GUI command string.
+ * @param param Parameter for command.
+ */
+void FrontendConnector::send_gui_command(const vpid_t& pid, const std::string& command,
+                                         const picojson::object& param) {
+  if (gui_pipe == nullptr) {
+    /// @todo error
+    assert(false);
+  }
+
+  picojson::object packet;
+  packet.insert(std::make_pair("command", picojson::value(std::string("gui_command"))));
+  packet.insert(std::make_pair("pid", Convert::vpid2json(pid)));
+  packet.insert(std::make_pair("gui_command", picojson::value(command)));
+  packet.insert(std::make_pair("param", picojson::value(param)));
+
+  send_packet(*gui_pipe, packet);
 }
 
 /**
@@ -88,31 +119,36 @@ void FrontendConnector::on_recv_packet(uv_pipe_t& client, picojson::object& pack
 
 /**
  * When close pipe, remove status from properties.
+ * If client type is GUI, set GUI pipe null.
  * @param client Target pipe to close.
  */
 void FrontendConnector::on_close(uv_pipe_t& client) {
   properties.erase(&client);
+  if (gui_pipe == &client) {
+    gui_pipe = nullptr;
+  }
 }
 
 /**
  * When recieve connect-frontend command from frontend, check account.
  * Reply code 0 if account is valid, and change status to CONNECT.
  * Reply code -1 if account is invalid.
+ * If client type is GUI, set GUI pipe to this pipe.
  * @param client Frontend that passed this request.
  * @param packet Account information contain account, passord, type.
  */
 void FrontendConnector::recv_connect_frontend(uv_pipe_t& client, picojson::object& packet) {
   Router& router = Router::get_instance();
   const std::string& type_str = packet.at("type").get<std::string>();
-  FrontendType::Type type;
+  FrontendProperty& property = properties.at(&client);
 
-  assert(properties.at(&client).status == PipeStatus::SETUP);
+  assert(property.status == PipeStatus::SETUP);
 
   if (type_str == "gui") {
-    type = FrontendType::GUI;
+    property.type = FrontendType::GUI;
 
   } else if (type_str == "cui") {
-    type = FrontendType::CUI;
+    property.type = FrontendType::CUI;
 
   } else {
     /// @todo error
@@ -121,8 +157,18 @@ void FrontendConnector::recv_connect_frontend(uv_pipe_t& client, picojson::objec
 
   if (router.check_account(packet.at("account").get<std::string>(),
                            packet.at("password").get<std::string>())) {
+    if (property.type == FrontendType::GUI) {
+      if (gui_pipe == nullptr) {
+        gui_pipe = &client;
+
+      } else {
+        send_connect_frontend(client, -1);
+        close(client);
+        return;
+      }
+    }
     send_connect_frontend(client, 0);
-    properties.at(&client).status = PipeStatus::CONNECT;
+    property.status = PipeStatus::CONNECT;
 
   } else {
     send_connect_frontend(client, -1);

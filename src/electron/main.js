@@ -20,6 +20,7 @@ var backendSocket = null;
 var backendBuffer = new Buffer(0);
 var accountInfo   = {};
 var connectStatus = CONNECT_STATUS.CLOSE;
+var guiFrames     = {};
 
 /**
  * Quit main process when all window was closed.
@@ -172,24 +173,25 @@ function onBackendClose() {
 function onBackendRecv(data) {
   backendBuffer = Buffer.concat([backendBuffer, data]);
 
-  if (backendBuffer.length < 4) return;
-
-  var psize = backendBuffer.readUInt32BE(0);  
-  if (backendBuffer.length < 4 + psize + 1) return;
-  if (backendBuffer.readUInt8(4 + psize) != 0) {
-    /// @todo error
-    console.assert(false, 'todo');
-  }
-
-  var packet = JSON.parse(backendBuffer.toString('utf8', 4, 4 + psize));
-  backendBuffer = backendBuffer.slice(4 + psize + 1);
-
-  switch (packet.command) {
-    case 'connect_frontend': recvConnectFrontend(packet); break;
-    default: {
-      /// @todo eror
+  while (backendBuffer.length >= 4) {
+    var psize = backendBuffer.readUInt32BE(0);  
+    if (backendBuffer.length < 4 + psize + 1) return;
+    if (backendBuffer.readUInt8(4 + psize) != 0) {
+      /// @todo error
       console.assert(false, 'todo');
-    } break;
+    }
+
+    var packet = JSON.parse(backendBuffer.toString('utf8', 4, 4 + psize));
+    backendBuffer = backendBuffer.slice(4 + psize + 1);
+
+    switch (packet.command) {
+      case 'connect_frontend': recvConnectFrontend(packet); break;
+      case 'gui_command': recvGuiCommand(packet); break;
+      default: {
+	/// @todo eror
+	console.assert(false, 'todo');
+      } break;
+    }
   }
 }
 
@@ -239,4 +241,38 @@ function recvConnectFrontend(packet) {
   } else {
     mainWindow.webContents.send('action_connect_failure', packet.result);
   }
+}
+
+/**
+ * When receive GUI command, call capable method to do it.
+ * @param packet Packet contain command string, process-id send from, and parameter.
+ */
+function recvGuiCommand(packet) {
+  switch (packet.gui_command) {
+    case 'create': guiCommandCreate(packet.pid, packet.param); break;
+    default: {
+      /// @todo error
+      console.assert(false, 'todo');
+    } break;
+  }
+}
+
+/**
+ * When receive 'create' GUI command, create a new frame and load default HTML.
+ * The frame created is regist for guiFrames set with process-id.
+ * @param pid Process-id bundled for frame.
+ * @param param Not used.
+ */
+function guiCommandCreate(pid, param) {
+  if (pid in guiFrames) {
+    /// @todo error
+    console.assert(false, 'todo');
+  }
+
+  var frame = new BrowserWindow();
+  guiFrames[pid] = frame;
+  frame.loadURL('file://' + __dirname + '/frame.html');
+  frame.on('closed', function() {
+    delete guiFrames[pid];
+  });
 }

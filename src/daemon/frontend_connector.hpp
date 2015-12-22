@@ -4,8 +4,10 @@
 #include <uv.h>
 
 #include <map>
+#include <string>
 
 #include "connector.hpp"
+#include "definitions.hpp"
 #include "daemon_define.hpp"
 
 namespace processwarp {
@@ -15,6 +17,8 @@ class FrontendConnector : public Connector {
 
   void initialize(uv_loop_t* loop);
   void send_connect_frontend(uv_pipe_t& client, int result);
+  void send_gui_command(const vpid_t& pid, const std::string& command,
+                        const picojson::object& param);
 
  private:
   struct FrontendProperty {
@@ -24,6 +28,8 @@ class FrontendConnector : public Connector {
 
   /** Map of pipe and propertiy. */
   std::map<const uv_pipe_t*, FrontendProperty> properties;
+  /** The pipe connectiong frontend that having gui */
+  uv_pipe_t* gui_pipe;
 
   FrontendConnector();
   FrontendConnector(const FrontendConnector&);

@@ -13,6 +13,7 @@
 #include "vmemory.hpp"
 
 namespace processwarp {
+class BuiltinGuiDelegate;
 class VMachine;
 
 /**
@@ -47,6 +48,7 @@ class VMachine : private ProcessDelegate {
            const std::map<std::string, std::string>& lib_filter_);
   void initialize(const vpid_t& pid, const vtid_t& root_tid,
                   vaddr_t proc_addr, const nid_t& master_nid);
+  void initialize_gui(BuiltinGuiDelegate& delegate);
   void execute();
   void terminate();
 

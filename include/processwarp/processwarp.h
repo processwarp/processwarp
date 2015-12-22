@@ -49,6 +49,11 @@ extern "C" {
    */
   pw_int_t pw_set_processwarp_param(pw_int_t key, pw_int_t value);
 
+  /**
+   * Create a new GUI frame.
+   */
+  void pw_gui_create();
+  void pw_gui_script(const char* script, ...);
 #ifdef __cplusplus
 }  // extern "C"
 #endif

@@ -70,6 +70,7 @@ set(PWCORE_FILES
   finally.cpp
   basic_operator.cpp
   builtin_bit.cpp
+  builtin_gui.cpp
   builtin_libc.cpp
   builtin_memory.cpp
   builtin_overflow.cpp

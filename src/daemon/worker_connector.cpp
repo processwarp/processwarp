@@ -7,6 +7,7 @@
 
 #include "convert.hpp"
 #include "router.hpp"
+#include "frontend_connector.hpp"
 #include "server_connector.hpp"
 #include "worker_connector.hpp"
 
@@ -175,6 +176,9 @@ void WorkerConnector::on_recv_packet(uv_pipe_t& client, picojson::object& packet
   if (command == "relay") {
     recv_relay(pid_map.at(&client), packet);
 
+  } else if (command == "gui_command") {
+    recv_gui_command(pid_map.at(&client), packet);
+
   } else if (command == "connect_worker") {
     recv_connect_worker(client, packet);
 
@@ -219,6 +223,19 @@ void WorkerConnector::recv_connect_worker(uv_pipe_t& pipe, picojson::object& pac
     Connector::send_packet(*property.pipe, wait_one);
   }
   property.send_wait.clear();
+}
+
+/**
+ * When receive gui_command command, relay a packet to frontend.
+ * @param pid Process-id send from.
+ * @param packet Packet contain command string and parameters.
+ */
+void WorkerConnector::recv_gui_command(const vpid_t& pid, picojson::object& packet) {
+  FrontendConnector& frontend = FrontendConnector::get_instance();
+
+  frontend.send_gui_command(pid,
+                            packet.at("gui_command").get<std::string>(),
+                            packet.at("param").get<picojson::object>());
 }
 
 /**

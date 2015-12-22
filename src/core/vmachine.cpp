@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "builtin_bit.hpp"
+#include "builtin_gui.hpp"
 #include "builtin_libc.hpp"
 #include "builtin_memory.hpp"
 #include "builtin_overflow.hpp"
@@ -63,6 +64,15 @@ void VMachine::initialize(const vpid_t& pid, const vtid_t& root_tid,
                                      builtin_funcs, proc_addr, master_nid));
   process->setup();
   initialize_builtin();
+}
+
+/**
+ * Enable GUI.
+ * Regist GUI API's with pass delegate instance.
+ * @param delegate GUI delegate instance.
+ */
+void VMachine::initialize_gui(BuiltinGuiDelegate& delegate) {
+  BuiltinGui::regist(*this, delegate);
 }
 
 /**

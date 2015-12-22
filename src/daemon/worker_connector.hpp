@@ -50,6 +50,7 @@ class WorkerConnector : public Connector {
   void on_close(uv_pipe_t& client) override;
 
   void recv_connect_worker(uv_pipe_t& pipe, picojson::object& packet);
+  void recv_gui_command(const vpid_t& pid, picojson::object& packet);
   void recv_relay(const vpid_t& pid, picojson::object& packet);
   void send_packet(const vpid_t&pid, const picojson::object& packet);
 };
