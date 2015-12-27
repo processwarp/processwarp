@@ -569,6 +569,10 @@ const nid_t& VMemory::Accessor::get_master(vaddr_t addr) {
 }
 
 VMemory::Accessor::MasterKey VMemory::Accessor::keep_master(vaddr_t addr) {
+  if (addr == VADDR_NULL)  {
+    return MasterKey();
+  }
+
   addr = get_upper_addr(addr);
   Page& page = get_page(addr, true);
 
