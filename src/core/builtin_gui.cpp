@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "builtin_gui.hpp"
+#include "format.hpp"
 
 namespace processwarp {
 BuiltinGuiDelegate::~BuiltinGuiDelegate() {
@@ -26,10 +27,24 @@ BuiltinPostProc::Type BuiltinGui::create(Process& proc, Thread& thread, BuiltinF
   return BuiltinPostProc::NORMAL;
 }
 
+/**
+ * When program call pw_gui_script, send "script" GUI command with script string to the fromtend.
+ * Before send each command, embed parameter with format string the same as the "printf".
+ * Parameters get from src are, pointer of format-string, and any parameter alike to "printf".
+ * Return value set to dst isn't.
+ * @return NORMAL for terminate function.
+ */
 BuiltinPostProc::Type BuiltinGui::script(Process& proc, Thread& thread, BuiltinFuncParam p,
                                          vaddr_t dst, std::vector<uint8_t>& src) {
-  /// @todo
-  assert(false);
+  BuiltinGuiDelegate& delegate = *reinterpret_cast<BuiltinGuiDelegate*>(p.ptr);
+  picojson::object param;
+  int seek = 0;
+  vaddr_t format_ptr = Process::read_builtin_param_ptr(src, &seek);
+  std::vector<uint8_t> ap(src.begin() + seek, src.end());
+  std::string script = Format::parse(thread, thread.memory->read_raw(format_ptr), ap);
+
+  param.insert(std::make_pair("script", picojson::value(script)));
+  delegate.builtin_gui_command(proc, "script", param);
 
   return BuiltinPostProc::NORMAL;
 }

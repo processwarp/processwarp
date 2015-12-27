@@ -77,6 +77,7 @@ set(PWCORE_FILES
   builtin_posix.cpp
   builtin_va_arg.cpp
   builtin_warp.cpp
+  format.cpp
   interrupt_memory_require.cpp
   process.cpp
   scheduler.cpp

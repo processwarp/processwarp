@@ -7,6 +7,30 @@
     <script src="node_modules/material-design-lite/material.min.js"></script>
     <link rel="stylesheet" href="icon.css">
   </head>
+  <script>
+  const electron = require('electron');
+  const ipc      = electron.ipcRenderer;
+  var global     = {};
+
+  /**
+   * When receive script, execute script.
+   * @param event {object} Event instance from ipc.
+   * @param script {string} Script string.
+   */
+  function recvScript(event, script) {
+    console.log(script);
+    eval(script);
+  }
+  ipc.on('script', recvScript);
+
+  /**
+   * When loading html was finished, send frame_load command to main thread.
+   * @return {void}
+   */
+  function sendFrameLoad() {
+    ipc.send('frame_load');
+  }
+  </script>
   <style>
   html {
 	  height: 100%;
@@ -18,14 +42,7 @@
 	  overflow: hidden;
 	  width: 100%;
   }
-  canvas {
-	  height: 100%;
-	  position: absolute;
-	  width: 100%;
-  }
   </style>
-  <body>
-    <canvas id="canvas_fore"></canvas>
-    <canvas id="canvas_back"></canvas>
+  <body onLoad="sendFrameLoad();">
   </body>
 </html>

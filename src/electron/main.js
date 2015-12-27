@@ -20,7 +20,7 @@ var backendSocket = null;
 var backendBuffer = new Buffer(0);
 var accountInfo   = {};
 var connectStatus = CONNECT_STATUS.CLOSE;
-var guiFrames     = {};
+var contexts      = {};
 
 /**
  * Quit main process when all window was closed.
@@ -250,6 +250,7 @@ function recvConnectFrontend(packet) {
 function recvGuiCommand(packet) {
   switch (packet.gui_command) {
     case 'create': guiCommandCreate(packet.pid, packet.param); break;
+    case 'script': guiCommandScript(packet.pid, packet.param); break;
     default: {
       /// @todo error
       console.assert(false, 'todo');
@@ -259,20 +260,74 @@ function recvGuiCommand(packet) {
 
 /**
  * When receive 'create' GUI command, create a new frame and load default HTML.
- * The frame created is regist for guiFrames set with process-id.
+ * The frame created is regist for contexts set with process-id.
  * @param pid {string} Process-id bundled for frame.
  * @param param {object} Not used.
  */
 function guiCommandCreate(pid, param) {
-  if (pid in guiFrames) {
+  if (pid in contexts) {
     /// @todo error
     console.assert(false, 'todo');
   }
 
   var frame = new BrowserWindow();
-  guiFrames[pid] = frame;
+  frame.on('closed', function(event) { onFrameClose(event, pid); });
   frame.loadURL('file://' + __dirname + '/frame.html');
-  frame.on('closed', function() {
-    delete guiFrames[pid];
-  });
+  frame.webContents.pid = pid;
+  // frame.openDevTools(true);
+
+  var context = {};
+  context.is_normal = false;
+  context.script = [];
+  context.frame = frame;
+
+  contexts[pid] = context;
 }
+
+/**
+ * When receive 'script' GUI command, pass scipt to frame or store if frame not finished setup.
+ * @param pid {sring} Process-id send to.
+ * @param param {object} Parameter contain script string.
+ * @return {void}
+ */
+function guiCommandScript(pid, param) {
+  if (!(pid in contexts)) {
+    /// @todo error
+    console.assert(false, 'todo');
+  }
+
+  var context = contexts[pid];
+
+  if (context.is_normal == true) {
+    context.frame.webContents.send('script', param.script);
+
+  } else {
+    // console.log('save context:' + param.script);
+    context.script.push(param.script);
+  }
+}
+
+/**
+ * When frame was close by GUI, remove context.
+ * @param event {object} Not used.
+ * @param pid {string} Process-id bundled for frame.
+ */
+function onFrameClose(event, pid) {
+  delete contexts[pid];
+}
+
+/**
+ * When receive 'frame_load' command from frame, change status to normal and send scripts stored.
+ * @param event {object} WebContents instance from ipc containing pid.
+ * @return {void}
+ */
+function onFrameLoad(event) {
+  var context = contexts[event.sender.pid];
+  
+  context.script.forEach(function(script) {
+    context.frame.webContents.send('script', script);
+  });
+  context.is_normal = true;
+  delete context['script'];
+}
+ipc.on('frame_load', onFrameLoad);
