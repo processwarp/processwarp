@@ -178,7 +178,7 @@
        * @param result {number} Error code.
        * @return {void}
        */
-      function connectOnFailure(result) {
+      function connectOnFailure(sender, result) {
 	curtainUp();
 	alert('Connection failure : ' + result);
       }
