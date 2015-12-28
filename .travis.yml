@@ -16,12 +16,12 @@ before_install:
   - sudo add-apt-repository -y ppa:kubuntu-ppa/backports
   - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
   - sudo apt-get update -yqq
-  - sudo apt-get install -y --allow-unauthenticated pkg-config cmake libgtest-dev doxygen libssl-dev libboost1.55-dev libboost-system1.55-dev libboost-date-time1.55-dev libboost-random1.55-dev automake libtool libstdc++-${LIBSTDC_VERSION}-dev clang-${CLANG_VERSION}
+  - sudo apt-get install -y --allow-unauthenticated pkg-config cmake libgtest-dev doxygen libssl-dev libboost1.55-dev libboost-system1.55-dev libboost-date-time1.55-dev libboost-random1.55-dev automake libtool libncurses5-dev libstdc++-${LIBSTDC_VERSION}-dev clang-${CLANG_VERSION}
   # install socket.io
   - git clone --recurse-submodules https://github.com/socketio/socket.io-client-cpp.git
   - cd socket.io-client-cpp
   - sed -i -e 's/cmake_minimum_required(VERSION 3.1.0/cmake_minimum_required(VERSION 2.8.12/' ./CMakeLists.txt
-  - cmake -D CMAKE_CXX_FLAGS=-std=c++11 .
+  - CC=clang-3.5 CXX=clang++-3.5 cmake -D CMAKE_CXX_FLAGS=-std=c++11 .
   - make
   - make install
   - cd $TRAVIS_BUILD_DIR
@@ -31,7 +31,7 @@ before_install:
   - sudo chmod 755 /usr/local/bin/cpplint.py
   # install Google Test
   - cd /usr/src/gtest
-  - sudo cmake .
+  - sudo CC=clang-3.5 CXX=clang++-3.5 cmake .
   - sudo make
   - sudo mv libgtest* /usr/local/lib/
   - cd $TRAVIS_BUILD_DIR
@@ -43,6 +43,11 @@ before_install:
   - ./configure
   - make
   - sudo make install
+  - cd $TRAVIS_BUILD_DIR
+  # patch ubuntu llvm
+  - curl https://launchpadlibrarian.net/221945609/fix-llvm-3.5-dev-debian.bash > fix-llvm-3.5-dev-debian.bash
+  - sed -i -e 's/llvm-config/llvm-config-3.5/' ./fix-llvm-3.5-dev-debian.bash
+  - sh fix-llvm-3.5-dev-debian.bash
   - cd $TRAVIS_BUILD_DIR
   # finish before
   - sudo ldconfig

@@ -18,6 +18,19 @@
 #include "process.hpp"
 #include "vmemory.hpp"
 
+#ifndef LLVM_VERSION_STRING
+#ifdef LLVM_VERSION_PATCH
+static const std::string LLVM_VERSION_STRING =
+    std::to_string(LLVM_VERSION_MAJOR) + "." +
+    std::to_string(LLVM_VERSION_MINOR) + "." +
+    std::to_string(LLVM_VERSION_PATCH);
+#else
+static const std::string LLVM_VERSION_STRING =
+    std::to_string(LLVM_VERSION_MAJOR) + "." +
+    std::to_string(LLVM_VERSION_MINOR);
+#endif
+#endif
+
 namespace processwarp {
 
 static const std::string pool_path("/tmp/");
