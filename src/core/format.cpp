@@ -71,7 +71,7 @@ std::string Format::parse(Thread& thread, const uint8_t* format_,
   for (; it != end; it++) {
     std::smatch match = *it;
 
-    output.flags(0);
+    output.flags(static_cast<std::ios::fmtflags>(0));
     output.write(format.c_str() + output_position, match.position() - output_position);
     output_position = match.position() + match.length();
 
@@ -87,7 +87,7 @@ std::string Format::parse(Thread& thread, const uint8_t* format_,
     ApContent& content = ap_contents.at(index);
 
     // flags
-    std::ios::fmtflags flags = 0;
+    std::ios::fmtflags flags = static_cast<std::ios::fmtflags>(0);
     if (match[2].matched) {
       for (char c : match[2].str()) {
         switch (c) {
