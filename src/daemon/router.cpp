@@ -71,6 +71,13 @@ bool Router::check_account(const std::string& account_, const std::string& passw
 }
 
 /**
+ * It tell scheduler this node was actived by user or any event.
+ */
+void Router::activate() {
+  scheduler.activate();
+}
+
+/**
  * Open the LLVM-IR file and send load-llvm command to server.
  * @param filename Filename of LLVM-IR.
  * @param args Arguments to pass application's entry point.

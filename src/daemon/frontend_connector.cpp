@@ -105,7 +105,10 @@ void FrontendConnector::on_connect(uv_pipe_t& client) {
 void FrontendConnector::on_recv_packet(uv_pipe_t& client, picojson::object& packet) {
   const std::string& command = packet.at("command").get<std::string>();
 
-  if (command == "connect_frontend") {
+  if (command == "activate") {
+    recv_activate(client, packet);
+
+  } else if (command == "connect_frontend") {
     recv_connect_frontend(client, packet);
 
   } else if (command == "open_file") {
@@ -127,6 +130,17 @@ void FrontendConnector::on_close(uv_pipe_t& client) {
   if (gui_pipe == &client) {
     gui_pipe = nullptr;
   }
+}
+
+/**
+ * When recieve activate command from frontend, pass capable method on Router.
+ * @param client Frontend that passed this request.
+ * @param packet Not used.
+ */
+void FrontendConnector::recv_activate(uv_pipe_t& client, picojson::object& packet) {
+  Router& router = Router::get_instance();
+
+  router.activate();
 }
 
 /**

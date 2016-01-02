@@ -94,6 +94,16 @@ function onActionConnect(sender, param) {
 ipc.on('action_connect', onActionConnect);
 
 /**
+ * When activate event is happen, send activate event to backend.
+ */
+function onActionActivate() {
+  sendToBackend({
+    command: 'activate'
+  });
+}
+ipc.on('action_activate', onActionActivate);
+
+/**
  * When open file action is done in the interface, show dialog and let user select file.
  * @return {void}
  */

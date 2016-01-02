@@ -18,6 +18,7 @@ class Router : public SchedulerDelegate {
 
   void initialize(uv_loop_t* loop_, const picojson::object& config_);
   bool check_account(const std::string& account_, const std::string& password_);
+  void activate();
   void load_llvm(const std::string& filename, const std::vector<std::string>& args);
   const nid_t& get_my_nid();
   void on_connect_node();

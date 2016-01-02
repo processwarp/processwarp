@@ -118,6 +118,11 @@ enum Type : uint8_t {
 
 /** process-id */
 typedef std::string vpid_t;
+/** Special process-id those are used to send data. */
+namespace SpecialPID {
+static const vpid_t BROADCAST = "";  ///< Send data independent by process.
+}
+
 /** thread-id */
 typedef vaddr_t vtid_t;
 /** all thread */

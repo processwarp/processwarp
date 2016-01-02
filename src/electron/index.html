@@ -205,6 +205,10 @@
 	<header class="mdl-layout__header">
 	  <div class="mdl-layout__header-row">
 	    <button class="mdl-button mdl-js-button mdl-button--icon"
+		    onClick="mainOnActivate();">
+	      <i class="material-icons">insert_emoticon</i>
+	    </button>
+	    <button class="mdl-button mdl-js-button mdl-button--icon"
 		    onClick="mainOnOpenFile();">
 	      <i class="material-icons">unarchive</i>
 	    </button>
@@ -237,6 +241,14 @@
 	</main>
       </div>
       <script>
+      /**
+       * Send action_activate event to main process when activate button is touch.
+       * @return {void}
+       */
+      function mainOnActivate() {
+	ipc.send('action_activate');
+      }
+
       /**
        * Send action_open_file event to main process when open file button is touch.
        * @return {void}

@@ -39,6 +39,7 @@ class FrontendConnector : public Connector {
   void on_recv_packet(uv_pipe_t& client, picojson::object& packet) override;
   void on_close(uv_pipe_t& client) override;
 
+  void recv_activate(uv_pipe_t& client, picojson::object& packet);
   void recv_connect_frontend(uv_pipe_t& client, picojson::object& packet);
   void recv_open_file(uv_pipe_t& client, picojson::object& packet);
 };

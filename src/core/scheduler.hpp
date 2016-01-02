@@ -33,6 +33,7 @@ class Scheduler {
  public:
   void initialize(SchedulerDelegate& delegate_);
   void on_recv_packet(const vpid_t& pid, const std::string& packet);
+  void activate();
 
  private:
   /** Pointer for delegater instance.  */
@@ -40,6 +41,9 @@ class Scheduler {
   /** A list of processes these are running in all of nodes used by the same account. */
   std::map<vpid_t, ProcessTree> processes;
 
+  void recv_activate(const picojson::object& packet);
   void recv_warp(const vpid_t& pid, const picojson::object& packet);
+  void send_packet(const vpid_t& pid, const nid_t& dst_nid,
+                   const std::string& command, picojson::object& packet);
 };
 }  // namespace processwarp
