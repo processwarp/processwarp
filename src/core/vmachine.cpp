@@ -31,14 +31,14 @@ namespace processwarp {
 VMachineDelegate::~VMachineDelegate() {
 }
 
-  /**
-   * Constractor with delegate.
-   * @param delegate Events assignee.
-   * @param memory_delegate 
-   * @param nid This virtual machine's node-id.
-   * @param libs Loaded external libraries for ffi.
-   * @param lib_filter Map of API name call from and call for that can access.
-   */
+/**
+ * Constractor with delegate.
+ * @param delegate_ Events assignee.
+ * @param memory_delegate Events assignee for VMemory in this vm.
+ * @param my_nid_ This virtual machine's node-id.
+ * @param libs_ Loaded external libraries for ffi.
+ * @param lib_filter_ Map of API name call from and call for that can access.
+ */
 VMachine::VMachine(VMachineDelegate& delegate_,
                    VMemoryDelegate& memory_delegate,
                    const nid_t& my_nid_,
@@ -55,7 +55,8 @@ VMachine::VMachine(VMachineDelegate& delegate_,
  * Create empty process.
  * @param pid New process's process-id.
  * @param root_tid Root thread-id.
- * @param addr 
+ * @param proc_addr Address where are meta informations assigned.
+ * @param master_nid Node-id that process's root thread running.
  */
 void VMachine::initialize(const vpid_t& pid, const vtid_t& root_tid,
                           vaddr_t proc_addr, const nid_t& master_nid) {
