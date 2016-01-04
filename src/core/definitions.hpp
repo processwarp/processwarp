@@ -120,7 +120,7 @@ enum Type : uint8_t {
 typedef std::string vpid_t;
 /** Special process-id those are used to send data. */
 namespace SpecialPID {
-static const vpid_t BROADCAST = "";  ///< Send data independent by process.
+static const vpid_t BROADCAST = "*";  ///< Send data independent by process.
 }
 
 /** thread-id */
@@ -136,7 +136,8 @@ static const vtid_t JOIN_WAIT_DETACHED = 0x2;
 typedef std::string nid_t;
 /** Special node-id those are used to send data. */
 namespace SpecialNID {
-static const nid_t BROADCAST = "";        ///< Send data to any node with the same account.
+static const nid_t NONE      = "";        ///< Set none if destination node-id is't yet determined.
+static const nid_t BROADCAST = "*";       ///< Send data to any node with the same account.
 static const nid_t SERVER    = "server";  ///< Server is a special node.
 }
 
@@ -263,8 +264,29 @@ static const clock_t MEMORY_REQUIRE_INTERVAL = 5 * CLOCKS_PER_SEC;
  * Structure of process and thread.
  */
 struct ProcessTree {
+  /** Porcess-id */
   vpid_t pid;
+  /** Process name. */
   std::string name;
+  /** Map of thread-id and node-id that thread is running. */
   std::map<vtid_t, nid_t> threads;
+  /** Node-id that havign gui frontend bundled process or NONE. */
+  nid_t gui_nid;
+  /** True if vm bundled process is exist in this node. */
+  bool having_vm;
 };
+
+/** Modules those are target to send command and packet. */
+namespace InnerModule {
+typedef int Type;
+static const Type MEMORY    = 0;
+static const Type VM        = 1;
+static const Type SCHEDULER = 2;
+}  // namespace InnerModule
+
+/** Modules those are target to send packet. */
+namespace OuterModule {
+typedef int Type;
+static const Type FRONTEND  = 3;
+}  // namespace OuterModule
 }  // namespace processwarp

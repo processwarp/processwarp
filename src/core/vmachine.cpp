@@ -218,6 +218,22 @@ void VMachine::on_recv_update(vaddr_t addr) {
 }
 
 /**
+ * When receive command from other module in this node, read command and call capable method with parameter.
+ * @param content A JSON that contain a command string adn any parameter.
+ */
+void VMachine::recv_command(const picojson::object& content) {
+  const std::string& command = content.at("command").get<std::string>();
+
+  if (command == "warpout") {
+    warpout_thread(Convert::json2vtid(content.at("tid")));
+
+  } else {
+    /// @todo error
+    assert(false);
+  }
+}
+
+/**
  * Pass data from other node.
  * @param data Received load data.
  */

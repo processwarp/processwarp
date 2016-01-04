@@ -7,9 +7,11 @@
 
 #include "convert.hpp"
 #include "error.hpp"
+#include "frontend_connector.hpp"
 #include "router.hpp"
 #include "server_connector.hpp"
 #include "util.hpp"
+#include "worker_connector.hpp"
 
 namespace processwarp {
 /**
@@ -171,61 +173,6 @@ void ServerConnector::initialize(uv_loop_t* loop_, const std::string& url) {
 }
 
 /**
- * Initialize synchronizer.
- */
-void ServerConnector::initialize_async() {
-  uv_async_init(loop, &async_receive, on_recv);
-}
-
-/**
- * Initialize Socket.IO, bind event listener and connect to server.
- * @param url Server's URL.
- */
-void ServerConnector::initialize_socketio(const std::string& url) {
-  // Bind basic event to Socket.IO.
-  client.set_close_listener(std::bind(&ServerConnector::on_close, this));
-  client.set_fail_listener(std::bind(&ServerConnector::on_fail, this));
-  client.set_open_listener(std::bind(&ServerConnector::on_open, this));
-
-  client.connect(url);
-  {
-    std::lock_guard<std::mutex> guard(sio_mutex);
-    if (status == ServerStatus::SETUP) {
-      sio_cond.wait(sio_mutex);
-    }
-  }
-
-  if (status == ServerStatus::APPROACH1) {
-    socket = client.socket();
-
-  } else {
-    throw_error(Error::NETWORK);
-  }
-
-  // Bind 'on' event to Socket.IO.
-#define M_BIND_SOCKETIO_EVENT(_name) {                                  \
-    socket->on(_name,                                                   \
-               [&](sio::event& event) {                                 \
-                 print_debug("recv : %s\n", _name);                     \
-                 std::lock_guard<std::mutex> guard(sio_mutex);          \
-                 sio_queue.push(make_pair(_name, event.get_message())); \
-                 uv_async_send(&async_receive);                         \
-               });                                                      \
-  }
-
-  M_BIND_SOCKETIO_EVENT("sys_error");
-  M_BIND_SOCKETIO_EVENT("app_error");
-  M_BIND_SOCKETIO_EVENT("connect_node");
-  M_BIND_SOCKETIO_EVENT("list_node");
-  M_BIND_SOCKETIO_EVENT("bind_node");
-  M_BIND_SOCKETIO_EVENT("sync_proc_list");
-  M_BIND_SOCKETIO_EVENT("relay");
-  M_BIND_SOCKETIO_EVENT("test_console");
-
-#undef M_BIND_SOCKETIO_EVENT
-}
-
-/**
  * Get server connection status.
  * @return ServerConnection status.
  */
@@ -235,156 +182,32 @@ ServerStatus::Type ServerConnector::get_status() {
 }
 
 /**
- * When receive async event by Socket.IO's thread, expand a packet and call capable method.
- * @param handle Not use.
+ * Relay inner module packet to other node.
+ * Packet format: {
+ *   pid: &lt;Target process-id&gt;
+ *   module: &lt;Module type&gt;
+ *   dst_nid: &lt;Destination node-id&gt;
+ *   src_nid: &lt;This node-id, added by server&gt;
+ *   content: &lt;Packet content&gt;
+ * }
+ * @param pid Target process-id.
+ * @param dst_nid Destination node-id.
+ * @param module Module type.
+ * @param content Packet content.
  */
-void ServerConnector::on_recv(uv_async_t* handle) {
-  ServerConnector& THIS = ServerConnector::get_instance();
+void ServerConnector::relay_inner_module_packet(const vpid_t& pid,
+                                                const nid_t& dst_nid,
+                                                InnerModule::Type module,
+                                                const std::string& content) {
+  sio::message::ptr sio_packet(sio::object_message::create());
+  std::map<std::string, sio::message::ptr>& map = sio_packet->get_map();
 
-  while (true) {
-    std::string name;
-    sio::message::ptr data;
-    {
-      std::lock_guard<std::mutex> guard(THIS.sio_mutex);
-      if (THIS.sio_queue.empty()) break;
-      auto front = THIS.sio_queue.front();
-      name = front.first;
-      data = front.second;
-      THIS.sio_queue.pop();
-    }
+  map.insert(std::make_pair("pid", get_sio_by_pid(pid)));
+  map.insert(std::make_pair("dst_nid", get_sio_by_nid(dst_nid)));
+  map.insert(std::make_pair("module", get_sio_by_str(Convert::int2str<InnerModule::Type>(module))));
+  map.insert(std::make_pair("content", get_sio_by_str(content)));
 
-    if (name == "sys_error") {
-      /// @todo
-      assert(false);
-
-    } else if (name == "app_error") {
-      /// @todo
-      assert(false);
-
-    } else if (name == "connect_node") {
-      THIS.recv_connect_node(data);
-
-    } else if (name == "bind_node") {
-      THIS.recv_bind_node(data);
-
-    } else if (name == "relay") {
-      THIS.recv_relay(data);
-
-      /*
-        } else if (name == "list_node") {
-        //
-        std::map<nid_t, std::string> nodes;
-
-        for (auto it : data->get_map().at("nodes")->get_vector()) {
-        nodes.insert(std::make_pair(get_nid_by_map(it, "id"),
-        it->get_map().at("name")->get_string()));
-        }
-
-        delegate.recv_list_node(data->get_map().at("result")->get_int(), nodes);
-
-        } else if (name == "sync_proc_list") {
-        std::vector<ProcessTree> procs;
-
-        for (auto& it_proc : data->get_vector()) {
-        ProcessTree proc;
-
-        proc.pid  = get_pid_by_map(it_proc, "pid");
-        proc.name = get_str_by_map(it_proc, "name");
-
-        auto& threads = it_proc->get_map().at("threads")->get_map();
-        for (auto& it_thread : threads) {
-        proc.threads.insert(std::make_pair
-        (Convert::str2vtid(it_thread.first),
-        Convert::str2nid(it_thread.second->get_string())));
-        }
-        procs.push_back(proc);
-        }
-        delegate.recv_sync_proc_list(procs);
-
-        } else if (name == "test_console") {
-        #ifndef NDEBUG
-        delegate.recv_test_console(get_pid_by_map(data, "pid"),
-        get_str_by_map(data, "dev"),
-        *data->get_map().at("payload")->get_binary(),
-        get_nid_by_map(data, "from_nid"));
-        #endif
-      */
-    } else {
-      /// @todo error
-      assert(false);
-    }
-  }
-}
-
-/**
- * When receive bind-node command's reply,
- * change status to CONNECT and call Router's method.
- * Receive data having member 'result',0 means success, other means error code.
- * Reveive data haging member 'nid' is assigned node-id for this node.
- * @param data Receive data.
- */
-void ServerConnector::recv_bind_node(sio::message::ptr data) {
-  Router& router = Router::get_instance();
-
-  assert(status == ServerStatus::APPROACH2);
-
-  if (data->get_map().at("result")->get_int() == 0) {
-    {
-      std::lock_guard<std::mutex> guard(sio_mutex);
-      status = ServerStatus::CONNECT;
-    }
-    router.on_bind_node(get_nid_by_map(data, "nid"));
-
-  } else {
-    /// @todo error
-    assert(false);
-  }
-}
-
-/**
- * When recieve connect-node command's reply,
- * change status to APPROACH2 and call Router's method.
- * Receive data having member 'result',0 means success, other means error code.
- * @param data Receive data.
- */
-void ServerConnector::recv_connect_node(sio::message::ptr data) {
-  Router& router = Router::get_instance();
-
-  assert(status == ServerStatus::APPROACH1);
-
-  if (data->get_map().at("result")->get_int() == 0) {
-    {
-      std::lock_guard<std::mutex> guard(sio_mutex);
-      status = ServerStatus::APPROACH2;
-    }
-    router.on_connect_node();
-
-  } else {
-    /// @todo error
-    assert(false);
-  }
-}
-
-/**
- * When receive packet from server, check if me should receive it, and relay to router.
- * @param data Recieve data.
- */
-void ServerConnector::recv_relay(sio::message::ptr data) {
-  Router& router = Router::get_instance();
-  const nid_t& dst_nid = get_nid_by_map(data, "dst_nid");
-  const nid_t& src_nid = get_nid_by_map(data, "src_nid");
-  const nid_t& my_nid  = router.get_my_nid();
-
-  assert(status == ServerStatus::CONNECT);
-
-  if (dst_nid == my_nid ||
-      (dst_nid == SpecialNID::BROADCAST && src_nid != my_nid)) {
-    const vpid_t& pid = get_pid_by_map(data, "pid");
-    const std::string& type = get_str_by_map(data, "type", true);
-    const std::string& packet = get_str_by_map(data, "packet", true);
-
-    router.on_recv_relay(pid, type, packet);
-  }
+  socket->emit("inner_module_packet", sio_packet);
 }
 
 /**
@@ -517,35 +340,6 @@ void ServerConnector::send_sync_proc_list(const std::vector<ProcessTree>& procs)
 }
 
 /**
- * Relay packet to other node.
- * Packet format: {
- *   pid: &lt;Target process-id&gt;
- *   type: &lt;Packet type&gt;
- *   dst_nid: &lt;Destination node-id&gt;
- *   src_nid: &lt;This node-id, added by server&gt;
- *   packet: &lt;Load data&gt;
- * }
- * @param pid Target process-id.
- * @param type Packet type.
- * @param dst_nid Destination node-id.
- * @param packet Content of packet.
- */
-void ServerConnector::relay_packet(const vpid_t& pid,
-                                   const std::string& type,
-                                   const nid_t& dst_nid,
-                                   const std::string& packet) {
-  sio::message::ptr sio_packet(sio::object_message::create());
-  std::map<std::string, sio::message::ptr>& map = sio_packet->get_map();
-
-  map.insert(std::make_pair("pid", get_sio_by_pid(pid)));
-  map.insert(std::make_pair("dst_nid", get_sio_by_nid(dst_nid)));
-  map.insert(std::make_pair("type", get_sio_by_str(type)));
-  map.insert(std::make_pair("packet", get_sio_by_str(packet)));
-
-  socket->emit("relay", sio_packet);
-}
-
-/**
  * Send console for test.
  * @param pid Source pid.
  * @param dev Device name (stdout/stderr).
@@ -565,6 +359,91 @@ void ServerConnector::send_test_console(const vpid_t& pid,
 
   socket->emit("test_console", data);
 #endif
+}
+
+/**
+ * When receive async event by Socket.IO's thread, expand a packet and call capable method.
+ * @param handle Not use.
+ */
+void ServerConnector::on_recv(uv_async_t* handle) {
+  ServerConnector& THIS = ServerConnector::get_instance();
+
+  while (true) {
+    std::string name;
+    sio::message::ptr data;
+    {
+      std::lock_guard<std::mutex> guard(THIS.sio_mutex);
+      if (THIS.sio_queue.empty()) break;
+      auto front = THIS.sio_queue.front();
+      name = front.first;
+      data = front.second;
+      THIS.sio_queue.pop();
+    }
+
+    if (name == "sys_error") {
+      /// @todo
+      assert(false);
+
+    } else if (name == "app_error") {
+      /// @todo
+      assert(false);
+
+    } else if (name == "connect_node") {
+      THIS.recv_connect_node(data);
+
+    } else if (name == "bind_node") {
+      THIS.recv_bind_node(data);
+
+    } else if (name == "inner_module_packet") {
+      THIS.recv_inner_module_packet(data);
+
+    } else if (name == "outer_module_packet") {
+      THIS.recv_outer_module_packet(data);
+
+      /*
+        } else if (name == "list_node") {
+        //
+        std::map<nid_t, std::string> nodes;
+
+        for (auto it : data->get_map().at("nodes")->get_vector()) {
+        nodes.insert(std::make_pair(get_nid_by_map(it, "id"),
+        it->get_map().at("name")->get_string()));
+        }
+
+        delegate.recv_list_node(data->get_map().at("result")->get_int(), nodes);
+
+        } else if (name == "sync_proc_list") {
+        std::vector<ProcessTree> procs;
+
+        for (auto& it_proc : data->get_vector()) {
+        ProcessTree proc;
+
+        proc.pid  = get_pid_by_map(it_proc, "pid");
+        proc.name = get_str_by_map(it_proc, "name");
+
+        auto& threads = it_proc->get_map().at("threads")->get_map();
+        for (auto& it_thread : threads) {
+        proc.threads.insert(std::make_pair
+        (Convert::str2vtid(it_thread.first),
+        Convert::str2nid(it_thread.second->get_string())));
+        }
+        procs.push_back(proc);
+        }
+        delegate.recv_sync_proc_list(procs);
+
+        } else if (name == "test_console") {
+        #ifndef NDEBUG
+        delegate.recv_test_console(get_pid_by_map(data, "pid"),
+        get_str_by_map(data, "dev"),
+        *data->get_map().at("payload")->get_binary(),
+        get_nid_by_map(data, "from_nid"));
+        #endif
+      */
+    } else {
+      /// @todo error
+      assert(false);
+    }
+  }
 }
 
 /**
@@ -592,5 +471,181 @@ void ServerConnector::on_open() {
   std::lock_guard<std::mutex> guard(sio_mutex);
   sio_cond.notify_all();
   status = ServerStatus::APPROACH1;
+}
+
+/**
+ * Initialize synchronizer.
+ */
+void ServerConnector::initialize_async() {
+  uv_async_init(loop, &async_receive, on_recv);
+}
+
+/**
+ * Initialize Socket.IO, bind event listener and connect to server.
+ * @param url Server's URL.
+ */
+void ServerConnector::initialize_socketio(const std::string& url) {
+  // Bind basic event to Socket.IO.
+  client.set_close_listener(std::bind(&ServerConnector::on_close, this));
+  client.set_fail_listener(std::bind(&ServerConnector::on_fail, this));
+  client.set_open_listener(std::bind(&ServerConnector::on_open, this));
+
+  client.connect(url);
+  {
+    std::lock_guard<std::mutex> guard(sio_mutex);
+    if (status == ServerStatus::SETUP) {
+      sio_cond.wait(sio_mutex);
+    }
+  }
+
+  if (status == ServerStatus::APPROACH1) {
+    socket = client.socket();
+
+  } else {
+    throw_error(Error::NETWORK);
+  }
+
+  // Bind 'on' event to Socket.IO.
+#define M_BIND_SOCKETIO_EVENT(_name) {                                  \
+    socket->on(_name,                                                   \
+               [&](sio::event& event) {                                 \
+                 print_debug("recv : %s\n", _name);                     \
+                 std::lock_guard<std::mutex> guard(sio_mutex);          \
+                 sio_queue.push(make_pair(_name, event.get_message())); \
+                 uv_async_send(&async_receive);                         \
+               });                                                      \
+  }
+
+  M_BIND_SOCKETIO_EVENT("sys_error");
+  M_BIND_SOCKETIO_EVENT("app_error");
+  M_BIND_SOCKETIO_EVENT("connect_node");
+  M_BIND_SOCKETIO_EVENT("list_node");
+  M_BIND_SOCKETIO_EVENT("bind_node");
+  M_BIND_SOCKETIO_EVENT("sync_proc_list");
+  M_BIND_SOCKETIO_EVENT("inner_module_packet");
+  M_BIND_SOCKETIO_EVENT("outer_module_packet");
+  M_BIND_SOCKETIO_EVENT("test_console");
+
+#undef M_BIND_SOCKETIO_EVENT
+}
+
+/**
+ * When receive bind-node command's reply,
+ * change status to CONNECT and call Router's method.
+ * Receive data having member 'result',0 means success, other means error code.
+ * Reveive data haging member 'nid' is assigned node-id for this node.
+ * @param data Receive data.
+ */
+void ServerConnector::recv_bind_node(sio::message::ptr data) {
+  Router& router = Router::get_instance();
+
+  assert(status == ServerStatus::APPROACH2);
+
+  if (data->get_map().at("result")->get_int() == 0) {
+    {
+      std::lock_guard<std::mutex> guard(sio_mutex);
+      status = ServerStatus::CONNECT;
+    }
+    router.recv_bind_node(get_nid_by_map(data, "nid"));
+
+  } else {
+    /// @todo error
+    assert(false);
+  }
+}
+
+/**
+ * When recieve connect-node command's reply,
+ * change status to APPROACH2 and call Router's method.
+ * Receive data having member 'result',0 means success, other means error code.
+ * @param data Receive data.
+ */
+void ServerConnector::recv_connect_node(sio::message::ptr data) {
+  Router& router = Router::get_instance();
+
+  assert(status == ServerStatus::APPROACH1);
+
+  if (data->get_map().at("result")->get_int() == 0) {
+    {
+      std::lock_guard<std::mutex> guard(sio_mutex);
+      status = ServerStatus::APPROACH2;
+    }
+    router.recv_connect_node();
+
+  } else {
+    /// @todo error
+    assert(false);
+  }
+}
+
+/**
+ * When receive inner module packet from server, check if me should receive it, and relay to capable modules.
+ * @param data Received data.
+ */
+void ServerConnector::recv_inner_module_packet(sio::message::ptr data) {
+  Router& router = Router::get_instance();
+  const nid_t& dst_nid = get_nid_by_map(data, "dst_nid");
+  const nid_t& src_nid = get_nid_by_map(data, "src_nid");
+  const nid_t& my_nid  = router.get_my_nid();
+
+  assert(status == ServerStatus::CONNECT);
+
+  if (dst_nid == my_nid ||
+      (dst_nid == SpecialNID::BROADCAST && src_nid != my_nid)) {
+    const vpid_t& pid = get_pid_by_map(data, "pid");
+    InnerModule::Type module =
+        Convert::str2int<InnerModule::Type>(get_str_by_map(data, "module", true));
+    const std::string& content = get_str_by_map(data, "content", true);
+
+    switch (module) {
+      case InnerModule::MEMORY:
+      case InnerModule::VM: {
+        WorkerConnector& worker = WorkerConnector::get_instance();
+        worker.relay_inner_module_packet(pid, module, content);
+      } break;
+
+      case InnerModule::SCHEDULER: {
+        router.relay_scheduler_packet(pid, content);
+      } break;
+
+      default: {
+        /// @todo error
+        assert(false);
+      } break;
+    }
+  }
+}
+
+/**
+ * When receive outer moudle packet from server, check if me should receive it, and relay to capable modules.
+ * @param data Received data.
+ */
+void ServerConnector::recv_outer_module_packet(sio::message::ptr data) {
+Router& router = Router::get_instance();
+  const nid_t& dst_nid = get_nid_by_map(data, "dst_nid");
+  const nid_t& src_nid = get_nid_by_map(data, "src_nid");
+  const nid_t& my_nid  = router.get_my_nid();
+
+  assert(status == ServerStatus::CONNECT);
+
+  if (dst_nid == my_nid ||
+      (dst_nid == SpecialNID::BROADCAST && src_nid != my_nid)) {
+    const vpid_t& pid = get_pid_by_map(data, "pid");
+    OuterModule::Type module =
+        Convert::str2int<OuterModule::Type>(get_str_by_map(data, "module", true));
+    const std::string& content = get_str_by_map(data, "content", true);
+
+    switch (module) {
+      case OuterModule::FRONTEND: {
+        FrontendConnector& frontend = FrontendConnector::get_instance();
+        frontend.relay_frontend_packet(pid, content);
+      } break;
+
+      default: {
+        /// @todo error
+        assert(false);
+      } break;
+    }
+  }
 }
 }  // namespace processwarp

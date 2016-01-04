@@ -53,6 +53,7 @@ class VMachine : private ProcessDelegate {
   void terminate();
 
   void on_recv_update(vaddr_t addr);
+  void recv_command(const picojson::object& content);
   void recv_packet(const std::string& data);
   Process& get_process();
   void warpout_thread(vtid_t tid);

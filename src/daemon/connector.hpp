@@ -18,10 +18,10 @@ class Connector {
   uv_loop_t* loop;
 
   void initialize(uv_loop_t* loop_, const std::string& path);
-  void send_packet(uv_pipe_t& client, const picojson::object& packet);
+  void send_data(uv_pipe_t& client, const picojson::object& data);
   void close(uv_pipe_t& client);
   virtual void on_connect(uv_pipe_t& client) = 0;
-  virtual void on_recv_packet(uv_pipe_t& client, picojson::object& packet) = 0;
+  virtual void on_recv_data(uv_pipe_t& client, picojson::object& data) = 0;
   virtual void on_close(uv_pipe_t& client) = 0;
 
  private:

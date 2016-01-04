@@ -7,8 +7,9 @@
 
 #include "convert.hpp"
 #include "daemon_define.hpp"
-#include "router.hpp"
 #include "frontend_connector.hpp"
+#include "router.hpp"
+#include "worker_connector.hpp"
 
 namespace processwarp {
 /**
@@ -39,50 +40,46 @@ void FrontendConnector::initialize(uv_loop_t* loop) {
   Connector::initialize(loop, "/tmp/pw.frontend.pipe");
 }
 
-/**
- * Send connect-frontend reply to frontend.
- * Packet format: {<br/>
- *   command: 'connect_frontend',
- *   result:  &lt;Result code&gt;
- * }
- * @param client Target frontend.
- * @param result Result code.
- */
-void FrontendConnector::send_connect_frontend(uv_pipe_t& client, int result) {
-  picojson::object packet;
-
-  packet.insert(std::make_pair("command", picojson::value(std::string("connect_frontend"))));
-  packet.insert(std::make_pair("result",  picojson::value(static_cast<double>(result))));
-
-  send_packet(client, packet);
-}
 
 /**
- * Send GUI command to frontend.
- * Packet format: {<br/>
- *   command: 'gui_command',
- *   pid: &lt;Process-id send from&gt;
- *   gui_command: &lt;GUI command string&gt;
- *   param: &lt;Parameter for command&gt;
- * }
- * @param pid Process-id send from.
- * @param command GUI command string.
- * @param param Parameter for command.
+ * Send create command to the GUi type frontend.
+ * @param pid Target process-id.
  */
-void FrontendConnector::send_gui_command(const vpid_t& pid, const std::string& command,
-                                         const picojson::object& param) {
+void FrontendConnector::create_gui(const vpid_t& pid) {
   if (gui_pipe == nullptr) {
     /// @todo error
     assert(false);
   }
 
-  picojson::object packet;
-  packet.insert(std::make_pair("command", picojson::value(std::string("gui_command"))));
-  packet.insert(std::make_pair("pid", Convert::vpid2json(pid)));
-  packet.insert(std::make_pair("gui_command", picojson::value(command)));
-  packet.insert(std::make_pair("param", picojson::value(param)));
+  picojson::object data;
+  data.insert(std::make_pair("command", picojson::value(std::string("create"))));
+  data.insert(std::make_pair("pid", Convert::vpid2json(pid)));
 
-  send_packet(*gui_pipe, packet);
+  send_data(*gui_pipe, data);
+}
+
+/**
+ * Relay packet to frontend.
+ * Packet format: {<br/>
+ *   command: 'relay_command',
+ *   pid: &lt;Process-id send from&gt;
+ *   content: &lt;GUI command&gt;
+ * }
+ * @param pid Target process-id.
+ * @param content A Packet data binary formatted.
+ */
+void FrontendConnector::relay_frontend_packet(const vpid_t& pid, const std::string& content) {
+  if (gui_pipe == nullptr) {
+    /// @todo error
+    assert(false);
+  }
+
+  picojson::object data;
+  data.insert(std::make_pair("command", picojson::value(std::string("relay_packet"))));
+  data.insert(std::make_pair("pid", Convert::vpid2json(pid)));
+  data.insert(std::make_pair("content", picojson::value(content)));
+
+  send_data(*gui_pipe, data);
 }
 
 /**
@@ -98,21 +95,21 @@ void FrontendConnector::on_connect(uv_pipe_t& client) {
 }
 
 /**
- * When receive packet, call capable methods.
+ * When receive data, call capable methods.
  * @param client Frontend pipe that send this packet.
- * @param packet Packet.
+ * @param data Packet.
  */
-void FrontendConnector::on_recv_packet(uv_pipe_t& client, picojson::object& packet) {
-  const std::string& command = packet.at("command").get<std::string>();
+void FrontendConnector::on_recv_data(uv_pipe_t& client, picojson::object& data) {
+  const std::string& command = data.at("command").get<std::string>();
 
-  if (command == "activate") {
-    recv_activate(client, packet);
+  if (command == "relay_command") {
+    recv_relay_command(client, data);
 
   } else if (command == "connect_frontend") {
-    recv_connect_frontend(client, packet);
+    recv_connect_frontend(client, data);
 
   } else if (command == "open_file") {
-    recv_open_file(client, packet);
+    recv_open_file(client, data);
 
   } else {
     /// @todo error
@@ -133,35 +130,24 @@ void FrontendConnector::on_close(uv_pipe_t& client) {
 }
 
 /**
- * When recieve activate command from frontend, pass capable method on Router.
- * @param client Frontend that passed this request.
- * @param packet Not used.
- */
-void FrontendConnector::recv_activate(uv_pipe_t& client, picojson::object& packet) {
-  Router& router = Router::get_instance();
-
-  router.activate();
-}
-
-/**
- * When recieve connect-frontend command from frontend, check account.
+ * When receive connect-frontend command from frontend, check account.
  * Reply code 0 if account is valid, and change status to CONNECT.
  * Reply code -1 if account is invalid.
  * If client type is GUI, set GUI pipe to this pipe.
  * @param client Frontend that passed this request.
- * @param packet Account information contain account, passord, type.
+ * @param param Parameter contain account, password, frontend type.
  */
-void FrontendConnector::recv_connect_frontend(uv_pipe_t& client, picojson::object& packet) {
+void FrontendConnector::recv_connect_frontend(uv_pipe_t& client, picojson::object& param) {
   Router& router = Router::get_instance();
-  const std::string& type_str = packet.at("type").get<std::string>();
+  const std::string& type = param.at("type").get<std::string>();
   FrontendProperty& property = properties.at(&client);
 
   assert(property.status == PipeStatus::SETUP);
 
-  if (type_str == "gui") {
+  if (type == "gui") {
     property.type = FrontendType::GUI;
 
-  } else if (type_str == "cui") {
+  } else if (type == "cui") {
     property.type = FrontendType::CUI;
 
   } else {
@@ -169,8 +155,8 @@ void FrontendConnector::recv_connect_frontend(uv_pipe_t& client, picojson::objec
     assert(false);
   }
 
-  if (router.check_account(packet.at("account").get<std::string>(),
-                           packet.at("password").get<std::string>())) {
+  if (router.check_account(param.at("account").get<std::string>(),
+                           param.at("password").get<std::string>())) {
     if (property.type == FrontendType::GUI) {
       if (gui_pipe == nullptr) {
         gui_pipe = &client;
@@ -193,11 +179,58 @@ void FrontendConnector::recv_connect_frontend(uv_pipe_t& client, picojson::objec
 /**
  * When receive open-file command from frontend, pass capable method on Router.
  * @param client Frontend that passed this request.
- * @param packet Account information contain account, passord, type.
+ * @param param Parameter contain a filename to open.
  */
-void FrontendConnector::recv_open_file(uv_pipe_t& client, picojson::object& packet) {
+void FrontendConnector::recv_open_file(uv_pipe_t& client, picojson::object& param) {
   Router& router = Router::get_instance();
 
-  router.load_llvm(packet.at("filename").get<std::string>(), std::vector<std::string>());
+  router.load_llvm(param.at("filename").get<std::string>(), std::vector<std::string>());
+}
+
+/**
+ * When receive command from frontend, relay to capable module.
+ * @param client Frontend that passed this request.
+ * @param content Data contain target module, pid, content of command.
+ */
+void FrontendConnector::recv_relay_command(uv_pipe_t& client, picojson::object& content) {
+  InnerModule::Type module = Convert::json2int<InnerModule::Type>(content.at("module"));
+
+  switch (module) {
+    case InnerModule::MEMORY:
+    case InnerModule::VM: {
+      WorkerConnector& worker = WorkerConnector::get_instance();
+      worker.relay_command(Convert::json2vpid(content.at("pid")), module,
+                           content.at("content").get<picojson::object>());
+    } break;
+
+    case InnerModule::SCHEDULER: {
+      Router& router = Router::get_instance();
+      router.relay_command(Convert::json2vpid(content.at("pid")),
+                           content.at("content").get<picojson::object>());
+    } break;
+
+    default: {
+      /// @todo error
+      assert(false);
+    }
+  }
+}
+
+/**
+ * Send connect-frontend reply to frontend.
+ * Packet format: {<br/>
+ *   command: 'connect_frontend',
+ *   result:  &lt;Result code&gt;
+ * }
+ * @param client Target frontend.
+ * @param result Result code.
+ */
+void FrontendConnector::send_connect_frontend(uv_pipe_t& client, int result) {
+  picojson::object data;
+
+  data.insert(std::make_pair("command", picojson::value(std::string("connect_frontend"))));
+  data.insert(std::make_pair("result",  picojson::value(static_cast<double>(result))));
+
+  send_data(client, data);
 }
 }  // namespace processwarp

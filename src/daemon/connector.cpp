@@ -61,25 +61,25 @@ void Connector::initialize(uv_loop_t* loop_, const std::string& path) {
  * Send packet to client.
  * Packet format is the same to on_recv method.
  * @param client Distination client's pipe.
- * @param packet Packet that formated json.
+ * @param data Packet that formated json.
  */
-void Connector::send_packet(uv_pipe_t& client, const picojson::object& packet) {
-  std::string str_packet = picojson::value(packet).serialize();
+void Connector::send_data(uv_pipe_t& client, const picojson::object& data) {
+  std::string bin_data = picojson::value(data).serialize();
   std::unique_ptr<uv_write_t> write_req(new uv_write_t());
   std::unique_ptr<WriteHandler> handler(new WriteHandler());
-  std::unique_ptr<char[]> buffer(new char[4 + str_packet.size() + 1]);
+  std::unique_ptr<char[]> buffer(new char[4 + bin_data.size() + 1]);
 
-  assert(str_packet.size() != 0);
+  assert(bin_data.size() != 0);
 
-  *reinterpret_cast<uint32_t*>(buffer.get()) = htonl(str_packet.size());
-  memcpy(buffer.get() + 4, str_packet.c_str(), str_packet.size());
-  buffer[4 + str_packet.size()] = '\0';
+  *reinterpret_cast<uint32_t*>(buffer.get()) = htonl(bin_data.size());
+  memcpy(buffer.get() + 4, bin_data.c_str(), bin_data.size());
+  buffer[4 + bin_data.size()] = '\0';
 
   handler->THIS = this;
   handler->pipe = &client;
   handler->buffer = buffer.get();
   write_req->data = reinterpret_cast<void*>(handler.get());
-  uv_buf_t write_buf = uv_buf_init(buffer.get(), 4 + str_packet.size() + 1);
+  uv_buf_t write_buf = uv_buf_init(buffer.get(), 4 + bin_data.size() + 1);
   uv_write(write_req.get(), reinterpret_cast<uv_stream_t*>(&client),
            &write_buf, 1, Connector::on_write_end);
   buffer.release();
@@ -124,10 +124,10 @@ void Connector::on_connect(uv_stream_t *listener, int status) {
 }
 
 /**
- * Reveive stream data from a client, clip packet and call on_recv_packet.
+ * Reveive stream data from a client, clip packet and call on_recv_data.
  * Concaenate stream data received yet with just now as buffer.
  * Parse json from buffer.
- * Call on_receive method if json packet (like bellow) is received fully,
+ * Call on_recv_data method if json packet (like bellow) is received fully,
  * and cut off a stream of packet data in head of buffer.
  * Packet:<br/>
  * [packet size (json length 4Byte big endian)][packet body (json)][\0]...(repeat)<br/>
@@ -173,7 +173,7 @@ void Connector::on_recv(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf)
       return;
     }
 
-    THIS.on_recv_packet(*client, v.get<picojson::object>());
+    THIS.on_recv_data(*client, v.get<picojson::object>());
     uint32_t rest_size = client_buffer.size() - 4 - psize - 1;
     memmove(client_buffer.data(), client_buffer.data() + 4 + psize + 1, rest_size);
     client_buffer.resize(rest_size);

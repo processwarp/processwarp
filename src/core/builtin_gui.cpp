@@ -12,7 +12,8 @@ BuiltinGuiDelegate::~BuiltinGuiDelegate() {
 }
 
 /**
- * When program call pw_gui_create, send "create" GUI command to frontend.
+ * When program call pw_gui_create, send "create_gui" command to scheduler.
+ * Scheduler should control to create a GUI frontend.
  * Parameters get from src aren't.
  * Return value set to dst isn't.
  * @return NORMAL for terminate function.
@@ -20,15 +21,16 @@ BuiltinGuiDelegate::~BuiltinGuiDelegate() {
 BuiltinPostProc::Type BuiltinGui::create(Process& proc, Thread& thread, BuiltinFuncParam p,
                                          vaddr_t dst, std::vector<uint8_t>& src) {
   BuiltinGuiDelegate& delegate = *reinterpret_cast<BuiltinGuiDelegate*>(p.ptr);
-  picojson::object param;
+  picojson::object command;
+  command.insert(std::make_pair("command", picojson::value("create_gui")));
 
-  delegate.builtin_gui_command(proc, "create", param);
+  delegate.builtin_gui_send_command(proc, InnerModule::SCHEDULER, command);
 
   return BuiltinPostProc::NORMAL;
 }
 
 /**
- * When program call pw_gui_script, send "script" GUI command with script string to the fromtend.
+ * When program call pw_gui_script, send "script" command with script string to the frontend.
  * Before send each command, embed parameter with format string the same as the "printf".
  * Parameters get from src are, pointer of format-string, and any parameter alike to "printf".
  * Return value set to dst isn't.
@@ -37,14 +39,15 @@ BuiltinPostProc::Type BuiltinGui::create(Process& proc, Thread& thread, BuiltinF
 BuiltinPostProc::Type BuiltinGui::script(Process& proc, Thread& thread, BuiltinFuncParam p,
                                          vaddr_t dst, std::vector<uint8_t>& src) {
   BuiltinGuiDelegate& delegate = *reinterpret_cast<BuiltinGuiDelegate*>(p.ptr);
-  picojson::object param;
   int seek = 0;
   vaddr_t format_ptr = Process::read_builtin_param_ptr(src, &seek);
   std::vector<uint8_t> ap(src.begin() + seek, src.end());
   std::string script = Format::parse(thread, thread.memory->read_raw(format_ptr), ap);
 
-  param.insert(std::make_pair("script", picojson::value(script)));
-  delegate.builtin_gui_command(proc, "script", param);
+  picojson::object packet;
+  packet.insert(std::make_pair("command", picojson::value("script")));
+  packet.insert(std::make_pair("script", picojson::value(script)));
+  delegate.builtin_gui_send_frontend_packet(proc, picojson::value(packet).serialize());
 
   return BuiltinPostProc::NORMAL;
 }

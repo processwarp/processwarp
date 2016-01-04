@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "frontend_connector.hpp"
 #include "router.hpp"
 #include "scheduler.hpp"
 #include "server_connector.hpp"
@@ -71,13 +72,6 @@ bool Router::check_account(const std::string& account_, const std::string& passw
 }
 
 /**
- * It tell scheduler this node was actived by user or any event.
- */
-void Router::activate() {
-  scheduler.activate();
-}
-
-/**
  * Open the LLVM-IR file and send load-llvm command to server.
  * @param filename Filename of LLVM-IR.
  * @param args Arguments to pass application's entry point.
@@ -119,7 +113,7 @@ const nid_t& Router::get_my_nid() {
 /**
  * When connect is success, send bind_node packet with my-nid and node-name.
  */
-void Router::on_connect_node() {
+void Router::recv_connect_node() {
   ServerConnector& server = ServerConnector::get_instance();
 
   server.send_bind_node(my_nid, config.at("node-name").get<std::string>());
@@ -129,30 +123,48 @@ void Router::on_connect_node() {
  * When bind is success, store assigned nid as my-nid.
  * @param nid Assigned nid for this node.
  */
-void Router::on_bind_node(const nid_t& nid) {
+void Router::recv_bind_node(const nid_t& nid) {
   my_nid = nid;
 }
 
 /**
- * When receive a packet, and relay it to capable module.
- * Packet type is 'sched', relay this packet to Scheduler.
- * Packet type is 'meory' or 'vm', relay this packet to WorkerConnector.
+ * When receive a scheduler command, relay it to scheduler.
  * @param pid Target process-id.
- * @param type Packet type.
- * @param packet Packet content.
+ * @param content Command content.
  */
-void Router::on_recv_relay(const vpid_t& pid, const std::string& type, const std::string& packet) {
-  if (type == "memory" || type == "vm") {
-    WorkerConnector& worker = WorkerConnector::get_instance();
-    worker.relay_packet(pid, type, packet);
+void Router::relay_command(const vpid_t& pid, const picojson::object& content) {
+  scheduler.recv_command(pid, content);
+}
 
-  } else if (type == "sched") {
-    scheduler.on_recv_packet(pid, packet);
+/**
+ * When passed a outer module packet from any module in this node,
+ * set destination node-id and pass content to capable module in this node or other node through the server.
+ * @param pid Process-id bundled for a packet.
+ * @param module Target module.
+ * @param content Packet content.
+ */
+void Router::relay_outer_module_packet(const vpid_t& pid, OuterModule::Type module,
+                                       const std::string& content) {
+  switch (module) {
+    case OuterModule::FRONTEND: {
+      FrontendConnector& frontend = FrontendConnector::get_instance();
+      frontend.relay_frontend_packet(pid, content);
+    } break;
 
-  } else {
-    /// @todo error
-    assert(false);
+    default: {
+      /// @todo error
+      assert(false);
+    }
   }
+}
+
+/**
+ * When receive a scheduler packet, relay it to scheduler.
+ * @param pid Target process-id.
+ * @param content Packet content.
+ */
+void Router::relay_scheduler_packet(const vpid_t& pid, const std::string& content) {
+  scheduler.recv_packet(pid, content);
 }
 
 /**
@@ -171,6 +183,17 @@ void Router::scheduler_create_vm(Scheduler& scheduler, const vpid_t& pid, vtid_t
 }
 
 /**
+ * When scheduler require create GUI, call Frontend's methid to do it.
+ * @param scheduler Caller instance.
+ * @param pid Process-id for new GUI.
+ */
+void Router::scheduler_create_gui(Scheduler& scheduler, const vpid_t& pid) {
+  FrontendConnector& frontend = FrontendConnector::get_instance();
+
+  frontend.create_gui(pid);
+}
+
+/**
  * When scheduler require this node's node-id, return it.
  * @param scheduler Caller instance.
  */
@@ -179,29 +202,26 @@ nid_t Router::scheduler_get_my_nid(Scheduler& scheduler) {
 }
 
 /**
- * When scheduler require execute vm command, call Worke's method to do it.
+ * When scheduler require send a command, relay command by command type.
  * @param scheduler Caller instance.
- * @param pid Target process-id to execute vm.
- * @param command Command string.
- * @param param Parameter JSON object.
+ * @param pid Target process-id to execute it.
+ * @param module Target module.
+ * @param content Command content.
  */
-void Router::scheduler_vm_command(Scheduler& scheduler, const vpid_t& pid,
-                                  const std::string& command, const picojson::object& param) {
-  WorkerConnector& worker = WorkerConnector::get_instance();
+void Router::scheduler_send_command(Scheduler& scheduler, const vpid_t& pid,
+                                    InnerModule::Type module, const picojson::object& content) {
+  switch (module) {
+    case InnerModule::MEMORY:
+    case InnerModule::VM: {
+      WorkerConnector& worker = WorkerConnector::get_instance();
+      worker.relay_command(pid, module, content);
+    } break;
 
-  worker.send_scheduler_command(pid, command, param);
-}
-
-/**
- * When scheduler require check process is having process, call Worke's method to do it.
- * @param scheduler Caller instance.
- * @param pid Target process-id to check.
- * @return True if process instance was exist in thid node.
- */
-bool Router::scheduler_have_process(Scheduler& scheduler, const vpid_t& pid) {
-  WorkerConnector& worker = WorkerConnector::get_instance();
-
-  return worker.have_process(pid);
+    default: {
+      /// @todo error
+      assert(false);
+    }
+  }
 }
 
 /**
@@ -209,12 +229,14 @@ bool Router::scheduler_have_process(Scheduler& scheduler, const vpid_t& pid) {
  * @param scheduler Caller instance.
  * @param pid Process-id bundling packet.
  * @param dst_nid Destination node-id.
- * @param packet Packet to send.
+ * @param module Target module.
+ * @param content Packet content.
  */
-void Router::scheduler_send_packet(Scheduler& scheduler, const vpid_t& pid,
-                                   const nid_t& dst_nid, const std::string& packet) {
+void Router::scheduler_send_inner_module_packet(Scheduler& scheduler, const vpid_t& pid,
+                                                const nid_t& dst_nid, InnerModule::Type module,
+                                                const std::string& content) {
   ServerConnector& server = ServerConnector::get_instance();
 
-  server.relay_packet(pid, dst_nid, "sched", packet);
+  server.relay_inner_module_packet(pid, dst_nid, module, content);
 }
 }  // namespace processwarp

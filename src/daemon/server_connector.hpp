@@ -26,10 +26,14 @@ class ServerConnector {
 
   void initialize(uv_loop_t* loop_, const std::string& url);
   ServerStatus::Type get_status();
-  void relay_packet(const vpid_t& pid,
-                    const nid_t& dst_nid,
-                    const std::string& type,
-                    const std::string& packet);
+  void relay_inner_module_packet(const vpid_t& pid,
+                                 const nid_t& dst_nid,
+                                 InnerModule::Type module,
+                                 const std::string& content);
+  void relay_outer_module_packet(const vpid_t& pid,
+                                 const nid_t& dst_nid,
+                                 OuterModule::Type module,
+                                 const std::string& content);
   void send_connect_node(const std::string& account,
                          const std::string& password);
   void send_load_llvm(const std::string& name,
@@ -65,15 +69,17 @@ class ServerConnector {
   ServerConnector& operator=(const ServerConnector&);
   virtual ~ServerConnector();
 
-  void initialize_async();
-  void initialize_socketio(const std::string& url);
+  static void on_recv(uv_async_t* handle);
+
   void on_close();
   void on_fail();
   void on_open();
+
+  void initialize_async();
+  void initialize_socketio(const std::string& url);
   void recv_connect_node(sio::message::ptr data);
   void recv_bind_node(sio::message::ptr data);
-  void recv_relay(sio::message::ptr data);
-
-  static void on_recv(uv_async_t* handle);
+  void recv_inner_module_packet(sio::message::ptr data);
+  void recv_outer_module_packet(sio::message::ptr data);
 };
 }  // namespace processwarp

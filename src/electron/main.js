@@ -8,6 +8,12 @@ var net = require('net');
 
 require('crash-reporter').start();
 
+const PID_BROADCAST = '*';
+
+const INNER_MODULE_MEMORY    = '0';
+const INNER_MODULE_VM        = '1';
+const INNER_MODULE_SCHEDULER = '2';
+
 const CONNECT_STATUS = {
   SETUP:    0,  ///< Goint to open socket.
   APPROACH: 1,  ///< Send account info, but not response yet.
@@ -94,12 +100,10 @@ function onActionConnect(sender, param) {
 ipc.on('action_connect', onActionConnect);
 
 /**
- * When activate event is happen, send activate event to backend.
+ * When activate event is happen, send activate command to the scheduler.
  */
 function onActionActivate() {
-  sendToBackend({
-    command: 'activate'
-  });
+  sendCommand(PID_BROADCAST, INNER_MODULE_SCHEDULER, 'activate', {});
 }
 ipc.on('action_activate', onActionActivate);
 
@@ -120,7 +124,7 @@ function onActionOpenFile() {
     },
     function(filename) {
       if (filename && filename.length) {
-	sendToBackend({
+	sendData({
 	  command: 'open_file',
 	  filename: filename[0],
 	});
@@ -143,7 +147,7 @@ function connectBackend() {
 
   backendSocket.on('connect', onBackendConnect);
   backendSocket.on('close',   onBackendClose);
-  backendSocket.on('data',    onBackendRecv);
+  backendSocket.on('data',    onBackendRecvData);
   backendSocket.on('error',   onBackendError);
 
   backendSocket.connect('/tmp/pw.frontend.pipe');
@@ -156,7 +160,7 @@ function connectBackend() {
 function onBackendConnect() {
   console.assert(connectStatus == CONNECT_STATUS.APPROACH, connectStatus);
   
-  sendToBackend({
+  sendData({
     command:  'connect_frontend',
     account:  accountInfo.account,
     password: accountInfo.password,
@@ -176,11 +180,11 @@ function onBackendClose() {
 /**
  * When receive data from backend, clip packet and call capable method.
  * Concaenate stream data received yet with just now as buffer.
- * Packet format is the same to sendToBackend method.
+ * Packet format is the same to sendData method.
  * @param data {Buffer} Received data.
  * @return {void}
  */
-function onBackendRecv(data) {
+function onBackendRecvData(data) {
   backendBuffer = Buffer.concat([backendBuffer, data]);
 
   while (backendBuffer.length >= 4) {
@@ -191,12 +195,13 @@ function onBackendRecv(data) {
       console.assert(false, 'todo');
     }
 
-    var packet = JSON.parse(backendBuffer.toString('utf8', 4, 4 + psize));
+    var content = JSON.parse(backendBuffer.toString('utf8', 4, 4 + psize));
     backendBuffer = backendBuffer.slice(4 + psize + 1);
 
-    switch (packet.command) {
-      case 'connect_frontend': recvConnectFrontend(packet); break;
-      case 'gui_command': recvGuiCommand(packet); break;
+    switch (content.command) {
+      case 'connect_frontend': recvConnectFrontend(content); break;
+      case 'create': recvCreate(content); break;
+      case 'relay_packet': recvPacket(content); break;
       default: {
 	/// @todo eror
 	console.assert(false, 'todo');
@@ -218,28 +223,6 @@ function onBackendError() {
 }
 
 /**
- * Send packet to backend.
- * Convert packet format json to string.
- * Send length, string, and '\0' as terminater.
- * @param packet {json} Packet to send to backend.
- * @return {void}
- */
-function sendToBackend(packet) {
-  console.assert(connectStatus != CONNECT_STATUS.CLOSE, connectStatus);
-
-  var str = JSON.stringify(packet);
-  var len = Buffer.byteLength(str, 'utf8');
-  var buf = new Buffer(4 + len + 1);
-  buf.writeUInt32BE(len, 0);
-  buf.write(str, 4);
-  buf.writeInt8(0, 4 + len);
-
-  if (!backendSocket.write(buf)) {
-    onBackendError();
-  }
-}
-
-/**
  * When receive connect-frontend reply, send result to window.
  * If result code is 0, send action_connect_success, otherwise action_connect_failure.
  * @param packet.result {number} Result code.
@@ -254,27 +237,13 @@ function recvConnectFrontend(packet) {
 }
 
 /**
- * When receive GUI command, call capable method to do it.
- * @param packet {object} Packet contain command string, process-id send from, and parameter.
- */
-function recvGuiCommand(packet) {
-  switch (packet.gui_command) {
-    case 'create': guiCommandCreate(packet.pid, packet.param); break;
-    case 'script': guiCommandScript(packet.pid, packet.param); break;
-    default: {
-      /// @todo error
-      console.assert(false, 'todo');
-    } break;
-  }
-}
-
-/**
  * When receive 'create' GUI command, create a new frame and load default HTML.
  * The frame created is regist for contexts set with process-id.
  * @param pid {string} Process-id bundled for frame.
  * @param param {object} Not used.
  */
-function guiCommandCreate(pid, param) {
+function recvCreate(param) {
+  var pid = param.pid
   if (pid in contexts) {
     /// @todo error
     console.assert(false, 'todo');
@@ -295,12 +264,28 @@ function guiCommandCreate(pid, param) {
 }
 
 /**
+ * When receive GUI command packet, call capable method to do it.
+ * @param packet {object} Packet contain command string, process-id send from, and parameter.
+ */
+function recvPacket(packet) {
+  var content = JSON.parse(packet.content);
+
+  switch (content.command) {
+    case 'script': recvPacketScript(packet.pid, content); break;
+    default: {
+      /// @todo error
+      console.assert(false, 'todo');
+    } break;
+  }
+}
+
+/**
  * When receive 'script' GUI command, pass scipt to frame or store if frame not finished setup.
  * @param pid {sring} Process-id send to.
  * @param param {object} Parameter contain script string.
  * @return {void}
  */
-function guiCommandScript(pid, param) {
+function recvPacketScript(pid, param) {
   if (!(pid in contexts)) {
     /// @todo error
     console.assert(false, 'todo');
@@ -315,6 +300,45 @@ function guiCommandScript(pid, param) {
     // console.log('save context:' + param.script);
     context.script.push(param.script);
   }
+}
+
+/**
+ * Send data packet to backend.
+ * Convert packet format JSON formatted string.
+ * Send length, string, and '\0' as terminater.
+ * @param data {object} Data content.
+ * @return {void}
+ */
+function sendData(data) {
+  console.assert(connectStatus != CONNECT_STATUS.CLOSE, connectStatus);
+
+  var str = JSON.stringify(data);
+  var len = Buffer.byteLength(str, 'utf8');
+  var buf = new Buffer(4 + len + 1);
+  buf.writeUInt32BE(len, 0);
+  buf.write(str, 4);
+  buf.writeInt8(0, 4 + len);
+
+  if (!backendSocket.write(buf)) {
+    onBackendError();
+  }
+}
+
+/**
+ * Send a command to other module in this node through the backend.
+ * @param pid {string} Process-id bundled to command.
+ * @param module {string} Target module.
+ * @param command {string} Command string.
+ * @param param {object} Parameter for a command.
+ */
+function sendCommand(pid, module, command, param) {
+  param.command = command;
+  sendData({
+    command: 'relay_command',
+    pid:     pid,
+    module:  module,
+    content: param
+  });
 }
 
 /**

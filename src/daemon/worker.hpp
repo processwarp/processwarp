@@ -47,17 +47,19 @@ class Worker : public VMachineDelegate, public VMemoryDelegate, public BuiltinGu
   std::map<std::string, std::string> lib_filter;
   std::unique_ptr<VMachine> vm;
 
-  void vmachine_send_packet(VMachine& vm, const nid_t& dst_nid, const std::string& packet) override;
+  void vmachine_send_packet(VMachine& vm, const nid_t& dst_nid,
+                            const std::string& content) override;
   void vmachine_finish(VMachine& vm) override;
   void vmachine_finish_thread(VMachine& vm, const vtid_t& tid) override;
   void vmachine_error(VMachine& vm, const std::string& message) override;
 
   void vmemory_send_packet(VMemory& memory, const nid_t& dst_nid,
-                           const std::string& packet) override;
+                           const std::string& content) override;
   void vmemory_recv_update(VMemory& memory, vaddr_t addr) override;
 
-  void builtin_gui_command(Process& proc, const std::string& command,
-                           const picojson::object& param) override;
+  void builtin_gui_send_command(Process& proc, InnerModule::Type module,
+                                const picojson::object& content) override;
+  void builtin_gui_send_frontend_packet(Process& proc, const std::string& content) override;
 
   static void on_alloc(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf);
   static void on_close(uv_handle_t* handle);
@@ -71,9 +73,12 @@ class Worker : public VMachineDelegate, public VMemoryDelegate, public BuiltinGu
   void connect_pipe(WorkerParameter& parameter);
   void initialize_vm(WorkerParameter& parameter);
   void initialize_loop();
-  void recv_packet(const picojson::object& packet);
-  void recv_scheduler_warpout(const picojson::object& parameter);
-  void relay_packet(const nid_t& dst_nid, const std::string& type, const std::string& packet);
-  void send_packet(const picojson::object& packet);
+  void recv_data(const picojson::object& data);
+  void send_command(InnerModule::Type module, const picojson::object& content);
+  void send_inner_module_packet(const nid_t& dst_nid, InnerModule::Type module,
+                                const std::string& content);
+  void send_outer_module_packet(const nid_t& dst_nid, OuterModule::Type module,
+                                const std::string& content);
+  void send_data(const picojson::object& data);
 };
 }  // namespace processwarp
