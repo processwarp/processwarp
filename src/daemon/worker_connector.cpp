@@ -36,7 +36,8 @@ WorkerConnector::WorkerConnector() {
  * @param pipe_path_ Path of pipe that for connecting with worker.
  * @param config_file_ Config filename to pass worker.
  */
-void WorkerConnector::initialize(uv_loop_t* loop, const std::string& pipe_path_, const std::string& config_file_) {
+void WorkerConnector::initialize(uv_loop_t* loop, const std::string& pipe_path_,
+                                 const std::string& config_file_) {
   config_file = config_file_;
   pipe_path   = pipe_path_;
   Connector::initialize(loop, pipe_path);
