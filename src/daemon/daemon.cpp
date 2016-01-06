@@ -175,8 +175,8 @@ int Daemon::main_loop() {
   server.initialize(loop,
                     config.at("server").get<std::string>());
   router.initialize(loop, config);
-  frontend.initialize(loop);
-  worker.initialize(loop, config_file);
+  frontend.initialize(loop, config.at("frontend-pipe").get<std::string>());
+  worker.initialize(loop, config.at("worker-pipe").get<std::string>(), config_file);
 
   server.send_connect_node(config.at("account").get<std::string>(),
                            config.at("password").get<std::string>());

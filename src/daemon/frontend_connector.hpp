@@ -15,7 +15,7 @@ class FrontendConnector : public Connector {
  public:
   static FrontendConnector& get_instance();
 
-  void initialize(uv_loop_t* loop);
+  void initialize(uv_loop_t* loop, const std::string& pipe_path);
   void create_gui(const vpid_t& pid);
   void relay_frontend_packet(const vpid_t& pid, const std::string& content);
   void destroy_gui(const vpid_t& pid);

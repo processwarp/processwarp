@@ -32,11 +32,14 @@ WorkerConnector::WorkerConnector() {
 /**
  * Initialize for WorkerConnector.
  * Create UNIX domain socket for worker.
- * @todo Get path of UNIX domain socket from configure.
+ * @param loop libuv's loop for WorkerConnector.
+ * @param pipe_path_ Path of pipe that for connecting with worker.
+ * @param config_file_ Config filename to pass worker.
  */
-void WorkerConnector::initialize(uv_loop_t* loop,  const std::string& config_file_) {
+void WorkerConnector::initialize(uv_loop_t* loop, const std::string& pipe_path_, const std::string& config_file_) {
   config_file = config_file_;
-  Connector::initialize(loop, "/tmp/pw.worker.pipe");
+  pipe_path   = pipe_path_;
+  Connector::initialize(loop, pipe_path);
 }
 
 /**
@@ -52,7 +55,6 @@ void WorkerConnector::initialize(uv_loop_t* loop,  const std::string& config_fil
 void WorkerConnector::create_vm(const vpid_t& pid, vtid_t root_tid,
                                 vaddr_t proc_addr, const nid_t& master_nid) {
   // static const char VALGRIND_PATH = "/usr/local/bin/valgrind";
-  static const char PIPE_PATH[]   = "/tmp/pw.worker.pipe";
   std::string worker_path = Util::file_dirname(Util::get_my_fullpath()) + "/worker";
   Router& router = Router::get_instance();
 
@@ -72,7 +74,7 @@ void WorkerConnector::create_vm(const vpid_t& pid, vtid_t root_tid,
     // const_cast<char*>(VALGRIND_PATH),
     const_cast<char*>(worker_path.c_str()),
     const_cast<char*>(config_file.c_str()),
-    const_cast<char*>(PIPE_PATH),
+    const_cast<char*>(pipe_path.c_str()),
     const_cast<char*>(Convert::vpid2str(pid).c_str()),
     const_cast<char*>(root_tid_str.c_str()),
     const_cast<char*>(proc_addr_str.c_str()),

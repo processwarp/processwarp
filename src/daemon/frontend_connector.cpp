@@ -34,10 +34,11 @@ FrontendConnector::FrontendConnector() :
 /**
  * Initialize for FrontendConnector.
  * Create UNIX domain socket for controller.
- * @todo Get path of UNIX domain socket from configure.
+ * @param loop libuv's loop for WorkerConnector.
+ * @param pipe_path Path of pipe that for connecting with worker.
  */
-void FrontendConnector::initialize(uv_loop_t* loop) {
-  Connector::initialize(loop, "/tmp/pw.frontend.pipe");
+void FrontendConnector::initialize(uv_loop_t* loop, const std::string& pipe_path) {
+  Connector::initialize(loop, pipe_path);
 }
 
 

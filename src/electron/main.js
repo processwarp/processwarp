@@ -4,6 +4,7 @@ var app = require('app');
 var BrowserWindow = require('browser-window');
 var dialog = require('dialog');
 var ipc = require('electron').ipcMain;
+var fs = require('fs');
 var net = require('net');
 
 require('crash-reporter').start();
@@ -25,6 +26,7 @@ var mainWindow    = null;
 var backendSocket = null;
 var backendBuffer = new Buffer(0);
 var accountInfo   = {};
+var configure     = null;
 var connectStatus = CONNECT_STATUS.CLOSE;
 var contexts      = {};
 
@@ -41,6 +43,8 @@ app.on('window-all-closed', function() {
  * On start application, create new window.
  */
 app.on('ready', function() {
+  readConfigure();
+
   mainWindow = new BrowserWindow({
     minHeight: 400,
     minWidth: 340,
@@ -150,7 +154,7 @@ function connectBackend() {
   backendSocket.on('data',    onBackendRecvData);
   backendSocket.on('error',   onBackendError);
 
-  backendSocket.connect('/tmp/pw.frontend.pipe');
+  backendSocket.connect(configure['frontend-pipe']);
 }
 
 /**
@@ -220,6 +224,35 @@ function onBackendError() {
   connectStatus = CONNECT_STATUS.CLOSE;
 
   console.log('connection error.');
+}
+
+/**
+ * Read configuration.
+ * @return {void}
+ */
+function readConfigure() {
+  var is_next_config = false;
+  var filename = false;
+  process.argv.forEach(function(val, index) {
+    if (val === '-f') {
+      is_next_config = true;
+
+    } else if (is_next_config) {
+      is_next_config = false;
+      filename = val;
+    }
+  });
+
+  if (!filename) return;
+
+  fs.readFile(filename, 'utf8', function(err, text) {
+    if (err != null) {
+      console.log(err);
+      console.assert(false, 'todo');
+    }
+
+    configure = JSON.parse(text);
+  });
 }
 
 /**
