@@ -8,254 +8,254 @@
     <link rel="stylesheet" href="icon.css">
   </head>
   <script>
-  const electron = require('electron');
-  const shell = electron.shell;
-  const ipc   = electron.ipcRenderer;
+    const electron = require('electron');
+    const shell = electron.shell;
+    const ipc   = electron.ipcRenderer;
 
-  window.onload = function() {
-    curtainUp();
-  };
+    window.onload = function() {
+      curtainUp();
+    };
   </script>
   <body>
     <style>
-    html {
-	    height: 100%;
-	    overflow: hidden;
-    }
-    body {
-	    height: 100%;
-	    overflow: hidden;
-	    width: 100%;
-    }
+      html {
+        height: 100%;
+        overflow: hidden;
+      }
+      body {
+        height: 100%;
+        overflow: hidden;
+        width: 100%;
+      }
     </style>
     <div id="curtain">
       <style>
-      #curtain {
-	      box-pack: center;
-	      box-align: center;
-	      display: -webkit-box;
-	      display: box;
-	      height: 100%;
-	      position: fixed;
-	      width: 100%;
-	      z-index: 9;
-	      -webkit-box-align: center;
-	      -webkit-box-pack: center;
-      }
-      #curtain-layer {
-	      background: #FFF;
-	      height: 100%;
-	      left: 0;
-	      opacity: 0.5;
-	      position: absolute;
-	      top: 0;
-	      width: 100%;
-	      -moz-opacity: 0.5;
-      }
+        #curtain {
+          box-pack: center;
+          box-align: center;
+          display: -webkit-box;
+          display: box;
+          height: 100%;
+          position: fixed;
+          width: 100%;
+          z-index: 9;
+          -webkit-box-align: center;
+          -webkit-box-pack: center;
+        }
+        #curtain-layer {
+          background: #FFF;
+          height: 100%;
+          left: 0;
+          opacity: 0.5;
+          position: absolute;
+          top: 0;
+          width: 100%;
+          -moz-opacity: 0.5;
+        }
       </style>
       <div id="curtain-layer"></div>
       <div class="mdl-spinner mdl-spinner--single-color mdl-js-spinner is-active"></div>
       <script>
-      /**
-       * Allow input by clearing the curtain.
-       * @return {void}
-       */
-      function curtainUp() {
-	var curtain = document.getElementById('curtain');
-	curtain.style.display = 'none';
-      }
+        /**
+         * Allow input by clearing the curtain.
+         * @return {void}
+         */
+        function curtainUp() {
+          var curtain = document.getElementById('curtain');
+          curtain.style.display = 'none';
+        }
 
-      /**
-       * Block input by clossing the curtain.
-       * @return {void}
-       */
-      function curtainDown() {
-	var curtain = document.getElementById('curtain');
-	curtain.style.display = '';
-      }
+        /**
+         * Block input by clossing the curtain.
+         * @return {void}
+         */
+        function curtainDown() {
+          var curtain = document.getElementById('curtain');
+          curtain.style.display = '';
+        }
       </script>
     </div><!-- end of curtain -->
 
     <div id="connect">
       <style>
-      #connect {
-	      display: -webkit-box;
-	      display: box;
-	      -webkit-box-pack: center;
-	      box-pack: center;
-	      -webkit-box-align: center;
-	      box-align: center;
-	      height: 100%;
-	      width: 100%;
-      }
-      .connect-card-square.mdl-card {
-	      height: 360px;
-	      width: 320px;
-      }
-      .connect-card-square > .mdl-card__title {
-	      background: #46B6AC;
-	      color: #fff;
-      }
+        #connect {
+          display: -webkit-box;
+          display: box;
+          -webkit-box-pack: center;
+          box-pack: center;
+          -webkit-box-align: center;
+          box-align: center;
+          height: 100%;
+          width: 100%;
+        }
+        .connect-card-square.mdl-card {
+          height: 360px;
+          width: 320px;
+        }
+        .connect-card-square > .mdl-card__title {
+          background: #46B6AC;
+          color: #fff;
+        }
       </style>
       <div class="connect-card-square mdl-card mdl-shadow--2dp">
-	<div class="mdl-card__title mdl-card--expand">
-	  <h2 class="mdl-card__title-text">PROCESS WARP</h2>
-	</div>
-	<div class="mdl-card__supporting-text">
-	  Please <a href="javascript:void(0)" onClick="connectOnSignup();">sign-up</a>
-	  if you don't have account for PROCESS WARP.
-	</div>
-	<div class="mdl-card__actions mdl-card--border">
-	  <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
-	    <input class="mdl-textfield__input" type="text" id="connect-account">
-	    <label class="mdl-textfield__label" for="connect-account">account...</label>
-	  </div>
-	  <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
-	    <input class="mdl-textfield__input" type="password" id="connect-password">
-	    <label class="mdl-textfield__label" for="connect-password">password...</label>
-	  </div>
-	  <div class="mdl-grid mdl-grid--no-spacing">
-	    <button id="connect-quit" style="margin-left: auto;"
-		    class="mdl-button mdl-js-button mdl-button--primary"
-		    onClick="connectOnQuit();">
-	      QUIT
-	    </button>
-	    <button id="connect-connect"
-		    class="mdl-button mdl-js-button mdl-button--primary"
-		    onClick="connectOnConnect();">
-	      CONNECT
-	    </button>
-	  </div>
-	</div>
+        <div class="mdl-card__title mdl-card--expand">
+          <h2 class="mdl-card__title-text">PROCESS WARP</h2>
+        </div>
+        <div class="mdl-card__supporting-text">
+          Please <a href="javascript:void(0)" onClick="connectOnSignup();">sign-up</a>
+          if you don't have account for PROCESS WARP.
+        </div>
+        <div class="mdl-card__actions mdl-card--border">
+          <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+            <input class="mdl-textfield__input" type="text" id="connect-account">
+            <label class="mdl-textfield__label" for="connect-account">account...</label>
+          </div>
+          <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+            <input class="mdl-textfield__input" type="password" id="connect-password">
+            <label class="mdl-textfield__label" for="connect-password">password...</label>
+          </div>
+          <div class="mdl-grid mdl-grid--no-spacing">
+            <button id="connect-quit" style="margin-left: auto;"
+                    class="mdl-button mdl-js-button mdl-button--primary"
+                    onClick="connectOnQuit();">
+              QUIT
+            </button>
+            <button id="connect-connect"
+                    class="mdl-button mdl-js-button mdl-button--primary"
+                    onClick="connectOnConnect();">
+              CONNECT
+            </button>
+          </div>
+        </div>
       </div>
       <script>
-      /**
-       * Open link to sign-up web page by system browser when 'sign up' link was touch.
-       * @return {void}
-       */
-      function connectOnSignup() {
-	shell.openExternal('https://prev.processwarp.org');
-      }
+        /**
+         * Open link to sign-up web page by system browser when 'sign up' link was touch.
+         * @return {void}
+         */
+        function connectOnSignup() {
+          shell.openExternal('https://prev.processwarp.org');
+        }
 
-      /**
-       * Send quit event to main process when 'QUIT' button was touch.
-       * @return {void}
-       */
-      function connectOnQuit() {
-	ipc.send('action_quit');
-      }
+        /**
+         * Send quit event to main process when 'QUIT' button was touch.
+         * @return {void}
+         */
+        function connectOnQuit() {
+          ipc.send('action_quit');
+        }
 
-      /**
-       * Get account and password from input form and
-       * send connect event to main process when 'CONNECT' button was touch.
-       * @return {void}
-       */
-      function connectOnConnect() {
-	var account  = document.getElementById('connect-account').value;
-	var password = document.getElementById('connect-password').value;	
+        /**
+         * Get account and password from input form and
+         * send connect event to main process when 'CONNECT' button was touch.
+         * @return {void}
+         */
+        function connectOnConnect() {
+          var account  = document.getElementById('connect-account').value;
+          var password = document.getElementById('connect-password').value;
 
-	curtainDown();
+          curtainDown();
 
-	ipc.send('action_connect', {
-	  account: account,
-	  password: password
-	});
-      }
+          ipc.send('action_connect', {
+            account: account,
+            password: password
+          });
+        }
 
-      /**
-       * When connecting to backend is succeed, turn connect card off and curtain up.
-       * @return {void}
-       */
-      function connectOnSuccess() {
-	var connect = document.getElementById('connect');
-	connect.style.display = 'none';
-	curtainUp();
-      }
-      ipc.on('action_connect_success', connectOnSuccess);
+        /**
+         * When connecting to backend is succeed, turn connect card off and curtain up.
+         * @return {void}
+         */
+        function connectOnSuccess() {
+          var connect = document.getElementById('connect');
+          connect.style.display = 'none';
+          curtainUp();
+        }
+        ipc.on('action_connect_success', connectOnSuccess);
 
-      /**
-       * When connecting to backend is failed, show alert and curtain up.
-       * @param result {number} Error code.
-       * @return {void}
-       */
-      function connectOnFailure(sender, result) {
-	curtainUp();
-	alert('Connection failure : ' + result);
-      }
-      ipc.on('action_connect_failure', connectOnFailure);
+        /**
+         * When connecting to backend is failed, show alert and curtain up.
+         * @param result {number} Error code.
+         * @return {void}
+         */
+        function connectOnFailure(sender, result) {
+          curtainUp();
+          alert('Connection failure : ' + result);
+        }
+        ipc.on('action_connect_failure', connectOnFailure);
       </script>
     </div><!-- end of connect -->
     <div id="main">
       <style>
-      #main {
-	      height: 100%;
-	      width: 100%;
-      }
-      #processes-table {
-	      width: 100%;
-      }
-      .mdl-layout__header-row {
-	      padding: 0 16px;
-      }
-      .mdl-layout__header-row button {
-	      margin-right: 16px;
-      }
+        #main {
+          height: 100%;
+          width: 100%;
+        }
+        #processes-table {
+          width: 100%;
+        }
+        .mdl-layout__header-row {
+          padding: 0 16px;
+        }
+        .mdl-layout__header-row button {
+          margin-right: 16px;
+        }
       </style>
       <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
-	<header class="mdl-layout__header">
-	  <div class="mdl-layout__header-row">
-	    <button class="mdl-button mdl-js-button mdl-button--icon"
-		    onClick="mainOnActivate();">
-	      <i class="material-icons">insert_emoticon</i>
-	    </button>
-	    <button class="mdl-button mdl-js-button mdl-button--icon"
-		    onClick="mainOnOpenFile();">
-	      <i class="material-icons">unarchive</i>
-	    </button>
-	    <!--
-	    <button class="mdl-button mdl-js-button mdl-button--icon">
-	      <i class="material-icons">highlight_off</i>
-	    </button>
-	    -->
-	    <div class="mdl-layout-spacer"></div>
-	  </div>
-	</header>
-	<main class="mdl-layout__content">
-	  <div class="page-content">
-	    <!-- List of processes. -->
-	    <table class="mdl-data-table mdl-js-data-table mdl-shadow--2dp"
-		    id="processes-table">
-	      <tbody>
-		<tr>
-		  <td class="mdl-data-table__cell--non-numeric">Acrylic (Transparent)</td>
-		</tr>
-		<tr>
-		  <td class="mdl-data-table__cell--non-numeric">Plywood (Birch)</td>
-		</tr>
-		<tr>
-		  <td class="mdl-data-table__cell--non-numeric">Laminate (Gold on Blue)</td>
-		</tr>
-	      </tbody>
-	    </table><!-- End of list. -->
-	  </div>
-	</main>
+        <header class="mdl-layout__header">
+          <div class="mdl-layout__header-row">
+            <button class="mdl-button mdl-js-button mdl-button--icon"
+                    onClick="mainOnActivate();">
+              <i class="material-icons">insert_emoticon</i>
+            </button>
+            <button class="mdl-button mdl-js-button mdl-button--icon"
+                    onClick="mainOnOpenFile();">
+              <i class="material-icons">unarchive</i>
+            </button>
+            <!--
+                 <button class="mdl-button mdl-js-button mdl-button--icon">
+                 <i class="material-icons">highlight_off</i>
+                 </button>
+               -->
+            <div class="mdl-layout-spacer"></div>
+          </div>
+        </header>
+        <main class="mdl-layout__content">
+          <div class="page-content">
+            <!-- List of processes. -->
+            <table class="mdl-data-table mdl-js-data-table mdl-shadow--2dp"
+                   id="processes-table">
+              <tbody>
+                <tr>
+                  <td class="mdl-data-table__cell--non-numeric">Acrylic (Transparent)</td>
+                </tr>
+                <tr>
+                  <td class="mdl-data-table__cell--non-numeric">Plywood (Birch)</td>
+                </tr>
+                <tr>
+                  <td class="mdl-data-table__cell--non-numeric">Laminate (Gold on Blue)</td>
+                </tr>
+              </tbody>
+            </table><!-- End of list. -->
+          </div>
+        </main>
       </div>
       <script>
-      /**
-       * Send action_activate event to main process when activate button is touch.
-       * @return {void}
-       */
-      function mainOnActivate() {
-	ipc.send('action_activate');
-      }
+        /**
+         * Send action_activate event to main process when activate button is touch.
+         * @return {void}
+         */
+        function mainOnActivate() {
+          ipc.send('action_activate');
+        }
 
-      /**
-       * Send action_open_file event to main process when open file button is touch.
-       * @return {void}
-       */
-      function mainOnOpenFile() {
-	ipc.send('action_open_file');
-      }
+        /**
+         * Send action_open_file event to main process when open file button is touch.
+         * @return {void}
+         */
+        function mainOnOpenFile() {
+          ipc.send('action_open_file');
+        }
       </script>
     </div><!-- end of main -->
   </body>

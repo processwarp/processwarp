@@ -8,40 +8,40 @@
     <link rel="stylesheet" href="icon.css">
   </head>
   <script>
-  const electron = require('electron');
-  const ipc      = electron.ipcRenderer;
-  var global     = {};
+    const electron = require('electron');
+    const ipc      = electron.ipcRenderer;
+    var global     = {};
 
-  /**
-   * When receive script, execute script.
-   * @param event {object} Event instance from ipc.
-   * @param script {string} Script string.
-   */
-  function recvScript(event, script) {
-    console.log(script);
-    eval(script);
-  }
-  ipc.on('script', recvScript);
+    /**
+     * When receive script, execute script.
+     * @param event {object} Event instance from ipc.
+     * @param script {string} Script string.
+     */
+    function recvScript(event, script) {
+      console.log(script);
+      eval(script);
+    }
+    ipc.on('script', recvScript);
 
-  /**
-   * When loading html was finished, send frame_load command to main thread.
-   * @return {void}
-   */
-  function sendFrameLoad() {
-    ipc.send('frame_load');
-  }
+    /**
+     * When loading html was finished, send frame_load command to main thread.
+     * @return {void}
+     */
+    function sendFrameLoad() {
+      ipc.send('frame_load');
+    }
   </script>
   <style>
-  html {
-	  height: 100%;
-	  overflow: hidden;
-	  width: 100%;
-  }
-  body {
-	  height: 100%;
-	  overflow: hidden;
-	  width: 100%;
-  }
+    html {
+      height: 100%;
+      overflow: hidden;
+      width: 100%;
+    }
+    body {
+      height: 100%;
+      overflow: hidden;
+      width: 100%;
+    }
   </style>
   <body onLoad="sendFrameLoad();">
   </body>
