@@ -125,6 +125,7 @@ void Router::recv_connect_node() {
  */
 void Router::recv_bind_node(const nid_t& nid) {
   my_nid = nid;
+  scheduler.set_my_nid(nid);
 }
 
 /**
@@ -201,14 +202,6 @@ void Router::scheduler_create_gui(Scheduler& scheduler, const vpid_t& pid) {
   FrontendConnector& frontend = FrontendConnector::get_instance();
 
   frontend.create_gui(pid);
-}
-
-/**
- * When scheduler require this node's node-id, return it.
- * @param scheduler Caller instance.
- */
-nid_t Router::scheduler_get_my_nid(Scheduler& scheduler) {
-  return my_nid;
 }
 
 /**

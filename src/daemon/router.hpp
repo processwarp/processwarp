@@ -45,7 +45,6 @@ class Router : public SchedulerDelegate {
   void scheduler_create_vm(Scheduler& scheduler, const vpid_t& pid, vtid_t root_tid,
                            vaddr_t proc_addr, const nid_t& master_nid) override;
   void scheduler_create_gui(Scheduler& scheduler, const vpid_t& pid) override;
-  nid_t scheduler_get_my_nid(Scheduler& scheduler) override;
   void scheduler_send_command(Scheduler& scheduler, const vpid_t& pid,
                               InnerModule::Type module, const picojson::object& content) override;
   void scheduler_send_inner_module_packet(Scheduler& scheduler, const vpid_t& pid,

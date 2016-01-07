@@ -16,6 +16,13 @@ SchedulerDelegate::~SchedulerDelegate() {
 }
 
 /**
+ * Constructor, set default property.
+ */
+Scheduler::Scheduler() :
+    my_nid(SpecialNID::NONE) {
+}
+
+/**
  * Initialize scheduler.
  * Save delegater.
  * @param delegate_ Delegater instance for scheduler.
@@ -113,12 +120,22 @@ void Scheduler::recv_packet(const vpid_t& pid, const std::string& content) {
 }
 
 /**
+ * Set node-id of this node.
+ * Nid must not NONE.
+ * @param nid Node-id of this node.
+ */
+void Scheduler::set_my_nid(const nid_t& nid) {
+  assert(nid != SpecialNID::NONE);
+
+  my_nid = nid;
+}
+
+/**
  * It tell scheduler this node was actived by user or any event.
  */
 void Scheduler::activate() {
   picojson::object packet;
-  packet.insert(std::make_pair("nid",
-                               Convert::vpid2json(delegate->scheduler_get_my_nid(*this))));
+  packet.insert(std::make_pair("nid", Convert::nid2json(my_nid)));
   send_packet(SpecialPID::BROADCAST, SpecialNID::BROADCAST, "activate", packet);
 }
 
@@ -142,6 +159,8 @@ void Scheduler::recv_command_activate(const vpid_t& pid, const picojson::object&
  * @param param Not used.
  */
 void Scheduler::recv_command_create_gui(const vpid_t& pid, const picojson::object& param) {
+  assert(my_nid != SpecialNID::NONE);
+
   if (pid == SpecialPID::BROADCAST) {
     /// @todo error
     assert(false);
@@ -154,7 +173,7 @@ void Scheduler::recv_command_create_gui(const vpid_t& pid, const picojson::objec
     assert(false);
   }
 
-  it_info->second.gui_nid = delegate->scheduler_get_my_nid(*this);
+  it_info->second.gui_nid = my_nid;
   delegate->scheduler_create_gui(*this, pid);
 }
 
@@ -167,8 +186,8 @@ void Scheduler::recv_command_create_gui(const vpid_t& pid, const picojson::objec
 void Scheduler::recv_command_create_gui_done(const vpid_t& pid, const picojson::object& param) {
   auto process_tree = processes.find(pid);
   picojson::object packet_param;
-  const nid_t& my_nid = delegate->scheduler_get_my_nid(*this);
 
+  assert(my_nid != SpecialNID::NONE);
   assert(pid != SpecialPID::BROADCAST);
   assert(process_tree != processes.end());
 
@@ -185,8 +204,9 @@ void Scheduler::recv_command_create_gui_done(const vpid_t& pid, const picojson::
  * @param param Parameters for activate command, containing active node-id.
  */
 void Scheduler::recv_packet_activate(const vpid_t& pid, const picojson::object& param) {
-  const nid_t& my_nid = delegate->scheduler_get_my_nid(*this);
   const nid_t& active_nid = Convert::json2nid(param.at("nid"));
+
+  assert(my_nid != SpecialNID::NONE);
 
   if (pid != SpecialPID::BROADCAST) {
     /// @todo error
@@ -210,10 +230,11 @@ void Scheduler::recv_packet_activate(const vpid_t& pid, const picojson::object& 
  * @param param Parameter containing pid, name, and array of threads source node having.
  */
 void Scheduler::recv_packet_process_list(const vpid_t& pid, const picojson::object& param) {
-  const nid_t& my_nid = delegate->scheduler_get_my_nid(*this);
   const nid_t& nid = Convert::json2nid(param.at("nid"));
   bool is_changed = false;
   bool is_need_update = false;
+
+  assert(my_nid != SpecialNID::NONE);
 
   for (auto& it_proc : param.at("procs").get<picojson::array>()) {
     const picojson::object& proc = it_proc.get<picojson::object>();
@@ -299,9 +320,11 @@ void Scheduler::recv_packet_process_list(const vpid_t& pid, const picojson::obje
  * @param param Parameter containing node-id to change property.
  */
 void Scheduler::recv_packet_update_gui_node(const vpid_t& pid, const picojson::object& param) {
-  const nid_t& my_nid = delegate->scheduler_get_my_nid(*this);
   const nid_t& active_nid = Convert::json2nid(param.at("nid"));
-  if (my_nid == active_nid) return;
+
+  assert(my_nid != SpecialNID::NONE);
+
+  if (active_nid == my_nid) return;
 
   auto it = processes.find(pid);
   if (it == processes.end()) return;
@@ -324,6 +347,8 @@ void Scheduler::recv_packet_update_gui_node(const vpid_t& pid, const picojson::o
  * @param param Parameters for warp command and create new vm.
  */
 void Scheduler::recv_packet_warp(const vpid_t& pid, const picojson::object& param) {
+  assert(my_nid != SpecialNID::NONE);
+
   auto it = processes.find(pid);
   if (it == processes.end() ||
       !it->second.having_vm) {
@@ -335,7 +360,6 @@ void Scheduler::recv_packet_warp(const vpid_t& pid, const picojson::object& para
 
   picojson::object param_warpout;
   vtid_t tid = Convert::json2vtid(param.at("tid"));
-  const nid_t& my_nid = delegate->scheduler_get_my_nid(*this);
   param_warpout.insert(std::make_pair("tid", param.at("tid")));
   send_command(pid, InnerModule::VM, "warpout", param_warpout);
 
@@ -410,7 +434,7 @@ void Scheduler::send_packet(const vpid_t& pid, const nid_t& dst_nid,
  * Listup process information and send process_list packet to another node.
  */
 void Scheduler::send_packet_process_list() {
-  const nid_t& my_nid = delegate->scheduler_get_my_nid(*this);
+  assert(my_nid != SpecialNID::NONE);
 
   picojson::array procs;
   for (auto& it_process : processes) {
@@ -446,6 +470,8 @@ void Scheduler::send_packet_process_list() {
  * Listup process information and send process_list command to frontend.
  */
 void Scheduler::send_process_list() {
+  assert(my_nid != SpecialNID::NONE);
+
   picojson::array procs;
   for (auto& it_process : processes) {
     ProcessTree& info = it_process.second;
@@ -468,7 +494,6 @@ void Scheduler::send_process_list() {
   content.insert(std::make_pair("command", picojson::value(std::string("process_list"))));
   content.insert(std::make_pair("processes", picojson::value(procs)));
 
-  const nid_t& my_nid = delegate->scheduler_get_my_nid(*this);
   delegate->scheduler_send_outer_module_packet(*this, SpecialPID::BROADCAST, my_nid,
                                                OuterModule::FRONTEND,
                                                picojson::value(content).serialize());
