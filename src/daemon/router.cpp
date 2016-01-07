@@ -140,21 +140,31 @@ void Router::relay_command(const vpid_t& pid, const picojson::object& content) {
  * When passed a outer module packet from any module in this node,
  * set destination node-id and pass content to capable module in this node or other node through the server.
  * @param pid Process-id bundled for a packet.
+ * @param dst_nid Destination node-id if known, or NONE if source module don't know.
  * @param module Target module.
  * @param content Packet content.
  */
-void Router::relay_outer_module_packet(const vpid_t& pid, OuterModule::Type module,
-                                       const std::string& content) {
-  switch (module) {
-    case OuterModule::FRONTEND: {
-      FrontendConnector& frontend = FrontendConnector::get_instance();
-      frontend.relay_frontend_packet(pid, content);
-    } break;
+void Router::relay_outer_module_packet(const vpid_t& pid, const nid_t& dst_nid,
+                                       OuterModule::Type module, const std::string& content) {
+  nid_t real_nid = (dst_nid != SpecialNID::NONE ? dst_nid : scheduler.get_dst_nid(pid, module));
 
-    default: {
-      /// @todo error
-      assert(false);
+  if (real_nid == my_nid) {
+    switch (module) {
+      case OuterModule::FRONTEND: {
+        FrontendConnector& frontend = FrontendConnector::get_instance();
+        frontend.relay_frontend_packet(pid, content);
+      } break;
+
+      default: {
+        /// @todo error
+        assert(false);
+      }
     }
+
+  } else {
+    ServerConnector& server = ServerConnector::get_instance();
+
+    server.relay_outer_module_packet(pid, real_nid, module, content);
   }
 }
 
@@ -225,7 +235,7 @@ void Router::scheduler_send_command(Scheduler& scheduler, const vpid_t& pid,
 }
 
 /**
- * When scheduler require send packet to other node, call ServerConnector's method to do it.
+ * When scheduler require send inner module packet to another node, call ServerConnector's method to do it.
  * @param scheduler Caller instance.
  * @param pid Process-id bundling packet.
  * @param dst_nid Destination node-id.
@@ -238,5 +248,19 @@ void Router::scheduler_send_inner_module_packet(Scheduler& scheduler, const vpid
   ServerConnector& server = ServerConnector::get_instance();
 
   server.relay_inner_module_packet(pid, dst_nid, module, content);
+}
+
+/**
+ * When scheduler require send outer module packet to another node, pass capable method to set dst_nid if need.
+ * @param scheduler Caller instance.
+ * @param pid Process-id bundling packet.
+ * @param dst_nid Destination node-id.
+ * @param module Target module.
+ * @param content Packet content.
+ */
+void Router::scheduler_send_outer_module_packet(Scheduler& scheduler, const vpid_t& pid,
+                                                const nid_t& dst_nid, OuterModule::Type module,
+                                                const std::string& content) {
+  relay_outer_module_packet(pid, dst_nid, module, content);
 }
 }  // namespace processwarp

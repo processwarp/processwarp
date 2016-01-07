@@ -277,10 +277,9 @@ function recvConnectFrontend(packet) {
  */
 function recvCreate(param) {
   var pid = param.pid
-  if (pid in contexts) {
-    /// @todo error
-    console.assert(false, 'todo');
-  }
+
+  console.assert(pid !== PID_BROADCAST);
+  console.assert(!(pid in contexts));
 
   var frame = new BrowserWindow();
   frame.on('closed', function(event) { onFrameClose(event, pid); });
@@ -299,17 +298,29 @@ function recvCreate(param) {
 /**
  * When receive GUI command packet, call capable method to do it.
  * @param packet {object} Packet contain command string, process-id send from, and parameter.
+ * @return {void}
  */
 function recvPacket(packet) {
   var content = JSON.parse(packet.content);
 
   switch (content.command) {
     case 'script': recvPacketScript(packet.pid, content); break;
+    case 'process_list': recvPacketProcessList(packet.pid, content); break;
+    case 'warpin': recvPacketWarpin(packet.pid, content); break;
     default: {
       /// @todo error
-      console.assert(false, 'todo');
+      console.assert(false, 'todo : ' + content.command);
     } break;
   }
+}
+
+/**
+ * When receive update_process packet, relay it to renderer process.
+ * @param pid {string} Not used.
+ * @param param {object} Parameter containing process list.
+ */
+function recvPacketProcessList(pid, param) {
+  mainWindow.webContents.send('update_processes', param.processes);
 }
 
 /**
@@ -319,10 +330,7 @@ function recvPacket(packet) {
  * @return {void}
  */
 function recvPacketScript(pid, param) {
-  if (!(pid in contexts)) {
-    /// @todo error
-    console.assert(false, 'todo');
-  }
+  console.assert(pid in contexts);
 
   var context = contexts[pid];
 
@@ -333,6 +341,18 @@ function recvPacketScript(pid, param) {
     // console.log('save context:' + param.script);
     context.script.push(param.script);
   }
+}
+
+/**
+ * When receive warpin packet, close target frame.
+ * Because, this packet was passed after new frame had createn in another node.
+ * @param pid Process-id for frame.
+ * @param param Not used.
+ */
+function recvPacketWarpin(pid, param) {
+  console.assert(pid in contexts);
+
+  contexts[pid].frame.close();
 }
 
 /**
@@ -385,16 +405,22 @@ function onFrameClose(event, pid) {
 
 /**
  * When receive 'frame_load' command from frame, change status to normal and send scripts stored.
+ * And tell event to scheduler.
  * @param event {object} WebContents instance from ipc containing pid.
  * @return {void}
  */
 function onFrameLoad(event) {
-  var context = contexts[event.sender.pid];
+  var pid     = event.sender.pid;
+  var context = contexts[pid];
+
+  console.assert(pid != PID_BROADCAST);
   
   context.script.forEach(function(script) {
     context.frame.webContents.send('script', script);
   });
   context.is_normal = true;
   delete context['script'];
+
+  sendCommand(pid, INNER_MODULE_SCHEDULER, 'create_gui_done', {});
 }
 ipc.on('frame_load', onFrameLoad);

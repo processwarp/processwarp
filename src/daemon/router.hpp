@@ -24,7 +24,7 @@ class Router : public SchedulerDelegate {
   void recv_bind_node(const nid_t& nid);
 
   void relay_command(const vpid_t& pid, const picojson::object& content);
-  void relay_outer_module_packet(const vpid_t& pid, OuterModule::Type module,
+  void relay_outer_module_packet(const vpid_t& pid, const nid_t& dst_nid, OuterModule::Type module,
                                  const std::string& content);
   void relay_scheduler_packet(const vpid_t& pid, const std::string& content);
 
@@ -50,6 +50,9 @@ class Router : public SchedulerDelegate {
                               InnerModule::Type module, const picojson::object& content) override;
   void scheduler_send_inner_module_packet(Scheduler& scheduler, const vpid_t& pid,
                                           const nid_t& dst_nid, InnerModule::Type module,
+                                          const std::string& content) override;
+  void scheduler_send_outer_module_packet(Scheduler& scheduler, const vpid_t& pid,
+                                          const nid_t& dst_nid, OuterModule::Type module,
                                           const std::string& content) override;
 };
 }  // namespace processwarp

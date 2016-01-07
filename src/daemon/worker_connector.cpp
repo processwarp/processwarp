@@ -254,6 +254,7 @@ void WorkerConnector::recv_outer_module_packet(const vpid_t& pid, picojson::obje
   Router& router = Router::get_instance();
 
   router.relay_outer_module_packet(pid,
+                                   Convert::json2nid(content.at("dst_nid")),
                                    Convert::json2int<OuterModule::Type>(content.at("module")),
                                    content.at("content").get<std::string>());
 }

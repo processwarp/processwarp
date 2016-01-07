@@ -211,6 +211,28 @@ void ServerConnector::relay_inner_module_packet(const vpid_t& pid,
 }
 
 /**
+ * Relay outer module packet to another node.
+ * @param pid Target process-id.
+ * @param dst_nid Destination node-id.
+ * @param module Module type.
+ * @param content Packet content.
+ */
+void ServerConnector::relay_outer_module_packet(const vpid_t& pid,
+                                                const nid_t& dst_nid,
+                                                OuterModule::Type module,
+                                                const std::string& content) {
+  sio::message::ptr sio_packet(sio::object_message::create());
+  std::map<std::string, sio::message::ptr>& map = sio_packet->get_map();
+
+  map.insert(std::make_pair("pid", get_sio_by_pid(pid)));
+  map.insert(std::make_pair("dst_nid", get_sio_by_nid(dst_nid)));
+  map.insert(std::make_pair("module", get_sio_by_str(Convert::int2str<OuterModule::Type>(module))));
+  map.insert(std::make_pair("content", get_sio_by_str(content)));
+
+  socket->emit("outer_module_packet", sio_packet);
+}
+
+/**
  * Send connect-node command.
  * Packet format: {<br/>
  *   account: &lt;account&gt;,<br/>

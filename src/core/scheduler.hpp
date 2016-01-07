@@ -23,11 +23,15 @@ class SchedulerDelegate {
   virtual void scheduler_send_inner_module_packet(Scheduler& scheduler, const vpid_t& pid,
                                                   const nid_t& dst_nid, InnerModule::Type module,
                                                   const std::string& content) = 0;
+  virtual void scheduler_send_outer_module_packet(Scheduler& scheduler, const vpid_t& pid,
+                                                  const nid_t& dst_nid, OuterModule::Type module,
+                                                  const std::string& content) = 0;
 };
 
 class Scheduler {
  public:
   void initialize(SchedulerDelegate& delegate_);
+  nid_t get_dst_nid(const vpid_t& pid, OuterModule::Type module);
   void recv_command(const vpid_t& pid, const picojson::object& content);
   void recv_packet(const vpid_t& pid, const std::string& content);
 
@@ -41,11 +45,17 @@ class Scheduler {
 
   void recv_command_activate(const vpid_t& pid, const picojson::object& param);
   void recv_command_create_gui(const vpid_t& pid, const picojson::object& param);
+  void recv_command_create_gui_done(const vpid_t& pid, const picojson::object& param);
   void recv_packet_activate(const vpid_t& pid, const picojson::object& param);
+  void recv_packet_process_list(const vpid_t& pid, const picojson::object& param);
+  void recv_packet_update_gui_node(const vpid_t& pid, const picojson::object& param);
   void recv_packet_warp(const vpid_t& pid, const picojson::object& param);
+  void recv_packet_warp_gui(const vpid_t& pid, const picojson::object& param);
   void send_command(const vpid_t& pid, InnerModule::Type module,
                     const std::string& command, picojson::object& param);
   void send_packet(const vpid_t& pid, const nid_t& dst_nid,
                    const std::string& command, picojson::object& param);
+  void send_packet_process_list();
+  void send_process_list();
 };
 }  // namespace processwarp

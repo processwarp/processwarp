@@ -225,16 +225,7 @@
             <!-- List of processes. -->
             <table class="mdl-data-table mdl-js-data-table mdl-shadow--2dp"
                    id="processes-table">
-              <tbody>
-                <tr>
-                  <td class="mdl-data-table__cell--non-numeric">Acrylic (Transparent)</td>
-                </tr>
-                <tr>
-                  <td class="mdl-data-table__cell--non-numeric">Plywood (Birch)</td>
-                </tr>
-                <tr>
-                  <td class="mdl-data-table__cell--non-numeric">Laminate (Gold on Blue)</td>
-                </tr>
+              <tbody id="processes-list">
               </tbody>
             </table><!-- End of list. -->
           </div>
@@ -256,6 +247,34 @@
         function mainOnOpenFile() {
           ipc.send('action_open_file');
         }
+
+        /**
+         * When receive update_processes command form main process,
+         * update list of process to view.
+         * @param sender {object} Not used.
+         * @param processes {object} Parameter containing list of process-id and name.
+         * @return {void}
+         */
+        function mainOnUpdateProcesses(sender, processes) {
+          var processes_list = document.getElementById('processes-list');
+
+          while (processes_list.firstChild) {
+            processes_list.removeChild(processes_list.firstChild);
+          }
+
+          processes.forEach(function(process) {
+            var tr = document.createElement('tr');
+            var td = document.createElement('td');
+            var text = document.createTextNode(process.name);
+
+            td.classList.add('mdl-data-table__cell--non-numeric');
+
+            td.appendChild(text);
+            tr.appendChild(td);
+            processes_list.appendChild(tr);
+          });
+        }
+        ipc.on('update_processes', mainOnUpdateProcesses);
       </script>
     </div><!-- end of main -->
   </body>

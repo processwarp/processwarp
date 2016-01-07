@@ -47,6 +47,8 @@ void FrontendConnector::initialize(uv_loop_t* loop, const std::string& pipe_path
  * @param pid Target process-id.
  */
 void FrontendConnector::create_gui(const vpid_t& pid) {
+  assert(pid != SpecialPID::BROADCAST);
+
   if (gui_pipe == nullptr) {
     /// @todo error
     assert(false);
