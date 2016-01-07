@@ -53,6 +53,7 @@ nid_t Scheduler::get_dst_nid(const vpid_t& pid, OuterModule::Type module) {
     default: {
       /// @todo error
       assert(false);
+      return SpecialNID::NONE;
     } break;
   }
 }
