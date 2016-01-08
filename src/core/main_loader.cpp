@@ -84,14 +84,15 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
   }
 
   /**
-   * Override a delegater method that send any packet to other node.
-   * Must not use in loader.
-   * @param memory
-   * @param dst_nid
-   * @param data
+   * Override a delegater method that send command to another node, but must not use in loader.
+   * @param memory Not used.
+   * @param dst_nid Not used.
+   * @param module Not used.
+   * @param command Not used.
+   * @param param Not used.
    */
-  void vmemory_send_packet(VMemory& memory, const nid_t& dst_nid,
-                           const std::string& data) override {
+  void vmemory_send_command(VMemory& memory, const nid_t& dst_nid, Module::Type module,
+                            const std::string& command, picojson::object& param) override {
     assert(false);
   }
 
@@ -158,7 +159,7 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
     picojson::array js_sched_packet;
     {
       picojson::object packet;
-      packet.insert(std::make_pair("command", picojson::value(std::string("warp"))));
+      packet.insert(std::make_pair("command", picojson::value(std::string("warp_thread"))));
       packet.insert(std::make_pair("pid", Convert::vpid2json(in_pid)));
       packet.insert(std::make_pair("root_tid", Convert::vtid2json(proc->root_tid)));
       packet.insert(std::make_pair("proc_addr", Convert::vaddr2json(proc->addr)));

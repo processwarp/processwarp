@@ -26,20 +26,14 @@ class ServerConnector {
 
   void initialize(uv_loop_t* loop_, const std::string& url);
   ServerStatus::Type get_status();
-  void relay_inner_module_packet(const vpid_t& pid,
-                                 const nid_t& dst_nid,
-                                 InnerModule::Type module,
-                                 const std::string& content);
-  void relay_outer_module_packet(const vpid_t& pid,
-                                 const nid_t& dst_nid,
-                                 OuterModule::Type module,
-                                 const std::string& content);
   void send_connect_node(const std::string& account,
                          const std::string& password);
   void send_load_llvm(const std::string& name,
                       const std::string& file,
                       const std::vector<std::string>& args,
                       const nid_t& dst_nid);
+  void send_relay_command(const CommandPacket& packet);
+
   void send_list_node();
   void send_bind_node(const nid_t& nid,
                       const std::string& node_name);
@@ -79,7 +73,6 @@ class ServerConnector {
   void initialize_socketio(const std::string& url);
   void recv_connect_node(sio::message::ptr data);
   void recv_bind_node(sio::message::ptr data);
-  void recv_inner_module_packet(sio::message::ptr data);
-  void recv_outer_module_packet(sio::message::ptr data);
+  void recv_relay_command(sio::message::ptr data);
 };
 }  // namespace processwarp

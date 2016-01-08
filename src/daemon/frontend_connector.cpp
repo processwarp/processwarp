@@ -62,25 +62,30 @@ void FrontendConnector::create_gui(const vpid_t& pid) {
 }
 
 /**
- * Relay packet to frontend.
+ * Relay command to frontend.
  * Packet format: {<br/>
  *   command: 'relay_command',
- *   pid: &lt;Process-id send from&gt;
- *   content: &lt;GUI command&gt;
+ *   pid: &lt;Process-id of packet&gt;
+ *   dst_nid: &lt;Destination node-id&gt;
+ *   src_nid: &lt;Source node-id&gt;
+ *   content: &lt;Command content&gt;
  * }
- * @param pid Target process-id.
- * @param content A Packet data binary formatted.
+ * @param packet Command packet for relaying.
  */
-void FrontendConnector::relay_frontend_packet(const vpid_t& pid, const std::string& content) {
+void FrontendConnector::relay_frontend_command(const CommandPacket& packet) {
+  assert(packet.module == Module::FRONTEND);
+
   if (gui_pipe == nullptr) {
     /// @todo error
     assert(false);
   }
 
   picojson::object data;
-  data.insert(std::make_pair("command", picojson::value(std::string("relay_packet"))));
-  data.insert(std::make_pair("pid", Convert::vpid2json(pid)));
-  data.insert(std::make_pair("content", picojson::value(content)));
+  data.insert(std::make_pair("command", picojson::value(std::string("relay_command"))));
+  data.insert(std::make_pair("pid", Convert::vpid2json(packet.pid)));
+  data.insert(std::make_pair("dst_nid", Convert::nid2json(packet.dst_nid)));
+  data.insert(std::make_pair("src_nid", Convert::nid2json(packet.src_nid)));
+  data.insert(std::make_pair("content", picojson::value(packet.content)));
 
   send_data(*gui_pipe, data);
 }
@@ -196,27 +201,16 @@ void FrontendConnector::recv_open_file(uv_pipe_t& client, picojson::object& para
  * @param content Data contain target module, pid, content of command.
  */
 void FrontendConnector::recv_relay_command(uv_pipe_t& client, picojson::object& content) {
-  InnerModule::Type module = Convert::json2int<InnerModule::Type>(content.at("module"));
+  CommandPacket packet = {
+    Convert::json2vpid(content.at("pid")),
+    SpecialNID::THIS,
+    SpecialNID::NONE,
+    Convert::json2int<Module::Type>(content.at("module")),
+    content.at("content").get<picojson::object>()
+  };
 
-  switch (module) {
-    case InnerModule::MEMORY:
-    case InnerModule::VM: {
-      WorkerConnector& worker = WorkerConnector::get_instance();
-      worker.relay_command(Convert::json2vpid(content.at("pid")), module,
-                           content.at("content").get<picojson::object>());
-    } break;
-
-    case InnerModule::SCHEDULER: {
-      Router& router = Router::get_instance();
-      router.relay_command(Convert::json2vpid(content.at("pid")),
-                           content.at("content").get<picojson::object>());
-    } break;
-
-    default: {
-      /// @todo error
-      assert(false);
-    }
-  }
+  Router& router = Router::get_instance();
+  router.relay_command(packet);
 }
 
 /**

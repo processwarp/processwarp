@@ -19,11 +19,7 @@ class WorkerConnector : public Connector {
 
   void initialize(uv_loop_t* loop, const std::string& pipe_path_, const std::string& config_file_);
   void create_vm(const vpid_t& pid, vtid_t root_tid, vaddr_t proc_addr, const nid_t& master_nid);
-  void relay_command(const vpid_t& pid, InnerModule::Type module, const picojson::object& content);
-  void relay_inner_module_packet(const vpid_t& pid, InnerModule::Type module,
-                                 const std::string& content);
-  void relay_outer_module_packet(const vpid_t& pid, OuterModule::Type module,
-                                 const std::string& content);
+  void relay_command(const CommandPacket& packet);
 
  private:
   struct WorkerProperty {
@@ -53,8 +49,6 @@ class WorkerConnector : public Connector {
   void on_close(uv_pipe_t& client) override;
 
   void recv_connect_worker(uv_pipe_t& pipe, picojson::object& param);
-  void recv_inner_module_packet(const vpid_t& pid, picojson::object& content);
-  void recv_outer_module_packet(const vpid_t& pid, picojson::object& content);
   void recv_relay_command(const vpid_t& pid, picojson::object& content);
   void send_data(const vpid_t&pid, const picojson::object& data);
 };

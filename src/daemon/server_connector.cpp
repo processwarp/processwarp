@@ -182,54 +182,28 @@ ServerStatus::Type ServerConnector::get_status() {
 }
 
 /**
- * Relay inner module packet to other node.
+ * Relay command to another node by throgh server.
  * Packet format: {
  *   pid: &lt;Target process-id&gt;
- *   module: &lt;Module type&gt;
  *   dst_nid: &lt;Destination node-id&gt;
  *   src_nid: &lt;This node-id, added by server&gt;
- *   content: &lt;Packet content&gt;
+ *   module: &lt;Module type&gt;
+ *   content: &lt;Content of command packet&gt;
  * }
- * @param pid Target process-id.
- * @param dst_nid Destination node-id.
- * @param module Module type.
- * @param content Packet content.
+ * @param packet Command packet.
  */
-void ServerConnector::relay_inner_module_packet(const vpid_t& pid,
-                                                const nid_t& dst_nid,
-                                                InnerModule::Type module,
-                                                const std::string& content) {
+void ServerConnector::send_relay_command(const CommandPacket& packet) {
   sio::message::ptr sio_packet(sio::object_message::create());
   std::map<std::string, sio::message::ptr>& map = sio_packet->get_map();
 
-  map.insert(std::make_pair("pid", get_sio_by_pid(pid)));
-  map.insert(std::make_pair("dst_nid", get_sio_by_nid(dst_nid)));
-  map.insert(std::make_pair("module", get_sio_by_str(Convert::int2str<InnerModule::Type>(module))));
-  map.insert(std::make_pair("content", get_sio_by_str(content)));
+  map.insert(std::make_pair("pid", get_sio_by_pid(packet.pid)));
+  map.insert(std::make_pair("dst_nid", get_sio_by_nid(packet.dst_nid)));
+  map.insert(std::make_pair("module",
+                            get_sio_by_str(Convert::int2str<Module::Type>(packet.module))));
+  map.insert(std::make_pair("content",
+                            get_sio_by_str(picojson::value(packet.content).serialize())));
 
-  socket->emit("inner_module_packet", sio_packet);
-}
-
-/**
- * Relay outer module packet to another node.
- * @param pid Target process-id.
- * @param dst_nid Destination node-id.
- * @param module Module type.
- * @param content Packet content.
- */
-void ServerConnector::relay_outer_module_packet(const vpid_t& pid,
-                                                const nid_t& dst_nid,
-                                                OuterModule::Type module,
-                                                const std::string& content) {
-  sio::message::ptr sio_packet(sio::object_message::create());
-  std::map<std::string, sio::message::ptr>& map = sio_packet->get_map();
-
-  map.insert(std::make_pair("pid", get_sio_by_pid(pid)));
-  map.insert(std::make_pair("dst_nid", get_sio_by_nid(dst_nid)));
-  map.insert(std::make_pair("module", get_sio_by_str(Convert::int2str<OuterModule::Type>(module))));
-  map.insert(std::make_pair("content", get_sio_by_str(content)));
-
-  socket->emit("outer_module_packet", sio_packet);
+  socket->emit("relay_command", sio_packet);
 }
 
 /**
@@ -416,11 +390,8 @@ void ServerConnector::on_recv(uv_async_t* handle) {
     } else if (name == "bind_node") {
       THIS.recv_bind_node(data);
 
-    } else if (name == "inner_module_packet") {
-      THIS.recv_inner_module_packet(data);
-
-    } else if (name == "outer_module_packet") {
-      THIS.recv_outer_module_packet(data);
+    } else if (name == "relay_command") {
+      THIS.recv_relay_command(data);
 
       /*
         } else if (name == "list_node") {
@@ -544,8 +515,7 @@ void ServerConnector::initialize_socketio(const std::string& url) {
   M_BIND_SOCKETIO_EVENT("list_node");
   M_BIND_SOCKETIO_EVENT("bind_node");
   M_BIND_SOCKETIO_EVENT("sync_proc_list");
-  M_BIND_SOCKETIO_EVENT("inner_module_packet");
-  M_BIND_SOCKETIO_EVENT("outer_module_packet");
+  M_BIND_SOCKETIO_EVENT("relay_command");
   M_BIND_SOCKETIO_EVENT("test_console");
 
 #undef M_BIND_SOCKETIO_EVENT
@@ -601,10 +571,10 @@ void ServerConnector::recv_connect_node(sio::message::ptr data) {
 }
 
 /**
- * When receive inner module packet from server, check if me should receive it, and relay to capable modules.
+ * When receive relay_command packet from server, check if me should receive it, and relay to capable modules.
  * @param data Received data.
  */
-void ServerConnector::recv_inner_module_packet(sio::message::ptr data) {
+void ServerConnector::recv_relay_command(sio::message::ptr data) {
   Router& router = Router::get_instance();
   const nid_t& dst_nid = get_nid_by_map(data, "dst_nid");
   const nid_t& src_nid = get_nid_by_map(data, "src_nid");
@@ -615,52 +585,39 @@ void ServerConnector::recv_inner_module_packet(sio::message::ptr data) {
   if (dst_nid == my_nid ||
       (dst_nid == SpecialNID::BROADCAST && src_nid != my_nid)) {
     const vpid_t& pid = get_pid_by_map(data, "pid");
-    InnerModule::Type module =
-        Convert::str2int<InnerModule::Type>(get_str_by_map(data, "module", true));
+    Module::Type module = Convert::str2int<Module::Type>(get_str_by_map(data, "module", true));
     const std::string& content = get_str_by_map(data, "content", true);
 
-    switch (module) {
-      case InnerModule::MEMORY:
-      case InnerModule::VM: {
-        WorkerConnector& worker = WorkerConnector::get_instance();
-        worker.relay_inner_module_packet(pid, module, content);
-      } break;
-
-      case InnerModule::SCHEDULER: {
-        router.relay_scheduler_packet(pid, content);
-      } break;
-
-      default: {
-        /// @todo error
-        assert(false);
-      } break;
+    picojson::value v;
+    std::istringstream is(content);
+    std::string err = picojson::parse(v, is);
+    if (!err.empty()) {
+      /// @todo error
+      assert(false);
     }
-  }
-}
 
-/**
- * When receive outer moudle packet from server, check if me should receive it, and relay to capable modules.
- * @param data Received data.
- */
-void ServerConnector::recv_outer_module_packet(sio::message::ptr data) {
-Router& router = Router::get_instance();
-  const nid_t& dst_nid = get_nid_by_map(data, "dst_nid");
-  const nid_t& src_nid = get_nid_by_map(data, "src_nid");
-  const nid_t& my_nid  = router.get_my_nid();
-
-  assert(status == ServerStatus::CONNECT);
-
-  if (dst_nid == my_nid ||
-      (dst_nid == SpecialNID::BROADCAST && src_nid != my_nid)) {
-    const vpid_t& pid = get_pid_by_map(data, "pid");
-    OuterModule::Type module =
-        Convert::str2int<OuterModule::Type>(get_str_by_map(data, "module", true));
-    const std::string& content = get_str_by_map(data, "content", true);
+    CommandPacket packet = {
+      pid,
+      dst_nid,
+      src_nid,
+      module,
+      v.get<picojson::object>()
+    };
 
     switch (module) {
-      case OuterModule::FRONTEND: {
+      case Module::MEMORY:
+      case Module::VM: {
+        WorkerConnector& worker = WorkerConnector::get_instance();
+        worker.relay_command(packet);
+      } break;
+
+      case Module::SCHEDULER: {
+        router.relay_scheduler_command(packet);
+      } break;
+
+      case Module::FRONTEND: {
         FrontendConnector& frontend = FrontendConnector::get_instance();
-        frontend.relay_frontend_packet(pid, content);
+        frontend.relay_frontend_command(packet);
       } break;
 
       default: {

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <picojson.h>
+
 #include <cinttypes>
 #include <cstdint>
 #include <ctime>
@@ -134,10 +136,11 @@ static const vtid_t JOIN_WAIT_DETACHED = 0x2;
 
 /** Node-id is assigned for each node process run in any devices. */
 typedef std::string nid_t;
-/** Special node-id those are used to send data. */
+/** Special node-id those are used to send command. */
 namespace SpecialNID {
 static const nid_t NONE      = "";        ///< Set none if destination node-id is't yet determined.
-static const nid_t BROADCAST = "*";       ///< Send data to any node with the same account.
+static const nid_t THIS      = ".";       ///< Send command to this(local) node.
+static const nid_t BROADCAST = "*";       ///< Send command to any node with the same account.
 static const nid_t SERVER    = "server";  ///< Server is a special node.
 }
 
@@ -276,17 +279,21 @@ struct ProcessTree {
   bool having_vm;
 };
 
-/** Modules those are target to send command and packet. */
-namespace InnerModule {
+/** Modules those are target of send command. */
+namespace Module {
 typedef int Type;
 static const Type MEMORY    = 0;
 static const Type VM        = 1;
 static const Type SCHEDULER = 2;
-}  // namespace InnerModule
-
-/** Modules those are target to send packet. */
-namespace OuterModule {
-typedef int Type;
 static const Type FRONTEND  = 3;
-}  // namespace OuterModule
+}  // namespace Module
+
+/** Packet for transport command. */
+struct CommandPacket {
+  const vpid_t& pid;
+  const nid_t& dst_nid;
+  const nid_t& src_nid;
+  const Module::Type module;  ///< Target (destination) module.
+  const picojson::object& content;  ///< Content format is depend on each module and command.
+};
 }  // namespace processwarp

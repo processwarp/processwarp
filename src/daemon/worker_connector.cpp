@@ -110,40 +110,20 @@ void WorkerConnector::create_vm(const vpid_t& pid, vtid_t root_tid,
 
 /**
  * Relay command to VM or memory by through a worker.
- * @param pid Process-id bundled to command.
- * @param module Target module.
- * @param content Command content.
+ * @param packet Command packet.
  */
-void WorkerConnector::relay_command(const vpid_t& pid, InnerModule::Type module,
-                                    const picojson::object& content) {
+void WorkerConnector::relay_command(const CommandPacket& packet) {
+  assert(packet.module == Module::MEMORY || packet.module == Module::VM);
+
   picojson::object data;
-
-  assert(module == InnerModule::MEMORY || module == InnerModule::VM);
-
   data.insert(std::make_pair("command", picojson::value(std::string("relay_command"))));
-  data.insert(std::make_pair("module", Convert::int2json<InnerModule::Type>(module)));
-  data.insert(std::make_pair("content", picojson::value(content)));
+  data.insert(std::make_pair("pid", Convert::vpid2json(packet.pid)));
+  data.insert(std::make_pair("dst_nid", Convert::nid2json(packet.dst_nid)));
+  data.insert(std::make_pair("src_nid", Convert::nid2json(packet.src_nid)));
+  data.insert(std::make_pair("module", Convert::int2json<Module::Type>(packet.module)));
+  data.insert(std::make_pair("content", picojson::value(packet.content)));
 
-  send_data(pid, data);
-}
-
-/**
- * Relay packet to VM or memory by through a worker.
- * @param pid Process-id bundled to packet
- * @param module Target module.
- * @param content Packet content.
- */
-void WorkerConnector::relay_inner_module_packet(const vpid_t& pid, InnerModule::Type module,
-                                                const std::string& content) {
-  picojson::object data;
-
-  assert(module == InnerModule::MEMORY || module == InnerModule::VM);
-
-  data.insert(std::make_pair("command", picojson::value(std::string("inner_module_packet"))));
-  data.insert(std::make_pair("module", Convert::int2json<InnerModule::Type>(module)));
-  data.insert(std::make_pair("content", picojson::value(content)));
-
-  send_data(pid, data);
+  send_data(packet.pid, data);
 }
 
 /**
@@ -175,13 +155,7 @@ void WorkerConnector::on_connect(uv_pipe_t& client) {
 void WorkerConnector::on_recv_data(uv_pipe_t& client, picojson::object& data) {
   std::string& command = data.at("command").get<std::string>();
 
-  if (command == "inner_module_packet") {
-    recv_inner_module_packet(pid_map.at(&client), data);
-
-  } else if (command == "outer_module_packet") {
-    recv_outer_module_packet(pid_map.at(&client), data);
-
-  } else if (command == "relay_command") {
+  if (command == "relay_command") {
     recv_relay_command(pid_map.at(&client), data);
 
   } else if (command == "connect_worker") {
@@ -231,53 +205,21 @@ void WorkerConnector::recv_connect_worker(uv_pipe_t& pipe, picojson::object& par
 }
 
 /**
- * When receive inner module packet from worker, relay it to other node by through the server.
- * @param pid Process-id bundled packet.
- * @param content Packet content.
- */
-void WorkerConnector::recv_inner_module_packet(const vpid_t& pid, picojson::object& content) {
-  ServerConnector& server = ServerConnector::get_instance();
-
-  server.relay_inner_module_packet(pid,
-                                   Convert::json2nid(content.at("dst_nid")),
-                                   Convert::json2int<InnerModule::Type>(content.at("module")),
-                                   content.at("content").get<std::string>());
-}
-
-/**
- * When receive outer module packet from worker, relay it to this node or other node
- * by through the server if need.
- * @param pid Process-id bundled packet.
- * @param content Packet content.
- */
-void WorkerConnector::recv_outer_module_packet(const vpid_t& pid, picojson::object& content) {
-  Router& router = Router::get_instance();
-
-  router.relay_outer_module_packet(pid,
-                                   Convert::json2nid(content.at("dst_nid")),
-                                   Convert::json2int<OuterModule::Type>(content.at("module")),
-                                   content.at("content").get<std::string>());
-}
-
-/**
- * When receive command, relay a packet to frontend.
+ * When receive command, relay a packet to target module through router and server if need.
  * @param pid Process-id send from.
  * @param content Packet content that contain command string and parameters.
  */
 void WorkerConnector::recv_relay_command(const vpid_t& pid, picojson::object& content) {
-  InnerModule::Type module = Convert::json2int<InnerModule::Type>(content.at("module"));
+  CommandPacket packet = {
+    pid,
+    Convert::json2nid(content.at("dst_nid")),
+    SpecialNID::NONE,
+    Convert::json2int<Module::Type>(content.at("module")),
+    content.at("content").get<picojson::object>()
+  };
 
-  switch (module) {
-    case InnerModule::SCHEDULER: {
-      Router& router = Router::get_instance();
-      router.relay_command(pid, content.at("content").get<picojson::object>());
-    } break;
-
-    default: {
-      /// @todo error
-      assert(false);
-    } break;
-  }
+  Router& router = Router::get_instance();
+  router.relay_command(packet);
 }
 
 /**

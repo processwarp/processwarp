@@ -22,11 +22,8 @@ class Router : public SchedulerDelegate {
   const nid_t& get_my_nid();
   void recv_connect_node();
   void recv_bind_node(const nid_t& nid);
-
-  void relay_command(const vpid_t& pid, const picojson::object& content);
-  void relay_outer_module_packet(const vpid_t& pid, const nid_t& dst_nid, OuterModule::Type module,
-                                 const std::string& content);
-  void relay_scheduler_packet(const vpid_t& pid, const std::string& content);
+  void relay_command(const CommandPacket& packet);
+  void relay_scheduler_command(const CommandPacket& packet);
 
  private:
   /** Main loop of libuv. */
@@ -45,13 +42,6 @@ class Router : public SchedulerDelegate {
   void scheduler_create_vm(Scheduler& scheduler, const vpid_t& pid, vtid_t root_tid,
                            vaddr_t proc_addr, const nid_t& master_nid) override;
   void scheduler_create_gui(Scheduler& scheduler, const vpid_t& pid) override;
-  void scheduler_send_command(Scheduler& scheduler, const vpid_t& pid,
-                              InnerModule::Type module, const picojson::object& content) override;
-  void scheduler_send_inner_module_packet(Scheduler& scheduler, const vpid_t& pid,
-                                          const nid_t& dst_nid, InnerModule::Type module,
-                                          const std::string& content) override;
-  void scheduler_send_outer_module_packet(Scheduler& scheduler, const vpid_t& pid,
-                                          const nid_t& dst_nid, OuterModule::Type module,
-                                          const std::string& content) override;
+  void scheduler_send_command(Scheduler& scheduler, const CommandPacket& packet) override;
 };
 }  // namespace processwarp

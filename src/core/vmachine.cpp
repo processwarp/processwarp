@@ -220,13 +220,13 @@ void VMachine::on_recv_update(vaddr_t addr) {
 
 /**
  * When receive command from other module in this node, read command and call capable method with parameter.
- * @param content A JSON that contain a command string adn any parameter.
+ * @param packet Command packet.
  */
-void VMachine::recv_command(const picojson::object& content) {
-  const std::string& command = content.at("command").get<std::string>();
+void VMachine::recv_command(const CommandPacket& packet) {
+  const std::string& command = packet.content.at("command").get<std::string>();
 
   if (command == "warpout") {
-    warpout_thread(Convert::json2vtid(content.at("tid")));
+    warpout_thread(Convert::json2vtid(packet.content.at("tid")));
 
   } else {
     /// @todo error
@@ -474,7 +474,9 @@ void VMachine::send_packet(const nid_t& dst_nid, const std::string& command,
   packet.insert(std::make_pair("command", picojson::value(command)));
   packet.insert(std::make_pair("src_nid", Convert::nid2json(my_nid)));
 
-  delegate.vmachine_send_packet(*this, dst_nid, picojson::value(packet).serialize());
+  /// @todo
+  assert(false);
+  // delegate.vmachine_send_packet(*this, dst_nid, picojson::value(packet).serialize());
 }
 
 /**

@@ -39,67 +39,65 @@ VMemoryDelegate::~VMemoryDelegate() {
 
 // Constructor with node-id.
 VMemory::VMemory(VMemoryDelegate& delegate_, const nid_t& nid_) :
-    nid(nid_),
+    my_nid(nid_),
     rnd(std::random_device()()),
     delegate(delegate_) {
 }
 
-// Recv and decode data from other node.
-void VMemory::recv_memory_data(const std::string& name, const std::string& data) {
-  picojson::value v;
-  std::istringstream is(data);
-  std::string err = picojson::parse(v, is);
-  if (!err.empty()) {
-    std::cerr << err << std::endl;
-    assert(false);
-    /// @todo error
-  }
-  picojson::object& json = v.get<picojson::object>();
+/**
+ * When reveive command from another module or node, pass it to capable method by command string.
+ * @param packet Command packet.
+ */
+void VMemory::recv_command(const CommandPacket& packet) {
+  const std::string& command = packet.content.at("command").get<std::string>();
 
-  std::string cmd = json.at("command").get<std::string>();
-  if (cmd == "copy") {
-    recv_copy(name, json);
+  if (command == "copy") {
+    recv_command_copy(packet);
 
-  } else if (cmd == "require") {
-    recv_require(name, json);
+  } else if (command == "require") {
+    recv_command_require(packet);
 
-  } else if (cmd == "update") {
-    recv_update(name, json);
+  } else if (command == "update") {
+    recv_command_update(packet);
 
-  } else if (cmd == "reserve") {
-    recv_reserve(name, json);
+  } else if (command == "reserve") {
+    recv_command_reserve(packet);
 
-  } else if (cmd == "free") {
-    recv_free(name, json);
+  } else if (command == "free") {
+    recv_command_free(packet);
 
     /*
-      } else if (cmd == "release") {
+      } else if (command == "release") {
     */
-  } else if (cmd == "stand") {
-    recv_stand(name, json);
+  } else if (command == "stand") {
+    recv_command_stand(packet);
 
-  } else if (cmd == "give") {
-    recv_give(name, json);
+  } else if (command == "give") {
+    recv_command_give(packet);
+
   } else {
-    assert(false);
     /// @todo error
+    assert(false);
   }
-
-  return;
 }
 
-void VMemory::recv_copy(const std::string& name, picojson::object& json) {
-  vaddr_t addr = Convert::json2vaddr(json.at("addr"));
-  const std::string& value = Convert::json2bin(json.at("value"));
-  nid_t src = Convert::json2nid(json.at("src_nid"));
+/**
+ * When receive copy command, check and copy value on target address.
+ * At last, pass update event to VM throught a delegate.
+ * @param packet Command packet containing target address and value.
+ */
+void VMemory::recv_command_copy(const CommandPacket& packet) {
+  vaddr_t addr = Convert::json2vaddr(packet.content.at("addr"));
+  const std::string& value = Convert::json2bin(packet.content.at("value"));
+
   if (get_upper_addr(addr) != addr) {
     /// @todo error
     assert(false);
   }
 
-  auto it_space = spaces.find(name);
+  auto it_space = spaces.find(packet.pid);
   if (it_space == spaces.end()) {
-    send_unwant(name, src, addr);
+    send_command_unwant(packet.pid, packet.src_nid, addr);
     return;
   }
 
@@ -111,7 +109,7 @@ void VMemory::recv_copy(const std::string& name, picojson::object& json) {
     auto it_ri = space.requiring.find(addr);
     if (it_ri != space.requiring.end()) {
       std::set<nid_t> hint;
-      hint.insert(src);
+      hint.insert(packet.src_nid);
       space.pages.insert(std::make_pair
                          (addr, Page(is_program(addr) ? PT_PROGRAM : PT_COPY,
                                      true, value, hint)));
@@ -122,7 +120,7 @@ void VMemory::recv_copy(const std::string& name, picojson::object& json) {
     Page& page = it_page->second;
     assert(page.type == PT_COPY);
     assert(page.hint.size() == 1);
-    assert(*page.hint.begin() == src);
+    assert(*page.hint.begin() == packet.src_nid);
 
     if (value.size() != 0) {
       if (page.size != value.size()) {
@@ -145,11 +143,16 @@ void VMemory::recv_copy(const std::string& name, picojson::object& json) {
   delegate.vmemory_recv_update(*this, addr);
 }
 
-void VMemory::recv_free(const std::string& name, picojson::object& json) {
-  vaddr_t addr = Convert::json2vaddr(json.at("addr"));
+/**
+ * When receive free command, update page to 0-size if this node is master of target address,
+ * or delegate command to master node if this node isn't master of target address.
+ * @param packet Command packet containing target address.
+ */
+void VMemory::recv_command_free(const CommandPacket& packet) {
+  vaddr_t addr = Convert::json2vaddr(packet.content.at("addr"));
   assert(addr == get_upper_addr(addr));
 
-  auto it_space = spaces.find(name);
+  auto it_space = spaces.find(packet.pid);
   if (it_space == spaces.end()) {
     /// @todo I'm not in this space.
     assert(false);
@@ -170,8 +173,8 @@ void VMemory::recv_free(const std::string& name, picojson::object& json) {
       }
       page.size = 0;
       page.value.reset();
-      for (auto& to : page.hint) {
-        send_copy(to, space, page, addr);
+      for (auto& dst_nid : page.hint) {
+        send_command_copy(dst_nid, space, page, addr);
       }
       space.release_addr(addr);
       space.pages.erase(addr);
@@ -179,7 +182,7 @@ void VMemory::recv_free(const std::string& name, picojson::object& json) {
 
     case PT_COPY: {
       assert(page.hint.size() == 1);
-      send_free(*page.hint.begin(), space, addr);
+      send_command_free(*page.hint.begin(), space, addr);
     } break;
 
     default: {
@@ -189,22 +192,27 @@ void VMemory::recv_free(const std::string& name, picojson::object& json) {
   }
 }
 
-void VMemory::recv_give(const std::string& name, picojson::object& json) {
-  vaddr_t addr = Convert::json2vaddr(json.at("addr"));
-  const std::string& value = Convert::json2bin(json.at("value"));
-  nid_t src = Convert::json2nid(json.at("src_nid"));
-  nid_t dst = Convert::json2nid(json.at("dst_nid"));
-  picojson::array js_hint = json.at("hint_nid").get<picojson::array>();
+/**
+ * When receive give command to pass master flag, change flag and save value if target node is this node.
+ * Only update hint if target node isn't this node.
+ * @param packet Command packet containing target address, value, destination node-id, and hint node-id.
+ */
+void VMemory::recv_command_give(const CommandPacket& packet) {
+  vaddr_t addr = Convert::json2vaddr(packet.content.at("addr"));
+  const std::string& value = Convert::json2bin(packet.content.at("value"));
+  const nid_t& dst_nid = Convert::json2nid(packet.content.at("dst_nid"));
+  picojson::array js_hint = packet.content.at("hint_nid").get<picojson::array>();
+
   assert(addr == get_upper_addr(addr));
 
-  auto it_space = spaces.find(name);
+  auto it_space = spaces.find(packet.pid);
   if (it_space == spaces.end()) {
-    if (dst == nid) {
+    if (dst_nid == my_nid) {
       /// @todo Give master to this node but this node is't binded selected name space.
       assert(false);
 
     } else {
-      send_unwant(name, dst, addr);
+      send_command_unwant(packet.pid, dst_nid, addr);
       /// @todo send_unwant and relay packet to dst.
       assert(false);
       return;
@@ -213,16 +221,16 @@ void VMemory::recv_give(const std::string& name, picojson::object& json) {
 
   Space& space = *it_space->second;
   auto it_page = space.pages.find(addr);
-  if (dst == nid) {
+  if (dst_nid == my_nid) {
     std::set<nid_t> hint;
     for (auto& js_h : js_hint) {
       const nid_t& hint_node = Convert::json2nid(js_h);
-      if (hint_node != nid) {
+      if (hint_node != my_nid) {
         hint.insert(hint_node);
       }
     }
-    if (src != SpecialNID::SERVER) {
-      hint.insert(src);
+    if (packet.src_nid != SpecialNID::SERVER) {
+      hint.insert(packet.src_nid);
     }
 
     if (it_page == space.pages.end()) {
@@ -255,33 +263,39 @@ void VMemory::recv_give(const std::string& name, picojson::object& json) {
     if (it_page == space.pages.end()) {
       /// @todo
       assert(false);
-      send_unwant(name, dst, addr);
+      send_command_unwant(packet.pid, dst_nid, addr);
 
     } else {
       Page& page = it_page->second;
       assert(page.type == PT_COPY);
 
       page.hint.clear();
-      page.hint.insert(dst);
+      page.hint.insert(dst_nid);
     }
   }
 }
 
-void VMemory::recv_require(const std::string& name, picojson::object& json) {
-  vaddr_t addr = Convert::json2vaddr(json.at("addr"));
-  nid_t src = Convert::json2nid(json.at("src_nid"));
+/**
+ * When receive require command, broad cast or relay to another node if value is not exist in this node.
+ * Reply copy command if value is stored in this node.
+ * @param packet Command packet containing target address and node-id that node required a value.
+ */
+void VMemory::recv_command_require(const CommandPacket& packet) {
+  vaddr_t addr = Convert::json2vaddr(packet.content.at("addr"));
+  nid_t src_nid = Convert::json2nid(packet.content.at("src_nid"));
+
   assert(addr == get_upper_addr(addr));
-  assert(src != nid);
+  assert(src_nid != my_nid);
 
-  auto it_space = spaces.find(name);
+  auto it_space = spaces.find(packet.pid);
   if (it_space == spaces.end()) {
-    if (src != SpecialNID::BROADCAST && src != nid) {
-      picojson::object packet;
+    if (src_nid != SpecialNID::BROADCAST && src_nid != my_nid) {
+      picojson::object param;
 
-      packet.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
-      packet.insert(std::make_pair("src_nid", Convert::nid2json(src)));
+      param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
+      param.insert(std::make_pair("src_nid", Convert::nid2json(src_nid)));
 
-      send_packet(name, SpecialNID::BROADCAST, "require", packet);
+      send_memory_command(packet.pid, SpecialNID::BROADCAST, "require", param);
     }
     return;
   }
@@ -289,41 +303,45 @@ void VMemory::recv_require(const std::string& name, picojson::object& json) {
   Space& space = *it_space->second;
   auto it_page = space.pages.find(addr);
   if (it_page == space.pages.end()) {
-    if (src != SpecialNID::BROADCAST && src != nid) {
-      picojson::object packet;
+    if (src_nid != SpecialNID::BROADCAST && src_nid != my_nid) {
+      picojson::object param;
 
-      packet.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
-      packet.insert(std::make_pair("src_nid", Convert::nid2json(src)));
+      param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
+      param.insert(std::make_pair("src_nid", Convert::nid2json(src_nid)));
 
-      send_packet(name, SpecialNID::BROADCAST, "require", packet);
+      send_memory_command(packet.pid, SpecialNID::BROADCAST, "require", param);
     }
     return;
   }
 
   Page& page = it_page->second;
   if (page.type == PT_MASTER) {
-    page.hint.insert(src);
+    page.hint.insert(src_nid);
 
   } else if (page.type == PT_COPY) {
-    picojson::object packet;
+    picojson::object param;
 
-    packet.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
-    packet.insert(std::make_pair("src_nid", Convert::nid2json(src)));
+    param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
+    param.insert(std::make_pair("src_nid", Convert::nid2json(src_nid)));
 
-    send_packet(name, *page.hint.begin(), "require", packet);
+    send_memory_command(packet.pid, *page.hint.begin(), "require", param);
   }
 
-  send_copy(src, space, page, addr);
+  send_command_copy(src_nid, space, page, addr);
 }
 
-void VMemory::recv_reserve(const std::string& name, picojson::object& json) {
-  auto it_space = spaces.find(name);
+/**
+ * When receive reserve command, check addresses to used or not for use those addresses in another node.
+ * @param packet Command packet containing target addresses.
+ */
+void VMemory::recv_command_reserve(const CommandPacket& packet) {
+  auto it_space = spaces.find(packet.pid);
   if (it_space == spaces.end()) {
     /// @todo send "I'm not in this space"
   }
 
   Space& space = *it_space->second;
-  for (auto& js_addr : json.at("addrs").get<picojson::array>()) {
+  for (auto& js_addr : packet.content.at("addrs").get<picojson::array>()) {
     vaddr_t addr = Convert::json2vaddr(js_addr);
 
     if (space.pages.find(addr) != space.pages.end()) {
@@ -333,13 +351,18 @@ void VMemory::recv_reserve(const std::string& name, picojson::object& json) {
   }
 }
 
-void VMemory::recv_stand(const std::string& name, picojson::object& json) {
-  vaddr_t addr = Convert::json2vaddr(json.at("addr"));
-  nid_t src_node = Convert::json2nid(json.at("src_nid"));
-  assert(addr == get_upper_addr(addr));
-  assert(src_node != nid);
+/**
+ * When receive stand command, send give command to pass master flag if it can.
+ * To pass master flag, this node have master flag for taget address and not locked for master by runing thread.
+ * @param packet Command packet containing target address.
+ */
+void VMemory::recv_command_stand(const CommandPacket& packet) {
+  vaddr_t addr = Convert::json2vaddr(packet.content.at("addr"));
 
-  auto it_space = spaces.find(name);
+  assert(addr == get_upper_addr(addr));
+  assert(packet.src_nid != my_nid);
+
+  auto it_space = spaces.find(packet.pid);
   if (it_space == spaces.end()) {
     return;
   }
@@ -353,21 +376,26 @@ void VMemory::recv_stand(const std::string& name, picojson::object& json) {
   Page& page = it_page->second;
   if (page.type == PT_MASTER && page.master_count == 0) {
     assert(page.flg_update == true);
-    send_give(space, page, addr, src_node);
+    send_command_give(space, page, addr, packet.src_nid);
 
     page.type = PT_COPY;
     page.hint.clear();
-    page.hint.insert(src_node);
+    page.hint.insert(packet.src_nid);
   }
 
   space.requiring.erase(addr);
 }
 
-void VMemory::recv_update(const std::string& name, picojson::object& json) {
-  std::string value = Convert::json2bin(json.at("value"));
-  vaddr_t addr = Convert::json2vaddr(json.at("addr"));
+/**
+ * When receive update command, check and update master value on target address.
+ * Relay update command to master node if this node isn't master.
+ * @param packet Command packet containing target address and value to update.
+ */
+void VMemory::recv_command_update(const CommandPacket& packet) {
+  vaddr_t addr = Convert::json2vaddr(packet.content.at("addr"));
+  const std::string& value = Convert::json2bin(packet.content.at("value"));
 
-  auto it_space = spaces.find(name);
+  auto it_space = spaces.find(packet.pid);
   if (it_space == spaces.end()) {
     /// @todo relay
     assert(false);
@@ -385,7 +413,7 @@ void VMemory::recv_update(const std::string& name, picojson::object& json) {
   Page& page = it_page->second;
   if (page.type == PT_MASTER) {
     if (page.size < get_lower_addr(addr) + value.size()) {
-      /// @toto error
+      /// @todo error
       assert(false);
       return;
     }
@@ -393,8 +421,8 @@ void VMemory::recv_update(const std::string& name, picojson::object& json) {
     delegate.vmemory_recv_update(*this, get_upper_addr(addr));
 
   } else if (page.type == PT_COPY) {
-    send_update(*page.hint.begin(), space, addr,
-                reinterpret_cast<const uint8_t*>(value.data()), value.size());
+    send_command_update(*page.hint.begin(), space, addr,
+                        reinterpret_cast<const uint8_t*>(value.data()), value.size());
 
   } else {
     /// @todo error
@@ -425,119 +453,172 @@ void VMemory::set_loading(const std::string& name, bool flg) {
   space.is_loading = flg;
 }
 
-// Send packet.
-void VMemory::send_packet(const std::string& name, const nid_t& nid,
-                          const std::string& cmd, picojson::object& data) {
-  assert(nid != this->nid);
-  data.insert(std::make_pair("command", picojson::value(cmd)));
-  data.insert(std::make_pair("src_nid", Convert::nid2json(this->nid)));
+/**
+ * Send selected command to MEMORY module in another node.
+ * @param name Not used.
+ * @param dst_nid Destination node-id, BROADCAST, or NONE if not resolved yet.
+ * @param command Command string.
+ * @param param Parameter for command.
+ */
+void VMemory::send_memory_command(const std::string& name, const nid_t& dst_nid,
+                                  const std::string& command, picojson::object& param) {
+  assert(dst_nid != my_nid);
 
-  delegate.vmemory_send_packet(*this, nid, picojson::value(data).serialize());
+  delegate.vmemory_send_command(*this, dst_nid, Module::MEMORY, command, param);
 }
 
-// This request means to update memory for copy data.
-void VMemory::send_copy(const nid_t& nid, Space& space, Page& page, vaddr_t addr) {
+/**
+ * Send copy command for update page value in another copy node.
+ * This command is used to copy value from master to copy node.
+ * @param dst_nid Destination node-id.
+ * @param space Target memory space.
+ * @param page Target page having value.
+ * @param addr Target address to copy.
+ */
+void VMemory::send_command_copy(const nid_t& dst_nid, Space& space, Page& page, vaddr_t addr) {
   assert(page.type != PT_COPY);
-  assert(nid != this->nid);
+  assert(dst_nid != my_nid);
   assert(get_upper_addr(addr) == addr);
-  picojson::object packet;
 
-  packet.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
-  packet.insert(std::make_pair("value", Convert::bin2json(page.value.get(), page.size)));
+  picojson::object param;
+  param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
+  param.insert(std::make_pair("value", Convert::bin2json(page.value.get(), page.size)));
 
-  send_packet(space.name, nid, "copy", packet);
+  send_memory_command(space.name, dst_nid, "copy", param);
 }
 
-// This request means to selected memory isn't able to use.
-void VMemory::send_free(const nid_t& nid, Space& space, vaddr_t addr) {
-  picojson::object packet;
+/**
+ * Send free command.
+ * @param dst_nid Destination node-id.
+ * @param space Target memory space.
+ * @param addr Target address to free.
+ */
+void VMemory::send_command_free(const nid_t& dst_nid, Space& space, vaddr_t addr) {
+  picojson::object param;
 
-  packet.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
+  param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
 
-  send_packet(space.name, nid, "free", packet);
+  send_memory_command(space.name, dst_nid, "free", param);
 }
 
-// This request means to give right of master.
-void VMemory::send_give(Space& space, Page& page, vaddr_t addr, const nid_t& dst) {
+/**
+ * Send give command for giving master flag of page.
+ * @param space Target memory space.
+ * @param page Target page having value.
+ * @param addr Target address to give master flag.
+ * @param dst_nid Node-id target of give master flag.
+ */
+void VMemory::send_command_give(Space& space, Page& page, vaddr_t addr, const nid_t& dst_nid) {
   assert(page.type == PT_MASTER && page.master_count == 0);
   assert(addr == get_upper_addr(addr));
-  picojson::object packet;
+  picojson::object param;
   picojson::array hint;
 
-  packet.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
-  packet.insert(std::make_pair("value", Convert::bin2json(page.value.get(), page.size)));
-  packet.insert(std::make_pair("dst_nid", Convert::nid2json(dst)));
+  param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
+  param.insert(std::make_pair("value", Convert::bin2json(page.value.get(), page.size)));
+  param.insert(std::make_pair("dst_nid", Convert::nid2json(dst_nid)));
   for (auto& h : page.hint) {
     hint.push_back(Convert::nid2json(h));
   }
-  packet.insert(std::make_pair("hint_nid", picojson::value(hint)));
+  param.insert(std::make_pair("hint_nid", picojson::value(hint)));
 
-  send_packet(space.name, dst, "give", packet);
+  send_memory_command(space.name, SpecialNID::BROADCAST, "give", param);
 }
 
-// This request means to broadcast some unused address.
-void VMemory::send_release(Space& space, std::set<vaddr_t> addrs) {
-  picojson::object packet;
+/**
+ * Send release command for releaseing allocation of page.
+ * @param space Target memory space.
+ * @param addrs Some addresses to release.
+ */
+void VMemory::send_command_release(Space& space, std::set<vaddr_t> addrs) {
+  picojson::object param;
   picojson::array js_addrs;
 
   for (auto addr : addrs) {
     js_addrs.push_back(Convert::vaddr2json(addr));
   }
-  packet.insert(std::make_pair("addrs", picojson::value(js_addrs)));
+  param.insert(std::make_pair("addrs", picojson::value(js_addrs)));
 
-  send_packet(space.name, SpecialNID::BROADCAST, "release", packet);
+  send_memory_command(space.name, SpecialNID::BROADCAST, "release", param);
 }
 
-// This request means to need a data of copy.
-void VMemory::send_require(Space& space, vaddr_t addr, const nid_t& nid) {
+/**
+ * Send require command for requireing value in target address.
+ * @param dst_nid Destination node-id.
+ * @param space Target memory space.
+ * @param addr Target address to get value.
+ */
+void VMemory::send_command_require(const nid_t& dst_nid, Space& space, vaddr_t addr) {
   assert(get_upper_addr(addr) == addr);
   space.requiring.insert(addr);
-  picojson::object packet;
+  picojson::object param;
 
-  packet.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
+  param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
+  param.insert(std::make_pair("src_nid", Convert::nid2json(my_nid)));
 
-  send_packet(space.name, nid, "require", packet);
+  send_memory_command(space.name, dst_nid, "require", param);
 }
 
-// This request means to broadcast some reserve address for this node.
-void VMemory::send_reserve(Space& space, std::set<vaddr_t> addrs) {
-  picojson::object packet;
+/**
+ * Send reserve command for reserving address to allocate memory in this node.
+ * @param space Target memory space.
+ * @param addrs Target addresses for reserving.
+ */
+void VMemory::send_command_reserve(Space& space, std::set<vaddr_t> addrs) {
+  picojson::object param;
   picojson::array js_addrs;
 
   for (auto addr : addrs) {
     js_addrs.push_back(Convert::vaddr2json(addr));
   }
-  packet.insert(std::make_pair("addrs", picojson::value(js_addrs)));
+  param.insert(std::make_pair("addrs", picojson::value(js_addrs)));
 
-  send_packet(space.name, SpecialNID::BROADCAST, "reserve", packet);
+  send_memory_command(space.name, SpecialNID::BROADCAST, "reserve", param);
 }
 
-// This request means to stand as master.
-void VMemory::send_stand(Space& space, Page& page, vaddr_t addr) {
+/**
+ * Send stand command for emmiting to stand for master of target page.
+ * @param space Target memory space.
+ * @param page Target page.
+ * @param addr Target address for stainding.
+ */
+void VMemory::send_command_stand(Space& space, Page& page, vaddr_t addr) {
   assert(page.type == PT_COPY);
   assert(page.hint.size() == 1);
   assert(addr == get_upper_addr(addr));
-  picojson::object packet;
+  picojson::object param;
 
-  packet.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
+  param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
 
-  send_packet(space.name, *page.hint.begin(), "stand", packet);
+  send_memory_command(space.name, *page.hint.begin(), "stand", param);
 }
 
-// This request means tell unwant copy packet to sender.
-void VMemory::send_unwant(const std::string name, const nid_t& nid, vaddr_t addr) {
-  picojson::object packet;
-  packet.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
-  send_packet(name, nid, "unwant", packet);
+/**
+ * Send unwant command for emiting to a value on target address is not need for this node.
+ * @param dst_nid Destination node-id.
+ * @param name Target memory name.
+ * @param addr Target address.
+ */
+void VMemory::send_command_unwant(const nid_t& dst_nid, const std::string name, vaddr_t addr) {
+  picojson::object param;
+  param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
+  send_memory_command(name, dst_nid, "unwant", param);
 }
 
-// Send update packet.
-void VMemory::send_update(const nid_t& nid, Space& space, vaddr_t addr,
-                          const uint8_t* data, uint64_t size) {
-  picojson::object packet;
-  packet.insert(std::make_pair("value", Convert::bin2json(data, size)));
-  packet.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
-  send_packet(space.name, nid, "update", packet);
+/**
+ * Send update command for update page value in master node.
+ * @param dst_nid Destination node-id.
+ * @param space Target memory space.
+ * @param addr Target address to update.
+ * @param data Pointer of storeing value to update.
+ * @param size Size of data to update.
+ */
+void VMemory::send_command_update(const nid_t& dst_nid, Space& space, vaddr_t addr,
+                                  const uint8_t* data, uint64_t size) {
+  picojson::object param;
+  param.insert(std::make_pair("value", Convert::bin2json(data, size)));
+  param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
+  send_memory_command(space.name, dst_nid, "update", param);
 }
 
 // Constructor with memory space.
@@ -552,7 +633,7 @@ const nid_t& VMemory::Accessor::get_master(vaddr_t addr) {
 
   switch (page.type) {
     case PT_MASTER: {
-      return vmemory.nid;
+      return vmemory.my_nid;
     } break;
 
     case PT_COPY: {
@@ -585,7 +666,7 @@ VMemory::Accessor::MasterKey VMemory::Accessor::keep_master(vaddr_t addr) {
     } break;
 
     case PT_COPY: {
-      vmemory.send_stand(space, page, addr);
+      vmemory.send_command_stand(space, page, addr);
       throw InterruptMemoryRequire(addr);
     } break;
 
@@ -644,15 +725,15 @@ void VMemory::Accessor::update_meta_area(vaddr_t addr, const std::string& data) 
       }
       std::memcpy(page.value.get(), data.data(), page.size);
       for (auto& it_hint : page.hint) {
-        vmemory.send_copy(it_hint, space, page, addr);
+        vmemory.send_command_copy(it_hint, space, page, addr);
       }
     } break;
 
     case PT_COPY: {
       assert(page.hint.size() == 1);
       page.flg_update = false;
-      vmemory.send_update(*page.hint.begin(), space, addr,
-                          reinterpret_cast<const uint8_t*>(data.data()), data.size());
+      vmemory.send_command_update(*page.hint.begin(), space, addr,
+                                  reinterpret_cast<const uint8_t*>(data.data()), data.size());
     } break;
 
     default: {
@@ -691,8 +772,8 @@ void VMemory::Accessor::free(vaddr_t addr) {
       assert(page.master_count == 0 && raw_writable.find(addr) == raw_writable.end());
       page.size = 0;
       page.value.reset();
-      for (auto& to : page.hint) {
-        vmemory.send_copy(to, space, page, addr);
+      for (auto& dst_nid : page.hint) {
+        vmemory.send_command_copy(dst_nid, space, page, addr);
       }
       space.release_addr(addr);
       space.pages.erase(addr);
@@ -700,7 +781,7 @@ void VMemory::Accessor::free(vaddr_t addr) {
 
     case PT_COPY: {
       assert(page.hint.size() == 1);
-      vmemory.send_free(*page.hint.begin(), space, addr);
+      vmemory.send_command_free(*page.hint.begin(), space, addr);
     } break;
 
     default: {
@@ -737,7 +818,7 @@ vaddr_t VMemory::Accessor::realloc(vaddr_t addr, uint64_t size) {
         page.value.swap(tmp);
 
         for (auto& to : page.hint) {
-          vmemory.send_copy(to, space, page, addr);
+          vmemory.send_command_copy(to, space, page, addr);
         }
         return addr;
 
@@ -765,7 +846,7 @@ vaddr_t VMemory::Accessor::realloc(vaddr_t addr, uint64_t size) {
 
     case PT_COPY: {
       assert(page.hint.size() == 1);
-      vmemory.send_stand(space, page, addr);
+      vmemory.send_command_stand(space, page, addr);
       throw InterruptMemoryRequire(addr);
     } break;
 
@@ -824,14 +905,15 @@ void VMemory::Accessor::write_out() {
       case PT_MASTER: {
         page.value.swap(it->second);
         for (auto& it_hint : page.hint) {
-          vmemory.send_copy(it_hint, space, page, it->first);
+          vmemory.send_command_copy(it_hint, space, page, it->first);
         }
       } break;
 
       case PT_COPY: {
         assert(page.hint.size() == 1);
         page.flg_update = false;
-        vmemory.send_update(*page.hint.begin(), space, it->first, it->second.get(), page.size);
+        vmemory.send_command_update(*page.hint.begin(), space, it->first,
+                                    it->second.get(), page.size);
       } break;
 
       default: {
@@ -944,7 +1026,7 @@ vaddr_t VMemory::Space::assign_addr(AddrType::Type type) {
       }
 
     } else {
-      vmemory.send_reserve(*this, new_reserve);
+      vmemory.send_command_reserve(*this, new_reserve);
       finally.add([&]() {
           for (auto& it : new_reserve) {
             reserved_que.push_back(it);
@@ -975,7 +1057,7 @@ void VMemory::Space::release_addr(vaddr_t addr) {
       reserved_que.pop_back();
     }
 
-    vmemory.send_release(*this, release_set);
+    vmemory.send_command_release(*this, release_set);
   }
 }
 }  // namespace processwarp

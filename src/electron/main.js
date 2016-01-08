@@ -205,7 +205,7 @@ function onBackendRecvData(data) {
     switch (content.command) {
       case 'connect_frontend': recvConnectFrontend(content); break;
       case 'create': recvCreate(content); break;
-      case 'relay_packet': recvPacket(content); break;
+      case 'relay_command': recvCommand(content); break;
       default: {
 	/// @todo eror
 	console.assert(false, 'todo');
@@ -296,40 +296,38 @@ function recvCreate(param) {
 }
 
 /**
- * When receive GUI command packet, call capable method to do it.
- * @param packet {object} Packet contain command string, process-id send from, and parameter.
+ * When receive command for fontend, call capable method to do it.
+ * @param packet {object} Command packet contain, process-id, command content.
  * @return {void}
  */
-function recvPacket(packet) {
-  var content = JSON.parse(packet.content);
-
-  switch (content.command) {
-    case 'script': recvPacketScript(packet.pid, content); break;
-    case 'process_list': recvPacketProcessList(packet.pid, content); break;
-    case 'warpin': recvPacketWarpin(packet.pid, content); break;
+function recvCommand(packet) {
+  switch (packet.content.command) {
+    case 'script': recvCommandScript(packet.pid, packet.content); break;
+    case 'show_process_list': recvCommandShowProcessList(packet.pid, packet.content); break;
+    case 'warpin': recvCommandWarpin(packet.pid, packet.content); break;
     default: {
       /// @todo error
-      console.assert(false, 'todo : ' + content.command);
+      console.assert(false, 'todo : ' + packet.content.command);
     } break;
   }
 }
 
 /**
- * When receive update_process packet, relay it to renderer process.
+ * When receive show_process_list command, relay it to renderer process.
  * @param pid {string} Not used.
  * @param param {object} Parameter containing process list.
  */
-function recvPacketProcessList(pid, param) {
-  mainWindow.webContents.send('update_processes', param.processes);
+function recvCommandShowProcessList(pid, param) {
+  mainWindow.webContents.send('show_process_list', param.processes);
 }
 
 /**
- * When receive 'script' GUI command, pass scipt to frame or store if frame not finished setup.
+ * When receive script command, pass scipt to frame or store if frame not finished setup.
  * @param pid {sring} Process-id send to.
  * @param param {object} Parameter contain script string.
  * @return {void}
  */
-function recvPacketScript(pid, param) {
+function recvCommandScript(pid, param) {
   console.assert(pid in contexts);
 
   var context = contexts[pid];
@@ -349,7 +347,7 @@ function recvPacketScript(pid, param) {
  * @param pid Process-id for frame.
  * @param param Not used.
  */
-function recvPacketWarpin(pid, param) {
+function recvCommandWarpin(pid, param) {
   console.assert(pid in contexts);
 
   contexts[pid].frame.close();

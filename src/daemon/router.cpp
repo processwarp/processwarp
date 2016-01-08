@@ -129,31 +129,39 @@ void Router::recv_bind_node(const nid_t& nid) {
 }
 
 /**
- * When receive a scheduler command, relay it to scheduler.
- * @param pid Target process-id.
- * @param content Command content.
+ * When passed a command from any module in this node,
+ * set destination node-id and pass content to capable module in this node or another node through the server.
+ * @param packet Command packet.
  */
-void Router::relay_command(const vpid_t& pid, const picojson::object& content) {
-  scheduler.recv_command(pid, content);
-}
+void Router::relay_command(const CommandPacket& packet) {
+  assert(packet.src_nid == SpecialNID::NONE || packet.src_nid == my_nid);
 
-/**
- * When passed a outer module packet from any module in this node,
- * set destination node-id and pass content to capable module in this node or other node through the server.
- * @param pid Process-id bundled for a packet.
- * @param dst_nid Destination node-id if known, or NONE if source module don't know.
- * @param module Target module.
- * @param content Packet content.
- */
-void Router::relay_outer_module_packet(const vpid_t& pid, const nid_t& dst_nid,
-                                       OuterModule::Type module, const std::string& content) {
-  nid_t real_nid = (dst_nid != SpecialNID::NONE ? dst_nid : scheduler.get_dst_nid(pid, module));
+  nid_t real_nid = (packet.dst_nid != SpecialNID::NONE ?
+                    packet.dst_nid :
+                    scheduler.get_dst_nid(packet.pid, packet.module));
+  CommandPacket real_packet = {
+    packet.pid,
+    real_nid,
+    my_nid,
+    packet.module,
+    packet.content
+  };
 
-  if (real_nid == my_nid) {
-    switch (module) {
-      case OuterModule::FRONTEND: {
+  if (real_packet.dst_nid == my_nid || real_packet.dst_nid == SpecialNID::THIS) {
+    switch (real_packet.module) {
+      case Module::MEMORY:
+      case Module::VM: {
+        WorkerConnector& worker = WorkerConnector::get_instance();
+        worker.relay_command(real_packet);
+      } break;
+
+      case Module::SCHEDULER: {
+        scheduler.recv_command(real_packet);
+      } break;
+
+      case Module::FRONTEND: {
         FrontendConnector& frontend = FrontendConnector::get_instance();
-        frontend.relay_frontend_packet(pid, content);
+        frontend.relay_frontend_command(real_packet);
       } break;
 
       default: {
@@ -164,18 +172,16 @@ void Router::relay_outer_module_packet(const vpid_t& pid, const nid_t& dst_nid,
 
   } else {
     ServerConnector& server = ServerConnector::get_instance();
-
-    server.relay_outer_module_packet(pid, real_nid, module, content);
+    server.send_relay_command(real_packet);
   }
 }
 
 /**
- * When receive a scheduler packet, relay it to scheduler.
- * @param pid Target process-id.
- * @param content Packet content.
+ * When receive packet from server to scheduler, relay it to scheduler.
+ * @param packet Command packet.
  */
-void Router::relay_scheduler_packet(const vpid_t& pid, const std::string& content) {
-  scheduler.recv_packet(pid, content);
+void Router::relay_scheduler_command(const CommandPacket& packet) {
+  scheduler.recv_command(packet);
 }
 
 /**
@@ -207,53 +213,9 @@ void Router::scheduler_create_gui(Scheduler& scheduler, const vpid_t& pid) {
 /**
  * When scheduler require send a command, relay command by command type.
  * @param scheduler Caller instance.
- * @param pid Target process-id to execute it.
- * @param module Target module.
- * @param content Command content.
+ * @param packet Command packet.
  */
-void Router::scheduler_send_command(Scheduler& scheduler, const vpid_t& pid,
-                                    InnerModule::Type module, const picojson::object& content) {
-  switch (module) {
-    case InnerModule::MEMORY:
-    case InnerModule::VM: {
-      WorkerConnector& worker = WorkerConnector::get_instance();
-      worker.relay_command(pid, module, content);
-    } break;
-
-    default: {
-      /// @todo error
-      assert(false);
-    }
-  }
-}
-
-/**
- * When scheduler require send inner module packet to another node, call ServerConnector's method to do it.
- * @param scheduler Caller instance.
- * @param pid Process-id bundling packet.
- * @param dst_nid Destination node-id.
- * @param module Target module.
- * @param content Packet content.
- */
-void Router::scheduler_send_inner_module_packet(Scheduler& scheduler, const vpid_t& pid,
-                                                const nid_t& dst_nid, InnerModule::Type module,
-                                                const std::string& content) {
-  ServerConnector& server = ServerConnector::get_instance();
-
-  server.relay_inner_module_packet(pid, dst_nid, module, content);
-}
-
-/**
- * When scheduler require send outer module packet to another node, pass capable method to set dst_nid if need.
- * @param scheduler Caller instance.
- * @param pid Process-id bundling packet.
- * @param dst_nid Destination node-id.
- * @param module Target module.
- * @param content Packet content.
- */
-void Router::scheduler_send_outer_module_packet(Scheduler& scheduler, const vpid_t& pid,
-                                                const nid_t& dst_nid, OuterModule::Type module,
-                                                const std::string& content) {
-  relay_outer_module_packet(pid, dst_nid, module, content);
+void Router::scheduler_send_command(Scheduler& scheduler, const CommandPacket& packet) {
+  relay_command(packet);
 }
 }  // namespace processwarp

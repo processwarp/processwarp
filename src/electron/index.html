@@ -249,13 +249,13 @@
         }
 
         /**
-         * When receive update_processes command form main process,
+         * When receive show_process_list command form main process,
          * update list of process to view.
          * @param sender {object} Not used.
          * @param processes {object} Parameter containing list of process-id and name.
          * @return {void}
          */
-        function mainOnUpdateProcesses(sender, processes) {
+        function mainShowProcessList(sender, processes) {
           var processes_list = document.getElementById('processes-list');
 
           while (processes_list.firstChild) {
@@ -274,7 +274,7 @@
             processes_list.appendChild(tr);
           });
         }
-        ipc.on('update_processes', mainOnUpdateProcesses);
+        ipc.on('show_process_list', mainShowProcessList);
       </script>
     </div><!-- end of main -->
   </body>

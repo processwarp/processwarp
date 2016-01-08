@@ -12,7 +12,7 @@ BuiltinGuiDelegate::~BuiltinGuiDelegate() {
 }
 
 /**
- * When program call pw_gui_create, send "create_gui" command to scheduler.
+ * When program call pw_gui_create, send "create_gui" command to scheduler in this node.
  * Scheduler should control to create a GUI frontend.
  * Parameters get from src aren't.
  * Return value set to dst isn't.
@@ -21,16 +21,16 @@ BuiltinGuiDelegate::~BuiltinGuiDelegate() {
 BuiltinPostProc::Type BuiltinGui::create(Process& proc, Thread& thread, BuiltinFuncParam p,
                                          vaddr_t dst, std::vector<uint8_t>& src) {
   BuiltinGuiDelegate& delegate = *reinterpret_cast<BuiltinGuiDelegate*>(p.ptr);
-  picojson::object command;
-  command.insert(std::make_pair("command", picojson::value("create_gui")));
 
-  delegate.builtin_gui_send_command(proc, InnerModule::SCHEDULER, command);
+  picojson::object param;
+  delegate.builtin_gui_send_command(proc, SpecialNID::THIS, Module::SCHEDULER, "create_gui", param);
 
   return BuiltinPostProc::NORMAL;
 }
 
 /**
  * When program call pw_gui_script, send "script" command with script string to the frontend.
+ * Destination node-id is resolved by scheduler.
  * Before send each command, embed parameter with format string the same as the "printf".
  * Parameters get from src are, pointer of format-string, and any parameter alike to "printf".
  * Return value set to dst isn't.
@@ -44,10 +44,9 @@ BuiltinPostProc::Type BuiltinGui::script(Process& proc, Thread& thread, BuiltinF
   std::vector<uint8_t> ap(src.begin() + seek, src.end());
   std::string script = Format::parse(thread, thread.memory->read_raw(format_ptr), ap);
 
-  picojson::object packet;
-  packet.insert(std::make_pair("command", picojson::value("script")));
-  packet.insert(std::make_pair("script", picojson::value(script)));
-  delegate.builtin_gui_send_frontend_packet(proc, picojson::value(packet).serialize());
+  picojson::object param;
+  param.insert(std::make_pair("script", picojson::value(script)));
+  delegate.builtin_gui_send_command(proc, SpecialNID::NONE, Module::FRONTEND, "script", param);
 
   return BuiltinPostProc::NORMAL;
 }

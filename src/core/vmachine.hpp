@@ -23,8 +23,8 @@ class VMachineDelegate {
  public:
   virtual ~VMachineDelegate();
 
-  virtual void vmachine_send_packet(VMachine& vm, const nid_t& dst_nid,
-                                    const std::string& packet) = 0;
+  virtual void vmachine_send_command(VMachine& vm, const nid_t& dst_nid, Module::Type module,
+                                     const std::string& command, picojson::object& param) = 0;
   virtual void vmachine_finish(VMachine& vm) = 0;
   virtual void vmachine_finish_thread(VMachine& vm, const vtid_t& tid) = 0;
   virtual void vmachine_error(VMachine& vm, const std::string& message) = 0;
@@ -53,7 +53,7 @@ class VMachine : private ProcessDelegate {
   void terminate();
 
   void on_recv_update(vaddr_t addr);
-  void recv_command(const picojson::object& content);
+  void recv_command(const CommandPacket& packet);
   void recv_packet(const std::string& data);
   Process& get_process();
   void warpout_thread(vtid_t tid);
