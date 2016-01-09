@@ -4,6 +4,9 @@
     "password":"<your password>",
     "device-name": "<device name>",
 
+    "worker-pipe": "<full path to pipe for worker>",
+    "frontend-pipe": "<full path to pipe for frontend>",
+
     "libs":[
 	"<full path to library for ffi>"
     ],
