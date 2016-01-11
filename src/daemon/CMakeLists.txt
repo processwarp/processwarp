@@ -59,6 +59,7 @@ add_executable(daemon
   router.cpp
   server_connector.cpp
   worker_connector.cpp
+  worker_dummy.cpp
   )
 target_link_libraries(daemon
   ${extra_libs}
