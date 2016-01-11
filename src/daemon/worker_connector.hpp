@@ -12,7 +12,12 @@
 #include "daemon_define.hpp"
 #include "definitions.hpp"
 
+#ifdef WORKER_DUMMY
+#include "worker_dummy.hpp"
+#endif
+
 namespace processwarp {
+#ifndef WORKER_DUMMY
 class WorkerConnector : public Connector {
  public:
   static WorkerConnector& get_instance();
@@ -52,4 +57,5 @@ class WorkerConnector : public Connector {
   void recv_relay_command(const vpid_t& pid, picojson::object& content);
   void send_data(const vpid_t&pid, const picojson::object& data);
 };
+#endif  // ifndef WORKER_DUMMY
 }  // namespace processwarp

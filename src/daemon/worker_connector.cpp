@@ -12,6 +12,7 @@
 #include "worker_connector.hpp"
 
 namespace processwarp {
+#ifndef WORKER_DUMMY
 /**
  * WorkerConnector instance getter as singleton pattern.
  * @return The singleton instance of WorkerConnector class.
@@ -241,4 +242,5 @@ void WorkerConnector::send_data(const vpid_t& pid, const picojson::object& data)
     assert(false);
   }
 }
+#endif  // ifndef WORKER_DUMMY
 }  // namespace processwarp
