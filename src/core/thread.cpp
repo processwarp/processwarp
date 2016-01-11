@@ -218,9 +218,13 @@ void Thread::setup_warpout() {
 }
 
 // Prepare to warp in.
-bool Thread::setup_warpin(const nid_t& dst_node) {
+bool Thread::setup_warpin(const nid_t& dst_nid) {
+  assert(dst_nid != SpecialNID::NONE);
+  print_debug("setup_warp(this=%p, tid=%s, dst=%s, status=%d)\n",
+              this, Convert::vtid2str(tid).c_str(), dst_nid.c_str(), status);
+
   if (status == BEFOR_WARP || status == WAIT_WARP) {
-    warp_dst = dst_node;
+    warp_dst = dst_nid;
     return true;
 
   } else if (status != NORMAL) {
@@ -237,7 +241,7 @@ bool Thread::setup_warpin(const nid_t& dst_node) {
     status = WAIT_WARP;
   }
 
-  warp_dst = dst_node;
+  warp_dst = dst_nid;
 
   return true;
 }

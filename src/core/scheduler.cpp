@@ -47,7 +47,8 @@ nid_t Scheduler::get_dst_nid(const vpid_t& pid, Module::Type module) {
       if (it_proc == processes.end() ||
           it_proc->second.gui_nid == SpecialNID::NONE) {
         /// @todo error
-        assert(false);
+        assert(it_proc != processes.end());
+        assert(it_proc->second.gui_nid != SpecialNID::NONE);
       }
 
       return it_proc->second.gui_nid;
@@ -84,6 +85,9 @@ void Scheduler::recv_command(const CommandPacket& packet) {
 
   } else if (command == "update_process_list") {
     recv_command_update_process_list(packet);
+
+  } else if (command == "update_threads") {
+    recv_command_update_threads(packet);
 
   } else if (command == "warp_thread") {
     recv_command_warp_thread(packet);
@@ -135,8 +139,18 @@ void Scheduler::recv_command_activate(const CommandPacket& packet) {
   } else {
     const nid_t& active_nid = Convert::json2nid(packet.content.at("nid"));
 
-    for (auto& it : processes) {
-      ProcessTree& info = it.second;
+    for (auto& it_info : processes) {
+      ProcessTree& info = it_info.second;
+
+      for (auto& it_thread : info.threads) {
+        if (it_thread.second == my_nid) {
+          picojson::object param;
+          param.insert(std::make_pair("tid", Convert::vtid2json(it_thread.first)));
+          param.insert(std::make_pair("dst_nid", Convert::nid2json(active_nid)));
+          assert(active_nid != SpecialNID::NONE);
+          send_command(info.pid, my_nid, Module::VM, "warp_request", param);
+        }
+      }
 
       if (info.gui_nid == my_nid) {
         picojson::object param;
@@ -300,6 +314,42 @@ void Scheduler::recv_command_update_process_list(const CommandPacket& packet) {
 }
 
 /**
+ * When receive update_threads command, update thread-id in process information and
+ * send show_process_list and update_process_list command to another module and node.
+ * This command was must send by vm in this node.
+ * @param packet Command packet containing a set of thread-id at now.
+ */
+void Scheduler::recv_command_update_threads(const CommandPacket& packet) {
+  assert(processes.find(packet.pid) != processes.end());
+
+  std::set<vtid_t> tids;
+  for (auto& it_tid : packet.content.at("tids").get<picojson::array>()) {
+    tids.insert(Convert::json2vtid(it_tid));
+  }
+
+  ProcessTree& info = processes.at(packet.pid);
+  for (vtid_t tid : tids) {
+    auto it_thread = info.threads.find(tid);
+    if (it_thread == info.threads.end()) {
+      info.threads.insert(std::make_pair(tid, my_nid));
+    } else {
+      info.threads.at(tid) = my_nid;
+    }
+  }
+  auto it_tid = info.threads.begin();
+  while (it_tid != info.threads.end()) {
+    if (it_tid->second == my_nid && tids.find(it_tid->first) == tids.end()) {
+      it_tid = info.threads.erase(it_tid);
+    } else {
+      it_tid++;
+    }
+  }
+
+  send_command_show_process_list();
+  send_command_update_process_list();
+}
+
+/**
  * When receive warp_gui packet, create gui in this node.
  * @param packet Command packet.
  */
@@ -321,10 +371,6 @@ void Scheduler::recv_command_warp_thread(const CommandPacket& packet) {
                                   Convert::json2vaddr(packet.content.at("proc_addr")),
                                   Convert::json2nid(packet.content.at("master_nid")));
   }
-
-  picojson::object param;
-  param.insert(std::make_pair("tid", packet.content.at("tid")));
-  send_command(packet.pid, my_nid, Module::VM, "warpout", param);
 
   vtid_t tid = Convert::json2vtid(packet.content.at("tid"));
   if (it_info == processes.end()) {
@@ -349,6 +395,10 @@ void Scheduler::recv_command_warp_thread(const CommandPacket& packet) {
       info.threads.at(tid) = my_nid;
     }
   }
+
+  picojson::object param;
+  param.insert(std::make_pair("tid", packet.content.at("tid")));
+  send_command(packet.pid, my_nid, Module::VM, "warpout", param);
 
   send_command_update_process_list();
   send_command_show_process_list();

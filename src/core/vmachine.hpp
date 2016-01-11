@@ -60,8 +60,6 @@ class VMachine : private ProcessDelegate {
   void regist_builtin_func(const std::string& name, builtin_func_t func, int i64);
   void regist_builtin_func(const std::string& name, builtin_func_t func, void* ptr);
 
-  void request_warp_thread(const vtid_t tid, const nid_t& dst_node);
-
   std::unique_ptr<VMemory::Accessor> process_assign_accessor(const vpid_t& pid) override;
   void process_change_thread_set(Process& process) override;
 
@@ -89,12 +87,13 @@ class VMachine : private ProcessDelegate {
   void clean_defunct_processe(const ProcessTree& sv_proc);
   void clean_defunct_memoryspace(const ProcessTree& sv_proc);
 
+  void recv_command_warp_request(const CommandPacket& packet);
   void recv_warp(picojson::object& json);
-  void recv_warp_request(picojson::object& json);
   void recv_terminate(picojson::object& json);
+  void send_command(const nid_t& dst_nid, Module::Type module,
+                    const std::string& command, picojson::object& param);
+  void send_command_warp_thread(Thread& thread);
   void send_packet(const nid_t& dst_nid, const std::string& command, picojson::object& packet);
-  void send_warp(Thread& thread);
-  void send_warp_request(const vtid_t tid, const nid_t& dst_nid);
   void send_terminate();
 };
 }  // namespace processwarp

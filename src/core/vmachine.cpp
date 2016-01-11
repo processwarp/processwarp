@@ -92,7 +92,7 @@ void VMachine::execute() {
       /// @todo migrate method anywhere
       for (auto& it_waiting : process->waiting_warp_result) {
         if (it_waiting.second + MEMORY_REQUIRE_INTERVAL < now) {
-          send_warp(process->get_thread(it_waiting.first));
+          send_command_warp_thread(process->get_thread(it_waiting.first));
           it_waiting.second = now;
         }
       }
@@ -100,7 +100,9 @@ void VMachine::execute() {
       // Reload thread information from memory.
       auto it_thread = process->threads.begin();
       while (it_thread != process->threads.end()) {
-        if (process->active_threads.find(it_thread->first) != process->active_threads.end()) {
+        if (process->active_threads.find(it_thread->first) != process->active_threads.end() ||
+            process->waiting_warp_result.find(it_thread->first) !=
+            process->waiting_warp_result.end()) {
           it_thread->second->read();
           it_thread++;
 
@@ -159,7 +161,7 @@ void VMachine::execute() {
     } else if (thread->status == Thread::WARP) {
       process->waiting_warp_result.insert(std::make_pair(thread->tid, std::clock()));
       process->active_threads.erase(thread->tid);
-      send_warp(*thread);
+      send_command_warp_thread(*thread);
 
     } else if (thread->status == Thread::ERROR) {
       delegate.vmachine_error(*this, "");
@@ -228,6 +230,9 @@ void VMachine::recv_command(const CommandPacket& packet) {
   if (command == "warpout") {
     warpout_thread(Convert::json2vtid(packet.content.at("tid")));
 
+  } else if (command == "warp_request") {
+    recv_command_warp_request(packet);
+
   } else {
     /// @todo error
     assert(false);
@@ -255,10 +260,6 @@ void VMachine::recv_packet(const std::string& data) {
     std::string command = json.at("command").get<std::string>();
     if (command == "warp") {
       // recv_warp(json);
-      assert(false);
-
-    } else if (command == "warp_request") {
-      // recv_warp_request(json);
       assert(false);
 
     } else if (command == "terminate") {
@@ -312,53 +313,23 @@ void VMachine::warpout_thread(vtid_t tid) {
   process->warp_out_thread(tid);
 }
 
-/**
- * Change thread status to warp thread.
- * @param tid Target thread-id.
- * @param dst_node Warp destination node-id.
- */
-void VMachine::request_warp_thread(const vtid_t tid, const nid_t& dst_node) {
-  if (process->active_threads.find(tid) != process->active_threads.end()) {
-    Thread& thread = process->get_thread(tid);
-    thread.setup_warpin(dst_node);
-    thread.write();
-    thread.memory->write_out();
-
-  } else {
-    // send_warp_request(tid, dst_node);
-    assert(false);
-  }
-}
-
 std::unique_ptr<VMemory::Accessor> VMachine::process_assign_accessor(const vpid_t& pid) {
   return std::move(vmemory.get_accessor(Convert::vpid2str(pid)));
 }
 
-void VMachine::process_change_thread_set(Process& proc) {
-  // update_proc_list();
-}
-
 /**
- * If recv this packet and this node contain target process and thread,
- * change status to warp thread.
- * @param json
+ * When changed a list of threads in this vm, send update_threads command to SCHEDULER for telling it.
+ * @param proc Caller instance.
  */
-/*
-void VMachine::recv_warp_request(picojson::object& json) {
-  const vtid_t tid = Convert::json2vtid(json.at("tid"));
-  const nid_t dst_node = Convert::json2nid(json.at("dst"));
-
-  auto it_proc = procs.find(pid);
-  if (it_proc != procs.end() &&
-      (it_proc->second->active_threads.find(tid)) !=
-      it_proc->second->active_threads.end()) {
-    Thread& thread = it_proc->second->get_thread(tid);
-    thread.setup_warpin(dst_node);
-    thread.write();
-    thread.memory->write_out();
+void VMachine::process_change_thread_set(Process& proc) {
+  picojson::object param;
+  picojson::array tids;
+  for (auto& thread : proc.threads) {
+    tids.push_back(Convert::vtid2json(thread.first));
   }
+  param.insert(std::make_pair("tids", picojson::value(tids)));
+  send_command(SpecialNID::THIS, Module::SCHEDULER, "update_threads", param);
 }
-*/
 
 /**
  * If recv this packet and this node have root-thread of target process,
@@ -464,6 +435,39 @@ void VMachine::clean_defunct_memoryspace(const std::vector<ProcessTree>& sv_proc
 */
 
 /**
+ * When receive warp_request command, call Thread::setup_warpin to warp thread.
+ * @param packet Command packet.
+ */
+void VMachine::recv_command_warp_request(const CommandPacket& packet) {
+  vtid_t tid = Convert::json2vtid(packet.content.at("tid"));
+  const nid_t& dst_nid = Convert::json2nid(packet.content.at("dst_nid"));
+  assert(dst_nid != SpecialNID::NONE);
+
+  if (process->active_threads.find(tid) != process->active_threads.end()) {
+    Thread& thread = process->get_thread(tid);
+    thread.setup_warpin(dst_nid);
+    thread.write();
+    thread.memory->write_out();
+
+  } else {
+    /// @todo send warp request to another node.
+    assert(false);
+  }
+}
+
+/**
+ * Send command to another module or node through backend and server if need.
+ * @param dst_nid Destination node-id.
+ * @param module Target module.
+ * @param command Command string.
+ * @param param Parameter for command.
+ */
+void VMachine::send_command(const nid_t& dst_nid, Module::Type module,
+                            const std::string& command, picojson::object& param) {
+  delegate.vmachine_send_command(*this, dst_nid, module, command, param);
+}
+
+/**
  * Convert json to machine data packet and send to destination node.
  * @param dst_nid
  * @param command
@@ -473,49 +477,31 @@ void VMachine::send_packet(const nid_t& dst_nid, const std::string& command,
                            picojson::object& packet) {
   packet.insert(std::make_pair("command", picojson::value(command)));
   packet.insert(std::make_pair("src_nid", Convert::nid2json(my_nid)));
-
+  print_debug("send_packet:%s\n", picojson::value(packet).serialize().c_str());
   /// @todo
   assert(false);
   // delegate.vmachine_send_packet(*this, dst_nid, picojson::value(packet).serialize());
 }
 
 /**
- * This request means to warp thread to target node.
- * This method regist thread-id to pool and loop method check
- * target thread's status to change.
- * @param thread
+ * Send warp_thread command to SCHEDULER at warp destination node.
+ * @param thread Target thread to warp.
  */
-void VMachine::send_warp(Thread& thread) {
-  picojson::object packet;
+void VMachine::send_command_warp_thread(Thread& thread) {
+  assert(thread.warp_dst != SpecialNID::NONE);
 
-  packet.insert(std::make_pair("root_tid", Convert::vtid2json(process->root_tid)));
-  packet.insert(std::make_pair("proc_addr", Convert::vaddr2json(process->addr)));
-  packet.insert(std::make_pair("master_nid", Convert::nid2json
-                               (process->proc_memory->get_master(process->addr))));
-  packet.insert(std::make_pair("name", picojson::value(process->name)));
-  packet.insert(std::make_pair("tid", Convert::vtid2json(thread.tid)));
-  packet.insert(std::make_pair("dst_nid", Convert::nid2json(thread.warp_dst)));
-  packet.insert(std::make_pair("src_nid", Convert::nid2json(my_nid)));
+  picojson::object param;
+  param.insert(std::make_pair("root_tid", Convert::vtid2json(process->root_tid)));
+  param.insert(std::make_pair("proc_addr", Convert::vaddr2json(process->addr)));
+  param.insert(std::make_pair("master_nid", Convert::nid2json
+                              (process->proc_memory->get_master(process->addr))));
+  param.insert(std::make_pair("name", picojson::value(process->name)));
+  param.insert(std::make_pair("tid", Convert::vtid2json(thread.tid)));
+  param.insert(std::make_pair("dst_nid", Convert::nid2json(thread.warp_dst)));
+  param.insert(std::make_pair("src_nid", Convert::nid2json(my_nid)));
 
-  send_packet(thread.warp_dst, "warp", packet);
+  send_command(thread.warp_dst, Module::SCHEDULER, "warp_thread", param);
 }
-
-/**
- * This request means to broadcast request of warp a thread.
- * @param tid
- * @param dst_node
- */
-/*
-void VMachine::send_warp_request(const vtid_t tid, const nid_t& dst_nid) {
-  picojson::object packet;
-
-  packet.insert(std::make_pair("cmd", picojson::value(std::string("warp_request"))));
-  packet.insert(std::make_pair("tid", Convert::vtid2json(tid)));
-  packet.insert(std::make_pair("dst_nid", Convert::nid2json(dst_nid)));
-
-  send_packet(SpecialNID::BROADCAST, "warp_request", packet);
-}
-*/
 
 /**
  * This request means to broadcast request of terminateing process.

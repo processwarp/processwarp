@@ -44,6 +44,7 @@ class Scheduler {
   void recv_command_create_gui_done(const CommandPacket& packet);
   void recv_command_update_gui_node(const CommandPacket& packet);
   void recv_command_update_process_list(const CommandPacket& packet);
+  void recv_command_update_threads(const CommandPacket& packet);
   void recv_command_warp_gui(const CommandPacket& packet);
   void recv_command_warp_thread(const CommandPacket& packet);
   void send_command_show_process_list();
