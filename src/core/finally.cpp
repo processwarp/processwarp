@@ -16,11 +16,14 @@ Finally::~Finally() {
     next_key--;
     auto func = funcs.find(next_key);
     if (func != funcs.end()) {
+#ifdef NDEBUG
       try {
         func->second();
       } catch (...) {
-        assert(false);
       }
+#else   // ifdef NDEBUG
+      func->second();
+#endif  // ifdef NDEBUG
     }
   } while (next_key != 0);
 }
