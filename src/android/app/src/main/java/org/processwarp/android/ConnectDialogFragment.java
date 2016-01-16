@@ -3,29 +3,44 @@ package org.processwarp.android;
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AlertDialog;
 import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.EditText;
 
 public class ConnectDialogFragment extends DialogFragment {
+    /**
+     * When create dialog, set event receiver to buttons.
+     * @param savedInstanceState Not used.
+     * @return Dialog instance.
+     */
     @Override
+    @NonNull
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-        // Get the layout inflater
         LayoutInflater inflater = getActivity().getLayoutInflater();
+        final View view = inflater.inflate(R.layout.dialog_connect, null, false);
 
-        // Inflate and set the layout for the dialog
-        // Pass null as the parent view because its going in the dialog layout
-        builder.setView(inflater.inflate(R.layout.dialog_connect, null))
+        builder.setView(view)
                 .setPositiveButton(R.string.connect_connect, new DialogInterface.OnClickListener() {
                     /**
                      * When choose CONNECT, connect to server by account and password.
-                     * @param dialog Not used.
+                     * @param dialog Not used.te
                      * @param id Not used.
                      */
                     @Override
                     public void onClick(DialogInterface dialog, int id) {
-                        // Connect to the server.
+                        EditText connect_account =
+                                (EditText)view.findViewById(R.id.connect_account);
+                        EditText connect_password =
+                                (EditText)view.findViewById(R.id.connect_password);
+
+                        ((MainActivity)getActivity()).connectServer(
+                                connect_account.getText().toString(),
+                                connect_password.getText().toString()
+                        );
                     }
                 })
                 .setNegativeButton(R.string.connect_quit, new DialogInterface.OnClickListener() {

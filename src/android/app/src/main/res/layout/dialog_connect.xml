@@ -33,7 +33,7 @@
         android:clickable="true" />
 
     <EditText
-        android:id="@+id/account"
+        android:id="@+id/connect_account"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
@@ -43,7 +43,7 @@
         android:hint="@string/connect_account"
         android:inputType="text" />
     <EditText
-        android:id="@+id/password"
+        android:id="@+id/connect_password"
         android:inputType="textPassword"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
