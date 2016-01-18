@@ -62,6 +62,10 @@ public class Router {
         }
     }
 
+    public String getMyNid() {
+        return myNid;
+    }
+
     public void recvConnectNode(int result) {
         if (result == 0) {
             ServerConnector server = ServerConnector.getInstance();
@@ -82,6 +86,12 @@ public class Router {
             // TODO
             Assert.fail();
         }
+    }
+
+    public void relaySchedulerCommand(CommandPacket packet) {
+        schedulerRecvCommand(
+                packet.pid, packet.dstNid, packet.srcNid,
+                packet.module, packet.content);
     }
 
     private static final Router THIS = new Router();

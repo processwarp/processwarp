@@ -19,6 +19,7 @@ import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
 
 public class ServerConnector {
+    // TODO check status
     /**
      * ServerConnector instance getter as singleton pattern.
      * @return The singleton instance of ServerConnector class.
@@ -156,7 +157,19 @@ public class ServerConnector {
      * @param packet Command packet.
      */
     public void sendRelayCommand(CommandPacket packet) {
-        // TODO
+        try {
+            JSONObject data = new JSONObject();
+
+            data.put("pid", packet.pid);
+            data.put("dst_nid", packet.dstNid);
+            data.put("module", Integer.toHexString(packet.module));
+            data.put("content", packet.content);
+
+            socket.emit("relay_command", data);
+
+        } catch (JSONException e) {
+            Log.e(this.getClass().getName(), "Exception", e);
+        }
     }
 
     /** Singleton instance for ServerConnector. */
@@ -192,6 +205,12 @@ public class ServerConnector {
         Log.e(this.getClass().getName(), "recvApplicationError");
     }
 
+    /**
+     * When receive bind-node command reply, call Router's method.
+     * Receive data having member 'result',0 means success, other means error code.
+     * Receive data having member 'nid' is assigned node-id for this node.
+     * @param data Receive data.
+     */
     private void recvConnectNode(JSONObject data) {
         Router router = Router.getInstance();
         try {
@@ -202,6 +221,12 @@ public class ServerConnector {
         }
     }
 
+    /**
+     * When receive bind-node command reply, call Router's method.
+     * Receive data having member 'result',0 means success, other means error code.
+     * Receive data having member 'nid' is assigned node-id for this node.
+     * @param data Receive data.
+     */
     private void recvBindNode(JSONObject data) {
         Router router = Router.getInstance();
         try {
@@ -219,7 +244,52 @@ public class ServerConnector {
         }
     }
 
+    /**
+     * When receive relay_command packet from server, check if me should receive it, and relay to capable modules.
+     * @param data Received data.
+     */
     private void recvRelayCommand(JSONObject data) {
-        // TODO: 1/13/16
+        Router router = Router.getInstance();
+        String myNid = router.getMyNid();
+
+        try {
+            CommandPacket packet = new CommandPacket();
+            packet.dstNid = data.getString("dst_nid");
+            packet.srcNid = data.getString("src_nid");
+
+            if (!myNid.equals(packet.dstNid) &&
+                    (!SpecialNid.BROADCAST.equals(packet.dstNid) || !myNid.equals(packet.srcNid))) {
+                return;
+            }
+
+            packet.pid    = data.getString("pid");
+            packet.module = Integer.parseInt(data.getString("module"), 16);
+            packet.content = data.getString("content");
+
+            switch (packet.module) {
+                case Module.MEMORY:
+                case Module.VM: {
+                    // TODO
+                    Assert.fail();
+                } break;
+
+                case Module.SCHEDULER: {
+                    router.relaySchedulerCommand(packet);
+                } break;
+
+                case Module.FRONTEND: {
+                    // TODO
+                    Assert.fail();
+                } break;
+
+                default: {
+                    // TODO error
+                    Assert.fail();
+                }
+            }
+
+        } catch (JSONException e) {
+            Log.e(this.getClass().getName(), "recvRelayCommand");
+        }
     }
 }
