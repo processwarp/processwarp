@@ -193,11 +193,30 @@ public class ServerConnector {
     }
 
     private void recvConnectNode(JSONObject data) {
-        // TODO: 1/13/16
+        Router router = Router.getInstance();
+        try {
+            router.recvConnectNode(data.getInt("result"));
+
+        } catch (JSONException e) {
+            Log.e(this.getClass().getName(), "recvConnectNode");
+        }
     }
 
     private void recvBindNode(JSONObject data) {
-        // TODO: 1/13/16
+        Router router = Router.getInstance();
+        try {
+            int result = data.getInt("result");
+            if (result == 0) {
+                String nid = data.getString("nid");
+                router.recvBindNode(result, nid);
+
+            } else {
+                router.recvBindNode(result, "");
+            }
+
+        } catch (JSONException e) {
+            Log.e(this.getClass().getName(), "recvBindNode");
+        }
     }
 
     private void recvRelayCommand(JSONObject data) {

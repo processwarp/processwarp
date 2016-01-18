@@ -2,8 +2,15 @@
 
 #include <picojson.h>
 
+#ifndef __ANDROID__
 #include <cinttypes>
 #include <cstdint>
+#else
+namespace std {
+#include <inttypes.h>
+#include <stdint.h>
+}  // namespace std
+#endif  // ifndef __ANDROID__
 #include <ctime>
 #include <map>
 #include <string>
@@ -59,10 +66,10 @@ typedef BuiltinPostProc::Type (*builtin_func_t)(Process& proc, Thread& thread, B
                                                 vaddr_t dst, std::vector<uint8_t>& src);
 
 /** システム中で扱う最長のuint */
-typedef std::uint64_t longest_uint_t;
+typedef uint64_t longest_uint_t;
 
 /** システム中で扱う最長のint */
-typedef std::uint64_t longest_int_t;
+typedef uint64_t longest_int_t;
 
 /** 最長のuintを1うめしたもの */
 // static longest_uint_t LONGEST_UINT_FILL = 0xFFFFFFFFFFFFFFFF;
@@ -76,7 +83,7 @@ static const vaddr_t VADDR_NULL = 0x00000000;
 static const vaddr_t VADDR_NON  = 0x00000000;
 
 /** 命令 */
-typedef std::uint32_t instruction_t;
+typedef uint32_t instruction_t;
 
 /** スタックの作業用バッファサイズ */
 static const int STACK_BUFFER_SIZE = 2;

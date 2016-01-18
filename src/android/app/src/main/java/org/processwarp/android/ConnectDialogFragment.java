@@ -37,7 +37,8 @@ public class ConnectDialogFragment extends DialogFragment {
                         EditText connect_password =
                                 (EditText)view.findViewById(R.id.connect_password);
 
-                        ((MainActivity)getActivity()).connectServer(
+                        Router router = Router.getInstance();
+                        router.connectServer(
                                 connect_account.getText().toString(),
                                 connect_password.getText().toString()
                         );

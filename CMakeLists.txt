@@ -21,6 +21,8 @@ add_custom_target(cpplint
   ${PROJECT_SOURCE_DIR}/src/daemon/*.cpp ${PROJECT_SOURCE_DIR}/src/daemon/*.hpp
   ${PROJECT_SOURCE_DIR}/include/processwarp/*.h ${PROJECT_SOURCE_DIR}/include/processwarp/*.hpp
   ${PROJECT_SOURCE_DIR}/test/unit/core/*.cpp ${PROJECT_SOURCE_DIR}/test/unit/core/*.hpp
+  ${PROJECT_SOURCE_DIR}/src/android/app/src/main/jni/*.cpp
+  ${PROJECT_SOURCE_DIR}/src/android/app/src/main/jni/*.hpp
   )
 
 # Generate develop document.
