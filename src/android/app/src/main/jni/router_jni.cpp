@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "convert.hpp"
+#include "jni_util.hpp"
 #include "scheduler.hpp"
 
 namespace processwarp {
@@ -31,11 +32,7 @@ extern "C" JNIEXPORT jstring JNICALL Java_org_processwarp_android_Router_schedul
 (JNIEnv* env, jobject caller, jstring jpid, jint jmodule) {
   __android_log_print(ANDROID_LOG_VERBOSE, "native", "scheduler::getDstNid\n");
 
-  const char* pid_char = env->GetStringUTFChars(jpid, nullptr);
-  vpid_t pid = Convert::str2vpid(pid_char);
-  env->ReleaseStringUTFChars(jpid, pid_char);
-
-  nid_t dst_nid = scheduler->get_dst_nid(pid, jmodule);
+  nid_t dst_nid = scheduler->get_dst_nid(jstr2vpid(env, jpid), jmodule);
 
   return env->NewStringUTF(Convert::nid2str(dst_nid).c_str());
 }
@@ -61,11 +58,7 @@ extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Router_schedulerS
 (JNIEnv* env, jobject caller, jstring jnid) {
   __android_log_print(ANDROID_LOG_VERBOSE, "native", "scheduler::setMyNid\n");
 
-  const char* nid_char = env->GetStringUTFChars(jnid, nullptr);
-  nid_t nid = Convert::str2nid(nid_char);
-  env->ReleaseStringUTFChars(jnid, nid_char);
-
-  scheduler->set_my_nid(nid);
+  scheduler->set_my_nid(jstr2nid(env, jnid));
 }
 
 /*
