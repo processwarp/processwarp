@@ -2,6 +2,7 @@
 #include <android/log.h>
 #include <router_jni.h>
 
+#include <cassert>
 #include <memory>
 
 #include "convert.hpp"
@@ -46,7 +47,24 @@ extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Router_schedulerR
     JNIEnv* env, jobject caller, jstring jpid, jstring jdst_nid, jstring jsrc_nid,
     int jmodule, jstring jcontent) {
   __android_log_print(ANDROID_LOG_VERBOSE, "native", "scheduler::recvCommand\n");
-  /// @todo
+
+  picojson::value v;
+  std::istringstream is(JniUtil::jstr2str(env, jcontent));
+  std::string err = picojson::parse(v, is);
+  if (!err.empty()) {
+    /// @todo error
+    assert(false);
+  }
+  
+  CommandPacket packet = {
+    JniUtil::jstr2vpid(env, jpid),
+    JniUtil::jstr2nid(env, jdst_nid),
+    JniUtil::jstr2nid(env, jsrc_nid),
+    jmodule,
+    v.get<picojson::object>()
+  };
+
+  scheduler->recv_command(packet);
 }
 
 /*
