@@ -5,6 +5,7 @@
 #include "definitions.hpp"
 
 namespace processwarp {
+namespace JniUtil {
 /**
  * Convert Java string type to C++ std::string.
  * @param env Java instance.
@@ -38,4 +39,5 @@ inline vpid_t jstr2vpid(JNIEnv* env, const jstring jpid) {
 inline nid_t jstr2nid(JNIEnv* env, const jstring jnid) {
   return Convert::str2nid(jstr2str(env, jnid));
 }
+}  // namespace JniUtil
 }  // namespace processwarp
