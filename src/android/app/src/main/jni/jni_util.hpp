@@ -1,5 +1,7 @@
 #pragma once
 
+#include <android/log.h>
+#include <jni.h>
 #include <picojson.h>
 
 #include "definitions.hpp"
@@ -39,5 +41,24 @@ inline vpid_t jstr2vpid(JNIEnv* env, const jstring jpid) {
 inline nid_t jstr2nid(JNIEnv* env, const jstring jnid) {
   return Convert::str2nid(jstr2str(env, jnid));
 }
+
+/**
+ * Android log output macros.
+ * @param NAME Log output function name.
+ * @param LV Log level for android monitor.
+ */
+#define M_ANDROID_LOG(NAME, LV)                                         \
+  inline void NAME(const char* format, ...) {                           \
+    va_list arg;                                                        \
+    va_start(arg, format);                                              \
+    __android_log_vprint(ANDROID_LOG_##LV, "processwarp", format, arg); \
+    va_end(arg);                                                        \
+  }
+M_ANDROID_LOG(log_v, VERBOSE);
+M_ANDROID_LOG(log_d, DEBUG);
+M_ANDROID_LOG(log_i, INFO);
+M_ANDROID_LOG(log_w, WARN);
+M_ANDROID_LOG(log_e, ERROR);
+#undef M_ANDROID_LOG
 }  // namespace JniUtil
 }  // namespace processwarp

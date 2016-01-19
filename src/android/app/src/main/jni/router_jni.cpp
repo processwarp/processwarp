@@ -1,5 +1,3 @@
-
-#include <android/log.h>
 #include <router_jni.h>
 
 #include <cassert>
@@ -19,7 +17,7 @@ std::unique_ptr<processwarp::Scheduler> scheduler;
  */
 extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Router_schedulerInitialize
 (JNIEnv* env, jobject caller) {
-  __android_log_print(ANDROID_LOG_VERBOSE, "native", "scheduler::initialize\n");
+  JniUtil::log_v("scheduler::initialize\n");
 
   scheduler.reset(new processwarp::Scheduler());
 }
@@ -31,7 +29,7 @@ extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Router_schedulerI
  */
 extern "C" JNIEXPORT jstring JNICALL Java_org_processwarp_android_Router_schedulerGetDstNid
 (JNIEnv* env, jobject caller, jstring jpid, jint jmodule) {
-  __android_log_print(ANDROID_LOG_VERBOSE, "native", "scheduler::getDstNid\n");
+  JniUtil::log_v("scheduler::getDstNid\n");
 
   nid_t dst_nid = scheduler->get_dst_nid(JniUtil::jstr2vpid(env, jpid), jmodule);
 
@@ -46,7 +44,7 @@ extern "C" JNIEXPORT jstring JNICALL Java_org_processwarp_android_Router_schedul
 extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Router_schedulerRecvCommand(
     JNIEnv* env, jobject caller, jstring jpid, jstring jdst_nid, jstring jsrc_nid,
     int jmodule, jstring jcontent) {
-  __android_log_print(ANDROID_LOG_VERBOSE, "native", "scheduler::recvCommand\n");
+  JniUtil::log_v("scheduler::recvCommand\n");
 
   picojson::value v;
   std::istringstream is(JniUtil::jstr2str(env, jcontent));
@@ -74,7 +72,7 @@ extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Router_schedulerR
  */
 extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Router_schedulerSetMyNid
 (JNIEnv* env, jobject caller, jstring jnid) {
-  __android_log_print(ANDROID_LOG_VERBOSE, "native", "scheduler::setMyNid\n");
+  JniUtil::log_v("scheduler::setMyNid\n");
 
   scheduler->set_my_nid(JniUtil::jstr2nid(env, jnid));
 }
@@ -86,7 +84,7 @@ extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Router_schedulerS
  */
 extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Router_schedulerActivate
 (JNIEnv* env, jobject caller) {
-  __android_log_print(ANDROID_LOG_VERBOSE, "native", "scheduler::activate\n");
+  JniUtil::log_v("scheduler::activate\n");
 
   scheduler->activate();
 }
