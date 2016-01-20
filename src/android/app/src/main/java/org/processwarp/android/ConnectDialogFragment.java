@@ -6,13 +6,14 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AlertDialog;
+import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.EditText;
 
 public class ConnectDialogFragment extends DialogFragment {
     /**
-     * When create dialog, set event receiver to buttons.
+     * When create dialog, set toolbar and event receiver to buttons.
      * @param savedInstanceState Not used.
      * @return Dialog instance.
      */
@@ -22,6 +23,9 @@ public class ConnectDialogFragment extends DialogFragment {
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         LayoutInflater inflater = getActivity().getLayoutInflater();
         final View view = inflater.inflate(R.layout.dialog_connect, null, false);
+
+        Toolbar toolbar = (Toolbar)view.findViewById(R.id.connect_toolbar);
+        toolbar.setTitle(R.string.app_name);
 
         builder.setView(view)
                 .setPositiveButton(R.string.connect_connect, new DialogInterface.OnClickListener() {

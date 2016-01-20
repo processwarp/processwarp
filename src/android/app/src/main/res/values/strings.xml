@@ -6,4 +6,6 @@
     <string name="connect_password">password...</string>
     <string name="connect_connect">connect</string>
     <string name="connect_quit">quit</string>
+
+    <string name="menu_activate">activate</string>
 </resources>

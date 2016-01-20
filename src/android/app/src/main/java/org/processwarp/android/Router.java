@@ -88,6 +88,55 @@ public class Router {
         }
     }
 
+    /**
+     * When passed a command from some module in this node,
+     * set destination node-id and pass content to capable module in this node or
+     * another node through the server.
+     * @param packet Command packet.
+     */
+    public void relayCommand(CommandPacket packet) {
+        String realNid = (
+                !SpecialNid.NONE.equals(packet.dstNid) ?
+                packet.dstNid :
+                schedulerGetDstNid(packet.pid, packet.module));
+
+        CommandPacket realPacket = new CommandPacket();
+        realPacket.pid     = packet.pid;
+        realPacket.dstNid  = realNid;
+        realPacket.srcNid  = myNid;
+        realPacket.module  = packet.module;
+        realPacket.content = packet.content;
+
+        if (realPacket.dstNid.equals(myNid) || realPacket.dstNid.equals(SpecialNid.THIS)) {
+            switch (realPacket.module) {
+                case Module.MEMORY:
+                case Module.VM:
+                    // TODO
+                    Assert.fail();
+                    break;
+
+                case Module.SCHEDULER:
+                    schedulerRecvCommand(
+                            realPacket.pid, realPacket.srcNid, realPacket.srcNid,
+                            realPacket.module, realPacket.content);
+                    break;
+
+                case Module.FRONTEND:
+                    // TODO
+                    Assert.fail();
+                    break;
+
+                default:
+                    // TODO
+                    Assert.fail();
+                    break;
+            }
+        }
+
+        ServerConnector server = ServerConnector.getInstance();
+        server.sendRelayCommand(realPacket);
+    }
+
     public void relaySchedulerCommand(CommandPacket packet) {
         schedulerRecvCommand(
                 packet.pid, packet.dstNid, packet.srcNid,
