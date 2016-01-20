@@ -8,6 +8,10 @@ import junit.framework.Assert;
 import java.security.MessageDigest;
 
 public class Router {
+    /**
+     * Router instance getter as singleton pattern.
+     * @return The singleton instance of Router class.
+     */
     public static Router getInstance() {
         return THIS;
     }
@@ -62,10 +66,18 @@ public class Router {
         }
     }
 
+    /**
+     * Get this node's node-id.
+     * @return This node's node-id.
+     */
     public String getMyNid() {
         return myNid;
     }
 
+    /**
+     * When connect is success, send bind_node packet with my-nid and node-name.
+     * @param result Result code.
+     */
     public void recvConnectNode(int result) {
         if (result == 0) {
             ServerConnector server = ServerConnector.getInstance();
@@ -77,6 +89,11 @@ public class Router {
         }
     }
 
+    /**
+     * When bind is success, store assigned nid as my-nid.
+     * @param result Result code.
+     * @param nid Assigned nid for this node.
+     */
     public void recvBindNode(int result, String nid) {
         if (result == 0) {
             myNid = nid;
@@ -137,6 +154,10 @@ public class Router {
         server.sendRelayCommand(realPacket);
     }
 
+    /**
+     * When receive packet from server to scheduler, relay it to scheduler.
+     * @param packet Command packet.
+     */
     public void relaySchedulerCommand(CommandPacket packet) {
         schedulerRecvCommand(
                 packet.pid, packet.dstNid, packet.srcNid,
@@ -146,6 +167,11 @@ public class Router {
     private static final Router THIS = new Router();
     private String myNid;
 
+    /**
+     * Constructor for singleton pattern.
+     * This class is singleton.
+     * This method is private.
+     */
     private Router() {
     }
 
