@@ -10,10 +10,10 @@ extern "C" {
 /*
  * Class:     org_processwarp_android_Router
  * Method:    schedulerInitialize
- * Signature: ()V
+ * Signature: (Lorg/processwarp/android/Router;)V
  */
 JNIEXPORT void JNICALL Java_org_processwarp_android_Router_schedulerInitialize
-        (JNIEnv *, jobject);
+  (JNIEnv *, jobject, jobject);
 
 /*
  * Class:     org_processwarp_android_Router
@@ -21,7 +21,7 @@ JNIEXPORT void JNICALL Java_org_processwarp_android_Router_schedulerInitialize
  * Signature: (Ljava/lang/String;I)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL Java_org_processwarp_android_Router_schedulerGetDstNid
-        (JNIEnv *, jobject, jstring, jint);
+  (JNIEnv *, jobject, jstring, jint);
 
 /*
  * Class:     org_processwarp_android_Router
@@ -29,7 +29,7 @@ JNIEXPORT jstring JNICALL Java_org_processwarp_android_Router_schedulerGetDstNid
  * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;)V
  */
 JNIEXPORT void JNICALL Java_org_processwarp_android_Router_schedulerRecvCommand
-        (JNIEnv *, jobject, jstring, jstring, jstring, jint, jstring);
+  (JNIEnv *, jobject, jstring, jstring, jstring, jint, jstring);
 
 /*
  * Class:     org_processwarp_android_Router
@@ -37,7 +37,7 @@ JNIEXPORT void JNICALL Java_org_processwarp_android_Router_schedulerRecvCommand
  * Signature: (Ljava/lang/String;)V
  */
 JNIEXPORT void JNICALL Java_org_processwarp_android_Router_schedulerSetMyNid
-        (JNIEnv *, jobject, jstring);
+  (JNIEnv *, jobject, jstring);
 
 /*
  * Class:     org_processwarp_android_Router
@@ -45,7 +45,7 @@ JNIEXPORT void JNICALL Java_org_processwarp_android_Router_schedulerSetMyNid
  * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_org_processwarp_android_Router_schedulerActivate
-        (JNIEnv *, jobject);
+  (JNIEnv *, jobject);
 
 #ifdef __cplusplus
 }

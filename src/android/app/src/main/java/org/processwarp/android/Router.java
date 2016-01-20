@@ -22,7 +22,7 @@ public class Router {
     public void initialize() {
         try {
             myNid = "";
-            schedulerInitialize();
+            schedulerInitialize(this);
 
             ServerConnector server = ServerConnector.getInstance();
             server.initialize();
@@ -164,6 +164,35 @@ public class Router {
                 packet.module, packet.content);
     }
 
+    public void schedulerCreateVm(String pid, long rootTid, long procAddr, String masterNid) {
+        // TODO
+        Assert.fail();
+    }
+
+    public void schedulerCreateGui(String pid) {
+        // TODO
+        Assert.fail();
+    }
+
+    /**
+     * When scheduler require send a command, relay command by command type.
+     * @param pid Process-id bundled to packet.
+     * @param dstNid Destination node-id.
+     * @param srcNid Source node-id, should be my node-id, THIS, or NONE.
+     * @param module Target module.
+     * @param content Packet content string of JSON.
+     */
+    private void schedulerSendCommand(String pid, String dstNid, String srcNid,
+                                      int module, String content) {
+        CommandPacket packet = new CommandPacket();
+        packet.pid = pid;
+        packet.dstNid = dstNid;
+        packet.srcNid = srcNid;
+        packet.module = module;
+        packet.content = content;
+        relayCommand(packet);
+    }
+
     private static final Router THIS = new Router();
     private String myNid;
 
@@ -175,7 +204,7 @@ public class Router {
     private Router() {
     }
 
-    private native void schedulerInitialize();
+    private native void schedulerInitialize(Router router);
     private native String schedulerGetDstNid(String pid, int module);
     private native void schedulerRecvCommand(String pid, String dstNid, String srcNid,
                                              int module, String content);

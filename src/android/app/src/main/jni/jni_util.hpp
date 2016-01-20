@@ -3,6 +3,7 @@
 #include <android/log.h>
 #include <jni.h>
 #include <picojson.h>
+#include <string>
 
 #include "definitions.hpp"
 
