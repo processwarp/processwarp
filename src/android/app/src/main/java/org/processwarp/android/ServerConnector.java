@@ -257,8 +257,8 @@ public class ServerConnector {
             packet.dstNid = data.getString("dst_nid");
             packet.srcNid = data.getString("src_nid");
 
-            if (!myNid.equals(packet.dstNid) &&
-                    (!SpecialNid.BROADCAST.equals(packet.dstNid) || !myNid.equals(packet.srcNid))) {
+            if ((!myNid.equals(packet.dstNid) && !SpecialNid.BROADCAST.equals(packet.dstNid)) ||
+                    myNid.equals(packet.srcNid)) {
                 return;
             }
 
