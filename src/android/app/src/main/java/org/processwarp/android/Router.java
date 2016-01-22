@@ -8,24 +8,18 @@ import junit.framework.Assert;
 import java.security.MessageDigest;
 
 public class Router {
-    /**
-     * Router instance getter as singleton pattern.
-     * @return The singleton instance of Router class.
-     */
-    public static Router getInstance() {
-        return THIS;
-    }
+    private ServerConnector server;
 
     /**
      * Initialize some module.
+     * @param server ServerConnector instance for send data.
      */
-    public void initialize() {
+    public void initialize(ServerConnector server) {
+        this.server = server;
+
         try {
             myNid = "";
             schedulerInitialize(this);
-
-            ServerConnector server = ServerConnector.getInstance();
-            server.initialize();
 
         } catch (Exception e) {
             Log.e(this.getClass().getName(), "", e);
@@ -58,7 +52,6 @@ public class Router {
             }
 
             // Send to server
-            ServerConnector server = ServerConnector.getInstance();
             server.sendConnectNode(account, "[10sha256]" + hexString);
 
         } catch (Exception e) {
@@ -80,7 +73,6 @@ public class Router {
      */
     public void recvConnectNode(int result) {
         if (result == 0) {
-            ServerConnector server = ServerConnector.getInstance();
             server.sendBindNode(myNid, Build.HOST);
 
         } else {
@@ -150,7 +142,6 @@ public class Router {
             }
         }
 
-        ServerConnector server = ServerConnector.getInstance();
         server.sendRelayCommand(realPacket);
     }
 
@@ -193,16 +184,7 @@ public class Router {
         relayCommand(packet);
     }
 
-    private static final Router THIS = new Router();
     private String myNid;
-
-    /**
-     * Constructor for singleton pattern.
-     * This class is singleton.
-     * This method is private.
-     */
-    private Router() {
-    }
 
     private native void schedulerInitialize(Router router);
     private native String schedulerGetDstNid(String pid, int module);

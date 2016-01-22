@@ -19,21 +19,28 @@ import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
 
 public class ServerConnector {
+    /** Socket.IO instance. */
+    private Socket socket;
+    /** Router instance for relay event. */
+    private Router router;
+    /** Instance for event listener. */
+    private ServerConnector THIS = null;
+
     // TODO check status
-    /**
-     * ServerConnector instance getter as singleton pattern.
-     * @return The singleton instance of ServerConnector class.
-     */
-    public static ServerConnector getInstance() {
-        return THIS;
-    }
 
     /**
      * Initialize ServerConnector, setup Socket.IO instance with trust manager.
      * And relate Socket.IO event with receiver method.
+     * @param router Router instance for relay event.
      */
-    public void initialize() {
+    public void initialize(Router router) {
         Log.v(this.getClass().getName(), "initialize()");
+
+        // Save instance for event listener.
+        assert THIS == null;
+        THIS = this;
+
+        this.router = router;
         try {
             // Skip verification of certificate.
             final TrustManager[] manager = {new X509TrustManager() {
@@ -108,6 +115,15 @@ public class ServerConnector {
     }
 
     /**
+     * Connect to server if not connected.
+     */
+    public void connect() {
+        if (!socket.connected()) {
+            socket.connect();
+        }
+    }
+
+    /**
      * Send connect_node command.
      * @param account Account name.
      * @param password Password for account.
@@ -120,8 +136,6 @@ public class ServerConnector {
             JSONObject data = new JSONObject();
             data.put("account", account);
             data.put("password", password);
-
-            socket.connect();
             socket.emit("connect_node", data);
 
         } catch (JSONException e) {
@@ -172,18 +186,6 @@ public class ServerConnector {
         }
     }
 
-    /** Singleton instance for ServerConnector. */
-    private static final ServerConnector THIS = new ServerConnector();
-    /** Socket.IO instance. */
-    private Socket socket;
-
-    /**
-     * Constructor for singleton pattern.
-     * This class is singleton.
-     */
-    private ServerConnector() {
-    }
-
     /**
      * When receive error event from Socket.IO, show log if debug mode.
      */
@@ -212,7 +214,6 @@ public class ServerConnector {
      * @param data Receive data.
      */
     private void recvConnectNode(JSONObject data) {
-        Router router = Router.getInstance();
         try {
             router.recvConnectNode(data.getInt("result"));
 
@@ -228,7 +229,6 @@ public class ServerConnector {
      * @param data Receive data.
      */
     private void recvBindNode(JSONObject data) {
-        Router router = Router.getInstance();
         try {
             int result = data.getInt("result");
             if (result == 0) {
@@ -249,7 +249,6 @@ public class ServerConnector {
      * @param data Received data.
      */
     private void recvRelayCommand(JSONObject data) {
-        Router router = Router.getInstance();
         String myNid = router.getMyNid();
 
         try {

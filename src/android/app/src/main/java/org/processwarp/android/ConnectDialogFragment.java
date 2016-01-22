@@ -3,6 +3,7 @@ package org.processwarp.android;
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
+import android.os.RemoteException;
 import android.support.annotation.NonNull;
 import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AlertDialog;
@@ -11,7 +12,19 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.EditText;
 
+import junit.framework.Assert;
+
 public class ConnectDialogFragment extends DialogFragment {
+    private RouterInterface router = null;
+
+    /**
+     * Set a router instance for connect server.
+     * @param router Router instance.
+     */
+    public void setRouter(RouterInterface router) {
+        this.router = router;
+    }
+
     /**
      * When create dialog, set toolbar and event receiver to buttons.
      * @param savedInstanceState Not used.
@@ -20,6 +33,8 @@ public class ConnectDialogFragment extends DialogFragment {
     @Override
     @NonNull
     public Dialog onCreateDialog(Bundle savedInstanceState) {
+        Assert.assertNotNull(router);
+
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         LayoutInflater inflater = getActivity().getLayoutInflater();
         final View view = inflater.inflate(R.layout.dialog_connect, null, false);
@@ -41,11 +56,15 @@ public class ConnectDialogFragment extends DialogFragment {
                         EditText connect_password =
                                 (EditText)view.findViewById(R.id.connect_password);
 
-                        Router router = Router.getInstance();
-                        router.connectServer(
-                                connect_account.getText().toString(),
-                                connect_password.getText().toString()
-                        );
+                        try {
+                            router.connectServer(
+                                    connect_account.getText().toString(),
+                                    connect_password.getText().toString()
+                            );
+                        } catch (RemoteException e) {
+                            // TODO error
+                            Assert.fail();
+                        }
                     }
                 })
                 .setNegativeButton(R.string.connect_quit, new DialogInterface.OnClickListener() {
