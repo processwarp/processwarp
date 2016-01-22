@@ -23,13 +23,17 @@ android {
             jniLibs.srcDirs = ['src/main/libs']
         }
     }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_6
+        targetCompatibility JavaVersion.VERSION_1_6
+    }
 }
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     testCompile 'junit:junit:4.12'
     compile 'com.android.support:appcompat-v7:23.1.1'
-    compile ('io.socket:socket.io-client:0.6.3') {
+    compile('io.socket:socket.io-client:0.6.3') {
         exclude group: 'org.json', module: 'json'
     }
 }
