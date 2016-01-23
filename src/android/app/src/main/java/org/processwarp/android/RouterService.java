@@ -75,10 +75,10 @@ public class RouterService extends Service implements Router.Delegate {
         /**
          * When send command is called by another activity or services,
          * make packet and relay to router.
-         * @param pid
-         * @param dstNid
-         * @param module
-         * @param content
+         * @param pid Process-id bundled to packet.
+         * @param dstNid Destination node-id.
+         * @param module Target module.
+         * @param content JSON string contain command and parameter.
          * @throws RemoteException
          */
         @Override
