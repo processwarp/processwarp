@@ -4,7 +4,7 @@ package org.processwarp.android;
  *  Node-id is assigned for each node process run in any devices.
  */
 public class SpecialNid {
-    /** Set none if destination node-id is't yet determined. */
+    /** Set none if destination node-id isn't yet determined. */
     static final String NONE      = "";
     /** Send command to this(local) node. */
     static final String THIS      = ".";
