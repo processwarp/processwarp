@@ -14,7 +14,7 @@
         android:theme="@style/ThemeOverlay.AppCompat.ActionBar"/>
 
     <ListView
-        android:id="@+id/listView1"
+        android:id="@+id/processList"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 

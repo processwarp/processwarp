@@ -6,9 +6,12 @@ import android.os.IBinder;
 import android.os.RemoteException;
 import android.support.annotation.Nullable;
 
-public class RouterService extends Service {
+import junit.framework.Assert;
+
+public class RouterService extends Service implements Router.Delegate {
     private Router router = null;
     private ServerConnector server = null;
+    private static ControllerInterface controller = null;
 
     /**
      * When create service, setup Router and Server Connector instances.
@@ -18,7 +21,7 @@ public class RouterService extends Service {
         router = new Router();
         server = new ServerConnector();
 
-        router.initialize(server);
+        router.initialize(this, server);
         server.initialize(router);
     }
 
@@ -48,6 +51,16 @@ public class RouterService extends Service {
     }
 
     private RouterInterface.Stub binder = new RouterInterface.Stub() {
+        /**
+         * When method is called by frontend, save passed controller callback.
+         * @param controller Controller callback instance.
+         */
+        @Override
+        public void registerController(ControllerInterface controller) {
+            Assert.assertNull(RouterService.controller);
+            RouterService.controller = controller;
+        }
+
         /**
          * When method is called by frontend, pass it to router.
          * @param account Account string.
@@ -82,6 +95,24 @@ public class RouterService extends Service {
             router.relayCommand(packet);
         }
     };
+
+    /**
+     * When relay controller is required, relay packet to controller by AIDL.
+     * @param packet Command packet.
+     */
+    @Override
+    public void relayControllerPacket(CommandPacket packet) {
+        if (controller == null) return;
+
+        try {
+            controller.recvCommand(
+                    packet.pid, packet.dstNid, packet.srcNid,
+                    packet.module, packet.content);
+
+        } catch (RemoteException e) {
+            Assert.fail();
+        }
+    }
 
     static {
         System.loadLibrary("processwarp_jni");

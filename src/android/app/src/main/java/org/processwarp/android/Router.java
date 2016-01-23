@@ -8,13 +8,23 @@ import junit.framework.Assert;
 import java.security.MessageDigest;
 
 public class Router {
+    /**
+     * Delegate for implement by service.
+     */
+    public interface Delegate {
+        void relayControllerPacket(CommandPacket packet);
+    }
+
+    private Delegate delegate;
     private ServerConnector server;
 
     /**
      * Initialize some module.
+     * @param delegate Delegate for implement by service.
      * @param server ServerConnector instance for send data.
      */
-    public void initialize(ServerConnector server) {
+    public void initialize(Delegate delegate, ServerConnector server) {
+        this.delegate = delegate;
         this.server = server;
 
         try {
@@ -131,8 +141,12 @@ public class Router {
                     break;
 
                 case Module.FRONTEND:
-                    // TODO
-                    Assert.fail();
+                    if (realPacket.pid.equals(SpecialPid.BROADCAST)) {
+                        delegate.relayControllerPacket(realPacket);
+                    } else {
+                        // TODO
+                        Assert.fail();
+                    }
                     break;
 
                 default:
