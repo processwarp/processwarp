@@ -16,6 +16,9 @@
         </activity>
 
         <service android:name=".RouterService" android:process=":router" />
+        <service android:name=".WorkerService0" android:process=":worker0" />
+        <service android:name=".WorkerService1" android:process=":worker1" />
+        <service android:name=".WorkerService2" android:process=":worker2" />
     </application>
 
 </manifest>

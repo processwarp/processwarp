@@ -101,7 +101,7 @@ class DelegateJni : public SchedulerDelegate {
                         jpid,
                         jdst_nid,
                         jsrc_nid,
-                        *reinterpret_cast<const jint*>(&packet.module),
+                        static_cast<jint>(packet.module),
                         jcontent);
 
     env->DeleteLocalRef(jpid);

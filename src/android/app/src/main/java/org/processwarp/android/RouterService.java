@@ -8,10 +8,34 @@ import android.support.annotation.Nullable;
 
 import junit.framework.Assert;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 public class RouterService extends Service implements Router.Delegate {
+    /** Max worker number. */
+    private static final int MAX_WORKERS = 3;
+    /** Classes for start worker service. */
+    private static final Class<?> WORKER_CLASSES[] = {
+            WorkerService0.class,
+            WorkerService1.class,
+            WorkerService2.class
+    };
+
+    /** The router having native interface. */
     private Router router = null;
+    /** The server for relay packet. */
     private ServerConnector server = null;
+    /** The controller callback for relay CONTROLLER command. */
     private static ControllerInterface controller = null;
+    /** Map of Process-id and worker callback for relay VM and VMEMORY command. */
+    private static Map<String, WorkerInterface> workers = new HashMap<String, WorkerInterface>();
+    private static Map<String, List<CommandPacket>> sendWait =
+            new HashMap<String, List<CommandPacket>>();
+    /** Process-id bind for worker. Array index is equal to worker index. */
+    private String[] workerPid = new String[MAX_WORKERS];
+
 
     /**
      * When create service, setup Router and Server Connector instances.
@@ -62,6 +86,33 @@ public class RouterService extends Service implements Router.Delegate {
         }
 
         /**
+         * When method is called by worker, save worker callback with process-id.
+         * If packets are waiting to send in buffer, send packet and remove buffer.
+         * @param pid Worker's process-id.
+         * @param worker Worker callback instance.
+         */
+        @Override
+        public void registerWorker(String pid, WorkerInterface worker) {
+            RouterService.workers.put(pid, worker);
+
+            for (CommandPacket packet : sendWait.get(pid)) {
+                try {
+                    worker.relayCommand(
+                            packet.pid,
+                            packet.dstNid,
+                            packet.srcNid,
+                            packet.module,
+                            packet.content
+                    );
+                } catch (RemoteException e) {
+                    // TODO error
+                    Assert.fail();
+                }
+            }
+            sendWait.remove(pid);
+        }
+
+        /**
          * When method is called by frontend, pass it to router.
          * @param account Account string.
          * @param password Password string.
@@ -97,11 +148,41 @@ public class RouterService extends Service implements Router.Delegate {
     };
 
     /**
-     * When relay controller is required, relay packet to controller by AIDL.
+     * When scheduler require create vm, call Worker's method to do it.
+     * @param caller Caller instance.
+     * @param pid Process-id for new vm.
+     * @param rootTid Root thread-id for new vm.
+     * @param procAddr Address of process information for new vm.
+     * @param masterNid Node-id of master node for new vm.
+     */
+    @Override
+    public void routerCreateVm(Router caller, String pid, long rootTid, long procAddr, String masterNid) {
+        Intent intent = null;
+        for (int id = 0; id < MAX_WORKERS; id++) {
+            if (workerPid[id] == null) {
+                workerPid[id] = pid;
+                intent = new Intent(this, WORKER_CLASSES[id]);
+            }
+        }
+
+        sendWait.put(pid, new ArrayList<CommandPacket>());
+
+        intent.putExtra("nid", router.getMyNid());
+        intent.putExtra("pid", pid);
+        intent.putExtra("root_tid", rootTid);
+        intent.putExtra("proc_addr", procAddr);
+        intent.putExtra("master_nid", masterNid);
+
+        startService(intent);
+    }
+
+    /**
+     * When relay packet to controller is required, do it by AIDL.
+     * @param caller Caller instance, not used.
      * @param packet Command packet.
      */
     @Override
-    public void relayControllerPacket(CommandPacket packet) {
+    public void routerRelayControllerPacket(Router caller, CommandPacket packet) {
         if (controller == null) return;
 
         try {
@@ -110,6 +191,37 @@ public class RouterService extends Service implements Router.Delegate {
                     packet.module, packet.content);
 
         } catch (RemoteException e) {
+            Assert.fail();
+        }
+    }
+
+    /**
+     * When relay packet to worker is required, do it by AIDL.
+     * Store packet to buffer if connection isn't open yet.
+     * @param caller Caller instance, not used.
+     * @param packet Command packet.
+     */
+    @Override
+    public void routerRelayWorkerPacket(Router caller, CommandPacket packet) {
+        if (workers.containsKey(packet.pid)) {
+            try {
+                workers.get(packet.pid).relayCommand(
+                        packet.pid,
+                        packet.dstNid,
+                        packet.srcNid,
+                        packet.module,
+                        packet.content
+                );
+            } catch (RemoteException e) {
+                // TODO error
+                Assert.fail();
+            }
+
+        } else if (sendWait.containsKey(packet.pid)) {
+            sendWait.get(packet.pid).add(packet);
+
+        } else {
+            // TODO error
             Assert.fail();
         }
     }

@@ -12,7 +12,9 @@ public class Router {
      * Delegate for implement by service.
      */
     public interface Delegate {
-        void relayControllerPacket(CommandPacket packet);
+        void routerCreateVm(Router caller, String pid, long rootTid, long procAddr, String masterNid);
+        void routerRelayControllerPacket(Router caller, CommandPacket packet);
+        void routerRelayWorkerPacket(Router caller, CommandPacket packet);
     }
 
     private Delegate delegate;
@@ -130,8 +132,7 @@ public class Router {
             switch (realPacket.module) {
                 case Module.MEMORY:
                 case Module.VM:
-                    // TODO
-                    Assert.fail();
+                    delegate.routerRelayWorkerPacket(this, realPacket);
                     break;
 
                 case Module.SCHEDULER:
@@ -142,7 +143,7 @@ public class Router {
 
                 case Module.FRONTEND:
                     if (realPacket.pid.equals(SpecialPid.BROADCAST)) {
-                        delegate.relayControllerPacket(realPacket);
+                        delegate.routerRelayControllerPacket(this, realPacket);
                     } else {
                         // TODO
                         Assert.fail();
@@ -170,8 +171,7 @@ public class Router {
     }
 
     public void schedulerCreateVm(String pid, long rootTid, long procAddr, String masterNid) {
-        // TODO
-        Assert.fail();
+        delegate.routerCreateVm(this, pid, rootTid, procAddr, masterNid);
     }
 
     public void schedulerCreateGui(String pid) {
