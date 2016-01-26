@@ -3,6 +3,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <stack>
 #include <vector>
 
 #include "builtin_gui.hpp"
@@ -14,11 +15,18 @@ namespace processwarp {
 class WorkerJni : public VMachineDelegate, public VMemoryDelegate, public BuiltinGuiDelegate {
  public:
   /**
-   * Set JNI instance, JNI methods must call this method to set JNI instance.
-   * @param env_ JNI instance.
+   * Push JNI instance, JNI methods must call this method to set JNI instance.
+   * @param env JNI instance.
    */
-  void set_env(JNIEnv* env_) {
-    env = env_;
+  void push_env(JNIEnv* env) {
+    env_stack.push(env);
+  }
+
+  /**
+   * Pop JNI instance.
+   */
+  void pop_env() {
+    env_stack.pop();
   }
 
   /**
@@ -35,6 +43,7 @@ class WorkerJni : public VMachineDelegate, public VMemoryDelegate, public Builti
   void initialize(jobject& worker_, const nid_t my_nid_, const vpid_t& my_pid_, vtid_t root_tid,
                   vaddr_t proc_addr, const nid_t master_nid) {
     JniUtil::log_v("WorkerJni::initialize\n");
+    JNIEnv* env = env_stack.top();
     worker = env->NewGlobalRef(worker_);
 
     jclass clazz = env->GetObjectClass(worker);
@@ -57,6 +66,7 @@ class WorkerJni : public VMachineDelegate, public VMemoryDelegate, public Builti
    */
   void relay_command(const CommandPacket& packet) {
     JniUtil::log_v("WorkerJni::relay_command\n");
+    JNIEnv* env = env_stack.top();
 
     switch (packet.module) {
       case Module::MEMORY: {
@@ -79,12 +89,13 @@ class WorkerJni : public VMachineDelegate, public VMemoryDelegate, public Builti
    */
   void quit() {
     JniUtil::log_v("WorkerJni::quit\n");
+    JNIEnv* env = env_stack.top();
 
     env->DeleteGlobalRef(worker);
   }
 
  private:
-  JNIEnv* env;
+  std::stack<JNIEnv*> env_stack;
   jobject worker;
   jmethodID send_command_id;
 
@@ -171,6 +182,7 @@ class WorkerJni : public VMachineDelegate, public VMemoryDelegate, public Builti
 
   void send_command(const nid_t& dst_nid, Module::Type module, const std::string command,
                     picojson::object& param) {
+    JNIEnv* env = env_stack.top();
     assert(param.find("command") == param.end());
 
     param.insert(std::make_pair("command", picojson::value(command)));
@@ -209,13 +221,14 @@ extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Worker_workerInit
   vpid_t pid = JniUtil::jstr2vpid(env, jmy_pid);
 
   WorkerJni& worker_jni = workers[pid];
-  worker_jni.set_env(env);
+  worker_jni.push_env(env);
   worker_jni.initialize(worker,
                         JniUtil::jstr2nid(env, jmy_nid),
                         pid,
                         *reinterpret_cast<vtid_t*>(&jroot_tid),
                         *reinterpret_cast<vaddr_t*>(&jproc_addr),
                         JniUtil::jstr2nid(env, jmaster_nid));
+  worker_jni.pop_env();
 }
 
 /*
@@ -246,8 +259,9 @@ extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Worker_workerRela
   };
 
   WorkerJni& worker_jni = workers.at(pid);
-  worker_jni.set_env(env);
+  worker_jni.push_env(env);
   worker_jni.relay_command(packet);
+  worker_jni.pop_env();
 }
 
 /*
@@ -262,8 +276,9 @@ extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Worker_workerQuit
   vpid_t pid = JniUtil::jstr2vpid(env, jpid);
 
   WorkerJni& worker_jni = workers.at(pid);
-  worker_jni.set_env(env);
+  worker_jni.push_env(env);
   worker_jni.quit();
+  worker_jni.pop_env();
   workers.erase(pid);
 }
 }  // namespace processwarp

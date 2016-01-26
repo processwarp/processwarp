@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <memory>
+#include <stack>
 #include <string>
 
 #include "convert.hpp"
@@ -12,11 +13,18 @@ namespace processwarp {
 class DelegateJni : public SchedulerDelegate {
  public:
   /**
-   * Set JNI instance, JNI methods must call this method to set JNI instance.
-   * @param env_ JNI instance.
+   * Push JNI instance, JNI methods must call this method to set JNI instance.
+   * @param env JNI instance.
    */
-  void set_env(JNIEnv* env_) {
-    env = env_;
+  void push_env(JNIEnv* env) {
+    env_stack.push(env);
+  }
+
+  /**
+   * Pop JNI instance.
+   */
+  void pop_env() {
+    env_stack.pop();
   }
 
   /**
@@ -26,6 +34,7 @@ class DelegateJni : public SchedulerDelegate {
    */
   void initialize(jobject& router_) {
     JniUtil::log_v("delegate::initialize\n");
+    JNIEnv* env = env_stack.top();
     router = env->NewGlobalRef(router_);
 
     jclass clazz = env->GetObjectClass(router);
@@ -42,7 +51,7 @@ class DelegateJni : public SchedulerDelegate {
   }
 
  private:
-  JNIEnv* env;
+  std::stack<JNIEnv*> env_stack;
   jobject router;
   jmethodID create_vm_id;
   jmethodID create_gui_id;
@@ -59,6 +68,7 @@ class DelegateJni : public SchedulerDelegate {
   void scheduler_create_vm(Scheduler& scheduler, const vpid_t& pid, vtid_t root_tid,
                            vaddr_t proc_addr, const nid_t& master_nid) override {
     JniUtil::log_v("delegate::scheduler_create_vm\n");
+    JNIEnv* env = env_stack.top();
     jstring jpid = env->NewStringUTF(Convert::vpid2str(pid).c_str());
     jstring jnid = env->NewStringUTF(Convert::nid2str(master_nid).c_str());
 
@@ -79,6 +89,7 @@ class DelegateJni : public SchedulerDelegate {
    */
   void scheduler_create_gui(Scheduler& scheduler, const vpid_t& pid) override {
     JniUtil::log_v("delegate::scheduler_create_gui\n");
+    JNIEnv* env = env_stack.top();
     jstring jpid = env->NewStringUTF(Convert::vpid2str(pid).c_str());
 
     env->CallVoidMethod(router, create_gui_id, jpid);
@@ -92,6 +103,7 @@ class DelegateJni : public SchedulerDelegate {
    */
   void scheduler_send_command(Scheduler& scheduler, const CommandPacket& packet) override {
     JniUtil::log_v("delegate::schedule_send_command\n");
+    JNIEnv* env = env_stack.top();
     jstring jpid = env->NewStringUTF(Convert::vpid2str(packet.pid).c_str());
     jstring jdst_nid = env->NewStringUTF(Convert::nid2str(packet.dst_nid).c_str());
     jstring jsrc_nid = env->NewStringUTF(Convert::nid2str(packet.src_nid).c_str());
@@ -123,10 +135,11 @@ extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Router_schedulerI
 (JNIEnv* env, jobject caller, jobject router) {
   JniUtil::log_v("scheduler::initialize\n");
 
-  delegate_jni.set_env(env);
+  delegate_jni.push_env(env);
   delegate_jni.initialize(router);
   scheduler.reset(new processwarp::Scheduler());
   scheduler->initialize(delegate_jni);
+  delegate_jni.pop_env();
 }
 
 /*
@@ -137,9 +150,10 @@ extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Router_schedulerI
 extern "C" JNIEXPORT jstring JNICALL Java_org_processwarp_android_Router_schedulerGetDstNid
 (JNIEnv* env, jobject caller, jstring jpid, jint jmodule) {
   JniUtil::log_v("scheduler::getDstNid\n");
-  delegate_jni.set_env(env);
+  delegate_jni.push_env(env);
 
   nid_t dst_nid = scheduler->get_dst_nid(JniUtil::jstr2vpid(env, jpid), jmodule);
+  delegate_jni.pop_env();
 
   return env->NewStringUTF(Convert::nid2str(dst_nid).c_str());
 }
@@ -153,7 +167,7 @@ extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Router_schedulerR
     JNIEnv* env, jobject caller, jstring jpid, jstring jdst_nid, jstring jsrc_nid,
     int jmodule, jstring jcontent) {
   JniUtil::log_v("scheduler::recvCommand\n");
-  delegate_jni.set_env(env);
+  delegate_jni.push_env(env);
 
   picojson::value v;
   std::istringstream is(JniUtil::jstr2str(env, jcontent));
@@ -172,6 +186,7 @@ extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Router_schedulerR
   };
 
   scheduler->recv_command(packet);
+  delegate_jni.pop_env();
 }
 
 /*
@@ -182,9 +197,10 @@ extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Router_schedulerR
 extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Router_schedulerSetMyNid
 (JNIEnv* env, jobject caller, jstring jnid) {
   JniUtil::log_v("scheduler::setMyNid\n");
-  delegate_jni.set_env(env);
+  delegate_jni.push_env(env);
 
   scheduler->set_my_nid(JniUtil::jstr2nid(env, jnid));
+  delegate_jni.pop_env();
 }
 
 /*
@@ -195,8 +211,9 @@ extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Router_schedulerS
 extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Router_schedulerActivate
 (JNIEnv* env, jobject caller) {
   JniUtil::log_v("scheduler::activate\n");
-  delegate_jni.set_env(env);
+  delegate_jni.push_env(env);
 
   scheduler->activate();
+  delegate_jni.pop_env();
 }
 }  // namespace processwarp
