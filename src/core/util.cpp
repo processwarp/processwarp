@@ -1,6 +1,8 @@
 
 #include <libgen.h>
+#if !defined(__ANDROID__)
 #include <openssl/sha.h>
+#endif
 #if defined(__APPLE__) && defined(__MACH__)
 #include <mach-o/dyld.h>
 #endif
@@ -80,6 +82,7 @@ const llvm::Instruction* Util::llvm_instruction;
  * @param src Target data.
  * @return SHA256 hex string.
  */
+#if !defined(__ANDROID__)
 std::string Util::calc_sha256(const std::string& src) {
   unsigned char bin_hash[SHA256_DIGEST_LENGTH];
   SHA256_CTX sha256;
@@ -97,6 +100,7 @@ std::string Util::calc_sha256(const std::string& src) {
 
   return os.str();
 }
+#endif
 
 /**
  * Get the last component of a pathname.
