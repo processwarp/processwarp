@@ -85,6 +85,14 @@ class WorkerJni : public VMachineDelegate, public VMemoryDelegate, public Builti
   }
 
   /**
+   * Execute vm instruction some stepes.
+   */
+  void execute() {
+    JniUtil::log_v("WorkerJni::execute\n");
+    vm->execute();
+  }
+
+  /**
    * Delete reference to worker instance in JVM for quiting.
    */
   void quit() {
@@ -261,6 +269,23 @@ extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Worker_workerRela
   WorkerJni& worker_jni = workers.at(pid);
   worker_jni.push_env(env);
   worker_jni.relay_command(packet);
+  worker_jni.pop_env();
+}
+
+/*
+ * Class:     org_processwarp_android_Worker
+ * Method:    workerExecute
+ * Signature: (Ljava/lang/String;)V
+ */
+extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Worker_workerExecute(
+    JNIEnv* env, jobject caller, jstring jpid) {
+  JniUtil::log_v("workerExecute");
+
+  vpid_t pid = JniUtil::jstr2vpid(env, jpid);
+  WorkerJni& worker_jni = workers.at(pid);
+
+  worker_jni.push_env(env);
+  worker_jni.execute();
   worker_jni.pop_env();
 }
 

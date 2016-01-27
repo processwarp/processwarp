@@ -64,6 +64,8 @@ public class WorkerService extends Service implements Worker.Delegate, ServiceCo
         router = RouterInterface.Stub.asInterface(service);
         try {
             router.registerWorker(worker.getPid(), callback);
+            worker.run();
+
         } catch (RemoteException e) {
             // TODO
             e.printStackTrace();
@@ -79,6 +81,8 @@ public class WorkerService extends Service implements Worker.Delegate, ServiceCo
     @Override
     public void onServiceDisconnected(ComponentName name) {
         router = null;
+        // TODO
+        Assert.fail();
     }
 
     private WorkerInterface callback = new WorkerInterface.Stub() {

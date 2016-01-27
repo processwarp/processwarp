@@ -1,6 +1,8 @@
 package org.processwarp.android;
 
-public class Worker {
+import android.os.Handler;
+
+public class Worker implements Runnable {
     /**
      * Delegate for implement by service.
      */
@@ -10,6 +12,8 @@ public class Worker {
 
     /** Delegate instance for pass packet. */
     private Delegate delegate;
+    /** Handler for run loop. */
+    private Handler handler;
     /** Process-id bundled for process. */
     private String myPid;
     /** Node-id of this node. */
@@ -31,6 +35,8 @@ public class Worker {
         this.myPid = myPid;
 
         workerInitialize(this, myNid, myPid, rootTid, procAddr, masterNid);
+
+        this.handler = new Handler();
     }
 
     /**
@@ -39,6 +45,12 @@ public class Worker {
      */
     public String getPid() {
         return myPid;
+    }
+
+    @Override
+    public  void run() {
+        workerExecute(myPid);
+        handler.postDelayed(this, 1);
     }
 
     /**
@@ -77,5 +89,6 @@ public class Worker {
                                          long procAddr, String masterNid);
     private native void workerRelayCommand(String pid, String dstNid, String srcNid,
                                            int module, String content);
+    private native void workerExecute(String pid);
     private native void workerQuit(String pid);
 }

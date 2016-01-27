@@ -143,7 +143,7 @@ public class RouterService extends Service implements Router.Delegate {
             packet.module = module;
             packet.content = content;
 
-            router.relayCommand(packet);
+            router.relayCommand(packet, false);
         }
     };
 
@@ -162,7 +162,13 @@ public class RouterService extends Service implements Router.Delegate {
             if (workerPid[id] == null) {
                 workerPid[id] = pid;
                 intent = new Intent(this, WORKER_CLASSES[id]);
+                break;
             }
+        }
+
+        if (intent == null) {
+            // TODO
+            Assert.fail();
         }
 
         sendWait.put(pid, new ArrayList<CommandPacket>());

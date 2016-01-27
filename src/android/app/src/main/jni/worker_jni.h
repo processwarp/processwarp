@@ -25,12 +25,31 @@ JNIEXPORT void JNICALL Java_org_processwarp_android_Worker_workerRelayCommand
 
 /*
  * Class:     org_processwarp_android_Worker
+ * Method:    workerExecute
+ * Signature: (Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_org_processwarp_android_Worker_workerExecute
+  (JNIEnv *, jobject, jstring);
+
+/*
+ * Class:     org_processwarp_android_Worker
  * Method:    workerQuit
  * Signature: (Ljava/lang/String;)V
  */
 JNIEXPORT void JNICALL Java_org_processwarp_android_Worker_workerQuit
   (JNIEnv *, jobject, jstring);
 
+#ifdef __cplusplus
+}
+#endif
+#endif
+/* Header for class org_processwarp_android_Worker_Delegate */
+
+#ifndef _Included_org_processwarp_android_Worker_Delegate
+#define _Included_org_processwarp_android_Worker_Delegate
+#ifdef __cplusplus
+extern "C" {
+#endif
 #ifdef __cplusplus
 }
 #endif

@@ -114,60 +114,53 @@ public class Router {
      * set destination node-id and pass content to capable module in this node or
      * another node through the server.
      * @param packet Command packet.
+     * @param isFromServer Set true if packet was passed by server.
      */
-    public void relayCommand(CommandPacket packet) {
-        String realNid = (
-                !SpecialNid.NONE.equals(packet.dstNid) ?
-                packet.dstNid :
-                schedulerGetDstNid(packet.pid, packet.module));
+    public void relayCommand(CommandPacket packet, boolean isFromServer) {
+        if (!isFromServer) {
+            if (SpecialNid.NONE.equals(packet.dstNid))
+                packet.dstNid = schedulerGetDstNid(packet.pid, packet.module);
 
-        CommandPacket realPacket = new CommandPacket();
-        realPacket.pid     = packet.pid;
-        realPacket.dstNid  = realNid;
-        realPacket.srcNid  = myNid;
-        realPacket.module  = packet.module;
-        realPacket.content = packet.content;
+            packet.srcNid = myNid;
+        }
 
-        if (realPacket.dstNid.equals(myNid) || realPacket.dstNid.equals(SpecialNid.THIS)) {
-            switch (realPacket.module) {
+        if (packet.dstNid.equals(myNid) ||
+                packet.dstNid.equals(SpecialNid.THIS) ||
+                (packet.dstNid.equals(SpecialNid.BROADCAST) &&
+                        !packet.srcNid.equals(myNid))) {
+            switch (packet.module) {
                 case Module.MEMORY:
                 case Module.VM:
-                    delegate.routerRelayWorkerPacket(this, realPacket);
-                    break;
+                    delegate.routerRelayWorkerPacket(this, packet);
+                    return;
 
                 case Module.SCHEDULER:
                     schedulerRecvCommand(
-                            realPacket.pid, realPacket.srcNid, realPacket.srcNid,
-                            realPacket.module, realPacket.content);
-                    break;
+                            packet.pid, packet.srcNid, packet.srcNid,
+                            packet.module, packet.content);
+                    return;
 
                 case Module.FRONTEND:
-                    if (realPacket.pid.equals(SpecialPid.BROADCAST)) {
-                        delegate.routerRelayControllerPacket(this, realPacket);
+                    if (packet.pid.equals(SpecialPid.BROADCAST)) {
+                        delegate.routerRelayControllerPacket(this, packet);
                     } else {
                         // TODO
                         Assert.fail();
                     }
-                    break;
+                    return;
 
                 default:
                     // TODO
                     Assert.fail();
-                    break;
+                    return;
             }
         }
 
-        server.sendRelayCommand(realPacket);
-    }
-
-    /**
-     * When receive packet from server to scheduler, relay it to scheduler.
-     * @param packet Command packet.
-     */
-    public void relaySchedulerCommand(CommandPacket packet) {
-        schedulerRecvCommand(
-                packet.pid, packet.dstNid, packet.srcNid,
-                packet.module, packet.content);
+        if (!isFromServer) {
+            server.sendRelayCommand(packet);
+        } else {
+            Assert.fail();
+        }
     }
 
     public void schedulerCreateVm(String pid, long rootTid, long procAddr, String masterNid) {
@@ -195,7 +188,7 @@ public class Router {
         packet.srcNid = srcNid;
         packet.module = module;
         packet.content = content;
-        relayCommand(packet);
+        relayCommand(packet, false);
     }
 
     private String myNid;

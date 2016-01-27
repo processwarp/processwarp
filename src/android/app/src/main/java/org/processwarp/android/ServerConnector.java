@@ -265,27 +265,7 @@ public class ServerConnector {
             packet.module = Integer.parseInt(data.getString("module"), 16);
             packet.content = data.getString("content");
 
-            switch (packet.module) {
-                case Module.MEMORY:
-                case Module.VM: {
-                    // TODO
-                    Assert.fail();
-                } break;
-
-                case Module.SCHEDULER: {
-                    router.relaySchedulerCommand(packet);
-                } break;
-
-                case Module.FRONTEND: {
-                    // TODO
-                    Assert.fail();
-                } break;
-
-                default: {
-                    // TODO error
-                    Assert.fail();
-                }
-            }
+            router.relayCommand(packet, true);
 
         } catch (JSONException e) {
             Log.e(this.getClass().getName(), "recvRelayCommand");
