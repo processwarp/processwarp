@@ -1,5 +1,9 @@
 #pragma once
 
+#if defined(__ANDROID__)
+#include <android/log.h>
+#endif
+
 #if defined(ENABLE_LLVM) && !defined(NDEBUG) && !defined(EMSCRIPTEN)
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/DerivedTypes.h>
@@ -115,6 +119,17 @@ void _fixme(int line, const char* file, std::string mesg);
  */
 #ifdef NDEBUG
 #define print_debug(...)  //
+#elif defined(__ANDROID__)
+#ifndef PRIu64
+#define PRIu64 "llu"
+#endif
+#ifndef PRIx64
+#define PRIx64 "llx"
+#endif
+#define print_debug(...) {                                              \
+    __android_log_print(ANDROID_LOG_DEBUG, "processwarp", "" __VA_ARGS__); \
+  }
+
 #else  // NDEBUG
 #define print_debug(...) {                                      \
     std::string file(__FILE__);                                 \

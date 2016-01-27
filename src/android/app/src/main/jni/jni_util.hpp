@@ -5,6 +5,7 @@
 #include <picojson.h>
 #include <string>
 
+#include "convert.hpp"
 #include "definitions.hpp"
 
 namespace processwarp {

@@ -952,9 +952,9 @@ void VMemory::Accessor::print_dump() {
         }
       }
     } else {
-      print_debug("value(size=%llu):", page.size);
+      print_debug("value(size=%" PRIu64 "):", page.size);
       for (unsigned int i = 0; i < page.size; i ++) {
-        if (i % 16 == 0) fprintf(stderr, "\n%016llx : ", addr + i);
+        if (i % 16 == 0) fprintf(stderr, "\n%016" PRIx64 " : ", addr + i);
         fprintf(stderr, "%02x ", 0xFF & page.value[i]);
       }
       fprintf(stderr, "\n");
