@@ -2,6 +2,8 @@ package org.processwarp.android;
 
 import android.os.Handler;
 
+import java.util.concurrent.locks.ReentrantLock;
+
 public class Worker implements Runnable {
     /**
      * Delegate for implement by service.
@@ -18,6 +20,8 @@ public class Worker implements Runnable {
     private String myPid;
     /** Node-id of this node. */
     private String myNid;
+    /** Mutex for execute native methods serial. */
+    private ReentrantLock lock = new ReentrantLock();
 
     /**
      * Initialize worker and create VM by native method.
@@ -34,8 +38,12 @@ public class Worker implements Runnable {
         this.myNid = myNid;
         this.myPid = myPid;
 
-        workerInitialize(this, myNid, myPid, rootTid, procAddr, masterNid);
-
+        lock.lock();
+        try {
+            workerInitialize(this, myNid, myPid, rootTid, procAddr, masterNid);
+        } finally {
+            lock.unlock();
+        }
         this.handler = new Handler();
     }
 
@@ -49,7 +57,12 @@ public class Worker implements Runnable {
 
     @Override
     public  void run() {
-        workerExecute(myPid);
+        lock.lock();
+        try {
+            workerExecute(myPid);
+        } finally {
+            lock.unlock();
+        }
         handler.postDelayed(this, 1);
     }
 
@@ -63,7 +76,12 @@ public class Worker implements Runnable {
      */
     public void relayWorkerCommand(String pid, String dstNid, String srcNid,
                                    int module, String content) {
-        workerRelayCommand(pid, dstNid, srcNid, module, content);
+        lock.lock();
+        try {
+            workerRelayCommand(pid, dstNid, srcNid, module, content);
+        } finally {
+            lock.unlock();
+        }
     }
 
     /**
