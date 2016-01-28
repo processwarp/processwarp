@@ -4,6 +4,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.os.Build;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.support.v7.app.AppCompatActivity;
@@ -34,6 +35,7 @@ public class FrontendActivity extends AppCompatActivity implements ServiceConnec
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_frontend);
         webView = (WebView)findViewById(R.id.web_view);
+        webView.getSettings().setJavaScriptEnabled(true);
         webView.loadUrl("file:///android_asset/frame.html");
 
         Intent intent = getIntent();
@@ -143,7 +145,11 @@ public class FrontendActivity extends AppCompatActivity implements ServiceConnec
 
             @Override
             public void run() {
-                webView.loadUrl("javascript:" + script);
+                if (Build.VERSION.SDK_INT >= 19) {
+                    webView.evaluateJavascript(script, null);
+                } else {
+                    webView.loadUrl("javascript:" + script);
+                }
             }
         }.initialize(script));
     }
