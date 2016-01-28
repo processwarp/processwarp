@@ -154,7 +154,7 @@ public class ServerConnector {
 
         try {
             JSONObject data = new JSONObject();
-            if (!nid.isEmpty()) {
+            if (nid != null) {
                 data.put("nid", nid);
             }
             data.put("node_name", nodeName);

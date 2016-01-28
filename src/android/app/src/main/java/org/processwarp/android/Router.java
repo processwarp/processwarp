@@ -22,6 +22,8 @@ public class Router {
 
     private Delegate delegate;
     private ServerConnector server;
+    /** This node's id. */
+    private String myNid = null;
     /** Mutex for execute native methods serial. */
     private ReentrantLock lock = new ReentrantLock();
 
@@ -36,7 +38,6 @@ public class Router {
 
         lock.lock();
         try {
-            myNid = "";
             schedulerInitialize(this);
         } finally {
             lock.unlock();
@@ -221,8 +222,6 @@ public class Router {
         packet.content = content;
         relayCommand(packet, false);
     }
-
-    private String myNid;
 
     private native void schedulerInitialize(Router router);
     private native String schedulerGetDstNid(String pid, int module);
