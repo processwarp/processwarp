@@ -6,6 +6,7 @@ import android.util.Log;
 import junit.framework.Assert;
 
 import java.security.MessageDigest;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class Router {
     /**
@@ -21,6 +22,8 @@ public class Router {
 
     private Delegate delegate;
     private ServerConnector server;
+    /** Mutex for execute native methods serial. */
+    private ReentrantLock lock = new ReentrantLock();
 
     /**
      * Initialize some module.
@@ -31,12 +34,12 @@ public class Router {
         this.delegate = delegate;
         this.server = server;
 
+        lock.lock();
         try {
             myNid = "";
             schedulerInitialize(this);
-
-        } catch (Exception e) {
-            Log.e(this.getClass().getName(), "", e);
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -69,7 +72,8 @@ public class Router {
             server.sendConnectNode(account, "[10sha256]" + hexString);
 
         } catch (Exception e) {
-            Assert.fail("");
+            // TODO error
+            Assert.fail();
         }
     }
 
@@ -103,7 +107,12 @@ public class Router {
     public void recvBindNode(int result, String nid) {
         if (result == 0) {
             myNid = nid;
-            schedulerSetMyNid(nid);
+            lock.lock();
+            try {
+                schedulerSetMyNid(nid);
+            } finally {
+                lock.unlock();
+            }
 
         } else {
             // TODO
@@ -120,8 +129,14 @@ public class Router {
      */
     public void relayCommand(CommandPacket packet, boolean isFromServer) {
         if (!isFromServer) {
-            if (SpecialNid.NONE.equals(packet.dstNid))
-                packet.dstNid = schedulerGetDstNid(packet.pid, packet.module);
+            if (SpecialNid.NONE.equals(packet.dstNid)) {
+                lock.lock();
+                try {
+                    packet.dstNid = schedulerGetDstNid(packet.pid, packet.module);
+                } finally {
+                    lock.unlock();
+                }
+            }
 
             packet.srcNid = myNid;
         }
@@ -137,9 +152,14 @@ public class Router {
                     return;
 
                 case Module.SCHEDULER:
-                    schedulerRecvCommand(
-                            packet.pid, packet.srcNid, packet.srcNid,
-                            packet.module, packet.content);
+                    lock.lock();
+                    try {
+                        schedulerRecvCommand(
+                                packet.pid, packet.srcNid, packet.srcNid,
+                                packet.module, packet.content);
+                    } finally {
+                        lock.unlock();
+                    }
                     return;
 
                 case Module.FRONTEND:
