@@ -13,7 +13,9 @@ public class Router {
      */
     public interface Delegate {
         void routerCreateVm(Router caller, String pid, long rootTid, long procAddr, String masterNid);
+        void routerCreateGui(Router caller, String pid);
         void routerRelayControllerPacket(Router caller, CommandPacket packet);
+        void routerRelayFrontendPacket(Router caller, CommandPacket packet);
         void routerRelayWorkerPacket(Router caller, CommandPacket packet);
     }
 
@@ -144,8 +146,7 @@ public class Router {
                     if (packet.pid.equals(SpecialPid.BROADCAST)) {
                         delegate.routerRelayControllerPacket(this, packet);
                     } else {
-                        // TODO
-                        Assert.fail();
+                        delegate.routerRelayFrontendPacket(this, packet);
                     }
                     return;
 
@@ -163,13 +164,23 @@ public class Router {
         }
     }
 
+    /**
+     * When scheduler require to create vm, do it by the android service.
+     * @param pid Process-id for new vm.
+     * @param rootTid Root thread-id for new vm.
+     * @param procAddr Process information address for new vm.
+     * @param masterNid Master node-id for new vm.
+     */
     public void schedulerCreateVm(String pid, long rootTid, long procAddr, String masterNid) {
         delegate.routerCreateVm(this, pid, rootTid, procAddr, masterNid);
     }
 
+    /**
+     * When scheduler require to create gui, do it by the android service.
+     * @param pid Process-id to bundle to gui.
+     */
     public void schedulerCreateGui(String pid) {
-        // TODO
-        Assert.fail();
+        delegate.routerCreateGui(this, pid);
     }
 
     /**

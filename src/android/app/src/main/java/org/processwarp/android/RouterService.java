@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Map;
 
 public class RouterService extends Service implements Router.Delegate {
+    /** Max frontend number. */
+    private static final int MAX_FRONTEND = 3;
     /** Max worker number. */
     private static final int MAX_WORKERS = 3;
     /** Classes for start worker service. */
@@ -29,12 +31,19 @@ public class RouterService extends Service implements Router.Delegate {
     private ServerConnector server = null;
     /** The controller callback for relay CONTROLLER command. */
     private static ControllerInterface controller = null;
+
     /** Map of Process-id and worker callback for relay VM and VMEMORY command. */
     private static Map<String, WorkerInterface> workers = new HashMap<String, WorkerInterface>();
-    private static Map<String, List<CommandPacket>> sendWait =
+    private static Map<String, List<CommandPacket>> workerSendWait =
             new HashMap<String, List<CommandPacket>>();
     /** Process-id bind for worker. Array index is equal to worker index. */
     private String[] workerPid = new String[MAX_WORKERS];
+
+    private static Map<String, FrontendInterface> frontends =
+            new HashMap<String, FrontendInterface>();
+    private static Map<String, List<CommandPacket>> frontendSendWait =
+            new HashMap<String, List<CommandPacket>>();
+    private String[] frontendPid = new String[MAX_FRONTEND];
 
 
     /**
@@ -76,13 +85,41 @@ public class RouterService extends Service implements Router.Delegate {
 
     private RouterInterface.Stub binder = new RouterInterface.Stub() {
         /**
-         * When method is called by frontend, save passed controller callback.
+         * When method is called by controller, save passed controller callback.
          * @param controller Controller callback instance.
          */
         @Override
         public void registerController(ControllerInterface controller) {
             Assert.assertNull(RouterService.controller);
             RouterService.controller = controller;
+        }
+
+        /**
+         * When method is called by frontend, save passed frontend callback with process-id.
+         * If packets are waiting to send in buffer, send packet and remove buffer.
+         * @param pid Frontend process-id.
+         * @param frontend Frontend callback instance.
+         * @throws RemoteException
+         */
+        @Override
+        public void registerFrontend(String pid, FrontendInterface frontend) throws RemoteException {
+            RouterService.frontends.put(pid, frontend);
+
+            for (CommandPacket packet : frontendSendWait.get(pid)) {
+                try {
+                    frontend.relayCommand(
+                            packet.pid,
+                            packet.dstNid,
+                            packet.srcNid,
+                            packet.module,
+                            packet.content
+                    );
+                } catch (RemoteException e) {
+                    // TODO error
+                    Assert.fail();
+                }
+            }
+            frontendSendWait.remove(pid);
         }
 
         /**
@@ -95,7 +132,7 @@ public class RouterService extends Service implements Router.Delegate {
         public void registerWorker(String pid, WorkerInterface worker) {
             RouterService.workers.put(pid, worker);
 
-            for (CommandPacket packet : sendWait.get(pid)) {
+            for (CommandPacket packet : workerSendWait.get(pid)) {
                 try {
                     worker.relayCommand(
                             packet.pid,
@@ -109,7 +146,7 @@ public class RouterService extends Service implements Router.Delegate {
                     Assert.fail();
                 }
             }
-            sendWait.remove(pid);
+            workerSendWait.remove(pid);
         }
 
         /**
@@ -171,7 +208,7 @@ public class RouterService extends Service implements Router.Delegate {
             Assert.fail();
         }
 
-        sendWait.put(pid, new ArrayList<CommandPacket>());
+        workerSendWait.put(pid, new ArrayList<CommandPacket>());
 
         intent.putExtra("nid", router.getMyNid());
         intent.putExtra("pid", pid);
@@ -180,6 +217,38 @@ public class RouterService extends Service implements Router.Delegate {
         intent.putExtra("master_nid", masterNid);
 
         startService(intent);
+    }
+
+    /**
+     * When scheduler require create gui, create a new frontend to do it.
+     * To create a frontend activity, broadcast intent to receiver.
+     * @param caller Caller instance, not used.
+     * @param pid New gui's process-id.
+     */
+    @Override
+    public void routerCreateGui(Router caller, String pid) {
+        Intent intent = null;
+
+        // Search empty id.
+        for (int id = 0; id < MAX_FRONTEND; id++) {
+            if (frontendPid[id] == null) {
+                frontendPid[id] = pid;
+                intent = new Intent();
+                intent.setAction("create_frontend");
+                intent.putExtra("pid", pid);
+                intent.putExtra("id", id);
+                break;
+            }
+        }
+
+        if (intent == null) {
+            // TODO
+            Assert.fail();
+        }
+
+        frontendSendWait.put(pid, new ArrayList<CommandPacket>());
+
+        sendBroadcast(intent);
     }
 
     /**
@@ -197,6 +266,37 @@ public class RouterService extends Service implements Router.Delegate {
                     packet.module, packet.content);
 
         } catch (RemoteException e) {
+            Assert.fail();
+        }
+    }
+
+    /**
+     * When relay packet to frontend is required, do it by AIDL.
+     * If connection was not made yet and buffer was made, store packet to buffer.
+     * @param caller Caller instance, not used.
+     * @param packet Command packet.
+     */
+    @Override
+    public void routerRelayFrontendPacket(Router caller, CommandPacket packet) {
+        if (frontends.containsKey(packet.pid)) {
+            try {
+                frontends.get(packet.pid).relayCommand(
+                        packet.pid,
+                        packet.dstNid,
+                        packet.srcNid,
+                        packet.module,
+                        packet.content
+                );
+            } catch (RemoteException e) {
+                // TODO error
+                Assert.fail();
+            }
+
+        } else if (frontendSendWait.containsKey(packet.pid)) {
+            frontendSendWait.get(packet.pid).add(packet);
+
+        } else {
+            // TODO error
             Assert.fail();
         }
     }
@@ -223,8 +323,8 @@ public class RouterService extends Service implements Router.Delegate {
                 Assert.fail();
             }
 
-        } else if (sendWait.containsKey(packet.pid)) {
-            sendWait.get(packet.pid).add(packet);
+        } else if (workerSendWait.containsKey(packet.pid)) {
+            workerSendWait.get(packet.pid).add(packet);
 
         } else {
             // TODO error
