@@ -32,14 +32,49 @@
     }
 
     /**
-     * When html has loaded, get canvas instance.
+     * When html has load, call all initialize methods.
      * @return {void}
      */
-    function setupCanvas() {
-      global.canvas_fore = document.getElementById('canvas_fore');
-      global.canvas_back = document.getElementById('canvas_back');
+    function initialize() {
+      sendFrameLoad();
+      initializeCanvas();
+      initializeOnResize();
+    }
+    
+    /**
+     * Get canvas, context and store instance to global object.
+     * @return {void}
+     */
+    function initializeCanvas() {
+      global.canvas_fore  = document.getElementById('canvas_fore');
       global.context_fore = global.canvas_fore.getContext('2d');
-      global.context_back = global.canvas_back.getContext('2d');
+
+      global.canvas  = document.getElementById('canvas_back');
+      global.context = global.canvas.getContext('2d');
+    }
+
+    /**
+     * Add event when window size has changed, resize canvas size to fit.
+     * @return {void}
+     */
+    function initializeOnResize() {
+      var on_resize = function() {
+        global.canvas_fore.width  = document.body.clientWidth;
+        global.canvas_fore.height = document.body.clientHeight;
+
+        global.canvas.width  = document.body.clientWidth;
+        global.canvas.height = document.body.clientHeight;      
+      }
+      
+      // Set first resize method.
+      global.resize_timer = setTimeout(on_resize, 100);
+
+      // When resize event was happen, update timeout.
+      window.addEventListener('resize', function(event) {
+        clearTimeout(global.resize_timer);
+
+        global.resize_timer = setTimeout(on_resize, 100);
+      });
     }
   </script>
   <style>
@@ -66,7 +101,7 @@
       visibility: hidden;
     }
   </style>
-  <body onLoad="sendFrameLoad(); setupCanvas();">
+  <body id="body" onLoad="initialize();">
     <canvas id="canvas_fore"></canvas>
     <canvas id="canvas_back"></canvas>
   </body>

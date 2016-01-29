@@ -17,6 +17,32 @@
       global.context_fore = global.canvas_fore.getContext('2d');
       global.context_back = global.canvas_back.getContext('2d');
     }
+
+    /**
+     * When html has load, call all initialize methods.
+     * @return {void}
+     */
+    function initialize() {
+      initializeCanvas();
+    }
+
+    /**
+     * Get canvas, context and store instance to global object.
+     * @return {void}
+     */
+    function initializeCanvas() {
+      global.canvas_fore  = document.getElementById('canvas_fore');
+      global.context_fore = global.canvas_fore.getContext('2d');
+
+      global.canvas  = document.getElementById('canvas_back');
+      global.context = global.canvas.getContext('2d');
+
+      // Add event when window size has changed, resize canvas size to fit.
+      global.canvas_fore.width  = document.body.clientWidth;
+      global.canvas_fore.height = document.body.clientHeight;
+      global.canvas.width  = document.body.clientWidth;
+      global.canvas.height = document.body.clientHeight;
+    }
   </script>
   <style>
     html {
@@ -42,7 +68,7 @@
       visibility: hidden;
     }
   </style>
-  <body onLoad="setupCanvas();">
+  <body onLoad="initialize();">
     <canvas id="canvas_fore"></canvas>
     <canvas id="canvas_back"></canvas>
   </body>

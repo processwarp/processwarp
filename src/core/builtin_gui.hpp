@@ -20,6 +20,8 @@ class BuiltinGui {
  public:
   static BuiltinPostProc::Type create(Process& proc, Thread& thread, BuiltinFuncParam p,
                                       vaddr_t dst, std::vector<uint8_t>& src);
+  static BuiltinPostProc::Type flush(Process& proc, Thread& thread, BuiltinFuncParam p,
+                                     vaddr_t dst, std::vector<uint8_t>& src);
   static BuiltinPostProc::Type script(Process& proc, Thread& thread, BuiltinFuncParam p,
                                       vaddr_t dst, std::vector<uint8_t>& src);
 

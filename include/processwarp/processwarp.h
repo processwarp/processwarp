@@ -53,6 +53,16 @@ extern "C" {
    * Create a new GUI frame.
    */
   void pw_gui_create();
+
+  /**
+   * Flush canvas content.
+   */
+  void pw_gui_flush();
+
+  /**
+   * Execute script on GUI frame as javascript.
+   * @param script Script string like printf format.
+   */
   void pw_gui_script(const char* script, ...);
 #ifdef __cplusplus
 }  // extern "C"
