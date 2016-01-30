@@ -65,7 +65,7 @@ std::string Format::parse(Thread& thread, const uint8_t* format_,
   if (it == end) return std::string(reinterpret_cast<const char*>(format_));
 
   int output_position = 0;
-  int last_index      = 0;
+  int last_index      = -1;
   std::ostringstream output;
 
   for (; it != end; it++) {
