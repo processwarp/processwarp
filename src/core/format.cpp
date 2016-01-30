@@ -26,7 +26,6 @@ union ApContent {
 std::string Format::parse(Thread& thread, const uint8_t* format_,
                           const std::vector<uint8_t>& ap) {
   const std::string format(reinterpret_cast<const char*>(format_));
-  printf("Format::parse(%s)\n", reinterpret_cast<const char*>(format_));
   std::vector<ApContent> ap_contents;
   unsigned int ap_index = 0;
   while (ap_index < ap.size()) {
