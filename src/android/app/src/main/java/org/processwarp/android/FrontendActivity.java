@@ -40,9 +40,38 @@ public class FrontendActivity extends AppCompatActivity implements ServiceConnec
 
         Intent intent = getIntent();
         myPid = intent.getStringExtra("pid");
+    }
 
+    /**
+     * When resume frontend activity, (re)bind to router service.
+     */
+    @Override
+    protected void onResume() {
+        Log.v(this.getClass().getName(), "onResume");
+
+        super.onResume();
         bindService(new Intent(this, RouterService.class), this,
                 Context.BIND_ABOVE_CLIENT | Context.BIND_AUTO_CREATE);
+    }
+
+    /**
+     * When pause frontend activity, unregister and unbind from router service.
+     */
+    @Override
+    protected void onPause() {
+        Log.v(this.getClass().getName(), "onPause");
+
+        if (router != null) try {
+            router.unregisterFrontend(myPid);
+            router = null;
+
+        } catch (RemoteException e) {
+            // TODO error
+            Log.e(this.getClass().getName(), "onPause", e);
+            Assert.fail();
+        }
+        unbindService(this);
+        super.onPause();
     }
 
     /**
@@ -172,6 +201,7 @@ public class FrontendActivity extends AppCompatActivity implements ServiceConnec
      */
     private void sendCommand(String pid, String dstNid, int module,
                              String command, JSONObject param) {
+        Assert.assertNotNull(router);
         Assert.assertFalse(param.has("command"));
         try {
             param.put("command", command);

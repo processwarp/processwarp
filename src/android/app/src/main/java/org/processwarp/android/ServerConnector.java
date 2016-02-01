@@ -26,6 +26,8 @@ public class ServerConnector {
     /** Instance for event listener. */
     private ServerConnector THIS = null;
 
+    private boolean isConnected = false;
+
     // TODO check status
 
     /**
@@ -37,7 +39,7 @@ public class ServerConnector {
         Log.v(this.getClass().getName(), "initialize()");
 
         // Save instance for event listener.
-        assert THIS == null;
+        Assert.assertNull(THIS);
         THIS = this;
 
         this.router = router;
@@ -121,6 +123,14 @@ public class ServerConnector {
         if (!socket.connected()) {
             socket.connect();
         }
+    }
+
+    /**
+     * Check if has connection with the server be enabled.
+     * @return True if connection with the server has be enabled.
+     */
+    public boolean isConnected() {
+        return socket.connected() && isConnected;
     }
 
     /**
@@ -234,6 +244,7 @@ public class ServerConnector {
             if (result == 0) {
                 String nid = data.getString("nid");
                 router.recvBindNode(result, nid);
+                isConnected = true;
 
             } else {
                 router.recvBindNode(result, "");

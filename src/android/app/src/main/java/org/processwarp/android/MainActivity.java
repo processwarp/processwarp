@@ -9,6 +9,7 @@ import android.os.RemoteException;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ArrayAdapter;
@@ -21,10 +22,13 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class MainActivity extends AppCompatActivity implements ServiceConnection {
+    /** Set true if router service has start. */
+    private static boolean isServiceStart = false;
+    /** AIDL interface for router. */
     private RouterInterface router = null;
 
     /**
-     * When create application, call initialize and show toolbar and connect dialog.
+     * When create application, show toolbar and start router service if needed.
      * @param savedInstanceState Used to super class's method.
      */
     @Override
@@ -35,9 +39,41 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        startService(new Intent(this, RouterService.class));
+        if (!isServiceStart) {
+            startService(new Intent(this, RouterService.class));
+            isServiceStart = true;
+        }
+    }
+
+    /**
+     * When resume main activity, (re)bind to router service.
+     */
+    @Override
+    protected void onResume() {
+        Log.v(this.getClass().getName(), "onResume");
+        super.onResume();
         bindService(new Intent(this, RouterService.class), this,
                 Context.BIND_ABOVE_CLIENT | Context.BIND_AUTO_CREATE);
+    }
+
+    /**
+     * When pause main activity, unregister and unbind from router service.
+     */
+    @Override
+    protected void onPause() {
+        Log.v(this.getClass().getName(), "onPause");
+        super.onPause();
+
+        if (router != null) try {
+            router.unregisterController();
+            router = null;
+
+        } catch (RemoteException e) {
+            // TODO error
+            Log.e(this.getClass().getName(), "onPause", e);
+            Assert.fail();
+        }
+        unbindService(this);
     }
 
     /**
@@ -72,7 +108,7 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
 
     /**
      * When connect with router service, save reference, set to router,
-     * register callback and show connect dialog.
+     * register callback and show connect dialog if needed.
      * @param name Not used.
      * @param service Router interface.
      */
@@ -81,12 +117,14 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
         router = RouterInterface.Stub.asInterface(service);
         try {
             router.registerController(callback);
+            if (!router.isConnectServer()) {
+                showConnectDialog();
+            }
         } catch (RemoteException e) {
             // TODO
             e.printStackTrace();
             Assert.fail();
         }
-        showConnectDialog();
     }
 
     /**
@@ -117,6 +155,8 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
      * @param param Parameter for a command.
      */
     private void sendCommand(String pid, int module, String command, JSONObject param) {
+        Assert.assertNotNull(router);
+
         try {
             Assert.assertFalse(param.has("command"));
             param.put("command", command);
@@ -182,7 +222,7 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
          * @throws RemoteException
          */
         @Override
-        public void recvCommand(
+        public void relayCommand(
                 String pid, String dstNid, String srcNid,
                 int module, String content) throws RemoteException {
             try {

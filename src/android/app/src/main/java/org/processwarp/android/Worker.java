@@ -22,6 +22,8 @@ public class Worker implements Runnable {
     private String myNid;
     /** Mutex for execute native methods serial. */
     private ReentrantLock lock = new ReentrantLock();
+    /** Stop flag. True if worker has stop explicit. */
+    private boolean isStoped = false;
 
     /**
      * Initialize worker and create VM by native method.
@@ -55,8 +57,17 @@ public class Worker implements Runnable {
         return myPid;
     }
 
+    /**
+     * Execute VM through JNI if not stop.
+     */
     @Override
-    public  void run() {
+    public void run() {
+        // Check and change stop flag to don't continue to stop.
+        if (isStoped) {
+            isStoped = false;
+            return;
+        }
+
         lock.lock();
         try {
             workerExecute(myPid);
@@ -64,6 +75,13 @@ public class Worker implements Runnable {
             lock.unlock();
         }
         handler.postDelayed(this, 1);
+    }
+
+    /**
+     * Stop vm.
+     */
+    public void stop() {
+        isStoped = true;
     }
 
     /**

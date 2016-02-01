@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
 import junit.framework.Assert;
 
@@ -59,17 +60,16 @@ public class RouterService extends Service implements Router.Delegate {
     }
 
     /**
-     * When service is created explicit, connect with server by Socket.IO if needed.
+     * When service is created explicit, return START_NOT_STICKY to continue as explicit as possible.
      * @param intent Not used.
      * @param flags Not used.
      * @param startId Not used.
-     * @return START_STICKY value.
+     * @return START_NOT_STICKY value.
      */
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        server.connect();
 
-        return START_STICKY;
+        return START_NOT_STICKY;
     }
 
     /**
@@ -84,6 +84,28 @@ public class RouterService extends Service implements Router.Delegate {
     }
 
     private RouterInterface.Stub binder = new RouterInterface.Stub() {
+        /**
+         * When method is called by frontend, pass it to router.
+         * @param account Account string.
+         * @param password Password string.
+         * @throws RemoteException
+         */
+        @Override
+        public void connectServer(String account, String password) throws RemoteException {
+            server.connect();
+            router.connectServer(account, password);
+        }
+
+        /**
+         * It check if has connection with server is created.
+         * @return True if connection with server has be created.
+         * @throws RemoteException
+         */
+        @Override
+        public boolean isConnectServer() throws RemoteException {
+            return server.isConnected();
+        }
+
         /**
          * When method is called by controller, save passed controller callback.
          * @param controller Controller callback instance.
@@ -150,14 +172,44 @@ public class RouterService extends Service implements Router.Delegate {
         }
 
         /**
-         * When method is called by frontend, pass it to router.
-         * @param account Account string.
-         * @param password Password string.
+         * Unregister controller if require from the controller activity.
          * @throws RemoteException
          */
         @Override
-        public void connectServer(String account, String password) throws RemoteException {
-            router.connectServer(account, password);
+        public void unregisterController() throws RemoteException {
+            RouterService.controller = null;
+        }
+
+        /**
+         * Unregister frontend if require from a frontend activity.
+         * @param pid Process-id bundled to frontend activity.
+         * @throws RemoteException
+         */
+        @Override
+        public void unregisterFrontend(String pid) throws RemoteException {
+            Assert.assertTrue(frontends.containsKey(pid) || frontendSendWait.containsKey(pid));
+
+            frontends.remove(pid);
+            frontendSendWait.remove(pid);
+            for (int i = 0; i < frontendPid.length; i ++) {
+                if (pid.equals(frontendPid[i])) frontendPid[i] = null;
+            }
+        }
+
+        /**
+         * Unregister worker if require from a worker service.
+         * @param pid Process-id bundled to worker service.
+         * @throws RemoteException
+         */
+        @Override
+        public void unregisterWorker(String pid) throws RemoteException {
+            Assert.assertTrue(workers.containsKey(pid) || workerSendWait.containsKey(pid));
+
+            workers.remove(pid);
+            workerSendWait.remove(pid);
+            for (int i = 0; i < workerPid.length; i ++) {
+                if (pid.equals(workerPid[i])) workerPid[i] = null;
+            }
         }
 
         /**
@@ -233,6 +285,8 @@ public class RouterService extends Service implements Router.Delegate {
         for (int id = 0; id < MAX_FRONTEND; id++) {
             if (frontendPid[id] == null) {
                 frontendPid[id] = pid;
+                // controller.createFrontend(id, pid);
+                frontendSendWait.put(pid, new ArrayList<CommandPacket>());
                 intent = new Intent();
                 intent.setAction("create_frontend");
                 intent.putExtra("pid", pid);
@@ -245,8 +299,6 @@ public class RouterService extends Service implements Router.Delegate {
             // TODO
             Assert.fail();
         }
-
-        frontendSendWait.put(pid, new ArrayList<CommandPacket>());
 
         sendBroadcast(intent);
     }
@@ -261,7 +313,7 @@ public class RouterService extends Service implements Router.Delegate {
         if (controller == null) return;
 
         try {
-            controller.recvCommand(
+            controller.relayCommand(
                     packet.pid, packet.dstNid, packet.srcNid,
                     packet.module, packet.content);
 

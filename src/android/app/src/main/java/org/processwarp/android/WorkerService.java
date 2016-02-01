@@ -8,6 +8,7 @@ import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
 import junit.framework.Assert;
 
@@ -40,6 +41,26 @@ public class WorkerService extends Service implements Worker.Delegate, ServiceCo
                 Context.BIND_ABOVE_CLIENT | Context.BIND_AUTO_CREATE);
 
         return START_NOT_STICKY;
+    }
+
+    /**
+     * When destroy service, stop vm and unregister this worker from the router service.
+     */
+    @Override
+    public void onDestroy() {
+        Log.v(this.getClass().getName(), "onDestroy");
+
+        try {
+            worker.stop();
+            router.unregisterWorker(worker.getPid());
+            router = null;
+
+        } catch (RemoteException e) {
+            Log.e(this.getClass().getName(), "onDestroy", e);
+            // TODO error
+            Assert.fail();
+        }
+        super.onDestroy();
     }
 
     /**

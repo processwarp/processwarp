@@ -7,9 +7,13 @@ import org.processwarp.android.WorkerInterface;
 
 // Declare any non-default types here with import statements
 interface RouterInterface {
+    void connectServer(String account, in String password);
+    boolean isConnectServer();
     void registerController(ControllerInterface controller);
     void registerFrontend(String pid, FrontendInterface frontend);
     void registerWorker(String pid, WorkerInterface worker);
-    void connectServer(String account, in String password);
+    void unregisterController();
+    void unregisterFrontend(String pid);
+    void unregisterWorker(String pid);
     void sendCommand(String pid, String dstNid, int module, String content);
 }

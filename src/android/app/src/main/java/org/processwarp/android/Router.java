@@ -129,6 +129,11 @@ public class Router {
      * @param isFromServer Set true if packet was passed by server.
      */
     public void relayCommand(CommandPacket packet, boolean isFromServer) {
+        Assert.assertNotNull(packet.pid);
+        Assert.assertNotNull(packet.dstNid);
+        Assert.assertNotNull(packet.srcNid);
+        Assert.assertNotNull(packet.content);
+
         if (!isFromServer) {
             if (SpecialNid.NONE.equals(packet.dstNid)) {
                 lock.lock();
