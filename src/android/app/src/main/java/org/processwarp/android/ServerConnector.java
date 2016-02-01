@@ -36,7 +36,7 @@ public class ServerConnector {
      * @param router Router instance for relay event.
      */
     public void initialize(Router router) {
-        Log.v(this.getClass().getName(), "initialize()");
+        Log.v(this.getClass().getName(), "initialize");
 
         // Save instance for event listener.
         Assert.assertNull(THIS);

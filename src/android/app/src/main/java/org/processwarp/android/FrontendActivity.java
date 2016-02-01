@@ -91,7 +91,7 @@ public class FrontendActivity extends AppCompatActivity implements ServiceConnec
 
         } catch (RemoteException e) {
             // TODO
-            e.printStackTrace();
+            Log.e(this.getClass().getName(), "onServiceConnected", e);
             Assert.fail();
         }
     }
@@ -102,8 +102,9 @@ public class FrontendActivity extends AppCompatActivity implements ServiceConnec
      */
     @Override
     public void onServiceDisconnected(ComponentName name) {
+        Log.e(this.getClass().getName(), "onServiceDisconnected");
         router = null;
-        // TODO
+        // TODO error
         Assert.fail();
     }
 
@@ -151,7 +152,7 @@ public class FrontendActivity extends AppCompatActivity implements ServiceConnec
 
         } catch (JSONException e) {
             // TODO error
-            e.printStackTrace();
+            Log.e(this.getClass().getName(), "recvCommand", e);
             Assert.fail();
         }
     }
@@ -189,6 +190,7 @@ public class FrontendActivity extends AppCompatActivity implements ServiceConnec
      */
     private void recvCommandWarpin(JSONObject param) {
         finish();
+        Log.v(this.getClass().getName(), "recvCommandWarpin");
     }
 
     /**
@@ -209,7 +211,7 @@ public class FrontendActivity extends AppCompatActivity implements ServiceConnec
 
         } catch (Exception e) {
             // TODO error
-            e.printStackTrace();
+            Log.e(this.getClass().getName(), "sendCommand", e);
             Assert.fail();
         }
     }

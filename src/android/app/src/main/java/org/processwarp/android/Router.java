@@ -74,6 +74,7 @@ public class Router {
 
         } catch (Exception e) {
             // TODO error
+            Log.e(this.getClass().getName(), "connectServer", e);
             Assert.fail();
         }
     }

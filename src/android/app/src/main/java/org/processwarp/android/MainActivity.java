@@ -33,6 +33,7 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
      */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Log.v(this.getClass().getName(), "onCreate");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -133,6 +134,7 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
      */
     @Override
     public void onServiceDisconnected(ComponentName name) {
+        Log.v(this.getClass().getName(), "onServiceDisconnected");
         router = null;
         // TODO error
         Assert.fail();

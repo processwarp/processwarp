@@ -52,6 +52,7 @@ public class RouterService extends Service implements Router.Delegate {
      */
     @Override
     public void onCreate() {
+        Log.v(this.getClass().getName(), "onCreate");
         router = new Router();
         server = new ServerConnector();
 
@@ -68,6 +69,7 @@ public class RouterService extends Service implements Router.Delegate {
      */
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        Log.v(this.getClass().getName(), "onStartCommand");
 
         return START_NOT_STICKY;
     }
@@ -80,6 +82,7 @@ public class RouterService extends Service implements Router.Delegate {
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
+        Log.v(this.getClass().getName(), "onBind");
         return binder;
     }
 
@@ -138,6 +141,7 @@ public class RouterService extends Service implements Router.Delegate {
                     );
                 } catch (RemoteException e) {
                     // TODO error
+                    Log.e(this.getClass().getName(), "registerFrontend", e);
                     Assert.fail();
                 }
             }
@@ -165,6 +169,7 @@ public class RouterService extends Service implements Router.Delegate {
                     );
                 } catch (RemoteException e) {
                     // TODO error
+                    Log.e(this.getClass().getName(), "registerWorker", e);
                     Assert.fail();
                 }
             }
@@ -246,6 +251,7 @@ public class RouterService extends Service implements Router.Delegate {
      */
     @Override
     public void routerCreateVm(Router caller, String pid, long rootTid, long procAddr, String masterNid) {
+        Log.v(this.getClass().getName(), "routerCreateVm");
         Intent intent = null;
         for (int id = 0; id < MAX_WORKERS; id++) {
             if (workerPid[id] == null) {
@@ -279,6 +285,7 @@ public class RouterService extends Service implements Router.Delegate {
      */
     @Override
     public void routerCreateGui(Router caller, String pid) {
+        Log.v(this.getClass().getName(), "routerCreateGui");
         Intent intent = null;
 
         // Search empty id.
@@ -296,7 +303,7 @@ public class RouterService extends Service implements Router.Delegate {
         }
 
         if (intent == null) {
-            // TODO
+            // TODO resource full
             Assert.fail();
         }
 
@@ -318,6 +325,8 @@ public class RouterService extends Service implements Router.Delegate {
                     packet.module, packet.content);
 
         } catch (RemoteException e) {
+            // TODO error
+            Log.e(this.getClass().getName(), "routerRelayControllerPacket", e);
             Assert.fail();
         }
     }
@@ -341,6 +350,7 @@ public class RouterService extends Service implements Router.Delegate {
                 );
             } catch (RemoteException e) {
                 // TODO error
+                Log.e(this.getClass().getName(), "routerRelayFrontendPacket", e);
                 Assert.fail();
             }
 
@@ -372,6 +382,7 @@ public class RouterService extends Service implements Router.Delegate {
                 );
             } catch (RemoteException e) {
                 // TODO error
+                Log.e(this.getClass().getName(), "routerRelayWorkerPacket", e);
                 Assert.fail();
             }
 

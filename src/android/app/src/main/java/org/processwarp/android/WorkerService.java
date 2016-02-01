@@ -25,6 +25,8 @@ public class WorkerService extends Service implements Worker.Delegate, ServiceCo
      */
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        Log.v(this.getClass().getName(), "onStartCommand");
+
         Assert.assertNull(worker);
         worker = new Worker();
 
@@ -82,14 +84,16 @@ public class WorkerService extends Service implements Worker.Delegate, ServiceCo
      */
     @Override
     public void onServiceConnected(ComponentName name, IBinder service) {
+        Log.v(this.getClass().getName(), "onServiceConnected");
+
         router = RouterInterface.Stub.asInterface(service);
         try {
             router.registerWorker(worker.getPid(), callback);
             worker.run();
 
         } catch (RemoteException e) {
-            // TODO
-            e.printStackTrace();
+            // TODO error
+            Log.e(this.getClass().getName(), "onServiceConnected", e);
             Assert.fail();
         }
     }
@@ -101,8 +105,10 @@ public class WorkerService extends Service implements Worker.Delegate, ServiceCo
      */
     @Override
     public void onServiceDisconnected(ComponentName name) {
+        Log.e(this.getClass().getName(), "onServiceDisconnected");
+
         router = null;
-        // TODO
+        // TODO error
         Assert.fail();
     }
 
@@ -126,7 +132,7 @@ public class WorkerService extends Service implements Worker.Delegate, ServiceCo
 
         } catch (RemoteException e) {
             // TODO error
-            e.printStackTrace();
+            Log.e(this.getClass().getName(), "workerRelayCommand", e);
             Assert.fail();
         }
     }

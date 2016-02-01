@@ -136,16 +136,19 @@ class WorkerJni : public VMachineDelegate, public VMemoryDelegate, public Builti
 
   void vmachine_finish(VMachine& vm) override {
     /// @todo
+    JniUtil::log_v("WorkerJni::vmachine_finish");
     assert(false);
   }
 
   void vmachine_finish_thread(VMachine& vm, const vtid_t& tid) override {
     /// @todo
+    JniUtil::log_v("WorkerJni::vmachine_finish_thread");
     assert(false);
   }
 
   void vmachine_error(VMachine& vm, const std::string& message) override {
     /// @todo
+    JniUtil::log_e("WorkerJni::vmachine_error\n%s", message.c_str());
     assert(false);
   }
 
@@ -230,12 +233,16 @@ extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Worker_workerInit
 
   WorkerJni& worker_jni = workers[pid];
   worker_jni.push_env(env);
-  worker_jni.initialize(worker,
-                        JniUtil::jstr2nid(env, jmy_nid),
-                        pid,
-                        *reinterpret_cast<vtid_t*>(&jroot_tid),
-                        *reinterpret_cast<vaddr_t*>(&jproc_addr),
-                        JniUtil::jstr2nid(env, jmaster_nid));
+  try {
+    worker_jni.initialize(worker,
+                          JniUtil::jstr2nid(env, jmy_nid),
+                          pid,
+                          *reinterpret_cast<vtid_t*>(&jroot_tid),
+                          *reinterpret_cast<vaddr_t*>(&jproc_addr),
+                          JniUtil::jstr2nid(env, jmaster_nid));
+  } catch (...) {
+    JniUtil::log_e("exception on workerInitialize");
+  }
   worker_jni.pop_env();
 }
 
@@ -268,7 +275,11 @@ extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Worker_workerRela
 
   WorkerJni& worker_jni = workers.at(pid);
   worker_jni.push_env(env);
-  worker_jni.relay_command(packet);
+  try {
+    worker_jni.relay_command(packet);
+  } catch (...) {
+    JniUtil::log_e("exception on workerRelayCommand");
+  }
   worker_jni.pop_env();
 }
 
@@ -285,7 +296,11 @@ extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Worker_workerExec
   WorkerJni& worker_jni = workers.at(pid);
 
   worker_jni.push_env(env);
-  worker_jni.execute();
+  try {
+    worker_jni.execute();
+  } catch (...) {
+    JniUtil::log_e("exception on workerExecute");
+  }
   worker_jni.pop_env();
 }
 
@@ -302,7 +317,11 @@ extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Worker_workerQuit
 
   WorkerJni& worker_jni = workers.at(pid);
   worker_jni.push_env(env);
-  worker_jni.quit();
+  try {
+    worker_jni.quit();
+  } catch (...) {
+    JniUtil::log_e("exception on workerQuit");
+  }
   worker_jni.pop_env();
   workers.erase(pid);
 }
