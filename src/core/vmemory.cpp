@@ -318,6 +318,8 @@ void VMemory::recv_command_require(const CommandPacket& packet) {
   if (page.type == PT_MASTER) {
     page.hint.insert(src_nid);
 
+    send_command_copy(src_nid, space, page, addr);
+
   } else if (page.type == PT_COPY) {
     picojson::object param;
 
@@ -326,8 +328,6 @@ void VMemory::recv_command_require(const CommandPacket& packet) {
 
     send_memory_command(packet.pid, *page.hint.begin(), "require", param);
   }
-
-  send_command_copy(src_nid, space, page, addr);
 }
 
 /**
