@@ -189,8 +189,10 @@ public class FrontendActivity extends AppCompatActivity implements ServiceConnec
      * @param param Not used.
      */
     private void recvCommandWarpin(JSONObject param) {
-        finish();
         Log.v(this.getClass().getName(), "recvCommandWarpin");
+
+        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+        startActivity(intent);
     }
 
     /**
