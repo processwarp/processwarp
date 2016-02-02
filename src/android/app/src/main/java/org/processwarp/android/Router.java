@@ -162,7 +162,7 @@ public class Router {
                     lock.lock();
                     try {
                         schedulerRecvCommand(
-                                packet.pid, packet.srcNid, packet.srcNid,
+                                packet.pid, packet.dstNid, packet.srcNid,
                                 packet.module, packet.content);
                     } finally {
                         lock.unlock();
