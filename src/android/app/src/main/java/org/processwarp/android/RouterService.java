@@ -390,8 +390,7 @@ public class RouterService extends Service implements Router.Delegate {
             workerSendWait.get(packet.pid).add(packet);
 
         } else {
-            // TODO error
-            Assert.fail();
+            Log.w(this.getClass().getName(), "routerRelayWorkerPacket, drop packet");
         }
     }
 

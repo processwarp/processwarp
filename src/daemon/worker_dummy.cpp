@@ -60,8 +60,9 @@ void WorkerDummy::create_vm(const vpid_t& pid, vtid_t root_tid, vaddr_t proc_add
  * @param packet Command packet.
  */
 void WorkerDummy::relay_command(const CommandPacket& packet) {
-  assert(vms.find(packet.pid) != vms.end());
-  VMachine& vm = *vms.at(packet.pid);
+  auto it_vm = vms.find(packet.pid);
+  if (it_vm == vms.end()) return;
+  VMachine& vm = *it_vm->second;
 
   switch (packet.module) {
     case Module::MEMORY: {

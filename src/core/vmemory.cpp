@@ -118,11 +118,12 @@ void VMemory::recv_command_copy(const CommandPacket& packet) {
 
   } else {
     Page& page = it_page->second;
-    assert(page.type == PT_COPY);
     assert(page.hint.size() == 1);
     assert(*page.hint.begin() == packet.src_nid);
 
-    if (value.size() != 0) {
+    if (page.type != PT_COPY) {
+      return;
+    } else if (value.size() != 0) {
       if (page.size != value.size()) {
         page.size = value.size();
         page.value.reset(new uint8_t[page.size]);
@@ -261,8 +262,6 @@ void VMemory::recv_command_give(const CommandPacket& packet) {
 
   } else {
     if (it_page == space.pages.end()) {
-      /// @todo
-      assert(false);
       send_command_unwant(packet.pid, dst_nid, addr);
 
     } else {
@@ -285,7 +284,7 @@ void VMemory::recv_command_require(const CommandPacket& packet) {
   nid_t src_nid = Convert::json2nid(packet.content.at("src_nid"));
 
   assert(addr == get_upper_addr(addr));
-  assert(src_nid != my_nid);
+  if (src_nid == my_nid) return;
 
   auto it_space = spaces.find(packet.pid);
   if (it_space == spaces.end()) {

@@ -116,6 +116,8 @@ void WorkerConnector::create_vm(const vpid_t& pid, vtid_t root_tid,
 void WorkerConnector::relay_command(const CommandPacket& packet) {
   assert(packet.module == Module::MEMORY || packet.module == Module::VM);
 
+  if (properties.find(packet.pid) == properties.end()) return;
+
   picojson::object data;
   data.insert(std::make_pair("command", picojson::value(std::string("relay_command"))));
   data.insert(std::make_pair("pid", Convert::vpid2json(packet.pid)));
