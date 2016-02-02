@@ -167,6 +167,7 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
 
         } catch (Exception e) {
             // TODO error
+            Log.e(this.getClass().getName(), "sendCommand", e);
             Assert.fail();
         }
     }
