@@ -243,53 +243,6 @@ void VMachine::recv_command(const CommandPacket& packet) {
 }
 
 /**
- * Pass data from other node.
- * @param data Received load data.
- */
-void VMachine::recv_packet(const std::string& data) {
-  try {
-    picojson::value v;
-    std::istringstream is(data);
-    std::string err = picojson::parse(v, is);
-    if (!err.empty()) {
-      std::cerr << err << std::endl;
-      assert(false);
-      /// @todo error
-    }
-
-    picojson::object json = v.get<picojson::object>();
-
-    // select command
-    std::string command = json.at("command").get<std::string>();
-    if (command == "warp") {
-      // recv_warp(json);
-      assert(false);
-
-    } else if (command == "terminate") {
-      recv_terminate(json);
-
-    } else {
-      assert(false);
-      /// @todo error
-    }
-
-    return;
-  } catch (Error& e) {
-    std::cerr << e.reason << ":" << e.mesg << std::endl;
-  }
-#ifdef NDEBUG
-  catch (std::exception& e) {
-    std::cerr << e.what() << std::endl;
-  } catch (...) {
-    std::cerr << "unknown exception" << std::endl;
-  }
-#endif
-
-  assert(false);
-  /// @todo error
-}
-
-/**
  * Change status of process in order to terminate.
  * After terminate process, resources of process are free automatic.
  */
@@ -368,73 +321,6 @@ void VMachine::regist_builtin_func(const std::string& name,
   param.ptr = ptr;
   builtin_funcs.insert(std::make_pair(name, std::make_pair(func, param)));
 }
-
-/**
- * Change flag to FINISH for all defunct thread.
- * @param sv_procs
- */
-void VMachine::kill_defunct_thread(const ProcessTree& sv_proc) {
-  if (sv_proc.threads.find(process->root_tid) == sv_proc.threads.end()) {
-    // Change flag to FINISH for all threads if root-thread was not exist yet.
-    for (auto& tid : process->active_threads) {
-      Thread& thread = process->get_thread(tid);
-      thread.status = Thread::FINISH;
-      thread.join_waiting = JOIN_WAIT_DETACHED;
-      thread.write();
-      thread.memory->write_out();
-    }
-  }
-
-  /// @todo Change flag to FINISH for all threads if process was not exist yet.
-  assert(false);
-}
-
-/**
- * Delete process if active-threads in this node were not exist.
- * @param sv_procs
- */
-/*
-void VMachine::clean_defunct_processe(const std::vector<ProcessTree>& sv_procs) {
-  auto it_proc = procs.begin();
-  while (it_proc != procs.end()) {
-    if (it_proc->second->active_threads.size() == 0) {
-      it_proc = procs.erase(it_proc);
-
-    } else {
-      it_proc++;
-    }
-  }
-}
-*/
-
-/*
- * Delete memory space if process in all nodes was not exist.
- * @param sv_procs
- */
-/*
-void VMachine::clean_defunct_memoryspace(const std::vector<ProcessTree>& sv_procs) {
-  auto it_space = vmemory.spaces.begin();
-  while (it_space != vmemory.spaces.end()) {
-    vpid_t pid = Convert::str2vpid(it_space->first);
-
-    bool is_find = false;
-    for (auto& it_sv_proc : sv_procs) {
-      if (it_sv_proc.pid == pid) {
-        is_find = true;
-        break;
-      }
-    }
-
-    if (!is_find &&
-        procs.find(pid) == procs.end()) {
-      it_space = vmemory.spaces.erase(it_space);
-
-    } else {
-      it_space++;
-    }
-  }
-}
-*/
 
 /**
  * When receive warp_request command, call Thread::setup_warpin to warp thread.
@@ -562,24 +448,4 @@ void VMachine::initialize_builtin() {
   BuiltinVaArg::regist(*this);
   BuiltinWarp::regist(*this);
 }
-
-// Make new process-tree and send to server.
-/*
-void VMachine::update_proc_list() {
-  std::vector<ProcessTree> packet;
-
-  for (auto& proc : procs) {
-    ProcessTree pt;
-    pt.pid = proc.second->pid;
-
-    for (auto& thread : proc.second->active_threads) {
-      pt.threads.insert(std::make_pair(thread, nid));
-    }
-
-    packet.push_back(pt);
-  }
-
-  delegate.send_sync_proc_list(packet);
-}
-*/
 }  // namespace processwarp
