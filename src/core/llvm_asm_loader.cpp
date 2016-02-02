@@ -1156,6 +1156,8 @@ vaddr_t LlvmAsmLoader::load_type(const llvm::Type* type, bool sign) {
     } break;
 
     case llvm::Type::VectorTyID: {
+      /// @todo canceling vector type.
+      assert(false);
       vaddr_t addr =
           TypeStore::alloc_vector(memory,
                                   load_type(type->getVectorElementType(),
