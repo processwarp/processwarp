@@ -56,7 +56,6 @@ class VMachine : private ProcessDelegate {
   void recv_command(const CommandPacket& packet);
   void recv_packet(const std::string& data);
   Process& get_process();
-  void warpout_thread(vtid_t tid);
   void regist_builtin_func(const std::string& name, builtin_func_t func, int i64);
   void regist_builtin_func(const std::string& name, builtin_func_t func, void* ptr);
 
@@ -88,10 +87,13 @@ class VMachine : private ProcessDelegate {
   void clean_defunct_memoryspace(const ProcessTree& sv_proc);
 
   void recv_command_warp_request(const CommandPacket& packet);
+  void recv_command_warp_success(const CommandPacket& packet);
+  void recv_command_warpout(const CommandPacket& packet);
   void recv_warp(picojson::object& json);
   void recv_terminate(picojson::object& json);
   void send_command(const nid_t& dst_nid, Module::Type module,
                     const std::string& command, picojson::object& param);
+  void send_command_warp_success(vtid_t thread);
   void send_command_warp_thread(Thread& thread);
   void send_packet(const nid_t& dst_nid, const std::string& command, picojson::object& packet);
   void send_terminate();
