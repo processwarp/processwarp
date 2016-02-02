@@ -525,7 +525,7 @@ void ServerConnector::initialize_socketio(const std::string& url) {
  * When receive bind-node command's reply,
  * change status to CONNECT and call Router's method.
  * Receive data having member 'result',0 means success, other means error code.
- * Reveive data haging member 'nid' is assigned node-id for this node.
+ * Receive data having member 'nid' is assigned node-id for this node.
  * @param data Receive data.
  */
 void ServerConnector::recv_bind_node(sio::message::ptr data) {

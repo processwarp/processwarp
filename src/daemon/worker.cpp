@@ -97,7 +97,7 @@ void Worker::vmemory_send_command(VMemory& memory, const nid_t& dst_nid, Module:
 }
 
 /**
- * When vmemory tell update memory image by other node, relay this event to vm.
+ * When vmemory tell update memory image by another node, relay this event to vm.
  * @param memory Caller instance.
  * @param addr Address updated.
  */
@@ -181,7 +181,7 @@ void Worker::on_idle(uv_idle_t* handle) {
 }
 
 /**
- * When recv stream data from backend, clip packet and call recv_packet.
+ * When recv stream data from backend, clip packet and call recv_data.
  * Concaenate stream data received yet with just now as buffer.
  * Parse json from buffer.
  * Call on_receive method if json packet (like bellow) is received fully,
