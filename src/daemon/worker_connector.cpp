@@ -64,9 +64,9 @@ void WorkerConnector::create_vm(const vpid_t& pid, vtid_t root_tid,
 
   properties.insert(std::make_pair(pid, WorkerProperty()));
   WorkerProperty& property = properties.at(pid);
-  memset(&property, 0, sizeof(WorkerProperty));
   property.status = PipeStatus::SETUP;
   property.pid    = pid;
+  property.pipe   = nullptr;
   property.process.data = &property;
 
   std::string root_tid_str = Convert::vtid2str(root_tid);
