@@ -172,13 +172,6 @@ std::string Util::get_my_fullpath() {
 #endif
 }
 
-
-// Show alert to fix function when NDEBUG isn't defined.
-void Util::_fixme(int line, const char* file, std::string mesg) {
-  std::cerr.setf(std::ios::dec);
-  std::cerr << "\x1b[31mfixme\x1b[39m [l" << line << "@" << file << "] " << mesg << std::endl;
-}
-
 // Convert instruction code to readable string.
 std::string Util::code2str(instruction_t code) {
   std::string opcode  = OPCODE_STR[Instruction::get_opcode(code)];

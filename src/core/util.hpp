@@ -102,43 +102,37 @@ inline std::string vaddr2str(vaddr_t addr) {
   return num2hex_str<vaddr_t>(addr);
 }
 
-/**
- * Show alert to fix function when NDEBUG isn't defined.
- * @param mesg Message to show.
- */
-#ifdef NDEBUG
-#define fixme(mesg)  //
-#else
-#define fixme(mesg) Util::_fixme(__LINE__, __FILE__, mesg);
-#endif
-void _fixme(int line, const char* file, std::string mesg);
+inline const char* get_filename(const std::string fullpath) {
+  std::string::size_type sep = fullpath.rfind('/');
+  if (sep == std::string::npos) sep = fullpath.rfind('\\');
+  const char* file_cstr = fullpath.c_str();
+  if (sep != std::string::npos) file_cstr += sep + 1;
+  return file_cstr;
+}
 
 /**
  * Show debug message when NEBUG isn't defined.
  * @param ... Messages to show (format is the same to printf).
  */
 #ifdef NDEBUG
-#define print_debug(...)  //
+#  define print_debug(...)  //
+
 #elif defined(__ANDROID__)
-#ifndef PRIu64
-#define PRIu64 "llu"
-#endif
-#ifndef PRIx64
-#define PRIx64 "llx"
-#endif
-#define print_debug(...) {                                              \
+#  ifndef PRIu64
+#    define PRIu64 "llu"
+#  endif
+#  ifndef PRIx64
+#    define PRIx64 "llx"
+#  endif
+
+#  define print_debug(...) {                                              \
     __android_log_print(ANDROID_LOG_DEBUG, "processwarp", "" __VA_ARGS__); \
   }
 
 #else  // NDEBUG
-#define print_debug(...) {                                      \
-    std::string file(__FILE__);                                 \
-    std::string::size_type sep = file.rfind('/');               \
-    if (sep == std::string::npos) sep = file.rfind('\\');       \
-    const char* file_cstr = file.c_str();                       \
-    if (sep != std::string::npos) file_cstr += sep + 1;         \
-    fprintf(stderr, "debug [%d@%s] ", __LINE__, file_cstr);     \
-    fprintf(stderr, "" __VA_ARGS__);                            \
+#  define print_debug(...) {                                              \
+    fprintf(stderr, "debug [%d@%s] ", __LINE__, Util::get_filename(__FILE__)); \
+    fprintf(stderr, "" __VA_ARGS__);                                    \
   }
 #endif  // NDEBUG
 

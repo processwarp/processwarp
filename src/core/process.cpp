@@ -702,7 +702,6 @@ void Process::call_external(Thread& thread,
     case BasicTypeAddress::F64:  ffi_ret_type = &ffi_type_double; break;
 
     default: {
-      fixme(Util::vaddr2str(func.ret_type));
       assert(false);  /// @todo 他の型の対応
     } break;
   }
