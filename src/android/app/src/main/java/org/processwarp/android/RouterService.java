@@ -15,8 +15,8 @@ import java.util.List;
 import java.util.Map;
 
 public class RouterService extends Service implements Router.Delegate {
-    /** Max frontend number. */
-    private static final int MAX_FRONTEND = 3;
+    /** Max gui number. */
+    private static final int MAX_GUIS = 3;
     /** Max worker number. */
     private static final int MAX_WORKERS = 3;
     /** Classes for start worker service. */
@@ -40,11 +40,11 @@ public class RouterService extends Service implements Router.Delegate {
     /** Process-id bind for worker. Array index is equal to worker index. */
     private String[] workerPid = new String[MAX_WORKERS];
 
-    private static Map<String, FrontendInterface> frontends =
-            new HashMap<String, FrontendInterface>();
-    private static Map<String, List<CommandPacket>> frontendSendWait =
+    private static Map<String, GuiInterface> guis =
+            new HashMap<String, GuiInterface>();
+    private static Map<String, List<CommandPacket>> guiSendWait =
             new HashMap<String, List<CommandPacket>>();
-    private String[] frontendPid = new String[MAX_FRONTEND];
+    private String[] guiPid = new String[MAX_GUIS];
 
 
     /**
@@ -88,7 +88,7 @@ public class RouterService extends Service implements Router.Delegate {
 
     private RouterInterface.Stub binder = new RouterInterface.Stub() {
         /**
-         * When method is called by frontend, pass it to router.
+         * When method is called by controller, pass it to router.
          * @param account Account string.
          * @param password Password string.
          * @throws RemoteException
@@ -130,19 +130,19 @@ public class RouterService extends Service implements Router.Delegate {
         }
 
         /**
-         * When method is called by frontend, save passed frontend callback with process-id.
+         * When method is called by gui, save gui callback with process-id.
          * If packets are waiting to send in buffer, send packet and remove buffer.
-         * @param pid Frontend process-id.
-         * @param frontend Frontend callback instance.
+         * @param pid GUI process-id.
+         * @param gui GUI callback instance.
          * @throws RemoteException
          */
         @Override
-        public void registerFrontend(String pid, FrontendInterface frontend) throws RemoteException {
-            RouterService.frontends.put(pid, frontend);
+        public void registerGui(String pid, GuiInterface gui) throws RemoteException {
+            RouterService.guis.put(pid, gui);
 
-            for (CommandPacket packet : frontendSendWait.get(pid)) {
+            for (CommandPacket packet : guiSendWait.get(pid)) {
                 try {
-                    frontend.relayCommand(
+                    gui.relayCommand(
                             packet.pid,
                             packet.dstNid,
                             packet.srcNid,
@@ -151,11 +151,11 @@ public class RouterService extends Service implements Router.Delegate {
                     );
                 } catch (RemoteException e) {
                     // TODO error
-                    Log.e(this.getClass().getName(), "registerFrontend", e);
+                    Log.e(this.getClass().getName(), "registerGui", e);
                     Assert.fail();
                 }
             }
-            frontendSendWait.remove(pid);
+            guiSendWait.remove(pid);
         }
 
         /**
@@ -196,18 +196,18 @@ public class RouterService extends Service implements Router.Delegate {
         }
 
         /**
-         * Unregister frontend if require from a frontend activity.
-         * @param pid Process-id bundled to frontend activity.
+         * Unregister GUI if require from a GUI activity.
+         * @param pid Process-id bundled to GUI activity.
          * @throws RemoteException
          */
         @Override
-        public void unregisterFrontend(String pid) throws RemoteException {
-            Assert.assertTrue(frontends.containsKey(pid) || frontendSendWait.containsKey(pid));
+        public void unregisterGui(String pid) throws RemoteException {
+            Assert.assertTrue(guis.containsKey(pid) || guiSendWait.containsKey(pid));
 
-            frontends.remove(pid);
-            frontendSendWait.remove(pid);
-            for (int i = 0; i < frontendPid.length; i ++) {
-                if (pid.equals(frontendPid[i])) frontendPid[i] = null;
+            guis.remove(pid);
+            guiSendWait.remove(pid);
+            for (int i = 0; i < guiPid.length; i ++) {
+                if (pid.equals(guiPid[i])) guiPid[i] = null;
             }
         }
 
@@ -296,8 +296,8 @@ public class RouterService extends Service implements Router.Delegate {
     }
 
     /**
-     * When scheduler require create gui, create a new frontend to do it.
-     * To create a frontend activity, broadcast intent to receiver.
+     * When scheduler require create gui, create a new GUI to do it.
+     * To create a GUI activity, broadcast intent to receiver.
      * @param caller Caller instance, not used.
      * @param pid New gui's process-id.
      */
@@ -307,20 +307,19 @@ public class RouterService extends Service implements Router.Delegate {
 
         // Ignore if gui is assigned.
         // This situation is possible by timing.
-        if (frontends.containsKey(pid) || frontendSendWait.containsKey(pid)) {
+        if (guis.containsKey(pid) || guiSendWait.containsKey(pid)) {
             Log.w(this.getClass().getName(), "duplicate gui");
             return;
         }
 
         // Search empty id.
         Intent intent = null;
-        for (int id = 0; id < MAX_FRONTEND; id++) {
-            if (frontendPid[id] == null) {
-                frontendPid[id] = pid;
-                // controller.createFrontend(id, pid);
-                frontendSendWait.put(pid, new ArrayList<CommandPacket>());
+        for (int id = 0; id < MAX_GUIS; id++) {
+            if (guiPid[id] == null) {
+                guiPid[id] = pid;
+                guiSendWait.put(pid, new ArrayList<CommandPacket>());
                 intent = new Intent();
-                intent.setAction("create_frontend");
+                intent.setAction("create_gui");
                 intent.putExtra("pid", pid);
                 intent.putExtra("id", id);
                 break;
@@ -357,16 +356,16 @@ public class RouterService extends Service implements Router.Delegate {
     }
 
     /**
-     * When relay packet to frontend is required, do it by AIDL.
+     * When relay packet to GUI is required, do it by AIDL.
      * If connection was not made yet and buffer was made, store packet to buffer.
      * @param caller Caller instance, not used.
      * @param packet Command packet.
      */
     @Override
     public void routerRelayGuiPacket(Router caller, CommandPacket packet) {
-        if (frontends.containsKey(packet.pid)) {
+        if (guis.containsKey(packet.pid)) {
             try {
-                frontends.get(packet.pid).relayCommand(
+                guis.get(packet.pid).relayCommand(
                         packet.pid,
                         packet.dstNid,
                         packet.srcNid,
@@ -375,12 +374,12 @@ public class RouterService extends Service implements Router.Delegate {
                 );
             } catch (RemoteException e) {
                 // TODO error
-                Log.e(this.getClass().getName(), "routerRelayFrontendPacket", e);
+                Log.e(this.getClass().getName(), "routerRelayGuiPacket", e);
                 Assert.fail();
             }
 
-        } else if (frontendSendWait.containsKey(packet.pid)) {
-            frontendSendWait.get(packet.pid).add(packet);
+        } else if (guiSendWait.containsKey(packet.pid)) {
+            guiSendWait.get(packet.pid).add(packet);
 
         }
     }

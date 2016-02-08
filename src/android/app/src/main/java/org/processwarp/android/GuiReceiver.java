@@ -4,12 +4,12 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
-public class FrontendReceiver extends BroadcastReceiver {
+public class GuiReceiver extends BroadcastReceiver {
     /** Classes for starting frontend activity. */
-    private static final Class<?> FRONTEND_CLASSES[] = {
-            FrontendActivity0.class,
-            FrontendActivity1.class,
-            FrontendActivity2.class
+    private static final Class<?> GUI_CLASSES[] = {
+            GuiActivity0.class,
+            GuiActivity1.class,
+            GuiActivity2.class
     };
 
     /**
@@ -20,8 +20,8 @@ public class FrontendReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         // Select a activity class by frontend-id.
-        int id = intent.getIntExtra("id", FRONTEND_CLASSES.length);
-        Intent lunch = new Intent(context, FRONTEND_CLASSES[id]);
+        int id = intent.getIntExtra("id", GUI_CLASSES.length);
+        Intent lunch = new Intent(context, GUI_CLASSES[id]);
         // Set flag and parameter to a intent.
         lunch.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         lunch.putExtra("pid", intent.getStringExtra("pid"));

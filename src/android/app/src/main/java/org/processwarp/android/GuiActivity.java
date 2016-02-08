@@ -18,7 +18,7 @@ import junit.framework.Assert;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class FrontendActivity extends AppCompatActivity implements ServiceConnection {
+public class GuiActivity extends AppCompatActivity implements ServiceConnection {
     /** Heartbeat interval.(sec) */
     private final int HEARTBEAT_INTERVAL = 3;
     /** GUI status. */
@@ -26,7 +26,7 @@ public class FrontendActivity extends AppCompatActivity implements ServiceConnec
 
     /** AIDL Router interface to relay commands. */
     private RouterInterface router = null;
-    /** Process-id for this frontend. */
+    /** Process-id for this GUI module. */
     private String myPid = null;
     /** Node-id for this node. */
     private String myNid = null;
@@ -40,14 +40,14 @@ public class FrontendActivity extends AppCompatActivity implements ServiceConnec
     private Handler handler = new Handler();
 
     /**
-     * When create frontend, set default html to web view, get parameters from intent,
+     * When create gui, set default html to web view, get parameters from intent,
      * and connect to router service.
      * @param savedInstanceState Used to super class's method.
      */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_frontend);
+        setContentView(R.layout.activity_gui);
         webView = (WebView)findViewById(R.id.web_view);
         webView.getSettings().setJavaScriptEnabled(true);
         webView.loadUrl("file:///android_asset/frame.html");
@@ -57,7 +57,7 @@ public class FrontendActivity extends AppCompatActivity implements ServiceConnec
     }
 
     /**
-     * When resume frontend activity, (re)bind to router service.
+     * When resume gui activity, (re)bind to router service.
      */
     @Override
     protected void onResume() {
@@ -69,14 +69,14 @@ public class FrontendActivity extends AppCompatActivity implements ServiceConnec
     }
 
     /**
-     * When pause frontend activity, unregister and unbind from router service.
+     * When pause gui activity, unregister and unbind from router service.
      */
     @Override
     protected void onPause() {
         Log.v(this.getClass().getName(), "onPause");
 
         if (router != null) try {
-            router.unregisterFrontend(myPid);
+            router.unregisterGui(myPid);
             router = null;
 
         } catch (RemoteException e) {
@@ -98,7 +98,7 @@ public class FrontendActivity extends AppCompatActivity implements ServiceConnec
     public void onServiceConnected(ComponentName name, IBinder service) {
         router = RouterInterface.Stub.asInterface(service);
         try {
-            router.registerFrontend(myPid, callback);
+            router.registerGui(myPid, callback);
             myNid = router.getMyNid();
 
         } catch (RemoteException e) {
@@ -144,7 +144,7 @@ public class FrontendActivity extends AppCompatActivity implements ServiceConnec
     }
 
     /** Make a call back instance for AIDL. */
-    private FrontendInterface callback = new FrontendInterface.Stub() {
+    private GuiInterface callback = new GuiInterface.Stub() {
         /**
          * Receiver for AIDL to relay command.
          * @param pid Process-id bundled for packet.
@@ -214,7 +214,7 @@ public class FrontendActivity extends AppCompatActivity implements ServiceConnec
         Assert.assertTrue(status != Status.NORMAL);
 
         if (status == Status.WAIT_WARP) {
-            Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+            Intent intent = new Intent(getApplicationContext(), ControllerActivity.class);
             startActivity(intent);
         }
     }

@@ -2,7 +2,7 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
       xmlns:tools="http://schemas.android.com/tools"
       xmlns:app="http://schemas.android.com/apk/res-auto"
-      tools:context=".MainActivity">
+      tools:context=".ControllerActivity">
     <item
         android:id="@+id/action_activate"
         android:icon="@mipmap/ic_insert_emoticon_black"

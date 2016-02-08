@@ -21,7 +21,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class MainActivity extends AppCompatActivity implements ServiceConnection {
+public class ControllerActivity extends AppCompatActivity implements ServiceConnection {
     /** Set true if router service has start. */
     private static boolean isServiceStart = false;
     /** AIDL interface for router. */
@@ -35,7 +35,7 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
     protected void onCreate(Bundle savedInstanceState) {
         Log.v(this.getClass().getName(), "onCreate");
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_contoller);
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -85,7 +85,7 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
      */
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_main, menu);
+        getMenuInflater().inflate(R.menu.menu_controller, menu);
         return true;
     }
 
@@ -118,6 +118,7 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
      */
     @Override
     public void onServiceConnected(ComponentName name, IBinder service) {
+        Log.v(this.getClass().getName(), "onServiceConnected");
         router = RouterInterface.Stub.asInterface(service);
         try {
             router.registerController(callback);

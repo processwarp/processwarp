@@ -10,7 +10,7 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
-        <activity android:name=".MainActivity">
+        <activity android:name=".ControllerActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
 
@@ -18,17 +18,17 @@
             </intent-filter>
         </activity>
 
-        <receiver android:name=".FrontendReceiver">
+        <receiver android:name=".GuiReceiver">
             <intent-filter>
-                <action android:name="create_frontend" />
+                <action android:name="create_gui" />
             </intent-filter>
         </receiver>
 
-        <activity android:name=".FrontendActivity0">
+        <activity android:name=".GuiActivity0">
         </activity>
-        <activity android:name=".FrontendActivity1">
+        <activity android:name=".GuiActivity1">
         </activity>
-        <activity android:name=".FrontendActivity2">
+        <activity android:name=".GuiActivity2">
         </activity>
 
         <service
