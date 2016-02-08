@@ -49,6 +49,7 @@ VMemory::VMemory(VMemoryDelegate& delegate_, const nid_t& nid_) :
  * @param packet Command packet.
  */
 void VMemory::recv_command(const CommandPacket& packet) {
+  if (packet.src_nid == my_nid) return;
   const std::string& command = packet.content.at("command").get<std::string>();
 
   if (command == "copy") {

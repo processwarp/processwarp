@@ -39,14 +39,17 @@ JNIEXPORT void JNICALL Java_org_processwarp_android_Router_schedulerRecvCommand
 JNIEXPORT void JNICALL Java_org_processwarp_android_Router_schedulerSetMyNid
   (JNIEnv *, jobject, jstring);
 
-/*
- * Class:     org_processwarp_android_Router
- * Method:    schedulerActivate
- * Signature: ()V
- */
-JNIEXPORT void JNICALL Java_org_processwarp_android_Router_schedulerActivate
-  (JNIEnv *, jobject);
+#ifdef __cplusplus
+}
+#endif
+#endif
+/* Header for class org_processwarp_android_Router_Delegate */
 
+#ifndef _Included_org_processwarp_android_Router_Delegate
+#define _Included_org_processwarp_android_Router_Delegate
+#ifdef __cplusplus
+extern "C" {
+#endif
 #ifdef __cplusplus
 }
 #endif

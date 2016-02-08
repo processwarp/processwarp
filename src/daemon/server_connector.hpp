@@ -28,16 +28,13 @@ class ServerConnector {
   ServerStatus::Type get_status();
   void send_connect_node(const std::string& account,
                          const std::string& password);
+  void send_bind_node(const nid_t& nid,
+                      const std::string& node_name);
   void send_load_llvm(const std::string& name,
                       const std::string& file,
                       const std::vector<std::string>& args,
                       const nid_t& dst_nid);
   void send_relay_command(const CommandPacket& packet);
-
-  void send_list_node();
-  void send_bind_node(const nid_t& nid,
-                      const std::string& node_name);
-  void send_sync_proc_list(const std::vector<ProcessTree>& procs);
   void send_test_console(const vpid_t& pid,
                          const std::string& dev,
                          const std::string& payload);

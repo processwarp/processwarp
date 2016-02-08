@@ -46,7 +46,7 @@ BuiltinPostProc::Type BuiltinGui::flush(Process& proc, Thread& thread, BuiltinFu
       "global.canvas.height);"
       "global.context_fore.putImageData(image, 0, 0);";
   param.insert(std::make_pair("script", picojson::value(script)));
-  delegate.builtin_gui_send_command(proc, SpecialNID::NONE, Module::FRONTEND, "script", param);
+  delegate.builtin_gui_send_command(proc, SpecialNID::NONE, Module::GUI, "script", param);
 
   return BuiltinPostProc::NORMAL;
 }
@@ -69,7 +69,7 @@ BuiltinPostProc::Type BuiltinGui::script(Process& proc, Thread& thread, BuiltinF
 
   picojson::object param;
   param.insert(std::make_pair("script", picojson::value(script)));
-  delegate.builtin_gui_send_command(proc, SpecialNID::NONE, Module::FRONTEND, "script", param);
+  delegate.builtin_gui_send_command(proc, SpecialNID::NONE, Module::GUI, "script", param);
 
   return BuiltinPostProc::NORMAL;
 }

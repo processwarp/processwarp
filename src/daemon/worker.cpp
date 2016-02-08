@@ -31,27 +31,10 @@ int Worker::entry(int argc, char* argv[]) {
 
 /**
  * When vmachine require send command, relay it to backend.
- * Backend process relay this command to target module in this node or another node through the server if need.
  * @param vm Caller instance.
- * @param dst_nid Destination node-id.
- * @param module Target module.
- * @param command Command string.
- * @param param Parameter for command.
+ * @param packet Command packet.
  */
-void Worker::vmachine_send_command(VMachine& vm, const nid_t& dst_nid, Module::Type module,
-                                   const std::string& command, picojson::object& param) {
-  assert(param.find("command") == param.end());
-
-  param.insert(std::make_pair("command", picojson::value(command)));
-
-  CommandPacket packet = {
-    parameter.pid,
-    dst_nid,
-    SpecialNID::NONE,
-    module,
-    param
-  };
-
+void Worker::vmachine_send_command(VMachine& vm, const CommandPacket& packet) {
   send_command(packet);
 }
 

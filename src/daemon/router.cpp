@@ -129,25 +129,38 @@ void Router::recv_bind_node(const nid_t& nid) {
 }
 
 /**
- * When passed a command from any module in this node,
+ * When receive a command from any modules or another nodes to this module,
  * set destination node-id and pass content to capable module in this node or another node through the server.
  * @param packet Command packet.
+ * @param is_from_server Set true if packet is relaied by server (send by another node).
  */
-void Router::relay_command(const CommandPacket& packet) {
-  assert(packet.src_nid == SpecialNID::NONE || packet.src_nid == my_nid);
+void Router::relay_command(const CommandPacket& packet, bool is_from_server) {
+  nid_t dst_nid;
+  nid_t src_nid;
+  if (is_from_server) {
+    dst_nid = packet.dst_nid;
+    src_nid = packet.src_nid;
 
-  nid_t real_nid = (packet.dst_nid != SpecialNID::NONE ?
-                    packet.dst_nid :
-                    scheduler.get_dst_nid(packet.pid, packet.module));
+  } else {
+    if (packet.dst_nid == SpecialNID::THIS) {
+      dst_nid = my_nid;
+    } else if (packet.dst_nid == SpecialNID::NONE) {
+      dst_nid = scheduler.get_dst_nid(packet.pid, packet.module);
+    } else {
+      dst_nid = packet.dst_nid;
+    }
+    src_nid = my_nid;
+  }
+
   CommandPacket real_packet = {
     packet.pid,
-    real_nid,
-    my_nid,
+    dst_nid,
+    src_nid,
     packet.module,
     packet.content
   };
 
-  if (real_packet.dst_nid == my_nid || real_packet.dst_nid == SpecialNID::THIS) {
+  if (dst_nid == my_nid || dst_nid == SpecialNID::BROADCAST) {
     switch (real_packet.module) {
       case Module::MEMORY:
       case Module::VM: {
@@ -159,7 +172,8 @@ void Router::relay_command(const CommandPacket& packet) {
         scheduler.recv_command(real_packet);
       } break;
 
-      case Module::FRONTEND: {
+      case Module::CONTROLLER:
+      case Module::GUI: {
         FrontendConnector& frontend = FrontendConnector::get_instance();
         frontend.relay_frontend_command(real_packet);
       } break;
@@ -169,8 +183,9 @@ void Router::relay_command(const CommandPacket& packet) {
         assert(false);
       }
     }
+  }
 
-  } else {
+  if (dst_nid != my_nid && !is_from_server) {
     ServerConnector& server = ServerConnector::get_instance();
     server.send_relay_command(real_packet);
   }
@@ -216,6 +231,6 @@ void Router::scheduler_create_gui(Scheduler& scheduler, const vpid_t& pid) {
  * @param packet Command packet.
  */
 void Router::scheduler_send_command(Scheduler& scheduler, const CommandPacket& packet) {
-  relay_command(packet);
+  relay_command(packet, false);
 }
 }  // namespace processwarp

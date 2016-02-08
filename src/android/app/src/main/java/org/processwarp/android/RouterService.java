@@ -27,9 +27,9 @@ public class RouterService extends Service implements Router.Delegate {
     };
 
     /** The router having native interface. */
-    private Router router = null;
+    private static Router router = null;
     /** The server for relay packet. */
-    private ServerConnector server = null;
+    private static ServerConnector server = null;
     /** The controller callback for relay CONTROLLER command. */
     private static ControllerInterface controller = null;
 
@@ -107,6 +107,16 @@ public class RouterService extends Service implements Router.Delegate {
         @Override
         public boolean isConnectServer() throws RemoteException {
             return server.isConnected();
+        }
+
+        /**
+         * Get this node's node-id.
+         * @return This node's node-id.
+         * @throws RemoteException
+         */
+        @Override
+        public String getMyNid() throws RemoteException {
+            return router.getMyNid();
         }
 
         /**
@@ -252,6 +262,14 @@ public class RouterService extends Service implements Router.Delegate {
     @Override
     public void routerCreateVm(Router caller, String pid, long rootTid, long procAddr, String masterNid) {
         Log.v(this.getClass().getName(), "routerCreateVm");
+
+        // Ignore if worker is assigned.
+        // This situation is possible by timing.
+        if (workers.containsKey(pid) || workerSendWait.containsKey(pid)) {
+            Log.w(this.getClass().getName(), "duplicate vm");
+            return;
+        }
+
         Intent intent = null;
         for (int id = 0; id < MAX_WORKERS; id++) {
             if (workerPid[id] == null) {
@@ -286,9 +304,16 @@ public class RouterService extends Service implements Router.Delegate {
     @Override
     public void routerCreateGui(Router caller, String pid) {
         Log.v(this.getClass().getName(), "routerCreateGui");
-        Intent intent = null;
+
+        // Ignore if gui is assigned.
+        // This situation is possible by timing.
+        if (frontends.containsKey(pid) || frontendSendWait.containsKey(pid)) {
+            Log.w(this.getClass().getName(), "duplicate gui");
+            return;
+        }
 
         // Search empty id.
+        Intent intent = null;
         for (int id = 0; id < MAX_FRONTEND; id++) {
             if (frontendPid[id] == null) {
                 frontendPid[id] = pid;
@@ -338,7 +363,7 @@ public class RouterService extends Service implements Router.Delegate {
      * @param packet Command packet.
      */
     @Override
-    public void routerRelayFrontendPacket(Router caller, CommandPacket packet) {
+    public void routerRelayGuiPacket(Router caller, CommandPacket packet) {
         if (frontends.containsKey(packet.pid)) {
             try {
                 frontends.get(packet.pid).relayCommand(
@@ -357,9 +382,6 @@ public class RouterService extends Service implements Router.Delegate {
         } else if (frontendSendWait.containsKey(packet.pid)) {
             frontendSendWait.get(packet.pid).add(packet);
 
-        } else {
-            // TODO error
-            Assert.fail();
         }
     }
 

@@ -47,8 +47,7 @@ class Worker : public VMachineDelegate, public VMemoryDelegate, public BuiltinGu
   std::map<std::string, std::string> lib_filter;
   std::unique_ptr<VMachine> vm;
 
-  void vmachine_send_command(VMachine& vm, const nid_t& dst_nid, Module::Type module,
-                             const std::string& command, picojson::object& param) override;
+  void vmachine_send_command(VMachine& vm, const CommandPacket& packet) override;
   void vmachine_finish(VMachine& vm) override;
   void vmachine_finish_thread(VMachine& vm, const vtid_t& tid) override;
   void vmachine_error(VMachine& vm, const std::string& message) override;

@@ -48,7 +48,8 @@ VMachine::VMachine(VMachineDelegate& delegate_,
     vmemory(memory_delegate, my_nid_),
     delegate(delegate_),
     libs(libs_),
-    lib_filter(lib_filter_) {
+    lib_filter(lib_filter_),
+    last_heartbeat(0) {
 }
 
 /**
@@ -176,8 +177,13 @@ void VMachine::execute() {
       if (tid == process->root_tid) {
         delegate.vmachine_finish(*this);
       }
+    }
 
-      // update_proc_list();
+    // Send heartbeat, per interval.
+    clock_t now = clock();
+    if ((now - last_heartbeat) / CLOCKS_PER_SEC > HEARTBEAT_INTERVAL) {
+      last_heartbeat = now;
+      send_command_heartbeat_vm();
     }
   } catch (Interrupt& e) {
     // Skip thread because waiting to update memroy data.
@@ -227,31 +233,18 @@ void VMachine::on_recv_update(vaddr_t addr) {
 void VMachine::recv_command(const CommandPacket& packet) {
   const std::string& command = packet.content.at("command").get<std::string>();
 
-  if (command == "warpout") {
-    recv_command_warpout(packet);
+  if (command == "heartbeat_vm") {
+    recv_command_heartbeat_vm(packet);
 
-  } else if (command == "warp_request") {
-    recv_command_warp_request(packet);
+  } else if (command == "require_warp_thread") {
+    recv_command_require_warp_thread(packet);
 
-  } else if (command == "warp_success") {
-    recv_command_warp_success(packet);
+  } else if (command == "warp_thread") {
+    recv_command_warp_thread(packet);
 
   } else {
     /// @todo error
     assert(false);
-  }
-}
-
-/**
- * Change status of process in order to terminate.
- * After terminate process, resources of process are free automatic.
- */
-void VMachine::terminate() {
-  if (process->active_threads.find(process->root_tid) != process->active_threads.end()) {
-    process->terminate();
-
-  } else {
-    send_terminate();
   }
 }
 
@@ -270,30 +263,11 @@ std::unique_ptr<VMemory::Accessor> VMachine::process_assign_accessor(const vpid_
 }
 
 /**
- * When changed a list of threads in this vm, send update_threads command to SCHEDULER for telling it.
+ * When changed a list of threads in this vm, send list of threads by heartbeat_vm command.
  * @param proc Caller instance.
  */
 void VMachine::process_change_thread_set(Process& proc) {
-  picojson::object param;
-  picojson::array tids;
-  for (auto& tid : proc.active_threads) {
-    tids.push_back(Convert::vtid2json(tid));
-  }
-  for (auto& it_waiting : proc.waiting_warp_result) {
-    tids.push_back(Convert::vtid2json(it_waiting.first));
-  }
-  param.insert(std::make_pair("tids", picojson::value(tids)));
-  send_command(SpecialNID::THIS, Module::SCHEDULER, "update_threads", param);
-}
-
-/**
- * If recv this packet and this node have root-thread of target process,
- * Change status of root-thread in order to terminate process.
- */
-void VMachine::recv_terminate(picojson::object& json) {
-  if (process->active_threads.find(process->root_tid) != process->active_threads.end()) {
-    process->terminate();
-  }
+  send_command_heartbeat_vm();
 }
 
 /**
@@ -323,86 +297,90 @@ void VMachine::regist_builtin_func(const std::string& name,
 }
 
 /**
- * When receive warp_request command, call Thread::setup_warpin to warp thread.
+ * When receive heartbeat_vm command, remove thread-id from waiting list if exisiting.
  * @param packet Command packet.
  */
-void VMachine::recv_command_warp_request(const CommandPacket& packet) {
+void VMachine::recv_command_heartbeat_vm(const CommandPacket& packet) {
+  if (packet.src_nid == my_nid) return;
+
+  for (auto& it_thread : packet.content.at("threads").get<picojson::array>()) {
+    vtid_t tid = Convert::json2vtid(it_thread);
+    process->waiting_warp_result.erase(tid);
+    /// @todo remove from threads?
+
+    if (process->active_threads.find(tid) != process->active_threads.end()) {
+      /// @todo error
+      assert(false);
+    }
+  }
+}
+
+/**
+ * When receive require_warp_thread command, setup to warp thread.
+ * @param packet Command packet, containing target thread-id and node-id.
+ */
+void VMachine::recv_command_require_warp_thread(const CommandPacket& packet) {
   vtid_t tid = Convert::json2vtid(packet.content.at("tid"));
-  const nid_t& dst_nid = Convert::json2nid(packet.content.at("dst_nid"));
-  assert(dst_nid != SpecialNID::NONE);
+  const nid_t& target_nid = Convert::json2nid(packet.content.at("target_nid"));
+  assert(target_nid != SpecialNID::NONE);
 
   if (process->active_threads.find(tid) != process->active_threads.end()) {
     Thread& thread = process->get_thread(tid);
-    thread.setup_warpin(dst_nid);
-    thread.write();
-    thread.memory->write_out();
-
-  } else {
-    /// @todo send warp request to another node.
-    assert(false);
+    if (thread.require_warp(target_nid)) {
+      thread.write();
+      thread.memory->write_out();
+    }
   }
 }
 
 /**
- * When receive warp_success command, remove tid from waiting pool to stop send request.
- * @param packet Command packet containing target thread-id.
+ * When receive warp_thread command, activate thread and tell it to another node by
+ * sending heartbeat_vm thread.
+ * @param packet Command packet.
  */
-void VMachine::recv_command_warp_success(const CommandPacket& packet) {
-  vtid_t tid = Convert::json2vtid(packet.content.at("tid"));
-  if (process->waiting_warp_result.find(tid) != process->waiting_warp_result.end()) {
-    process->waiting_warp_result.erase(tid);
-    process_change_thread_set(*process);
-  }
-}
-
-/**
- * When receive warpout command, call warp_out_thread to activate thread and
- * send warp_success to another node.
- * @param packet Command packet containing target thread-id.
- */
-void VMachine::recv_command_warpout(const CommandPacket& packet) {
+void VMachine::recv_command_warp_thread(const CommandPacket& packet) {
   vtid_t tid = Convert::json2vtid(packet.content.at("tid"));
   process->warp_out_thread(tid);
-  send_command_warp_success(tid);
+  send_command_heartbeat_vm();
 }
 
 /**
  * Send command to another module or node through backend and server if need.
+ * @param pid Process-id bundled to packet.
  * @param dst_nid Destination node-id.
  * @param module Target module.
  * @param command Command string.
  * @param param Parameter for command.
  */
-void VMachine::send_command(const nid_t& dst_nid, Module::Type module,
+void VMachine::send_command(const vpid_t& pid, const nid_t& dst_nid, Module::Type module,
                             const std::string& command, picojson::object& param) {
-  delegate.vmachine_send_command(*this, dst_nid, module, command, param);
+  assert(param.find("command") == param.end() ||
+         param.at("command").get<std::string>() == command);
+
+  param.insert(std::make_pair("command", picojson::value(command)));
+  delegate.vmachine_send_command(*this, {pid, dst_nid, SpecialNID::NONE, module, param});
 }
 
 /**
- * Convert json to machine data packet and send to destination node.
- * @param dst_nid
- * @param command
- * @param packet
+ * Send heartbeat_vm command to tell thread list having this VM module.
  */
-void VMachine::send_packet(const nid_t& dst_nid, const std::string& command,
-                           picojson::object& packet) {
-  packet.insert(std::make_pair("command", picojson::value(command)));
-  packet.insert(std::make_pair("src_nid", Convert::nid2json(my_nid)));
-  print_debug("send_packet:%s\n", picojson::value(packet).serialize().c_str());
-  /// @todo
-  assert(false);
-  // delegate.vmachine_send_packet(*this, dst_nid, picojson::value(packet).serialize());
-}
+void VMachine::send_command_heartbeat_vm() {
+  // List up activate thread.
+  picojson::array threads;
+  for (auto& it_thread : process->threads) {
+    Thread& thread = *it_thread.second;
+    if (thread.status == Thread::NORMAL ||
+        thread.status == Thread::AFTER_WARP ||
+        thread.status == Thread::JOIN_WAIT) {
+      threads.push_back(Convert::vtid2json(it_thread.first));
+    }
+  }
 
-/**
- * Send warp_success command  to tell warpout was success to another node.
- * @param tid Target thread-id.
- */
-void VMachine::send_command_warp_success(vtid_t tid) {
   picojson::object param;
-  param.insert(std::make_pair("tid", Convert::vtid2json(tid)));
-  param.insert(std::make_pair("nid", Convert::nid2json(my_nid)));
-  send_command(SpecialNID::BROADCAST, Module::VM, "warp_success", param);
+  param.insert(std::make_pair("name", picojson::value(process->name)));
+  param.insert(std::make_pair("threads", picojson::value(threads)));
+  send_command(process->pid, SpecialNID::BROADCAST, Module::VM, "heartbeat_vm", param);
+  send_command(process->pid, SpecialNID::BROADCAST, Module::SCHEDULER, "heartbeat_vm", param);
 }
 
 /**
@@ -422,18 +400,7 @@ void VMachine::send_command_warp_thread(Thread& thread) {
   param.insert(std::make_pair("dst_nid", Convert::nid2json(thread.warp_dst)));
   param.insert(std::make_pair("src_nid", Convert::nid2json(my_nid)));
 
-  send_command(thread.warp_dst, Module::SCHEDULER, "warp_thread", param);
-}
-
-/**
- * This request means to broadcast request of terminateing process.
- */
-void VMachine::send_terminate() {
-  picojson::object packet;
-
-  // Nothing for payload.
-
-  send_packet(SpecialNID::BROADCAST, "terminate", packet);
+  send_command(process->pid, thread.warp_dst, Module::SCHEDULER, "warp_thread", param);
 }
 
 /**

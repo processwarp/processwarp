@@ -23,8 +23,7 @@ class VMachineDelegate {
  public:
   virtual ~VMachineDelegate();
 
-  virtual void vmachine_send_command(VMachine& vm, const nid_t& dst_nid, Module::Type module,
-                                     const std::string& command, picojson::object& param) = 0;
+  virtual void vmachine_send_command(VMachine& vm, const CommandPacket& packet) = 0;
   virtual void vmachine_finish(VMachine& vm) = 0;
   virtual void vmachine_finish_thread(VMachine& vm, const vtid_t& tid) = 0;
   virtual void vmachine_error(VMachine& vm, const std::string& message) = 0;
@@ -50,7 +49,6 @@ class VMachine : private ProcessDelegate {
                   vaddr_t proc_addr, const nid_t& master_nid);
   void initialize_gui(BuiltinGuiDelegate& delegate);
   void execute();
-  void terminate();
 
   void on_recv_update(vaddr_t addr);
   void recv_command(const CommandPacket& packet);
@@ -79,18 +77,18 @@ class VMachine : private ProcessDelegate {
   /** Executable threads pool in this node's process. */
   std::queue<vtid_t> loop_queue;
 
+  clock_t last_heartbeat;
+
   void initialize_builtin();
 
   /// @todo Clean up unused thread information.
-  void recv_command_warp_request(const CommandPacket& packet);
-  void recv_command_warp_success(const CommandPacket& packet);
-  void recv_command_warpout(const CommandPacket& packet);
-  void recv_terminate(picojson::object& json);
-  void send_command(const nid_t& dst_nid, Module::Type module,
+  void recv_command_heartbeat_vm(const CommandPacket& packet);
+  void recv_command_require_warp_thread(const CommandPacket& packet);
+  void recv_command_warp_thread(const CommandPacket& packet);
+
+  void send_command(const vpid_t& pid, const nid_t& dst_nid, Module::Type module,
                     const std::string& command, picojson::object& param);
-  void send_command_warp_success(vtid_t thread);
+  void send_command_heartbeat_vm();
   void send_command_warp_thread(Thread& thread);
-  void send_packet(const nid_t& dst_nid, const std::string& command, picojson::object& packet);
-  void send_terminate();
 };
 }  // namespace processwarp

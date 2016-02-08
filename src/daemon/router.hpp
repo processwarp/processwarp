@@ -22,8 +22,7 @@ class Router : public SchedulerDelegate {
   const nid_t& get_my_nid();
   void recv_connect_node();
   void recv_bind_node(const nid_t& nid);
-  void relay_command(const CommandPacket& packet);
-  void relay_scheduler_command(const CommandPacket& packet);
+  void relay_command(const CommandPacket& packet, bool is_from_server);
 
  private:
   /** Main loop of libuv. */
@@ -38,6 +37,8 @@ class Router : public SchedulerDelegate {
   Router();
   Router(const Router&);
   Router& operator=(const Router&);
+
+  void relay_scheduler_command(const CommandPacket& packet);
 
   void scheduler_create_vm(Scheduler& scheduler, const vpid_t& pid, vtid_t root_tid,
                            vaddr_t proc_addr, const nid_t& master_nid) override;

@@ -88,30 +88,9 @@ void WorkerDummy::relay_command(const CommandPacket& packet) {
  * @param command Command string.
  * @param param Parameter for command.
  */
-void WorkerDummy::vmachine_send_command(VMachine& vm, const nid_t& dst_nid, Module::Type module,
-                                        const std::string& command, picojson::object& param) {
-  assert(param.find("command") == param.end());
-
-  param.insert(std::make_pair("command", picojson::value(command)));
-
-  vpid_t pid;
-  for (auto& it_vm : vms) {
-    if (it_vm.second.get() == &vm) {
-      pid = it_vm.first;
-    }
-  }
-  assert(!pid.empty());
-
-  CommandPacket packet = {
-    pid,
-    dst_nid,
-    SpecialNID::NONE,
-    module,
-    param
-  };
-
+void WorkerDummy::vmachine_send_command(VMachine& vm, const CommandPacket& packet) {
   Router& router = Router::get_instance();
-  router.relay_command(packet);
+  router.relay_command(packet, false);
 }
 
 void WorkerDummy::vmachine_finish(VMachine& vm) {
@@ -162,7 +141,7 @@ void WorkerDummy::vmemory_send_command(VMemory& memory, const nid_t& dst_nid,
   };
 
   Router& router = Router::get_instance();
-  router.relay_command(packet);
+  router.relay_command(packet, false);
 }
 
 /**
@@ -207,7 +186,7 @@ void WorkerDummy::builtin_gui_send_command(Process& proc, const nid_t& dst_nid,
   };
 
   Router& router = Router::get_instance();
-  router.relay_command(packet);
+  router.relay_command(packet, false);
 }
 
 /**

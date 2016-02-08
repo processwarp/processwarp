@@ -217,20 +217,17 @@ void Thread::setup_warpout() {
   status = AFTER_WARP;
 }
 
-// Prepare to warp in.
-bool Thread::setup_warpin(const nid_t& dst_nid) {
-  assert(dst_nid != SpecialNID::NONE);
-  print_debug("setup_warp(this=%p, tid=%s, dst=%s, status=%d)\n",
-              this, Convert::vtid2str(tid).c_str(), dst_nid.c_str(), status);
+/**
+ * Setup to warp this thread.
+ * @param target_nid Destination node-id to thread.
+ */
+bool Thread::require_warp(const nid_t& target_nid) {
+  assert(target_nid != SpecialNID::NONE);
+  // Status must be normal when warp.
+  if (status != NORMAL) return false;
 
-  if (status == BEFOR_WARP || status == WAIT_WARP) {
-    warp_dst = dst_nid;
-    return true;
-
-  } else if (status != NORMAL) {
-    // Status must be normal when warp.
-    return false;
-  }
+  print_debug("setup_warp(this=%p, tid=%s, target=%s)\n",
+              this, Convert::vtid2str(tid).c_str(), target_nid.c_str());
 
   if (warp_parameter[PW_KEY_WARP_TIMING] == PW_VAL_ON_ANYTIME) {
     warp_stack_size = stack.size();
@@ -241,7 +238,7 @@ bool Thread::setup_warpin(const nid_t& dst_nid) {
     status = WAIT_WARP;
   }
 
-  warp_dst = dst_nid;
+  warp_dst = target_nid;
 
   return true;
 }

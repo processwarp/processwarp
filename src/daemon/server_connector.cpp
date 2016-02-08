@@ -7,11 +7,9 @@
 
 #include "convert.hpp"
 #include "error.hpp"
-#include "frontend_connector.hpp"
 #include "router.hpp"
 #include "server_connector.hpp"
 #include "util.hpp"
-#include "worker_connector.hpp"
 
 namespace processwarp {
 /**
@@ -263,17 +261,6 @@ void ServerConnector::send_load_llvm(const std::string& name,
 }
 
 /**
- * Send request of node list.
- * Packet format: {
- * }
- */
-void ServerConnector::send_list_node() {
-  sio::message::ptr data(sio::object_message::create());
-
-  socket->emit("list_node", data);
-}
-
-/**
  * Send node bind command.
  * Packet format: {
  *   nid: &lt;Node-id just using or empty if not assigned&gt;,
@@ -295,44 +282,6 @@ void ServerConnector::send_bind_node(const nid_t& nid,
   map.insert(std::make_pair("node_name", sio::string_message::create(node_name)));
 
   socket->emit("bind_node", data);
-}
-
-/**
- * Send process list for synchronize.
- * Packet format: [
- *   {
- *     pid: &lt;pid&gt;,
- *     name: &lt;name of process&gt;,
- *     threads: {
- *       &lt;tid&gt;: &lt;nid&gt;
- *     }
- *   }, ...
- * }
- * @param procs List of process that this node having.
- */
-void ServerConnector::send_sync_proc_list(const std::vector<ProcessTree>& procs) {
-  auto sio_procs(sio::array_message::create());
-  auto& procs_vector = sio_procs->get_vector();
-
-  for (auto& it_proc : procs) {
-    auto sio_proc(sio::object_message::create());
-    auto& proc_map = sio_proc->get_map();
-    auto sio_threads(sio::object_message::create());
-    auto& threads_map = sio_threads->get_map();
-
-    proc_map.insert(std::make_pair("pid", get_sio_by_pid(it_proc.pid)));
-    proc_map.insert(std::make_pair("name", sio::string_message::create(it_proc.name)));
-    proc_map.insert(std::make_pair("threads", sio_threads));
-
-    for (auto& it_thread : it_proc.threads) {
-      threads_map.insert(std::make_pair(Convert::vtid2str(it_thread.first),
-                                        get_sio_by_nid(it_thread.second)));
-    }
-
-    procs_vector.push_back(sio_proc);
-  }
-
-  socket->emit("sync_proc_list", sio_procs);
 }
 
 /**
@@ -393,45 +342,10 @@ void ServerConnector::on_recv(uv_async_t* handle) {
     } else if (name == "relay_command") {
       THIS.recv_relay_command(data);
 
-      /*
-        } else if (name == "list_node") {
-        //
-        std::map<nid_t, std::string> nodes;
+    } else if (name == "test_console") {
+      /// @todo
+      assert(false);
 
-        for (auto it : data->get_map().at("nodes")->get_vector()) {
-        nodes.insert(std::make_pair(get_nid_by_map(it, "id"),
-        it->get_map().at("name")->get_string()));
-        }
-
-        delegate.recv_list_node(data->get_map().at("result")->get_int(), nodes);
-
-        } else if (name == "sync_proc_list") {
-        std::vector<ProcessTree> procs;
-
-        for (auto& it_proc : data->get_vector()) {
-        ProcessTree proc;
-
-        proc.pid  = get_pid_by_map(it_proc, "pid");
-        proc.name = get_str_by_map(it_proc, "name");
-
-        auto& threads = it_proc->get_map().at("threads")->get_map();
-        for (auto& it_thread : threads) {
-        proc.threads.insert(std::make_pair
-        (Convert::str2vtid(it_thread.first),
-        Convert::str2nid(it_thread.second->get_string())));
-        }
-        procs.push_back(proc);
-        }
-        delegate.recv_sync_proc_list(procs);
-
-        } else if (name == "test_console") {
-        #ifndef NDEBUG
-        delegate.recv_test_console(get_pid_by_map(data, "pid"),
-        get_str_by_map(data, "dev"),
-        *data->get_map().at("payload")->get_binary(),
-        get_nid_by_map(data, "from_nid"));
-        #endif
-      */
     } else {
       /// @todo error
       assert(false);
@@ -512,9 +426,7 @@ void ServerConnector::initialize_socketio(const std::string& url) {
   M_BIND_SOCKETIO_EVENT("sys_error");
   M_BIND_SOCKETIO_EVENT("app_error");
   M_BIND_SOCKETIO_EVENT("connect_node");
-  M_BIND_SOCKETIO_EVENT("list_node");
   M_BIND_SOCKETIO_EVENT("bind_node");
-  M_BIND_SOCKETIO_EVENT("sync_proc_list");
   M_BIND_SOCKETIO_EVENT("relay_command");
   M_BIND_SOCKETIO_EVENT("test_console");
 
@@ -604,27 +516,7 @@ void ServerConnector::recv_relay_command(sio::message::ptr data) {
       v.get<picojson::object>()
     };
 
-    switch (module) {
-      case Module::MEMORY:
-      case Module::VM: {
-        WorkerConnector& worker = WorkerConnector::get_instance();
-        worker.relay_command(packet);
-      } break;
-
-      case Module::SCHEDULER: {
-        router.relay_scheduler_command(packet);
-      } break;
-
-      case Module::FRONTEND: {
-        FrontendConnector& frontend = FrontendConnector::get_instance();
-        frontend.relay_frontend_command(packet);
-      } break;
-
-      default: {
-        /// @todo error
-        assert(false);
-      } break;
-    }
+    router.relay_command(packet, true);
   }
 }
 }  // namespace processwarp

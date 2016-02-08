@@ -73,18 +73,16 @@ void FrontendConnector::create_gui(const vpid_t& pid) {
  * @param packet Command packet for relaying.
  */
 void FrontendConnector::relay_frontend_command(const CommandPacket& packet) {
-  assert(packet.module == Module::FRONTEND);
+  assert(packet.module == Module::CONTROLLER || packet.module == Module::GUI);
 
-  if (gui_pipe == nullptr) {
-    /// @todo error
-    assert(false);
-  }
+  if (gui_pipe == nullptr) return;
 
   picojson::object data;
   data.insert(std::make_pair("command", picojson::value(std::string("relay_command"))));
   data.insert(std::make_pair("pid", Convert::vpid2json(packet.pid)));
   data.insert(std::make_pair("dst_nid", Convert::nid2json(packet.dst_nid)));
   data.insert(std::make_pair("src_nid", Convert::nid2json(packet.src_nid)));
+  data.insert(std::make_pair("module", Convert::int2json(packet.module)));
   data.insert(std::make_pair("content", picojson::value(packet.content)));
 
   send_data(*gui_pipe, data);
@@ -170,16 +168,16 @@ void FrontendConnector::recv_connect_frontend(uv_pipe_t& client, picojson::objec
         gui_pipe = &client;
 
       } else {
-        send_connect_frontend(client, -1);
+        send_connect_frontend(client, -1, SpecialNID::NONE);
         close(client);
         return;
       }
     }
-    send_connect_frontend(client, 0);
+    send_connect_frontend(client, 0, router.get_my_nid());
     property.status = PipeStatus::CONNECT;
 
   } else {
-    send_connect_frontend(client, -1);
+    send_connect_frontend(client, -1, SpecialNID::NONE);
     close(client);
   }
 }
@@ -203,30 +201,28 @@ void FrontendConnector::recv_open_file(uv_pipe_t& client, picojson::object& para
 void FrontendConnector::recv_relay_command(uv_pipe_t& client, picojson::object& content) {
   CommandPacket packet = {
     Convert::json2vpid(content.at("pid")),
-    SpecialNID::THIS,
+    Convert::json2nid(content.at("dst_nid")),
     SpecialNID::NONE,
     Convert::json2int<Module::Type>(content.at("module")),
     content.at("content").get<picojson::object>()
   };
 
   Router& router = Router::get_instance();
-  router.relay_command(packet);
+  router.relay_command(packet, false);
 }
 
 /**
- * Send connect-frontend reply to frontend.
- * Packet format: {<br/>
- *   command: 'connect_frontend',
- *   result:  &lt;Result code&gt;
- * }
+ * Send connect_frontend command.
  * @param client Target frontend.
  * @param result Result code.
+ * @param my_nid 
  */
-void FrontendConnector::send_connect_frontend(uv_pipe_t& client, int result) {
+void FrontendConnector::send_connect_frontend(uv_pipe_t& client, int result, const nid_t& my_nid) {
   picojson::object data;
 
   data.insert(std::make_pair("command", picojson::value(std::string("connect_frontend"))));
   data.insert(std::make_pair("result",  picojson::value(static_cast<double>(result))));
+  data.insert(std::make_pair("my_nid",  Convert::nid2json(my_nid)));
 
   send_data(client, data);
 }

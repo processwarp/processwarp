@@ -124,14 +124,10 @@ class WorkerJni : public VMachineDelegate, public VMemoryDelegate, public Builti
    * When vmachine require send command, relay it to RouterService.
    * RouterService process relay this command to target module in this node or another node through the server if need.
    * @param vm Caller instance.
-   * @param dst_nid Destination node-id.
-   * @param module Target module.
-   * @param command Command string.
-   * @param param Parameter for command.
+   * @param packet Command packet.
    */
-  void vmachine_send_command(VMachine& vm, const nid_t& dst_nid, Module::Type module,
-                             const std::string& command, picojson::object& param) override {
-    send_command(dst_nid, module, command, param);
+  void vmachine_send_command(VMachine& vm, const CommandPacket& packet) override {
+    send_command(packet);
   }
 
   void vmachine_finish(VMachine& vm) override {
@@ -163,7 +159,10 @@ class WorkerJni : public VMachineDelegate, public VMemoryDelegate, public Builti
    */
   void vmemory_send_command(VMemory& memory, const nid_t& dst_nid, Module::Type module,
                             const std::string& command, picojson::object& param) override {
-    send_command(dst_nid, module, command, param);
+    assert(param.find("command") == param.end());
+
+    param.insert(std::make_pair("command", picojson::value(command)));
+    send_command({my_pid, dst_nid, SpecialNID::NONE, module, param});
   }
 
   /**
@@ -187,27 +186,30 @@ class WorkerJni : public VMachineDelegate, public VMemoryDelegate, public Builti
    * @param param Parameter for command.
    */
   void builtin_gui_send_command(Process& proc, const nid_t& dst_nid, Module::Type module,
-                                const std::string& command,  picojson::object& param) override {
-    send_command(dst_nid, module, command, param);
-  }
-
-  void send_command(const nid_t& dst_nid, Module::Type module, const std::string command,
-                    picojson::object& param) {
-    JNIEnv* env = env_stack.top();
+                                const std::string& command, picojson::object& param) override {
     assert(param.find("command") == param.end());
 
     param.insert(std::make_pair("command", picojson::value(command)));
+    send_command({my_pid, dst_nid, SpecialNID::NONE, module, param});
+  }
 
-    jstring jpid = env->NewStringUTF(Convert::vpid2str(my_pid).c_str());
-    jstring jdst_nid = env->NewStringUTF(Convert::nid2str(dst_nid).c_str());
+  /**
+   * Call Java's Worker::workerSendCommand by JNI to send command packet.
+   * @param packet Command packet.
+   */
+  void send_command(const CommandPacket& packet) {
+    JNIEnv* env = env_stack.top();
+
+    jstring jpid = env->NewStringUTF(Convert::vpid2str(packet.pid).c_str());
+    jstring jdst_nid = env->NewStringUTF(Convert::nid2str(packet.dst_nid).c_str());
     jstring jsrc_nid = env->NewStringUTF(Convert::nid2str(my_nid).c_str());
-    jstring jcontent = env->NewStringUTF(picojson::value(param).serialize().c_str());
+    jstring jcontent = env->NewStringUTF(picojson::value(packet.content).serialize().c_str());
 
     env->CallVoidMethod(worker, send_command_id,
                         jpid,
                         jdst_nid,
                         jsrc_nid,
-                        static_cast<jint>(module),
+                        static_cast<jint>(packet.module),
                         jcontent);
 
     env->DeleteLocalRef(jpid);
@@ -217,6 +219,9 @@ class WorkerJni : public VMachineDelegate, public VMemoryDelegate, public Builti
   }
 };
 
+/**
+ * Map of process-id and JNI worker wrapper instance.
+ */
 std::map<vpid_t, WorkerJni> workers;
 
 /*

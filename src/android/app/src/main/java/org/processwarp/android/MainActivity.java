@@ -90,7 +90,7 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
     }
 
     /**
-     * When touched menu item, call
+     * When touched menu item, send activate command to scheduler on all nodes.
      * @param item Touched item instance.
      * @return Return value by super method.
      */
@@ -99,7 +99,9 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
         switch (item.getItemId()) {
             case R.id.action_activate: {
                 JSONObject param = new JSONObject();
-                sendCommand(SpecialPid.BROADCAST, Module.SCHEDULER, "activate", param);
+                sendCommand(
+                        SpecialPid.BROADCAST, SpecialNid.BROADCAST, Module.SCHEDULER,
+                        "activate", param);
                 return true;
             }
         }
@@ -110,6 +112,7 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
     /**
      * When connect with router service, save reference, set to router,
      * register callback and show connect dialog if needed.
+     * Send require_processes_info command to get processes information for showing list.
      * @param name Not used.
      * @param service Router interface.
      */
@@ -120,9 +123,15 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
             router.registerController(callback);
             if (!router.isConnectServer()) {
                 showConnectDialog();
+
+            } else {
+                sendCommand(
+                        SpecialPid.BROADCAST, SpecialNid.THIS, Module.SCHEDULER,
+                        "require_processes_info", new JSONObject());
             }
+
         } catch (RemoteException e) {
-            // TODO
+            // TODO error
             e.printStackTrace();
             Assert.fail();
         }
@@ -150,20 +159,21 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
     }
 
     /**
-     * Send a command to another module in this node.
+     * Send a command through router and server if needed.
      * @param pid Process-id bundled to command.
+     * @param dstNid Destination node-id.
      * @param module Target module.
      * @param command Command string.
      * @param param Parameter for a command.
      */
-    private void sendCommand(String pid, int module, String command, JSONObject param) {
+    private void sendCommand(String pid, String dstNid, int module, String command, JSONObject param) {
         Assert.assertNotNull(router);
 
         try {
             Assert.assertFalse(param.has("command"));
             param.put("command", command);
 
-            router.sendCommand(pid, SpecialNid.THIS, module, param.toString());
+            router.sendCommand(pid, dstNid, module, param.toString());
 
         } catch (Exception e) {
             // TODO error
@@ -173,10 +183,10 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
     }
 
     /**
-     * When receive show_process_list command, update list of process to view.
+     * When receive processes_info command, update processes list on controller.
      * @param param Parameter containing list of process-id and name.
      */
-    private void recvCommandShowProcessList(JSONObject param) {
+    private void recvCommandProcessesInfo(JSONObject param) {
         // TODO more smart implement?
         try {
             JSONArray processes = param.getJSONArray("processes");
@@ -232,8 +242,11 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
                 JSONObject param = new JSONObject(content);
                 String command = param.getString("command");
 
-                if (command.equals("show_process_list")) {
-                    recvCommandShowProcessList(param);
+                if (command.equals("processes_info")) {
+                    recvCommandProcessesInfo(param);
+
+                } else {
+                    Log.e(this.getClass().getName(), "unknown packet:" + content);
                 }
 
             } catch (JSONException e) {

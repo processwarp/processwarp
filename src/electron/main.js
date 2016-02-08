@@ -9,12 +9,6 @@ var net = require('net');
 
 require('crash-reporter').start();
 
-const PID_BROADCAST = '*';
-
-const INNER_MODULE_MEMORY    = '0';
-const INNER_MODULE_VM        = '1';
-const INNER_MODULE_SCHEDULER = '2';
-
 const CONNECT_STATUS = {
   SETUP:    0,  ///< Goint to open socket.
   APPROACH: 1,  ///< Send account info, but not response yet.
@@ -22,13 +16,36 @@ const CONNECT_STATUS = {
   CLOSE:    3,  ///< Disconnect from backend.
 };
 
-var mainWindow    = null;
+/** Modules those are target of send command. */
+const MODULE = {
+  MEMORY:     0,
+  VM:         1,
+  SCHEDULER:  2,
+  CONTROLLER: 3,
+  GUI:        4,
+};
+
+/** Special node-id those are used to send command. */
+const NID = {
+  NONE:      '',
+  THIS:      '.',
+  BROADCAST: '*',
+  SERVER:    'server',
+};
+
+/** Special process-id those are used to send data. */
+const PID = {
+  BROADCAST: '*',
+};
+
+var controller    = null;
 var backendSocket = null;
 var backendBuffer = new Buffer(0);
 var accountInfo   = {};
 var configure     = null;
 var connectStatus = CONNECT_STATUS.CLOSE;
 var contexts      = {};
+var myNid         = NID.NONE;
 
 /**
  * Quit main process when all window was closed.
@@ -44,38 +61,50 @@ app.on('window-all-closed', function() {
  */
 app.on('ready', function() {
   readConfigure();
-
-  mainWindow = new BrowserWindow({
-    minHeight: 400,
-    minWidth: 340,
-    height: 480,
-    width: 480
-  });
-  mainWindow.loadURL('file://' + __dirname + '/index.html');
-
-  // Open development and debug tool.
-  // mainWindow.openDevTools(true);
-
-  // Unlink BrowserWindow object when catch closed event.
-  mainWindow.on('closed', function() {
-    mainWindow = null;
-  });
+  initializeIpc();
+  initializeController();
 });
 
 /**
  * On activate application and not exist window, create windown again.
  */
 app.on('activate', function() {
-  if (!mainWindow) {
-    mainWindow = new BrowserWindow({width: 480, height: 480});
-    mainWindow.loadURL('file://' + __dirname + '/index.html');
-
-    // Unlink BrowserWindow object when catch closed event.
-    mainWindow.on('closed', function() {
-      mainWindow = null;
-    });
-  }
+  initializeController();
 });
+
+/**
+ * Create controller window and bind event listhener to close.
+ * @return {void}
+ */
+function initializeController() {
+  if (controller != null) return;
+
+  controller = new BrowserWindow({
+    minHeight: 400,
+    minWidth: 340,
+    height: 480,
+    width: 480
+  });
+
+  controller.loadURL('file://' + __dirname + '/index.html');
+  controller.on('closed', function() {
+    controller = null;
+  });
+}
+
+/**
+ * Bind IPC names and methods.
+ * @return {void}
+ */
+function initializeIpc() {
+  ipc.on('action_quit',      onActionQuit);
+  ipc.on('action_connect',   onActionConnect);
+  ipc.on('action_activate',  onActionActivate);
+  ipc.on('action_open_file', onActionOpenFile);
+
+  ipc.on('gui_load',          onGuiLoad);
+  ipc.on('gui_relay_command', onGuiRelayCommand);
+}
 
 /**
  * When quit action is done in the interface, quit main process.
@@ -84,7 +113,6 @@ app.on('activate', function() {
 function onActionQuit() {
   app.quit();
 }
-ipc.on('action_quit', onActionQuit);
 
 /**
  * When connect action is done in the interface,
@@ -101,15 +129,13 @@ function onActionConnect(sender, param) {
 
   connectBackend();
 }
-ipc.on('action_connect', onActionConnect);
 
 /**
  * When activate event is happen, send activate command to the scheduler.
  */
 function onActionActivate() {
-  sendCommand(PID_BROADCAST, INNER_MODULE_SCHEDULER, 'activate', {});
+  sendCommandActivate();
 }
-ipc.on('action_activate', onActionActivate);
 
 /**
  * When open file action is done in the interface, show dialog and let user select file.
@@ -117,7 +143,7 @@ ipc.on('action_activate', onActionActivate);
  */
 function onActionOpenFile() {
   dialog.showOpenDialog(
-    mainWindow,
+    controller,
     {
       title: 'Open and execute.',
       filters: [{
@@ -136,7 +162,6 @@ function onActionOpenFile() {
     }
   );
 }
-ipc.on('action_open_file', onActionOpenFile);
 
 /**
  * Connect to the backend by socket and set event emitter.
@@ -205,7 +230,7 @@ function onBackendRecvData(data) {
     switch (content.command) {
       case 'connect_frontend': recvConnectFrontend(content); break;
       case 'create': recvCreate(content); break;
-      case 'relay_command': recvCommand(content); break;
+      case 'relay_command': recvRelayCommand(content); break;
       default: {
 	/// @todo eror
 	console.assert(false, 'todo');
@@ -262,10 +287,12 @@ function readConfigure() {
  */
 function recvConnectFrontend(packet) {
   if (packet.result == 0) {
-    mainWindow.webContents.send('action_connect_success');
+    myNid = packet.my_nid;
+    controller.webContents.send('action_connect_success');
+    sendCommandRequireProcessesInfo();
 
   } else {
-    mainWindow.webContents.send('action_connect_failure', packet.result);
+    controller.webContents.send('action_connect_failure', packet.result);
   }
 }
 
@@ -278,36 +305,52 @@ function recvConnectFrontend(packet) {
 function recvCreate(param) {
   var pid = param.pid
 
-  console.assert(pid !== PID_BROADCAST);
-  console.assert(!(pid in contexts));
+  console.assert(pid !== PID.BROADCAST);
 
-  var frame = new BrowserWindow();
-  frame.on('closed', function(event) { onFrameClose(event, pid); });
-  frame.loadURL('file://' + __dirname + '/frame.html');
-  frame.webContents.pid = pid;
+  // Exists gui window for pid yet.
+  if (pid in contexts) return;
+
+  var window = new BrowserWindow();
+  window.on('closed', function(event) { onGuiClose(event, pid); });
+  window.loadURL('file://' + __dirname + '/frame.html');
+  window.webContents.pid = pid;
   // frame.openDevTools(true);
 
   var context = {};
   context.is_normal = false;
-  context.script = [];
-  context.frame = frame;
+  context.packets = [];
+  context.window = window;
 
   contexts[pid] = context;
 }
 
 /**
- * When receive command for fontend, call capable method to do it.
- * @param packet {object} Command packet contain, process-id, command content.
+ * When receive command for fontend, pass it capable GUI module or CONTROLLER module.
+ * @param packet {object} Command packet.
+ * @return {void}
+ */
+function recvRelayCommand(packet) {
+  switch (parseInt(packet.module, 10)) {
+    case MODULE.GUI:        relayGuiCommand(packet); break;
+    case MODULE.CONTROLLER: recvCommand(packet);     break;
+    default: {
+      /// @todo drop
+      console.assert(false, packet);
+    }
+  }
+}
+
+/**
+ * When receive command for controller, call capable method to do it.
+ * @param packet {object} Command packet.
  * @return {void}
  */
 function recvCommand(packet) {
   switch (packet.content.command) {
-    case 'script': recvCommandScript(packet.pid, packet.content); break;
-    case 'show_process_list': recvCommandShowProcessList(packet.pid, packet.content); break;
-    case 'warpin': recvCommandWarpin(packet.pid, packet.content); break;
+    case 'processes_info': recvCommandProcessesInfo(packet.content); break;
     default: {
       /// @todo error
-      console.assert(false, 'todo : ' + packet.content.command);
+      console.assert(false, 'unsupport : ' + JSON.stringify(packet.content));
     } break;
   }
 }
@@ -317,40 +360,42 @@ function recvCommand(packet) {
  * @param pid {string} Not used.
  * @param param {object} Parameter containing process list.
  */
-function recvCommandShowProcessList(pid, param) {
-  mainWindow.webContents.send('show_process_list', param.processes);
+function recvCommandProcessesInfo(param) {
+  if (controller == null) return;
+  controller.webContents.send('show_process_list', param.processes);
 }
 
 /**
- * When receive script command, pass scipt to frame or store if frame not finished setup.
- * @param pid {sring} Process-id send to.
- * @param param {object} Parameter contain script string.
+ * When receive command packet for GUI module, relay it by electron connect.
+ * Push it to waiting quieue if connection is disabled.
+ * @param packet Command packet to relay.
  * @return {void}
  */
-function recvCommandScript(pid, param) {
-  console.assert(pid in contexts);
+function relayGuiCommand(packet) {
+  // Send packet to gui or store to wait if didn't connect yet.
+  function sendOrPush(pid, packet) {
+    var context = contexts[pid];
 
-  var context = contexts[pid];
+    if (context.is_normal) {
+      context.window.webContents.send('gui_relay_command', packet);
+    } else {
+      context.packets.push(packet);
+    }
+  }
 
-  if (context.is_normal == true) {
-    context.frame.webContents.send('script', param.script);
+  // Send packet to all gui window or the target window.
+  if (packet.pid === PID.BROADCAST) {
+    for (var pid in contexts) {
+      sendOrPush(pid, packet);
+    }
 
   } else {
-    // console.log('save context:' + param.script);
-    context.script.push(param.script);
+    if (packet.pid in contexts) {
+      sendOrPush(packet.pid, packet);
+    } else {
+      console.assert(packet.dst_nid === NID.BROADCAST);
+    }
   }
-}
-
-/**
- * When receive warpin packet, close target frame.
- * Because, this packet was passed after new frame had createn in another node.
- * @param pid Process-id for frame.
- * @param param Not used.
- */
-function recvCommandWarpin(pid, param) {
-  console.assert(pid in contexts);
-
-  contexts[pid].frame.close();
 }
 
 /**
@@ -361,7 +406,7 @@ function recvCommandWarpin(pid, param) {
  * @return {void}
  */
 function sendData(data) {
-  console.assert(connectStatus != CONNECT_STATUS.CLOSE, connectStatus);
+  if (connectStatus == CONNECT_STATUS.CLOSE) return;
 
   var str = JSON.stringify(data);
   var len = Buffer.byteLength(str, 'utf8');
@@ -378,27 +423,36 @@ function sendData(data) {
 /**
  * Send a command to other module in this node through the backend.
  * @param pid {string} Process-id bundled to command.
- * @param module {string} Target module.
+ * @param dstNide {string} Destination node-id.
+ * @param module {int} Target module.
  * @param command {string} Command string.
  * @param param {object} Parameter for a command.
  */
-function sendCommand(pid, module, command, param) {
+function sendCommand(pid, dstNid, module, command, param) {
   param.command = command;
   sendData({
     command: 'relay_command',
     pid:     pid,
-    module:  module,
+    dst_nid: dstNid,
+    module:  module.toString(10),
     content: param
   });
 }
 
 /**
- * When frame was close by GUI, remove context.
- * @param event {object} Not used.
- * @param pid {string} Process-id bundled for frame.
+ * Send activate command.
+ * @return {void}
  */
-function onFrameClose(event, pid) {
-  delete contexts[pid];
+function sendCommandActivate() {
+  sendCommand(PID.BROADCAST, NID.BROADCAST, MODULE.SCHEDULER, 'activate', {});
+}
+
+/**
+ * Send require_processes_info command.
+ * @return {void}
+ */
+function sendCommandRequireProcessesInfo() {
+  sendCommand(PID.BROADCAST, NID.THIS, MODULE.SCHEDULER, 'require_processes_info', {});
 }
 
 /**
@@ -407,18 +461,44 @@ function onFrameClose(event, pid) {
  * @param event {object} WebContents instance from ipc containing pid.
  * @return {void}
  */
-function onFrameLoad(event) {
+function onGuiLoad(event) {
   var pid     = event.sender.pid;
   var context = contexts[pid];
 
-  console.assert(pid != PID_BROADCAST);
+  // Send property.
+  context.window.webContents.send('gui_property', {
+    pid: pid,
+    nid: myNid
+  });
   
-  context.script.forEach(function(script) {
-    context.frame.webContents.send('script', script);
+  // Send waiting packets.
+  context.packets.forEach(function(packet) {
+    context.window.webContents.send('gui_relay_command', packet);
   });
   context.is_normal = true;
-  delete context['script'];
-
-  sendCommand(pid, INNER_MODULE_SCHEDULER, 'create_gui_done', {});
+  delete context['packets'];
 }
-ipc.on('frame_load', onFrameLoad);
+
+/**
+ * When receive command from GUI module, relay it to backend.
+ * @param event {object} Not used.
+ * @param packet {object} Command packet to relay.
+ */
+function onGuiRelayCommand(event, packet) {
+  sendData({
+    command: 'relay_command',
+    pid:     packet.pid,
+    dst_nid: packet.dst_nid,
+    module:  packet.module.toString(10),
+    content: packet.content
+  });
+}
+
+/**
+ * When frame was close by GUI, remove context.
+ * @param event {object} Not used.
+ * @param pid {string} Process-id bundled for frame.
+ */
+function onGuiClose(event, pid) {
+  delete contexts[pid];
+}

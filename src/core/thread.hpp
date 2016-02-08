@@ -132,11 +132,7 @@ class Thread {
    */
   void setup_warpout();
 
-  /**
-   * Prepare to warp in.
-   * @param dst Destination node-id.
-   */
-  bool setup_warpin(const nid_t& dst);
+  bool require_warp(const nid_t& target_nid);
 
  private:
   /**

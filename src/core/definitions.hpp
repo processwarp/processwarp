@@ -14,6 +14,7 @@ namespace std {
 #include <ctime>
 #include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "processwarp/processwarp.h"
@@ -96,6 +97,9 @@ static const instruction_t HEAD_OPERAND = 0x02000000;
 typedef pw_int_t vm_int_t;
 /** VM内のint相当のint型 */
 typedef pw_uint_t vm_uint_t;
+
+/** Heartbeat interval.(sec) */
+static const int HEARTBEAT_INTERVAL = 3;
 
 /**
  * Virtual address types that is able to distinguish by using AND operation with MASK.
@@ -271,28 +275,31 @@ enum Type : uint8_t {
 static const clock_t MEMORY_REQUIRE_INTERVAL = 5 * CLOCKS_PER_SEC;
 
 /**
- * Structure of process and thread.
+ * Process and thread information to use in scheduler and controller.
  */
-struct ProcessTree {
+struct ProcessInfo {
   /** Porcess-id */
   vpid_t pid;
   /** Process name. */
   std::string name;
-  /** Map of thread-id and node-id that thread is running. */
-  std::map<vtid_t, nid_t> threads;
+  /** Map of thread-id and node-id, last heartbeat time that thread is running. */
+  std::map<vtid_t, std::pair<nid_t, clock_t>> threads;
   /** Node-id that havign gui frontend bundled process or NONE. */
   nid_t gui_nid;
   /** True if vm bundled process is exist in this node. */
   bool having_vm;
+  /** Last heartbeat time for process. */
+  clock_t heartbeat;
 };
 
 /** Modules those are target of send command. */
 namespace Module {
 typedef int Type;
-static const Type MEMORY    = 0;
-static const Type VM        = 1;
-static const Type SCHEDULER = 2;
-static const Type FRONTEND  = 3;
+static const Type MEMORY     = 0;
+static const Type VM         = 1;
+static const Type SCHEDULER  = 2;
+static const Type CONTROLLER = 3;
+static const Type GUI        = 4;
 }  // namespace Module
 
 /** Packet for transport command. */

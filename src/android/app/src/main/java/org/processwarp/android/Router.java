@@ -16,7 +16,7 @@ public class Router {
         void routerCreateVm(Router caller, String pid, long rootTid, long procAddr, String masterNid);
         void routerCreateGui(Router caller, String pid);
         void routerRelayControllerPacket(Router caller, CommandPacket packet);
-        void routerRelayFrontendPacket(Router caller, CommandPacket packet);
+        void routerRelayGuiPacket(Router caller, CommandPacket packet);
         void routerRelayWorkerPacket(Router caller, CommandPacket packet);
     }
 
@@ -84,6 +84,9 @@ public class Router {
      * @return This node's node-id.
      */
     public String getMyNid() {
+        Assert.assertNotNull(myNid);
+        Assert.assertFalse("".equals(myNid));
+
         return myNid;
     }
 
@@ -135,8 +138,12 @@ public class Router {
         Assert.assertNotNull(packet.srcNid);
         Assert.assertNotNull(packet.content);
 
+        // Update to real node-id if packet is from another modules in this node.
         if (!isFromServer) {
-            if (SpecialNid.NONE.equals(packet.dstNid)) {
+            if (SpecialNid.THIS.equals(packet.dstNid)) {
+                packet.dstNid = myNid;
+
+            } else if (SpecialNid.NONE.equals(packet.dstNid)) {
                 lock.lock();
                 try {
                     packet.dstNid = schedulerGetDstNid(packet.pid, packet.module);
@@ -144,19 +151,16 @@ public class Router {
                     lock.unlock();
                 }
             }
-
             packet.srcNid = myNid;
         }
 
-        if (packet.dstNid.equals(myNid) ||
-                packet.dstNid.equals(SpecialNid.THIS) ||
-                (packet.dstNid.equals(SpecialNid.BROADCAST) &&
-                        !packet.srcNid.equals(myNid))) {
+        // Relay command packet to capable module, if destination node is this node.
+        if (packet.dstNid.equals(myNid) || packet.dstNid.equals(SpecialNid.BROADCAST)) {
             switch (packet.module) {
                 case Module.MEMORY:
                 case Module.VM:
                     delegate.routerRelayWorkerPacket(this, packet);
-                    return;
+                    break;
 
                 case Module.SCHEDULER:
                     lock.lock();
@@ -167,15 +171,15 @@ public class Router {
                     } finally {
                         lock.unlock();
                     }
-                    return;
+                    break;
 
-                case Module.FRONTEND:
-                    if (packet.pid.equals(SpecialPid.BROADCAST)) {
-                        delegate.routerRelayControllerPacket(this, packet);
-                    } else {
-                        delegate.routerRelayFrontendPacket(this, packet);
-                    }
-                    return;
+                case Module.CONTROLLER:
+                    delegate.routerRelayControllerPacket(this, packet);
+                    break;
+
+                case Module.GUI:
+                    delegate.routerRelayGuiPacket(this, packet);
+                    break;
 
                 default:
                     // TODO
@@ -184,10 +188,10 @@ public class Router {
             }
         }
 
-        if (!isFromServer) {
+        // Relay command packet by through server,
+        // if destination node isn't this node and not from server.
+        if (!packet.dstNid.equals(myNid) && !isFromServer) {
             server.sendRelayCommand(packet);
-        } else {
-            Assert.fail();
         }
     }
 
@@ -234,5 +238,4 @@ public class Router {
     private native void schedulerRecvCommand(String pid, String dstNid, String srcNid,
                                              int module, String content);
     private native void schedulerSetMyNid(String nid);
-    private native void schedulerActivate();
 }

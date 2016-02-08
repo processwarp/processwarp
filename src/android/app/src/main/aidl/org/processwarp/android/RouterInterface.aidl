@@ -9,6 +9,7 @@ import org.processwarp.android.WorkerInterface;
 interface RouterInterface {
     void connectServer(String account, in String password);
     boolean isConnectServer();
+    String getMyNid();
     void registerController(ControllerInterface controller);
     void registerFrontend(String pid, FrontendInterface frontend);
     void registerWorker(String pid, WorkerInterface worker);

@@ -18,7 +18,6 @@ class FrontendConnector : public Connector {
   void initialize(uv_loop_t* loop, const std::string& pipe_path);
   void create_gui(const vpid_t& pid);
   void relay_frontend_command(const CommandPacket& packet);
-  void destroy_gui(const vpid_t& pid);
 
  private:
   struct FrontendProperty {
@@ -42,6 +41,6 @@ class FrontendConnector : public Connector {
   void recv_connect_frontend(uv_pipe_t& client, picojson::object& param);
   void recv_open_file(uv_pipe_t& client, picojson::object& param);
   void recv_relay_command(uv_pipe_t& client, picojson::object& content);
-  void send_connect_frontend(uv_pipe_t& client, int result);
+  void send_connect_frontend(uv_pipe_t& client, int result, const nid_t& my_nid);
 };
 }  // namespace processwarp

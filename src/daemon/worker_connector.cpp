@@ -56,11 +56,14 @@ void WorkerConnector::initialize(uv_loop_t* loop, const std::string& pipe_path_,
  */
 void WorkerConnector::create_vm(const vpid_t& pid, vtid_t root_tid,
                                 vaddr_t proc_addr, const nid_t& master_nid) {
-  // static const char VALGRIND_PATH = "/usr/local/bin/valgrind";
   std::string worker_path = Util::file_dirname(Util::get_my_fullpath()) + "/worker";
   Router& router = Router::get_instance();
 
-  assert(properties.find(pid) == properties.end());
+  // Exists vm for pid yet.
+  if (properties.find(pid) != properties.end()) {
+    print_debug("duplicate vm\n");
+    return;
+  }
 
   properties.insert(std::make_pair(pid, WorkerProperty()));
   WorkerProperty& property = properties.at(pid);

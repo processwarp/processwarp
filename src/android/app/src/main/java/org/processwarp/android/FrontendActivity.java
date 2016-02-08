@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.support.v7.app.AppCompatActivity;
@@ -18,12 +19,25 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class FrontendActivity extends AppCompatActivity implements ServiceConnection {
+    /** Heartbeat interval.(sec) */
+    private final int HEARTBEAT_INTERVAL = 3;
+    /** GUI status. */
+    enum Status { NORMAL, WAIT_WARP }
+
     /** AIDL Router interface to relay commands. */
     private RouterInterface router = null;
     /** Process-id for this frontend. */
     private String myPid = null;
+    /** Node-id for this node. */
+    private String myNid = null;
     /** WebView reference for speed-up. */
     private WebView webView = null;
+    /** GUI status. */
+    private Status status = Status.NORMAL;
+    /** Node-id to warp(this id is enable when status is WAIT_WARP). */
+    private String warp_target_nid = null;
+    /** Handler to heartbeat. */
+    private Handler handler = new Handler();
 
     /**
      * When create frontend, set default html to web view, get parameters from intent,
@@ -76,7 +90,7 @@ public class FrontendActivity extends AppCompatActivity implements ServiceConnec
 
     /**
      * When connect with router service, save reference, set to router,
-     * register callback and send create_gui_done command to SCHEDULER.
+     * register callback and get node-id for this node, start heartbeat.
      * @param name Not used.
      * @param service Router interface.
      */
@@ -85,15 +99,36 @@ public class FrontendActivity extends AppCompatActivity implements ServiceConnec
         router = RouterInterface.Stub.asInterface(service);
         try {
             router.registerFrontend(myPid, callback);
-
-            sendCommand(myPid, SpecialNid.THIS, Module.SCHEDULER,
-                    "create_gui_done", new JSONObject());
+            myNid = router.getMyNid();
 
         } catch (RemoteException e) {
             // TODO
             Log.e(this.getClass().getName(), "onServiceConnected", e);
             Assert.fail();
         }
+
+        // Start heartbeat.
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                switch (status) {
+                    case NORMAL:
+                        sendCommandHeartbeatGui();
+                        break;
+
+                    case WAIT_WARP:
+                        sendCommandWarpGui();
+                        break;
+
+                    default:
+                        // TODO error
+                        Log.e(this.getClass().getName(), "onCreate");
+                        Assert.fail();
+                }
+                // Set next heartbeat if connection is enable.
+                if (router != null) handler.postDelayed(this, HEARTBEAT_INTERVAL * 1000);
+            }
+        }, HEARTBEAT_INTERVAL * 1000);
     }
 
     /**
@@ -122,27 +157,37 @@ public class FrontendActivity extends AppCompatActivity implements ServiceConnec
         @Override
         public void relayCommand(String pid, String dstNid, String srcNid,
                                  int module, String content) throws RemoteException {
-            Assert.assertEquals(myPid, pid);
-            Assert.assertEquals(Module.FRONTEND, module);
-            recvCommand(content);
+            Assert.assertTrue(pid.equals(myPid) || pid.equals(SpecialPid.BROADCAST));
+            Assert.assertEquals(Module.GUI, module);
+
+            CommandPacket packet = new CommandPacket();
+            packet.pid = pid;
+            packet.dstNid = dstNid;
+            packet.srcNid = srcNid;
+            packet.module = module;
+            packet.content = content;
+            recvCommand(packet);
         }
     };
 
     /**
      * When receive command from another module or node through router,
      * decode and call capable method.
-     * @param content Packet content JSON formatted string.
+     * @param packet Packet content.
      */
-    private void recvCommand(String content) {
+    private void recvCommand(CommandPacket packet) {
         try {
-            JSONObject param = new JSONObject(content);
+            JSONObject param = new JSONObject(packet.content);
             String command = param.getString("command");
 
-            if ("script".equals(command)) {
-                recvCommandScript(param);
+            if ("heartbeat_gui".equals(command)) {
+                recvCommandHeartbeatGui(packet, param);
 
-            } else if ("warpin".equals(command)) {
-                recvCommandWarpin(param);
+            } else if ("script".equals(command)) {
+                recvCommandScript(packet, param);
+
+            } else if ("require_warp_gui".equals(command)) {
+                recvCommandRequireWarpGui(packet, param);
 
             } else {
                 // TODO error
@@ -158,13 +203,60 @@ public class FrontendActivity extends AppCompatActivity implements ServiceConnec
     }
 
     /**
-     * When receive script command, evaluate script as javascript on web view.
-     * @param param Command parameter containing script.
-     * @throws JSONException
+     * When receive heartbeat_gui command from another node, close GUI if on warp sequence.
+     * @param packet Command packet.
+     * @param param Parameter for command content.
      */
-    private void recvCommandScript(JSONObject param) throws JSONException {
-        String script = param.getString("script");
+    private void recvCommandHeartbeatGui(CommandPacket packet, JSONObject param) {
+        Log.v(this.getClass().getName(), "recvCommandHeartbeatGui");
 
+        if (packet.srcNid.equals(myNid)) return;
+        Assert.assertTrue(status != Status.NORMAL);
+
+        if (status == Status.WAIT_WARP) {
+            Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+            startActivity(intent);
+        }
+    }
+
+    /**
+     * When receive require_warp_gui command, save target node-id and send warp_gui command.
+     * Ignore if GUI status isn't NORMAL (ex. On warp sequence to another node).
+     * Ignore if target node is this node.
+     * @param packet Command packet.
+     * @param param Not used.
+     */
+    private void recvCommandRequireWarpGui(CommandPacket packet, JSONObject param) {
+        Log.v(this.getClass().getName(), "recvCommandRequireWarpGui");
+
+        if (status != Status.NORMAL) return;
+        try {
+            String target_nid = param.getString("target_nid");
+            if (target_nid.equals(myNid)) return;
+            warp_target_nid = target_nid;
+        } catch (JSONException e) {
+            // TODO error
+            Log.e(this.getClass().getName(), "recvCommandRequireWarpGui", e);
+        }
+        status = Status.WAIT_WARP;
+        sendCommandWarpGui();
+    }
+
+    /**
+     * When receive script command, evaluate script as javascript on web view.
+     * @param packet Command packet.
+     * @param param Command parameter containing script.
+     */
+    private void recvCommandScript(CommandPacket packet, JSONObject param) {
+        String script = null;
+        try {
+            script = param.getString("script");
+        } catch (JSONException e) {
+            // TODO error
+            Log.e(this.getClass().getName(), "recvCommandScript", e);
+        }
+
+        // Scripts must be evaluated in UI thread.
         runOnUiThread(new Runnable() {
             private String script = null;
 
@@ -185,18 +277,8 @@ public class FrontendActivity extends AppCompatActivity implements ServiceConnec
     }
 
     /**
-     * When receive warpin command, close activity.
-     * @param param Not used.
-     */
-    private void recvCommandWarpin(JSONObject param) {
-        Log.v(this.getClass().getName(), "recvCommandWarpin");
-
-        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-        startActivity(intent);
-    }
-
-    /**
      * Send command packet through router.
+     * Drop packets if connection is disabled.
      * @param pid Process-id bundled for packet.
      * @param dstNid Destination node-id.
      * @param module Target module.
@@ -205,8 +287,11 @@ public class FrontendActivity extends AppCompatActivity implements ServiceConnec
      */
     private void sendCommand(String pid, String dstNid, int module,
                              String command, JSONObject param) {
-        Assert.assertNotNull(router);
         Assert.assertFalse(param.has("command"));
+        if (router == null) {
+            Log.w(this.getClass().getName(), "Couldn't send command.");
+            return;
+        }
         try {
             param.put("command", command);
             router.sendCommand(pid, dstNid, module, param.toString());
@@ -216,5 +301,22 @@ public class FrontendActivity extends AppCompatActivity implements ServiceConnec
             Log.e(this.getClass().getName(), "sendCommand", e);
             Assert.fail();
         }
+    }
+
+    /**
+     * Send heartbeat_gui command to scheduler and GUI module on all nodes.
+     */
+    private void sendCommandHeartbeatGui() {
+        sendCommand(myPid, SpecialNid.BROADCAST, Module.SCHEDULER,
+                "heartbeat_gui", new JSONObject());
+        sendCommand(myPid, SpecialNid.BROADCAST, Module.GUI,
+                "heartbeat_gui", new JSONObject());
+    }
+
+    /**
+     * Send warp_gui command to scheduler on the target node.
+     */
+    private void sendCommandWarpGui() {
+        sendCommand(myPid, warp_target_nid, Module.SCHEDULER, "warp_gui", new JSONObject());
     }
 }

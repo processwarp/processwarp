@@ -1060,7 +1060,7 @@ Thread& Process::get_thread(vtid_t tid) {
 // Warp out thread.
 void Process::warp_out_thread(vtid_t tid) {
   if (waiting_warp_result.find(tid) == waiting_warp_result.end()) {
-    active_threads.insert(tid);  // @todo Raise conflict when bad timing!
+    active_threads.insert(tid);
     waiting_warp_setup.insert(tid);
     delegate.process_change_thread_set(*this);
   }
