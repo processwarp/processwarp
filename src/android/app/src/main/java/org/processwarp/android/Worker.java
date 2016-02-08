@@ -2,6 +2,8 @@ package org.processwarp.android;
 
 import android.os.Handler;
 
+import junit.framework.Assert;
+
 import java.util.concurrent.locks.ReentrantLock;
 
 public class Worker implements Runnable {
@@ -42,6 +44,9 @@ public class Worker implements Runnable {
 
         lock.lock();
         try {
+            Assert.assertNotNull(myNid);
+            Assert.assertNotNull(myPid);
+            Assert.assertNotNull(masterNid);
             workerInitialize(this, myNid, myPid, rootTid, procAddr, masterNid);
         } finally {
             lock.unlock();
@@ -70,6 +75,7 @@ public class Worker implements Runnable {
 
         lock.lock();
         try {
+            Assert.assertNotNull(myPid);
             workerExecute(myPid);
         } finally {
             lock.unlock();

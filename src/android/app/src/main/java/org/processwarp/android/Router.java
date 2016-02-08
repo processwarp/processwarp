@@ -114,6 +114,7 @@ public class Router {
             myNid = nid;
             lock.lock();
             try {
+                Assert.assertNotNull(nid);
                 schedulerSetMyNid(nid);
             } finally {
                 lock.unlock();
@@ -133,11 +134,6 @@ public class Router {
      * @param isFromServer Set true if packet was passed by server.
      */
     public void relayCommand(CommandPacket packet, boolean isFromServer) {
-        Assert.assertNotNull(packet.pid);
-        Assert.assertNotNull(packet.dstNid);
-        Assert.assertNotNull(packet.srcNid);
-        Assert.assertNotNull(packet.content);
-
         // Update to real node-id if packet is from another modules in this node.
         if (!isFromServer) {
             if (SpecialNid.THIS.equals(packet.dstNid)) {
@@ -146,6 +142,7 @@ public class Router {
             } else if (SpecialNid.NONE.equals(packet.dstNid)) {
                 lock.lock();
                 try {
+                    Assert.assertNotNull(packet.pid);
                     packet.dstNid = schedulerGetDstNid(packet.pid, packet.module);
                 } finally {
                     lock.unlock();
@@ -165,6 +162,10 @@ public class Router {
                 case Module.SCHEDULER:
                     lock.lock();
                     try {
+                        Assert.assertNotNull(packet.pid);
+                        Assert.assertNotNull(packet.dstNid);
+                        Assert.assertNotNull(packet.srcNid);
+                        Assert.assertNotNull(packet.content);
                         schedulerRecvCommand(
                                 packet.pid, packet.dstNid, packet.srcNid,
                                 packet.module, packet.content);
