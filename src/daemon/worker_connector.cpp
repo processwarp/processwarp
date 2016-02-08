@@ -225,7 +225,7 @@ void WorkerConnector::recv_relay_command(const vpid_t& pid, picojson::object& co
   };
 
   Router& router = Router::get_instance();
-  router.relay_command(packet);
+  router.relay_command(packet, false);
 }
 
 /**
