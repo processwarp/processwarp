@@ -58,7 +58,7 @@ inline const std::string& nid2str(const nid_t& nid) {
 
 /**
  * Convert string to integer.
- * @param json A source string.
+ * @param str A source string.
  * @return A converted integer.
  */
 template<class T> T str2int(const std::string& str) {
@@ -76,8 +76,8 @@ inline vpid_t str2vpid(const std::string& str) {
 
 /**
  * Convert thread-id from string.
- * @param str string.
- * @param thread-id.
+ * @param str A string.
+ * @return A thread-id.
  */
 inline vtid_t str2vtid(const std::string& str) {
   return str2int<vtid_t>(str);
@@ -86,7 +86,7 @@ inline vtid_t str2vtid(const std::string& str) {
 /**
  * Convert virtual-address from string.
  * @param str string.
- * @param Virtual-address.
+ * @return Virtual-address.
  */
 inline vaddr_t str2vaddr(const std::string& str) {
   return str2int<vaddr_t>(str);
@@ -95,7 +95,7 @@ inline vaddr_t str2vaddr(const std::string& str) {
 /**
  * Convert node-id to string.
  * @param str Source string value.
- * @param Converted value as nid_t.
+ * @return Node-id.
  */
 inline const nid_t& str2nid(const std::string& str) {
   return str;
@@ -232,7 +232,7 @@ inline picojson::value vaddr2json(vaddr_t addr) {
 
 /**
  * Convert vector of virtual address to JSON.
- * @param addr Source vector of virtual address.
+ * @param av Source vector of virtual address.
  * @return Virtual address as JSON.
  */
 inline picojson::value vaddr_vector2json(const std::vector<vaddr_t> av) {

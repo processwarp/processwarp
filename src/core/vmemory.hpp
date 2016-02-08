@@ -229,8 +229,7 @@ class VMemory {
      * if addr is VADDR_NULL then assign automatic by assign_addr.
      * if addr is not null then return address is equal to addr.
      * @param data Meta data.
-     * @param addr
-     * @param assigned address.
+     * @param addr Assigned address.
      */
     vaddr_t set_meta_area(const std::string& data, vaddr_t addr);
 
