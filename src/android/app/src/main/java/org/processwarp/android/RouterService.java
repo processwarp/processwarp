@@ -100,6 +100,18 @@ public class RouterService extends Service implements Router.Delegate {
         }
 
         /**
+         * Foreground GUI if GUI module is bundled for this node.
+         * @param pid Target process-id.
+         * @throws RemoteException
+         */
+        @Override
+        public void foregroundGui(String pid) throws RemoteException {
+            if (router.isGuiInThisNode(pid)) {
+                routerCreateGui(null, pid);
+            }
+        }
+
+        /**
          * It check if has connection with server is created.
          * @return True if connection with server has be created.
          * @throws RemoteException

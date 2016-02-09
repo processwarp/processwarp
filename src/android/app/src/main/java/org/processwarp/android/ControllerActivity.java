@@ -12,6 +12,8 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
@@ -192,18 +194,22 @@ public class ControllerActivity extends AppCompatActivity implements ServiceConn
         try {
             JSONArray processes = param.getJSONArray("processes");
             String[] members = new String[processes.length()];
+            String[] pids    = new String[processes.length()];
             for (int idx = 0; idx < processes.length(); idx ++) {
                 JSONObject info = processes.getJSONObject(idx);
                 members[idx] = info.getString("name");
+                pids[idx]    = info.getString("pid");
             }
 
             runOnUiThread(new Runnable() {
                 private Context context;
                 private String[] members;
+                private String[] pids;
 
-                public Runnable initialize(Context context, String[] members) {
+                public Runnable initialize(Context context, String[] members, String[] pids) {
                     this.context = context;
                     this.members = members;
+                    this.pids    = pids;
 
                     return this;
                 }
@@ -214,9 +220,21 @@ public class ControllerActivity extends AppCompatActivity implements ServiceConn
                     ArrayAdapter<String> adapter = new ArrayAdapter<String>(context,
                             android.R.layout.simple_expandable_list_item_1, members);
                     processList.setAdapter(adapter);
+                    // If select item, foreground bind GUI activity.
+                    processList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                        @Override
+                        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                            String pid = pids[position];
+                            try {
+                                router.foregroundGui(pid);
+                            } catch (RemoteException e) {
+                                Log.e(this.getClass().getName(), "foregroundGui");
+                            }
+                        }
+                    });
 
                 }
-            }.initialize(this, members));
+            }.initialize(this, members, pids));
 
         } catch (JSONException e) {
             // TODO error

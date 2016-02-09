@@ -92,6 +92,15 @@ public class Router {
     }
 
     /**
+     * Is GUI for process in this node?
+     * @param pid Target process-id.
+     * @return True if GUI is in this node.
+     */
+    public boolean isGuiInThisNode(String pid) {
+        return myNid.equals(schedulerGetDstNid(pid, Module.GUI));
+    }
+
+    /**
      * When connect is success, send bind_node packet with my-nid and node-name.
      * @param result Result code.
      */
