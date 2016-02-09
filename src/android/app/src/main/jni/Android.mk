@@ -9,6 +9,7 @@ LOCAL_C_INCLUDES += $(CORE_PATH)
 LOCAL_C_INCLUDES += $(ROOT_PATH)/include
 
 LOCAL_CPPFLAGS   += -I$(ROOT_PATH)/src/third_party/picojson
+LOCAL_CPPFLAGS   += -D PICOJSON_USE_LOCALE=0
 LOCAL_CPPFLAGS   += -I$(ROOT_PATH)/src/third_party/safeint
 
 LOCAL_LDLIBS     += -llog
