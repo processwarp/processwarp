@@ -4,10 +4,19 @@
 #include "builtin_overflow.hpp"
 #include "process.hpp"
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunused-local-typedef"
-#include "safeint3.hpp"
-#pragma clang diagnostic pop
+#ifdef __clang__
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wunused-local-typedef"
+#  include "safeint3.hpp"
+#  pragma clang diagnostic pop
+#elif defined(__GNUC__)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wattributes"
+#  include "safeint3.hpp"
+#  pragma GCC diagnostic pop
+#else
+#  include "safeint3.hpp"
+#endif
 
 namespace processwarp {
 
