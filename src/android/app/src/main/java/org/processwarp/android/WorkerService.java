@@ -36,7 +36,8 @@ public class WorkerService extends Service implements Worker.Delegate, ServiceCo
                 intent.getStringExtra("pid"),
                 intent.getLongExtra("root_tid", -1),
                 intent.getLongExtra("proc_addr", -1),
-                intent.getStringExtra("master_nid")
+                intent.getStringExtra("master_nid"),
+                intent.getStringExtra("name")
         );
 
         bindService(new Intent(this, RouterService.class), this,

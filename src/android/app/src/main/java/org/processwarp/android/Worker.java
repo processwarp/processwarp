@@ -35,9 +35,10 @@ public class Worker implements Runnable {
      * @param rootTid Root thread-id for new vm.
      * @param procAddr Address of process information for new vm.
      * @param masterNid Node-id of master node for new vm.
+     * @param name Process name for new vm.
      */
     public void initialize(Delegate delegate, String myNid, String myPid,
-                           long rootTid, long procAddr, String masterNid) {
+                           long rootTid, long procAddr, String masterNid, String name) {
         this.delegate = delegate;
         this.myNid = myNid;
         this.myPid = myPid;
@@ -47,7 +48,7 @@ public class Worker implements Runnable {
             Assert.assertNotNull(myNid);
             Assert.assertNotNull(myPid);
             Assert.assertNotNull(masterNid);
-            workerInitialize(this, myNid, myPid, rootTid, procAddr, masterNid);
+            workerInitialize(this, myNid, myPid, rootTid, procAddr, masterNid, name);
         } finally {
             lock.unlock();
         }
@@ -128,7 +129,7 @@ public class Worker implements Runnable {
     }
 
     private native void workerInitialize(Worker worker, String myNid, String myPid, long rootTid,
-                                         long procAddr, String masterNid);
+                                         long procAddr, String masterNid, String name);
     private native void workerRelayCommand(String pid, String dstNid, String srcNid,
                                            int module, String content);
     private native void workerExecute(String pid);

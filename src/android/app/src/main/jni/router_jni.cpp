@@ -39,7 +39,7 @@ class DelegateJni : public SchedulerDelegate {
 
     jclass clazz = env->GetObjectClass(router);
     create_vm_id = env->GetMethodID(clazz, "schedulerCreateVm",
-                                    "(Ljava/lang/String;JJLjava/lang/String;)V");
+                                    "(Ljava/lang/String;JJLjava/lang/String;Ljava/lang/String;)V");
     create_gui_id = env->GetMethodID(clazz, "schedulerCreateGui",
                                      "(Ljava/lang/String;)V");
     send_command_id = env->GetMethodID(clazz, "schedulerSendCommand",
@@ -64,22 +64,27 @@ class DelegateJni : public SchedulerDelegate {
    * @param root_tid Root thread-id for new vm.
    * @param proc_addr Address of process information for new vm.
    * @param master_nid Node-id of master node for new vm.
+   * @param name Process name for new vm.
    */
   void scheduler_create_vm(Scheduler& scheduler, const vpid_t& pid, vtid_t root_tid,
-                           vaddr_t proc_addr, const nid_t& master_nid) override {
+                           vaddr_t proc_addr, const nid_t& master_nid,
+                           const std::string& name) override {
     JniUtil::log_v("delegate::scheduler_create_vm\n");
-    JNIEnv* env = env_stack.top();
-    jstring jpid = env->NewStringUTF(Convert::vpid2str(pid).c_str());
-    jstring jnid = env->NewStringUTF(Convert::nid2str(master_nid).c_str());
+    JNIEnv* env   = env_stack.top();
+    jstring jpid  = env->NewStringUTF(Convert::vpid2str(pid).c_str());
+    jstring jnid  = env->NewStringUTF(Convert::nid2str(master_nid).c_str());
+    jstring jname = env->NewStringUTF(name.c_str());
 
     env->CallVoidMethod(router, create_vm_id,
                         jpid,
                         *reinterpret_cast<jlong*>(&root_tid),
                         *reinterpret_cast<jlong*>(&proc_addr),
-                        jnid);
+                        jnid,
+                        jname);
 
     env->DeleteLocalRef(jpid);
     env->DeleteLocalRef(jnid);
+    env->DeleteLocalRef(jname);
   }
 
   /**

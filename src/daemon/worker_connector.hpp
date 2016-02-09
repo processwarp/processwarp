@@ -23,7 +23,8 @@ class WorkerConnector : public Connector {
   static WorkerConnector& get_instance();
 
   void initialize(uv_loop_t* loop, const std::string& pipe_path_, const std::string& config_file_);
-  void create_vm(const vpid_t& pid, vtid_t root_tid, vaddr_t proc_addr, const nid_t& master_nid);
+  void create_vm(const vpid_t& pid, vtid_t root_tid, vaddr_t proc_addr,
+                 const nid_t& master_nid, const std::string& name);
   void relay_command(const CommandPacket& packet);
 
  private:

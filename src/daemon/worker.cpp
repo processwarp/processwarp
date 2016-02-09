@@ -245,7 +245,7 @@ void Worker::on_write_end(uv_write_t *req, int status) {
 Worker::WorkerParameter Worker::read_options(int argc, char* argv[]) {
   WorkerParameter parameter;
 
-  if (argc != 8) {
+  if (argc != 9) {
     /// @todo error
     assert(false);
   }
@@ -257,6 +257,7 @@ Worker::WorkerParameter Worker::read_options(int argc, char* argv[]) {
   parameter.proc_addr = Convert::str2vaddr(argv[5]);
   parameter.master_nid = Convert::str2nid(argv[6]);
   parameter.my_nid = Convert::str2nid(argv[7]);
+  parameter.name = std::string(argv[8]);
 
   return parameter;
 }
@@ -345,7 +346,8 @@ void Worker::initialize_vm(WorkerParameter& parameter) {
   vm->initialize(parameter.pid,
                  parameter.root_tid,
                  parameter.proc_addr,
-                 parameter.master_nid);
+                 parameter.master_nid,
+                 parameter.name);
   vm->initialize_gui(*this);
 }
 

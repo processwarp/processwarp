@@ -58,13 +58,15 @@ VMachine::VMachine(VMachineDelegate& delegate_,
  * @param root_tid Root thread-id.
  * @param proc_addr Address where are meta informations assigned.
  * @param master_nid Node-id that process's root thread running.
+ * @param name Process name for new vm.
  */
-void VMachine::initialize(const vpid_t& pid, const vtid_t& root_tid,
-                          vaddr_t proc_addr, const nid_t& master_nid) {
+void VMachine::initialize(const vpid_t& pid, const vtid_t& root_tid, vaddr_t proc_addr,
+                          const nid_t& master_nid, const std::string& name) {
   assert(process.get() == nullptr);
   process = std::move(Process::alloc(*this, pid, root_tid, libs, lib_filter,
                                      builtin_funcs, proc_addr, master_nid));
   process->setup();
+  process->name = name;
   initialize_builtin();
 }
 

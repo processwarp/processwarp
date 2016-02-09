@@ -13,7 +13,8 @@ public class Router {
      * Delegate for implement by service.
      */
     public interface Delegate {
-        void routerCreateVm(Router caller, String pid, long rootTid, long procAddr, String masterNid);
+        void routerCreateVm(Router caller, String pid, long rootTid, long procAddr,
+                            String masterNid, String name);
         void routerCreateGui(Router caller, String pid);
         void routerRelayControllerPacket(Router caller, CommandPacket packet);
         void routerRelayGuiPacket(Router caller, CommandPacket packet);
@@ -202,9 +203,11 @@ public class Router {
      * @param rootTid Root thread-id for new vm.
      * @param procAddr Process information address for new vm.
      * @param masterNid Master node-id for new vm.
+     * @param name Process name for new vm.
      */
-    public void schedulerCreateVm(String pid, long rootTid, long procAddr, String masterNid) {
-        delegate.routerCreateVm(this, pid, rootTid, procAddr, masterNid);
+    public void schedulerCreateVm(String pid, long rootTid, long procAddr,
+                                  String masterNid, String name) {
+        delegate.routerCreateVm(this, pid, rootTid, procAddr, masterNid, name);
     }
 
     /**

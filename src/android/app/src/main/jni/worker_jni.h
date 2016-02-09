@@ -10,10 +10,10 @@ extern "C" {
 /*
  * Class:     org_processwarp_android_Worker
  * Method:    workerInitialize
- * Signature: (Lorg/processwarp/android/Worker;Ljava/lang/String;Ljava/lang/String;JJLjava/lang/String;)V
+ * Signature: (Lorg/processwarp/android/Worker;Ljava/lang/String;Ljava/lang/String;JJLjava/lang/String;Ljava/lang/String;)V
  */
 JNIEXPORT void JNICALL Java_org_processwarp_android_Worker_workerInitialize
-  (JNIEnv *, jobject, jobject, jstring, jstring, jlong, jlong, jstring);
+  (JNIEnv *, jobject, jobject, jstring, jstring, jlong, jlong, jstring, jstring);
 
 /*
  * Class:     org_processwarp_android_Worker

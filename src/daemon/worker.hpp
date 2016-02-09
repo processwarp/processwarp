@@ -24,6 +24,7 @@ class Worker : public VMachineDelegate, public VMemoryDelegate, public BuiltinGu
     vaddr_t proc_addr;
     nid_t master_nid;
     nid_t my_nid;
+    std::string name;
   };
 
   struct WriteHandler {

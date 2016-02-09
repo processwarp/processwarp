@@ -45,8 +45,8 @@ class VMachine : private ProcessDelegate {
            const nid_t& my_nid_,
            const std::vector<void*>& libs_,
            const std::map<std::string, std::string>& lib_filter_);
-  void initialize(const vpid_t& pid, const vtid_t& root_tid,
-                  vaddr_t proc_addr, const nid_t& master_nid);
+  void initialize(const vpid_t& pid, const vtid_t& root_tid, vaddr_t proc_addr,
+                  const nid_t& master_nid, const std::string& name);
   void initialize_gui(BuiltinGuiDelegate& delegate);
   void execute();
 

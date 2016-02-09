@@ -206,12 +206,14 @@ void Router::relay_scheduler_command(const CommandPacket& packet) {
  * @param root_tid Root thread-id for new vm.
  * @param proc_addr Address of process information for new vm.
  * @param master_nid Node-id of master node for new vm.
+ * @param name Process name for new vm.
  */
 void Router::scheduler_create_vm(Scheduler& scheduler, const vpid_t& pid, vtid_t root_tid,
-                                 vaddr_t proc_addr, const nid_t& master_nid) {
+                                 vaddr_t proc_addr, const nid_t& master_nid,
+                                 const std::string& name) {
   WorkerConnector& worker = WorkerConnector::get_instance();
 
-  worker.create_vm(pid, root_tid, proc_addr, master_nid);
+  worker.create_vm(pid, root_tid, proc_addr, master_nid, name);
 }
 
 /**

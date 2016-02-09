@@ -53,9 +53,10 @@ void WorkerConnector::initialize(uv_loop_t* loop, const std::string& pipe_path_,
  * @param root_tid Root thread-id for new vm.
  * @param proc_addr Address of process information for new vm.
  * @param master_nid Node-id of master node for new vm.
+ * @param name Process name for new vm.
  */
-void WorkerConnector::create_vm(const vpid_t& pid, vtid_t root_tid,
-                                vaddr_t proc_addr, const nid_t& master_nid) {
+void WorkerConnector::create_vm(const vpid_t& pid, vtid_t root_tid, vaddr_t proc_addr,
+                                const nid_t& master_nid, const std::string& name) {
   std::string worker_path = Util::file_dirname(Util::get_my_fullpath()) + "/worker";
   Router& router = Router::get_instance();
 
@@ -85,6 +86,7 @@ void WorkerConnector::create_vm(const vpid_t& pid, vtid_t root_tid,
     const_cast<char*>(proc_addr_str.c_str()),
     const_cast<char*>(Convert::nid2str(master_nid).c_str()),
     const_cast<char*>(Convert::nid2str(router.get_my_nid()).c_str()),
+    const_cast<char*>(name.c_str()),
     nullptr
   };
 

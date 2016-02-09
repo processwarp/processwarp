@@ -258,9 +258,11 @@ public class RouterService extends Service implements Router.Delegate {
      * @param rootTid Root thread-id for new vm.
      * @param procAddr Address of process information for new vm.
      * @param masterNid Node-id of master node for new vm.
+     * @param name Process name for new vm.
      */
     @Override
-    public void routerCreateVm(Router caller, String pid, long rootTid, long procAddr, String masterNid) {
+    public void routerCreateVm(Router caller, String pid, long rootTid, long procAddr,
+                               String masterNid, String name) {
         Log.v(this.getClass().getName(), "routerCreateVm");
 
         // Ignore if worker is assigned.
@@ -291,6 +293,7 @@ public class RouterService extends Service implements Router.Delegate {
         intent.putExtra("root_tid", rootTid);
         intent.putExtra("proc_addr", procAddr);
         intent.putExtra("master_nid", masterNid);
+        intent.putExtra("name", name);
 
         startService(intent);
     }

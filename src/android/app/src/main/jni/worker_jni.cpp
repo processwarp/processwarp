@@ -39,9 +39,10 @@ class WorkerJni : public VMachineDelegate, public VMemoryDelegate, public Builti
    * @param root_tid Root thread-id for new vm.
    * @param proc_addr Address of process information for new vm.
    * @parma master_nid Node-id of master node for new vm.
+   * @param name Process name for new vm.
    */
   void initialize(jobject& worker_, const nid_t my_nid_, const vpid_t& my_pid_, vtid_t root_tid,
-                  vaddr_t proc_addr, const nid_t master_nid) {
+                  vaddr_t proc_addr, const nid_t master_nid, const std::string& name) {
     JniUtil::log_v("WorkerJni::initialize\n");
     JNIEnv* env = env_stack.top();
     worker = env->NewGlobalRef(worker_);
@@ -56,7 +57,7 @@ class WorkerJni : public VMachineDelegate, public VMemoryDelegate, public Builti
     my_pid = my_pid_;
 
     vm.reset(new VMachine(*this, *this, my_nid, libs, lib_filter));
-    vm->initialize(my_pid, root_tid, proc_addr, master_nid);
+    vm->initialize(my_pid, root_tid, proc_addr, master_nid, name);
     vm->initialize_gui(*this);
   }
 
@@ -231,7 +232,7 @@ std::map<vpid_t, WorkerJni> workers;
  */
 extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Worker_workerInitialize(
     JNIEnv* env, jobject caller, jobject worker, jstring jmy_nid,
-    jstring jmy_pid, jlong jroot_tid, jlong jproc_addr, jstring jmaster_nid) {
+    jstring jmy_pid, jlong jroot_tid, jlong jproc_addr, jstring jmaster_nid, jstring jname) {
   JniUtil::log_v("workerInitialize\n");
 
   vpid_t pid = JniUtil::jstr2vpid(env, jmy_pid);
@@ -244,7 +245,8 @@ extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Worker_workerInit
                           pid,
                           *reinterpret_cast<vtid_t*>(&jroot_tid),
                           *reinterpret_cast<vaddr_t*>(&jproc_addr),
-                          JniUtil::jstr2nid(env, jmaster_nid));
+                          JniUtil::jstr2nid(env, jmaster_nid),
+                          JniUtil::jstr2str(env, jname));
   } catch (...) {
     JniUtil::log_e("exception on workerInitialize");
   }

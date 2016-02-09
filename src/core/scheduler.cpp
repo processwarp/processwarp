@@ -286,7 +286,8 @@ void Scheduler::recv_command_warp_thread(const CommandPacket& packet) {
     delegate->scheduler_create_vm(*this, packet.pid,
                                   Convert::json2vtid(packet.content.at("root_tid")),
                                   Convert::json2vaddr(packet.content.at("proc_addr")),
-                                  Convert::json2nid(packet.content.at("master_nid")));
+                                  Convert::json2nid(packet.content.at("master_nid")),
+                                  packet.content.at("name").get<std::string>());
   }
 
   if (it_info == processes.end()) {
