@@ -122,10 +122,11 @@ public class Router {
     public void recvBindNode(int result, String nid) {
         if (result == 0) {
             myNid = nid;
+            String name = Build.MODEL + "(" + Build.HOST + ")";
             lock.lock();
             try {
                 Assert.assertNotNull(nid);
-                schedulerSetMyNid(nid);
+                schedulerSetNodeInformation(nid, name);
             } finally {
                 lock.unlock();
             }
@@ -250,5 +251,5 @@ public class Router {
     private native String schedulerGetDstNid(String pid, int module);
     private native void schedulerRecvCommand(String pid, String dstNid, String srcNid,
                                              int module, String content);
-    private native void schedulerSetMyNid(String nid);
+    private native void schedulerSetNodeInformation(String nid, String name);
 }

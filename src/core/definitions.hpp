@@ -28,6 +28,8 @@ static const int PROTOCOL_MAJOR_VERSION = 0;
 /** 通信プロトコルのマイナーバージョン */
 static const int PROTOCOL_MINOR_VERSION = 1;
 
+static const int NODE_NAME_MAX = 128;
+
 /** 仮想アドレス */
 typedef pw_ptr_t vaddr_t;
 
@@ -273,6 +275,17 @@ enum Type : uint8_t {
       };
 }  // namespace Opcode
 
+/**
+ * Node information to use in scheduler.
+ */
+struct NodeInfo {
+  /** Node-id. */
+  nid_t nid;
+  /** Node name. */
+  std::string name;
+  /** Last heartbeat time for node. */
+  std::time_t heartbeat;
+};
 
 /**
  * Process and thread information to use in scheduler and controller.

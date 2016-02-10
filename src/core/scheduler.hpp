@@ -26,11 +26,11 @@ class Scheduler {
   void initialize(SchedulerDelegate& delegate_);
   nid_t get_dst_nid(const vpid_t& pid, Module::Type module);
   void recv_command(const CommandPacket& packet);
-  void set_my_nid(const nid_t& nid);
+  void set_node_information(const nid_t& nid, const std::string& name);
 
  private:
-  /** Node-id of this node. */
-  nid_t my_nid;
+  /** Node information for this node. */
+  NodeInfo my_info;
   /** Pointer for delegater instance.  */
   SchedulerDelegate* delegate;
   /** A list of processes these are running in all of nodes used by the same account. */

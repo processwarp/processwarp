@@ -1,10 +1,14 @@
 
+#include <unistd.h>
+
 #include <cassert>
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
 
+#include "definitions.hpp"
 #include "frontend_connector.hpp"
 #include "router.hpp"
 #include "scheduler.hpp"
@@ -120,12 +124,18 @@ void Router::recv_connect_node() {
 }
 
 /**
- * When bind is success, store assigned nid as my-nid.
- * @param nid Assigned nid for this node.
+ * When bind is success, store assigned my node-id and hostname as node name.
+ * @param nid Assigned node-id for this node.
  */
 void Router::recv_bind_node(const nid_t& nid) {
   my_nid = nid;
-  scheduler.set_my_nid(nid);
+
+  // get local hostname
+  char hostname[NODE_NAME_MAX + 1];
+  std::memset(hostname, 0, sizeof(hostname));
+  gethostname(hostname, NODE_NAME_MAX);
+
+  scheduler.set_node_information(nid, std::string(hostname));
 }
 
 /**
