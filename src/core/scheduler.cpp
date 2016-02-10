@@ -192,7 +192,7 @@ void Scheduler::recv_command_heartbeat_gui(const CommandPacket& packet) {
  */
 void Scheduler::recv_command_heartbeat_vm(const CommandPacket& packet) {
   bool is_changed = false;
-  clock_t now = clock();
+  std::time_t now = std::time(nullptr);
 
   if (processes.find(packet.pid) == processes.end()) {
     ProcessInfo info;
@@ -279,7 +279,7 @@ void Scheduler::recv_command_warp_gui(const CommandPacket& packet) {
  * @param packet Command packet.
  */
 void Scheduler::recv_command_warp_thread(const CommandPacket& packet) {
-  clock_t now = clock();
+  std::time_t now = std::time(nullptr);
   auto it_info = processes.find(packet.pid);
   if (it_info == processes.end() ||
       !it_info->second.having_vm) {

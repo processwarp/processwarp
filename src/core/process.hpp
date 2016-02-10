@@ -73,7 +73,7 @@ class Process {
   /** Thread-ids waiting to get memory data and create instance on warp phase. (not dump) */
   std::set<vtid_t> waiting_warp_setup;
   /** Thread-ids and timestamp waiting to dealt with on warp phase. (not dump) */
-  std::map<vtid_t, std::clock_t> waiting_warp_result;
+  std::map<vtid_t, std::time_t> waiting_warp_result;
 
   /** Memory addres waiting to update by other node. (not dump) */
   std::map<vtid_t, vaddr_t> waiting_addr;

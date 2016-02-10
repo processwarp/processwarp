@@ -77,7 +77,7 @@ class VMachine : private ProcessDelegate {
   /** Executable threads pool in this node's process. */
   std::queue<vtid_t> loop_queue;
 
-  clock_t last_heartbeat;
+  std::time_t last_heartbeat;
 
   void initialize_builtin();
 

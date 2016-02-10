@@ -83,6 +83,7 @@ void VMachine::initialize_gui(BuiltinGuiDelegate& delegate) {
  * Main loop.
  */
 void VMachine::execute() {
+  std::time_t now = std::time(nullptr);
   vtid_t tid;
   Thread* thread;
   Finally finally;
@@ -90,7 +91,6 @@ void VMachine::execute() {
   try {
     if (loop_queue.empty()) {
       // Make list of process and threads temporary.
-      std::clock_t now = clock();
 
       /// @todo migrate method anywhere
       for (auto& it_waiting : process->waiting_warp_result) {
@@ -162,7 +162,7 @@ void VMachine::execute() {
       print_debug("loop finish status=%d\n", thread->status);
 
     } else if (thread->status == Thread::WARP) {
-      process->waiting_warp_result.insert(std::make_pair(thread->tid, std::clock()));
+      process->waiting_warp_result.insert(std::make_pair(thread->tid, now));
       process->active_threads.erase(thread->tid);
       send_command_warp_thread(*thread);
 
@@ -182,8 +182,7 @@ void VMachine::execute() {
     }
 
     // Send heartbeat, per interval.
-    clock_t now = clock();
-    if ((now - last_heartbeat) / CLOCKS_PER_SEC > HEARTBEAT_INTERVAL) {
+    if ((now - last_heartbeat) > HEARTBEAT_INTERVAL) {
       last_heartbeat = now;
       send_command_heartbeat_vm();
     }

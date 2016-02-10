@@ -98,6 +98,8 @@ typedef pw_int_t vm_int_t;
 /** VM内のint相当のint型 */
 typedef pw_uint_t vm_uint_t;
 
+/** Interval time of send require packet (sec). */
+static const int MEMORY_REQUIRE_INTERVAL = 5;
 /** Heartbeat interval.(sec) */
 static const int HEARTBEAT_INTERVAL = 3;
 
@@ -271,8 +273,6 @@ enum Type : uint8_t {
       };
 }  // namespace Opcode
 
-/** Interval time of send require packet (sec). */
-static const clock_t MEMORY_REQUIRE_INTERVAL = 5 * CLOCKS_PER_SEC;
 
 /**
  * Process and thread information to use in scheduler and controller.
@@ -283,13 +283,13 @@ struct ProcessInfo {
   /** Process name. */
   std::string name;
   /** Map of thread-id and node-id, last heartbeat time that thread is running. */
-  std::map<vtid_t, std::pair<nid_t, clock_t>> threads;
+  std::map<vtid_t, std::pair<nid_t, std::time_t>> threads;
   /** Node-id that havign gui frontend bundled process or NONE. */
   nid_t gui_nid;
   /** True if vm bundled process is exist in this node. */
   bool having_vm;
   /** Last heartbeat time for process. */
-  clock_t heartbeat;
+  std::time_t heartbeat;
 };
 
 /** Modules those are target of send command. */
