@@ -223,21 +223,21 @@ class WorkerJni : public VMachineDelegate, public VMemoryDelegate, public Builti
 /**
  * Map of process-id and JNI worker wrapper instance.
  */
-std::map<vpid_t, WorkerJni> workers;
+std::map<vpid_t, WorkerJni> worker_jni_map;
 
 /*
  * Class:     org_processwarp_android_Worker
- * Method:    workerInitialize
- * Signature: (Lorg/processwarp/android/Worker;Ljava/lang/String;Ljava/lang/String;JJLjava/lang/String;)V
+ * Method:    vmInitialize
+ * Signature: (Lorg/processwarp/android/Worker;Ljava/lang/String;Ljava/lang/String;JJLjava/lang/String;Ljava/lang/String;)V
  */
-extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Worker_workerInitialize(
+extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Worker_vmInitialize(
     JNIEnv* env, jobject caller, jobject worker, jstring jmy_nid,
     jstring jmy_pid, jlong jroot_tid, jlong jproc_addr, jstring jmaster_nid, jstring jname) {
-  JniUtil::log_v("workerInitialize\n");
+  JniUtil::log_v("vmInitialize\n");
 
   vpid_t pid = JniUtil::jstr2vpid(env, jmy_pid);
 
-  WorkerJni& worker_jni = workers[pid];
+  WorkerJni& worker_jni = worker_jni_map[pid];
   worker_jni.push_env(env);
   try {
     worker_jni.initialize(worker,
@@ -255,13 +255,13 @@ extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Worker_workerInit
 
 /*
  * Class:     org_processwarp_android_Worker
- * Method:    workerRelayCommand
+ * Method:    vmRelayCommand
  * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;)V
  */
-extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Worker_workerRelayCommand(
+extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Worker_vmRelayCommand(
     JNIEnv* env, jobject caller, jstring jpid, jstring jdst_nid, jstring jsrc_nid,
     jint jmodule, jstring jcontent) {
-  JniUtil::log_v("workerRelayCommand\n");
+  JniUtil::log_v("vmRelayCommand\n");
 
   picojson::value v;
   std::istringstream is(JniUtil::jstr2str(env, jcontent));
@@ -280,7 +280,7 @@ extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Worker_workerRela
     v.get<picojson::object>()
   };
 
-  WorkerJni& worker_jni = workers.at(pid);
+  WorkerJni& worker_jni = worker_jni_map.at(pid);
   worker_jni.push_env(env);
   try {
     worker_jni.relay_command(packet);
@@ -292,15 +292,15 @@ extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Worker_workerRela
 
 /*
  * Class:     org_processwarp_android_Worker
- * Method:    workerExecute
+ * Method:    vmExecute
  * Signature: (Ljava/lang/String;)V
  */
-extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Worker_workerExecute(
+extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Worker_vmExecute(
     JNIEnv* env, jobject caller, jstring jpid) {
-  JniUtil::log_v("workerExecute");
+  JniUtil::log_v("vmExecute");
 
   vpid_t pid = JniUtil::jstr2vpid(env, jpid);
-  WorkerJni& worker_jni = workers.at(pid);
+  WorkerJni& worker_jni = worker_jni_map.at(pid);
 
   worker_jni.push_env(env);
   try {
@@ -313,16 +313,16 @@ extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Worker_workerExec
 
 /*
  * Class:     org_processwarp_android_Worker
- * Method:    workerQuit
+ * Method:    vmQuit
  * Signature: (Ljava/lang/String;)V
  */
-extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Worker_workerQuit(
+extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Worker_vmQuit(
     JNIEnv* env, jobject caller, jstring jpid) {
-  JniUtil::log_v("workerQuit\n");
+  JniUtil::log_v("vmQuit\n");
 
   vpid_t pid = JniUtil::jstr2vpid(env, jpid);
 
-  WorkerJni& worker_jni = workers.at(pid);
+  WorkerJni& worker_jni = worker_jni_map.at(pid);
   worker_jni.push_env(env);
   try {
     worker_jni.quit();
@@ -330,6 +330,6 @@ extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Worker_workerQuit
     JniUtil::log_e("exception on workerQuit");
   }
   worker_jni.pop_env();
-  workers.erase(pid);
+  worker_jni_map.erase(pid);
 }
 }  // namespace processwarp

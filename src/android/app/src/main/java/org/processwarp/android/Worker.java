@@ -48,7 +48,7 @@ public class Worker implements Runnable {
             Assert.assertNotNull(myNid);
             Assert.assertNotNull(myPid);
             Assert.assertNotNull(masterNid);
-            workerInitialize(this, myNid, myPid, rootTid, procAddr, masterNid, name);
+            vmInitialize(this, myNid, myPid, rootTid, procAddr, masterNid, name);
         } finally {
             lock.unlock();
         }
@@ -77,7 +77,7 @@ public class Worker implements Runnable {
         lock.lock();
         try {
             Assert.assertNotNull(myPid);
-            workerExecute(myPid);
+            vmExecute(myPid);
         } finally {
             lock.unlock();
         }
@@ -103,7 +103,7 @@ public class Worker implements Runnable {
                                    int module, String content) {
         lock.lock();
         try {
-            workerRelayCommand(pid, dstNid, srcNid, module, content);
+            vmRelayCommand(pid, dstNid, srcNid, module, content);
         } finally {
             lock.unlock();
         }
@@ -128,10 +128,10 @@ public class Worker implements Runnable {
         delegate.workerRelayCommand(this, packet);
     }
 
-    private native void workerInitialize(Worker worker, String myNid, String myPid, long rootTid,
+    private native void vmInitialize(Worker worker, String myNid, String myPid, long rootTid,
                                          long procAddr, String masterNid, String name);
-    private native void workerRelayCommand(String pid, String dstNid, String srcNid,
+    private native void vmRelayCommand(String pid, String dstNid, String srcNid,
                                            int module, String content);
-    private native void workerExecute(String pid);
-    private native void workerQuit(String pid);
+    private native void vmExecute(String pid);
+    private native void vmQuit(String pid);
 }

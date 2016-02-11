@@ -9,34 +9,34 @@ extern "C" {
 #endif
 /*
  * Class:     org_processwarp_android_Worker
- * Method:    workerInitialize
+ * Method:    vmInitialize
  * Signature: (Lorg/processwarp/android/Worker;Ljava/lang/String;Ljava/lang/String;JJLjava/lang/String;Ljava/lang/String;)V
  */
-JNIEXPORT void JNICALL Java_org_processwarp_android_Worker_workerInitialize
+JNIEXPORT void JNICALL Java_org_processwarp_android_Worker_vmInitialize
   (JNIEnv *, jobject, jobject, jstring, jstring, jlong, jlong, jstring, jstring);
 
 /*
  * Class:     org_processwarp_android_Worker
- * Method:    workerRelayCommand
+ * Method:    vmRelayCommand
  * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;)V
  */
-JNIEXPORT void JNICALL Java_org_processwarp_android_Worker_workerRelayCommand
+JNIEXPORT void JNICALL Java_org_processwarp_android_Worker_vmRelayCommand
   (JNIEnv *, jobject, jstring, jstring, jstring, jint, jstring);
 
 /*
  * Class:     org_processwarp_android_Worker
- * Method:    workerExecute
+ * Method:    vmExecute
  * Signature: (Ljava/lang/String;)V
  */
-JNIEXPORT void JNICALL Java_org_processwarp_android_Worker_workerExecute
+JNIEXPORT void JNICALL Java_org_processwarp_android_Worker_vmExecute
   (JNIEnv *, jobject, jstring);
 
 /*
  * Class:     org_processwarp_android_Worker
- * Method:    workerQuit
+ * Method:    vmQuit
  * Signature: (Ljava/lang/String;)V
  */
-JNIEXPORT void JNICALL Java_org_processwarp_android_Worker_workerQuit
+JNIEXPORT void JNICALL Java_org_processwarp_android_Worker_vmQuit
   (JNIEnv *, jobject, jstring);
 
 #ifdef __cplusplus

@@ -215,7 +215,7 @@ public class Router {
      * @param masterNid Master node-id for new vm.
      * @param name Process name for new vm.
      */
-    public void schedulerCreateVm(String pid, long rootTid, long procAddr,
+    public void routerCreateVm(String pid, long rootTid, long procAddr,
                                   String masterNid, String name) {
         delegate.routerCreateVm(this, pid, rootTid, procAddr, masterNid, name);
     }
@@ -224,7 +224,7 @@ public class Router {
      * When scheduler require to create gui, do it by the android service.
      * @param pid Process-id to bundle to gui.
      */
-    public void schedulerCreateGui(String pid) {
+    public void routerCreateGui(String pid) {
         delegate.routerCreateGui(this, pid);
     }
 
@@ -236,7 +236,7 @@ public class Router {
      * @param module Target module.
      * @param content Packet content string of JSON.
      */
-    private void schedulerSendCommand(String pid, String dstNid, String srcNid,
+    private void routerSendCommand(String pid, String dstNid, String srcNid,
                                       int module, String content) {
         CommandPacket packet = new CommandPacket();
         packet.pid = pid;
