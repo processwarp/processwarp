@@ -2,6 +2,8 @@
 #include <picojson.h>
 
 #include <cassert>
+#include <ctime>
+#include <map>
 #include <set>
 #include <string>
 
@@ -81,6 +83,9 @@ void Scheduler::recv_command(const CommandPacket& packet) {
   } else if (command == "heartbeat_gui") {
     recv_command_heartbeat_gui(packet);
 
+  } else if (command == "heartbeat_scheduler") {
+    recv_command_heartbeat_scheduler(packet);
+
   } else if (command == "heartbeat_vm") {
     recv_command_heartbeat_vm(packet);
 
@@ -98,6 +103,7 @@ void Scheduler::recv_command(const CommandPacket& packet) {
     print_debug("recv unknown command:%s\n", command.c_str());
     assert(false);
   }
+  execute();  /// @todo call from timer.
 }
 
 /**
@@ -112,6 +118,18 @@ void Scheduler::set_node_information(const nid_t& nid, const std::string& name) 
   my_info.nid  = nid;
   my_info.name = name;
 }
+
+/**
+ * Scheduler main routine.
+ * Router or super module must be call this method at least once a HEARTBEAT_INTERVAL.
+ */
+void Scheduler::execute() {
+  // Send a heartbeat each interval time.
+  std::time_t now = std::time(nullptr);
+  if ((now - my_info.heartbeat) > HEARTBEAT_INTERVAL) {
+    my_info.heartbeat = now;
+    send_command_heartbeat_scheduler();
+  }
 }
 
 /**
@@ -186,6 +204,33 @@ void Scheduler::recv_command_heartbeat_gui(const CommandPacket& packet) {
 
   } else {
     it_info->second.gui_nid = packet.src_nid;
+  }
+}
+
+/**
+ * When receive heartbeat_scheduler command, save sender's information and update timestamp.
+ * @param packet Command packet.
+ */
+void Scheduler::recv_command_heartbeat_scheduler(const CommandPacket& packet) {
+  std::string name = packet.content.at("name").get<std::string>();
+  std::time_t now  = std::time(nullptr);
+  auto it_info = nodes.find(packet.src_nid);
+
+  assert(packet.pid == SpecialPID::BROADCAST);
+
+  if (packet.src_nid == my_info.nid) return;
+
+  if (it_info == nodes.end()) {
+    NodeInfo info;
+    info.nid  = packet.src_nid;
+    info.name = name;
+    info.heartbeat = now;
+    nodes.insert(std::make_pair(info.nid, info));
+
+  } else {
+    NodeInfo& info = it_info->second;
+    info.name = name;
+    info.heartbeat = now;
   }
 }
 
@@ -324,6 +369,17 @@ void Scheduler::send_command(const vpid_t& pid, const nid_t& dst_nid, Module::Ty
 
   param.insert(std::make_pair("command", picojson::value(command)));
   delegate->scheduler_send_command(*this, {pid, dst_nid, my_info.nid, module, param});
+}
+
+/**
+ * Send heartbeat_scheduler command to SCHDULER in another node.
+ */
+void Scheduler::send_command_heartbeat_scheduler() {
+  picojson::object param;
+  param.insert(std::make_pair("name", picojson::value(my_info.name)));
+
+  send_command(SpecialPID::BROADCAST, SpecialNID::BROADCAST, Module::SCHEDULER,
+               "heartbeat_scheduler", param);
 }
 
 /**
