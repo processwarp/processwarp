@@ -202,14 +202,6 @@ void Router::relay_command(const CommandPacket& packet, bool is_from_server) {
 }
 
 /**
- * When receive packet from server to scheduler, relay it to scheduler.
- * @param packet Command packet.
- */
-void Router::relay_scheduler_command(const CommandPacket& packet) {
-  scheduler.recv_command(packet);
-}
-
-/**
  * When scheduler require create vm, call Worker's method to do it.
  * @param scheduler Caller instance.
  * @param pid Process-id for new vm.

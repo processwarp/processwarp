@@ -38,8 +38,6 @@ class Router : public SchedulerDelegate {
   Router(const Router&);
   Router& operator=(const Router&);
 
-  void relay_scheduler_command(const CommandPacket& packet);
-
   void scheduler_create_vm(Scheduler& scheduler, const vpid_t& pid, vtid_t root_tid,
                            vaddr_t proc_addr, const nid_t& master_nid,
                            const std::string& name) override;
