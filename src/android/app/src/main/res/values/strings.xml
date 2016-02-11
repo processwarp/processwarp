@@ -8,4 +8,5 @@
     <string name="connect_quit">quit</string>
 
     <string name="menu_activate">activate</string>
+    <string name="menu_distribute">destribute</string>
 </resources>

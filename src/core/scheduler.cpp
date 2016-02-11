@@ -80,6 +80,9 @@ void Scheduler::recv_command(const CommandPacket& packet) {
   } else if (command == "create_gui") {
     recv_command_create_gui(packet);
 
+  } else if (command == "distribute") {
+    recv_command_distribute(packet);
+
   } else if (command == "heartbeat_gui") {
     recv_command_heartbeat_gui(packet);
 
@@ -184,6 +187,68 @@ void Scheduler::recv_command_create_gui(const CommandPacket& packet) {
   }
 
   delegate->scheduler_create_gui(*this, packet.pid);
+}
+
+/**
+ * When receive distribute command, distribute processes runnning in this node to another node.
+ * @param packet Command packet.
+ */
+void Scheduler::recv_command_distribute(const CommandPacket& packet) {
+  assert(packet.pid != SpecialPID::BROADCAST);
+
+  if (packet.src_nid != my_info.nid) {
+    /// @todo error
+    assert(false);
+  }
+
+  for (auto& it_proc : processes) {
+    ProcessInfo& proc = it_proc.second;
+    std::map<nid_t, int> counts;
+
+    for (auto& it_thread : proc.threads) {
+      nid_t nid = it_thread.second.first;
+      if (counts.find(nid) == counts.end()) {
+        counts.insert(make_pair(nid, 1));
+      } else {
+        counts.at(nid)++;
+      }
+    }
+
+    if (counts.find(my_info.nid) == counts.end()) continue;
+
+    for (auto& it_node : nodes) {
+      NodeInfo& node = it_node.second;
+      if (counts.find(node.nid) == counts.end()) {
+        counts.insert(make_pair(node.nid, 0));
+      }
+    }
+
+    int average = static_cast<int>(floor(static_cast<double>(proc.threads.size()) /
+                                         static_cast<double>(nodes.size())));
+    int over = counts.at(my_info.nid) - average;
+    if (over <= 0) break;
+
+    for (auto& it_thread : proc.threads) {
+      // For thread running in this node.
+      if (it_thread.second.first != my_info.nid) continue;
+
+      nid_t nid = SpecialNID::NONE;
+      int min_count = average;
+      for (auto& it_count : counts) {
+        int count = it_count.second;
+        if (count < min_count) {
+          min_count = count;
+          nid = it_count.first;
+        }
+      }
+      assert(nid != SpecialNID::NONE);
+      send_command_require_warp_thread(proc.pid, it_thread.first, nid);
+      counts.at(nid)++;
+
+      // Finish loop if require count is over.
+      if ((--over) == 0) break;
+    }
+  }
 }
 
 /**

@@ -41,6 +41,7 @@ class Scheduler {
 
   void recv_command_activate(const CommandPacket& packet);
   void recv_command_create_gui(const CommandPacket& packet);
+  void recv_command_distribute(const CommandPacket& packet);
   void recv_command_heartbeat_gui(const CommandPacket& packet);
   void recv_command_heartbeat_scheduler(const CommandPacket& packet);
   void recv_command_heartbeat_vm(const CommandPacket& packet);

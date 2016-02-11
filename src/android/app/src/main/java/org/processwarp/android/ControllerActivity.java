@@ -106,6 +106,14 @@ public class ControllerActivity extends AppCompatActivity implements ServiceConn
                         "activate", param);
                 return true;
             }
+
+            case R.id.action_distribute: {
+                JSONObject param = new JSONObject();
+                sendCommand(
+                        SpecialPid.BROADCAST, SpecialNid.THIS, Module.SCHEDULER,
+                        "distribute", param);
+                return true;
+            }
         }
 
         return super.onOptionsItemSelected(item);

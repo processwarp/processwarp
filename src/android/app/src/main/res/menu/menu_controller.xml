@@ -8,4 +8,9 @@
         android:icon="@mipmap/ic_insert_emoticon_black"
         android:title="@string/menu_activate"
         app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_distribute"
+        android:icon="@mipmap/ic_blur_on_black"
+        android:title="@string/menu_distribute"
+        app:showAsAction="ifRoom" />
 </menu>
