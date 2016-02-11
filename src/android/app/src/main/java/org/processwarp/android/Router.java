@@ -1,6 +1,7 @@
 package org.processwarp.android;
 
 import android.os.Build;
+import android.os.Handler;
 import android.util.Log;
 
 import junit.framework.Assert;
@@ -8,7 +9,7 @@ import junit.framework.Assert;
 import java.security.MessageDigest;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class Router {
+public class Router implements Runnable {
     /**
      * Delegate for implement by service.
      */
@@ -21,12 +22,16 @@ public class Router {
         void routerRelayWorkerPacket(Router caller, CommandPacket packet);
     }
 
+    /** Interval to call Scheduler::execute.(sec) */
+    private static final int SCHEDULER_EXECUTE_INTERVAL = 3;
     private Delegate delegate;
     private ServerConnector server;
     /** This node's id. */
     private String myNid = null;
     /** Mutex for execute native methods serial. */
     private ReentrantLock lock = new ReentrantLock();
+    /** Handler for run loop. */
+    private Handler handler;
 
     /**
      * Initialize some module.
@@ -43,6 +48,10 @@ public class Router {
         } finally {
             lock.unlock();
         }
+
+        // Setup timer to call schedulerExecute.
+        handler = new Handler();
+        handler.postDelayed(this, SCHEDULER_EXECUTE_INTERVAL * 1000);
     }
 
     /**
@@ -208,6 +217,15 @@ public class Router {
     }
 
     /**
+     * When handler's a timer event is happen, call schedulerExecute and reset the timer.
+     */
+    @Override
+    public void run() {
+        schedulerExecute();
+        handler.postDelayed(this, SCHEDULER_EXECUTE_INTERVAL * 1000);
+    }
+
+    /**
      * When scheduler require to create vm, do it by the android service.
      * @param pid Process-id for new vm.
      * @param rootTid Root thread-id for new vm.
@@ -252,4 +270,5 @@ public class Router {
     private native void schedulerRecvCommand(String pid, String dstNid, String srcNid,
                                              int module, String content);
     private native void schedulerSetNodeInformation(String nid, String name);
+    private native void schedulerExecute();
 }

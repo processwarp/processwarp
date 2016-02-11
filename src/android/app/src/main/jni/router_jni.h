@@ -39,6 +39,14 @@ JNIEXPORT void JNICALL Java_org_processwarp_android_Router_schedulerRecvCommand
 JNIEXPORT void JNICALL Java_org_processwarp_android_Router_schedulerSetNodeInformation
   (JNIEnv *, jobject, jstring, jstring);
 
+/*
+ * Class:     org_processwarp_android_Router
+ * Method:    schedulerExecute
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_org_processwarp_android_Router_schedulerExecute
+  (JNIEnv *, jobject);
+
 #ifdef __cplusplus
 }
 #endif

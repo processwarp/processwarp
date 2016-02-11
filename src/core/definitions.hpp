@@ -104,6 +104,8 @@ typedef pw_uint_t vm_uint_t;
 static const int MEMORY_REQUIRE_INTERVAL = 5;
 /** Heartbeat interval.(sec) */
 static const int HEARTBEAT_INTERVAL = 3;
+/** Interval to call Scheduler::execute.(sec) */
+static const int SCHEDULER_EXECUTE_INTERVAL = HEARTBEAT_INTERVAL;
 
 /**
  * Virtual address types that is able to distinguish by using AND operation with MASK.

@@ -208,4 +208,18 @@ extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Router_schedulerS
                                   JniUtil::jstr2str(env, jname));
   router_jni.pop_env();
 }
+
+/*
+ * Class:     org_processwarp_android_Router
+ * Method:    schedulerExecute
+ * Signature: ()V
+ */
+extern "C" JNIEXPORT void JNICALL Java_org_processwarp_android_Router_schedulerExecute
+(JNIEnv* env, jobject caller) {
+  JniUtil::log_v("schedulerExecute\n");
+
+  router_jni.push_env(env);
+  scheduler->execute();
+  router_jni.pop_env();
+}
 }  // namespace processwarp

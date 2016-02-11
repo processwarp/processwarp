@@ -27,6 +27,8 @@ class Router : public SchedulerDelegate {
  private:
   /** Main loop of libuv. */
   uv_loop_t* loop;
+  /** Timer for scheduler execute. */
+  uv_timer_t timer_for_execute;
   /** Configuration. */
   picojson::object config;
   /** This node's node-id. */
@@ -43,5 +45,9 @@ class Router : public SchedulerDelegate {
                            const std::string& name) override;
   void scheduler_create_gui(Scheduler& scheduler, const vpid_t& pid) override;
   void scheduler_send_command(Scheduler& scheduler, const CommandPacket& packet) override;
+
+  static void on_timer_for_execute(uv_timer_t* handle);
+
+  void initialize_timer();
 };
 }  // namespace processwarp

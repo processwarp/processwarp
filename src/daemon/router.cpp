@@ -46,6 +46,7 @@ void Router::initialize(uv_loop_t* loop_, const picojson::object& config_) {
   config = config_;
 
   scheduler.initialize(*this);
+  initialize_timer();
 }
 
 /**
@@ -236,5 +237,24 @@ void Router::scheduler_create_gui(Scheduler& scheduler, const vpid_t& pid) {
  */
 void Router::scheduler_send_command(Scheduler& scheduler, const CommandPacket& packet) {
   relay_command(packet, false);
+}
+
+/**
+ * When libuv's a timer event is happen, call Scheduler::execute.
+ */
+void Router::on_timer_for_execute(uv_timer_t* handle) {
+  Router& THIS = *reinterpret_cast<Router*>(handle->data);
+
+  THIS.scheduler.execute();
+}
+
+/**
+ * Initialize a timer event to call Scheduler::execute for each interval.
+ */
+void Router::initialize_timer() {
+  uv_timer_init(loop, &timer_for_execute);
+  timer_for_execute.data = this;
+  uv_timer_start(&timer_for_execute, Router::on_timer_for_execute,
+                 0, SCHEDULER_EXECUTE_INTERVAL * 1000);
 }
 }  // namespace processwarp

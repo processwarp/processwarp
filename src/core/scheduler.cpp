@@ -106,7 +106,6 @@ void Scheduler::recv_command(const CommandPacket& packet) {
     print_debug("recv unknown command:%s\n", command.c_str());
     assert(false);
   }
-  execute();  /// @todo call from timer.
 }
 
 /**
@@ -127,6 +126,9 @@ void Scheduler::set_node_information(const nid_t& nid, const std::string& name) 
  * Router or super module must be call this method at least once a HEARTBEAT_INTERVAL.
  */
 void Scheduler::execute() {
+  // Skip if didn't setup yet.
+  if (my_info.nid == SpecialNID::NONE) return;
+
   // Send a heartbeat each interval time.
   std::time_t now = std::time(nullptr);
   if ((now - my_info.heartbeat) > HEARTBEAT_INTERVAL) {
