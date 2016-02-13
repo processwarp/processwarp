@@ -86,7 +86,7 @@ function initializeController() {
     width: 480
   });
 
-  controller.loadURL('file://' + __dirname + '/index.html');
+  controller.loadURL('file://' + __dirname + '/controller.html');
   controller.on('closed', function() {
     controller = null;
   });
@@ -297,9 +297,9 @@ function recvConnectFrontend(packet) {
 }
 
 /**
- * When receive 'create' GUI command, create a new frame and load default HTML.
- * The frame created is regist for contexts set with process-id.
- * @param pid {string} Process-id bundled for frame.
+ * When receive 'create' GUI command, create a new GUI window and load default HTML.
+ * The GUI created is regist for contexts set with process-id.
+ * @param pid {string} Process-id bundled for window.
  * @param param {object} Not used.
  */
 function recvCreate(param) {
@@ -312,9 +312,8 @@ function recvCreate(param) {
 
   var window = new BrowserWindow();
   window.on('closed', function(event) { onGuiClose(event, pid); });
-  window.loadURL('file://' + __dirname + '/frame.html');
+  window.loadURL('file://' + __dirname + '/gui.html');
   window.webContents.pid = pid;
-  // frame.openDevTools(true);
 
   var context = {};
   context.is_normal = false;
@@ -495,9 +494,9 @@ function onGuiRelayCommand(event, packet) {
 }
 
 /**
- * When frame was close by GUI, remove context.
+ * When window was close by GUI, remove context.
  * @param event {object} Not used.
- * @param pid {string} Process-id bundled for frame.
+ * @param pid {string} Process-id bundled for window.
  */
 function onGuiClose(event, pid) {
   delete contexts[pid];
