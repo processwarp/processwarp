@@ -264,6 +264,25 @@ public class RouterService extends Service implements Router.Delegate {
     };
 
     /**
+     * When change connect status, relay event to controller.
+     * @param caller Caller instance.
+     * @param isConnect Connect status.
+     * @param myNid Node-id for this node.
+     */
+    @Override
+    public void routerChangeConnectStatus(Router caller, boolean isConnect, String myNid) {
+        if (controller != null) {
+            try {
+                controller.changeConnectStatus(isConnect, myNid);
+            } catch (RemoteException e) {
+                // TODO error
+                Log.e(this.getClass().getName(), "changeConnectStatus", e);
+                Assert.fail();
+            }
+        }
+    }
+
+    /**
      * When scheduler require create vm, call Worker's method to do it.
      * @param caller Caller instance.
      * @param pid Process-id for new vm.

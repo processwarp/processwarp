@@ -1,6 +1,7 @@
 package org.processwarp.android;
 
 import android.app.Dialog;
+import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.os.RemoteException;
@@ -15,14 +16,17 @@ import android.widget.EditText;
 import junit.framework.Assert;
 
 public class ConnectDialogFragment extends DialogFragment {
-    private RouterInterface router = null;
+    private RouterInterface router         = null;
+    private ProgressDialog  progressDialog = null;
 
     /**
-     * Set a router instance for connect server.
+     * Initialize with a router instance for connect server and progress dialog.
      * @param router Router instance.
+     * @param progressDialog Progress dialog instance.
      */
-    public void setRouter(RouterInterface router) {
-        this.router = router;
+    public void initialize(RouterInterface router, ProgressDialog progressDialog) {
+        this.router         = router;
+        this.progressDialog = progressDialog;
     }
 
     /**
@@ -45,7 +49,8 @@ public class ConnectDialogFragment extends DialogFragment {
         builder.setView(view)
                 .setPositiveButton(R.string.connect_connect, new DialogInterface.OnClickListener() {
                     /**
-                     * When choose CONNECT, connect to server by account and password.
+                     * When choose CONNECT, connect to server by account and password and
+                     * show progress dialog.
                      * @param dialog Not used.te
                      * @param id Not used.
                      */
@@ -56,6 +61,7 @@ public class ConnectDialogFragment extends DialogFragment {
                         EditText connect_password =
                                 (EditText)view.findViewById(R.id.connect_password);
 
+                        // Request of connect to server.
                         try {
                             router.connectServer(
                                     connect_account.getText().toString(),
@@ -65,6 +71,11 @@ public class ConnectDialogFragment extends DialogFragment {
                             // TODO error
                             Assert.fail();
                         }
+
+                        // Show progress dialog.
+                        progressDialog.setIndeterminate(true);
+                        progressDialog.setMessage(getString(R.string.connect_progress));
+                        progressDialog.show();
                     }
                 })
                 .setNegativeButton(R.string.connect_quit, new DialogInterface.OnClickListener() {

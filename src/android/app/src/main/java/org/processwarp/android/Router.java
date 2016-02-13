@@ -14,6 +14,7 @@ public class Router implements Runnable {
      * Delegate for implement by service.
      */
     public interface Delegate {
+        void routerChangeConnectStatus(Router caller, boolean isConnect, String myNid);
         void routerCreateVm(Router caller, String pid, long rootTid, long procAddr,
                             String masterNid, String name);
         void routerCreateGui(Router caller, String pid);
@@ -118,13 +119,13 @@ public class Router implements Runnable {
             server.sendBindNode(myNid, Build.HOST);
 
         } else {
-            // TODO
-            Assert.fail();
+            // If connection is failed, tell connect status.
+            delegate.routerChangeConnectStatus(this, false, SpecialNid.NONE);
         }
     }
 
     /**
-     * When bind is success, store assigned nid as my-nid.
+     * When bind is success, store assigned nid as my-nid and tell changing connect status to another module.
      * @param result Result code.
      * @param nid Assigned nid for this node.
      */
@@ -140,9 +141,12 @@ public class Router implements Runnable {
                 lock.unlock();
             }
 
+            // Tell changing connect status to another module.
+            delegate.routerChangeConnectStatus(this, true, myNid);
+
         } else {
-            // TODO
-            Assert.fail();
+            // If connection is failed, tell connect status.
+            delegate.routerChangeConnectStatus(this, false, SpecialNid.NONE);
         }
     }
 

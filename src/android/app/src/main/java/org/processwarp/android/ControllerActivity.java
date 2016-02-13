@@ -1,5 +1,6 @@
 package org.processwarp.android;
 
+import android.app.ProgressDialog;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -28,6 +29,10 @@ public class ControllerActivity extends AppCompatActivity implements ServiceConn
     private static boolean isServiceStart = false;
     /** AIDL interface for router. */
     private RouterInterface router = null;
+    /** Progress dialog. */
+    private ProgressDialog progressDialog;
+    /** Node-id of this node. */
+    private static String myNid;
 
     /**
      * When create application, show toolbar and start router service if needed.
@@ -41,6 +46,8 @@ public class ControllerActivity extends AppCompatActivity implements ServiceConn
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        progressDialog = new ProgressDialog(this);
 
         if (!isServiceStart) {
             startService(new Intent(this, RouterService.class));
@@ -165,7 +172,7 @@ public class ControllerActivity extends AppCompatActivity implements ServiceConn
      */
     private void showConnectDialog() {
         ConnectDialogFragment connectDialog = new ConnectDialogFragment();
-        connectDialog.setRouter(router);
+        connectDialog.initialize(router, progressDialog);
         connectDialog.show(getSupportFragmentManager(), "");
     }
 
@@ -252,6 +259,24 @@ public class ControllerActivity extends AppCompatActivity implements ServiceConn
     }
 
     ControllerInterface callback = new ControllerInterface.Stub() {
+        /**
+         * When change connect status and connect is success, hide progress and set my node-id.
+         * If connect is failed, re-show dialog for sign-in.
+         * @param isConnect Connect status, true if succeed.
+         * @param nid Node-id for this node.
+         * @throws RemoteException
+         */
+        @Override
+        public void changeConnectStatus(boolean isConnect, String nid) throws RemoteException {
+            progressDialog.dismiss();
+            if (isConnect){
+                myNid = nid;
+
+            } else {
+                showConnectDialog();
+            }
+        }
+
         /**
          * When receive command from service process, pass it to capable method.
          * @param pid Process-id bundled to packet.
