@@ -135,6 +135,64 @@ void Scheduler::execute() {
     my_info.heartbeat = now;
     send_command_heartbeat_scheduler();
   }
+
+  // Cleanup unresponsive module.
+  cleanup_unresponsive_process();
+  cleanup_unresponsive_node();
+}
+
+/**
+ * Cleanup unresponsive nodes that didn't send any heartbeat over HEATBEAT_DEADLINE seconds.
+ */
+void Scheduler::cleanup_unresponsive_node() {
+  std::time_t now = time(nullptr);
+
+  auto it_node = nodes.begin();
+  while (it_node != nodes.end()) {
+    if (it_node->second.heartbeat + HEARTBEAT_DEADLINE < now) {
+      it_node = nodes.erase(it_node);
+    } else {
+      it_node++;
+    }
+  }
+}
+
+/**
+ * Cleanup unresponsive threads and processes that didn't send any heartbeat over HEATBEAT_DEADLINE seconds.
+ */
+void Scheduler::cleanup_unresponsive_process() {
+  std::time_t now = time(nullptr);
+  bool is_changed = false;
+
+  auto it_proc = processes.begin();
+  while (it_proc != processes.end()) {
+    ProcessInfo& info = it_proc->second;
+
+    // Cleanup threads.
+    auto it_thread = info.threads.begin();
+    while (it_thread != info.threads.end()) {
+      if (it_thread->second.second + HEARTBEAT_DEADLINE < now) {
+        it_thread = info.threads.erase(it_thread);
+        is_changed = true;
+      } else {
+        it_thread++;
+      }
+    }
+
+    // Cleanup processes.
+    if (info.threads.size() == 0 &&
+        info.heartbeat + HEARTBEAT_DEADLINE < now) {
+      it_proc = processes.erase(it_proc);
+      is_changed = true;
+    } else {
+      it_proc++;
+    }
+  }
+
+  // Send processes_info command if set of processes are changed.
+  if (is_changed) {
+    send_command_processes_info();
+  }
 }
 
 /**

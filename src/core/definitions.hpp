@@ -106,6 +106,8 @@ static const int MEMORY_REQUIRE_INTERVAL = 5;
 static const int HEARTBEAT_INTERVAL = 3;
 /** Interval to call Scheduler::execute.(sec) */
 static const int SCHEDULER_EXECUTE_INTERVAL = HEARTBEAT_INTERVAL;
+/** Deadline time for unresponsive module.(sec) */
+static const int HEARTBEAT_DEADLINE = 10;
 
 /**
  * Virtual address types that is able to distinguish by using AND operation with MASK.

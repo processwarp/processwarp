@@ -39,6 +39,9 @@ class Scheduler {
   /** All node information as far as I can connect. */
   std::map<nid_t, NodeInfo> nodes;
 
+  void cleanup_unresponsive_node();
+  void cleanup_unresponsive_process();
+
   void recv_command_activate(const CommandPacket& packet);
   void recv_command_create_gui(const CommandPacket& packet);
   void recv_command_distribute(const CommandPacket& packet);
