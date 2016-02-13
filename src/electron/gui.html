@@ -47,7 +47,7 @@
         initializeCanvas();
         initializeOnResize();
 
-        // When loading html was finished, send frame_load command to main thread.
+        // When loading html was finished, send gui_load command to main thread.
         ipc.send('gui_load');
 
         // Start beat.
@@ -172,7 +172,7 @@
       }
 
       /**
-       * When receive script command, pass scipt to frame or store if frame not finished setup.
+       * When receive script command, execute script as Javascript.
        * @param pid {sring} Process-id send to.
        * @param param {object} Parameter contain script string.
        * @return {void}

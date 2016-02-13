@@ -457,7 +457,7 @@ function sendCommandRequireProcessesInfo() {
 }
 
 /**
- * When receive 'frame_load' command from frame, change status to normal and send scripts stored.
+ * When receive 'gui_load' command from GUI window, change status to normal and send scripts stored.
  * And tell event to scheduler.
  * @param event {object} WebContents instance from ipc containing pid.
  * @return {void}
