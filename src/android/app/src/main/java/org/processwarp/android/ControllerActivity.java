@@ -24,6 +24,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Iterator;
+
 public class ControllerActivity extends AppCompatActivity implements ServiceConnection {
     /** Set true if router service has start. */
     private static boolean isServiceStart = false;
@@ -212,7 +214,14 @@ public class ControllerActivity extends AppCompatActivity implements ServiceConn
             String[] pids    = new String[processes.length()];
             for (int idx = 0; idx < processes.length(); idx ++) {
                 JSONObject info = processes.getJSONObject(idx);
-                members[idx] = info.getString("name");
+                int thread_count = 0;
+                JSONObject threads = info.getJSONObject("threads");
+                Iterator<String> it_thread = threads.keys();
+                while (it_thread.hasNext()) {
+                    String tid = it_thread.next();
+                    if (threads.getString(tid).equals(myNid)) thread_count++;
+                }
+                members[idx] = info.getString("name") + " (" + thread_count + ")";
                 pids[idx]    = info.getString("pid");
             }
 

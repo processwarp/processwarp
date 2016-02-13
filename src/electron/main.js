@@ -288,7 +288,9 @@ function readConfigure() {
 function recvConnectFrontend(packet) {
   if (packet.result == 0) {
     myNid = packet.my_nid;
-    controller.webContents.send('action_connect_success');
+    controller.webContents.send('action_connect_success', {
+      my_nid: myNid
+    });
     sendCommandRequireProcessesInfo();
 
   } else {

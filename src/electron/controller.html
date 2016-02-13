@@ -11,6 +11,8 @@
     const electron = require('electron');
     const shell = electron.shell;
     const ipc   = electron.ipcRenderer;
+    /** Node-if for this node. */
+    var myNid = null;
 
     window.onload = function() {
       curtainUp();
@@ -166,8 +168,9 @@
          * When connecting to backend is succeed, turn connect card off and curtain up.
          * @return {void}
          */
-        function connectOnSuccess() {
+        function connectOnSuccess(sender, param) {
           var connect = document.getElementById('connect');
+          myNid = param.my_nid;
           connect.style.display = 'none';
           curtainUp();
         }
@@ -265,11 +268,16 @@
           processes.forEach(function(process) {
             var tr = document.createElement('tr');
             var td = document.createElement('td');
-            var text = document.createTextNode(process.name);
+            var thread_count = 0;
+            for (var thread in process.threads) {
+              if (process.threads[thread] === myNid) thread_count++;
+            }
+            var text = process.name + ' (' + thread_count + ')';
+            var text_node = document.createTextNode(text);
 
             td.classList.add('mdl-data-table__cell--non-numeric');
 
-            td.appendChild(text);
+            td.appendChild(text_node);
             tr.appendChild(td);
             processes_list.appendChild(tr);
           });
