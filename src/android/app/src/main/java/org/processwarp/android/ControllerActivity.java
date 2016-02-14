@@ -214,14 +214,17 @@ public class ControllerActivity extends AppCompatActivity implements ServiceConn
             String[] pids    = new String[processes.length()];
             for (int idx = 0; idx < processes.length(); idx ++) {
                 JSONObject info = processes.getJSONObject(idx);
+                int thread_all   = 0;
                 int thread_count = 0;
                 JSONObject threads = info.getJSONObject("threads");
                 Iterator<String> it_thread = threads.keys();
                 while (it_thread.hasNext()) {
                     String tid = it_thread.next();
+                    thread_all++;
                     if (threads.getString(tid).equals(myNid)) thread_count++;
                 }
-                members[idx] = info.getString("name") + " (" + thread_count + ")";
+                members[idx] = info.getString("name") +
+                        " ( " + thread_count + " / " + thread_all + " )";
                 pids[idx]    = info.getString("pid");
             }
 

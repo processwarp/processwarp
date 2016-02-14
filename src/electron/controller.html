@@ -268,11 +268,13 @@
           processes.forEach(function(process) {
             var tr = document.createElement('tr');
             var td = document.createElement('td');
+            var thread_all   = 0;
             var thread_count = 0;
             for (var thread in process.threads) {
+              thread_all++;
               if (process.threads[thread] === myNid) thread_count++;
             }
-            var text = process.name + ' (' + thread_count + ')';
+            var text = process.name + ' ( ' + thread_count + ' / ' + thread_all + ' )';
             var text_node = document.createTextNode(text);
 
             td.classList.add('mdl-data-table__cell--non-numeric');
