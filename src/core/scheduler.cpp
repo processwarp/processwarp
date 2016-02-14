@@ -72,6 +72,9 @@ nid_t Scheduler::get_dst_nid(const vpid_t& pid, Module::Type module) {
  */
 void Scheduler::recv_command(const CommandPacket& packet) {
   assert(my_info.nid != SpecialNID::NONE);
+  assert(packet.dst_nid != SpecialNID::NONE && packet.dst_nid != SpecialNID::THIS);
+  assert(packet.src_nid != SpecialNID::NONE && packet.src_nid != SpecialNID::THIS);
+  assert(packet.module == Module::SCHEDULER);
 
   const std::string& command = packet.content.at("command").get<std::string>();
   if (command == "activate") {
