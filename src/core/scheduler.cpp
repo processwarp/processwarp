@@ -261,7 +261,7 @@ void Scheduler::recv_command_create_gui(const CommandPacket& packet) {
  * @param packet Command packet.
  */
 void Scheduler::recv_command_distribute(const CommandPacket& packet) {
-  assert(packet.pid != SpecialPID::BROADCAST);
+  assert(packet.pid == SpecialPID::BROADCAST);
 
   if (packet.src_nid != my_info.nid) {
     /// @todo error
