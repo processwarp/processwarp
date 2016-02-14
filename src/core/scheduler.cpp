@@ -171,7 +171,7 @@ void Scheduler::cleanup_unresponsive_process() {
     // Cleanup threads.
     auto it_thread = info.threads.begin();
     while (it_thread != info.threads.end()) {
-      if (it_thread->second.second + HEARTBEAT_DEADLINE < now) {
+      if (it_thread->second.heartbeat + HEARTBEAT_DEADLINE < now) {
         it_thread = info.threads.erase(it_thread);
         is_changed = true;
       } else {
@@ -210,7 +210,7 @@ void Scheduler::recv_command_activate(const CommandPacket& packet) {
     ProcessInfo& info = it_info.second;
 
     for (auto& it_thread : info.threads) {
-      if (it_thread.second.first == my_info.nid) {
+      if (it_thread.second.nid == my_info.nid) {
         send_command_require_warp_thread(info.pid, it_thread.first, packet.src_nid);
       }
     }
@@ -266,7 +266,7 @@ void Scheduler::recv_command_distribute(const CommandPacket& packet) {
     std::map<nid_t, int> counts;
 
     for (auto& it_thread : proc.threads) {
-      nid_t nid = it_thread.second.first;
+      const nid_t& nid = it_thread.second.nid;
       if (counts.find(nid) == counts.end()) {
         counts.insert(make_pair(nid, 1));
       } else {
@@ -290,7 +290,7 @@ void Scheduler::recv_command_distribute(const CommandPacket& packet) {
 
     for (auto& it_thread : proc.threads) {
       // For thread running in this node.
-      if (it_thread.second.first != my_info.nid) continue;
+      if (it_thread.second.nid != my_info.nid) continue;
 
       nid_t nid = SpecialNID::NONE;
       int min_count = average;
@@ -390,15 +390,21 @@ void Scheduler::recv_command_heartbeat_vm(const CommandPacket& packet) {
     auto thread_pair = info.threads.find(tid);
 
     if (thread_pair == info.threads.end()) {
-      info.threads.insert(std::make_pair(tid, std::make_pair(packet.src_nid, now)));
+      ThreadInfo thread_info;
+      thread_info.tid = tid;
+      thread_info.nid = packet.src_nid;
+      thread_info.heartbeat = now;
+      info.threads.insert(std::make_pair(tid, thread_info));
       is_changed = true;
 
-    } else if (thread_pair->second.first != packet.src_nid) {
-      info.threads.at(tid) = std::make_pair(packet.src_nid, now);
+    } else if (thread_pair->second.nid != packet.src_nid) {
+      ThreadInfo& thread_info = info.threads.at(tid);
+      thread_info.nid = packet.src_nid;
+      thread_info.heartbeat = now;
       is_changed = true;
 
     } else {
-      info.threads.at(tid).second = now;
+      info.threads.at(tid).heartbeat = now;
     }
 
     tids.insert(tid);
@@ -407,9 +413,9 @@ void Scheduler::recv_command_heartbeat_vm(const CommandPacket& packet) {
   // Remove thread-id from list if it had run in source node but not run at now.
   auto it_thread = info.threads.begin();
   while (it_thread != info.threads.end()) {
-    if (it_thread->second.first == packet.src_nid &&
+    if (it_thread->second.nid == packet.src_nid &&
         tids.find(it_thread->first) == tids.end()) {
-      it_thread->second.first = SpecialNID::NONE;
+      it_thread->second.nid = SpecialNID::NONE;
       is_changed = true;
 
     } else {
@@ -517,8 +523,9 @@ void Scheduler::send_command_processes_info() {
 
     picojson::object threads;
     for (auto& it_thread : info.threads) {
-      threads.insert(std::make_pair(Convert::vtid2str(it_thread.first),
-                                    Convert::nid2json(it_thread.second.first)));
+      ThreadInfo& thread_info = it_thread.second;
+      threads.insert(std::make_pair(Convert::vtid2str(thread_info.tid),
+                                    Convert::nid2json(thread_info.nid)));
     }
 
     picojson::object proc;

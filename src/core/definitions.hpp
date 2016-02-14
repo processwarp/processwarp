@@ -292,7 +292,16 @@ struct NodeInfo {
 };
 
 /**
- * Process and thread information to use in scheduler and controller.
+ * Thread information to use in scheduler.
+ */
+struct ThreadInfo {
+  vtid_t tid;
+  nid_t nid;
+  std::time_t heartbeat;
+};
+
+/**
+ * Process information to use in scheduler.
  */
 struct ProcessInfo {
   /** Porcess-id */
@@ -300,7 +309,7 @@ struct ProcessInfo {
   /** Process name. */
   std::string name;
   /** Map of thread-id and node-id, last heartbeat time that thread is running. */
-  std::map<vtid_t, std::pair<nid_t, std::time_t>> threads;
+  std::map<vtid_t, ThreadInfo> threads;
   /** Node-id that havign gui frontend bundled process or NONE. */
   nid_t gui_nid;
   /** True if vm bundled process is exist in this node. */
