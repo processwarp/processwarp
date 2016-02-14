@@ -416,7 +416,6 @@ void ServerConnector::initialize_socketio(const std::string& url) {
 #define M_BIND_SOCKETIO_EVENT(_name) {                                  \
     socket->on(_name,                                                   \
                [&](sio::event& event) {                                 \
-                 print_debug("recv : %s\n", _name);                     \
                  std::lock_guard<std::mutex> guard(sio_mutex);          \
                  sio_queue.push(make_pair(_name, event.get_message())); \
                  uv_async_send(&async_receive);                         \

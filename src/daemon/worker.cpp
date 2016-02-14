@@ -179,7 +179,7 @@ void Worker::on_recv(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
   if (nread < 0) {
     if (nread != UV_EOF) {
       /// @todo error
-      fprintf(stderr, "Read error %s\n", uv_err_name(nread));
+      print_debug("Read error %s\n", uv_err_name(nread));
     }
     uv_close(reinterpret_cast<uv_handle_t*>(&THIS.pipe), Worker::on_close);
     return;
@@ -195,7 +195,7 @@ void Worker::on_recv(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
 
     if (THIS.recv_buffer.data()[4 + psize] != 0) {
       /// @todo error
-      fprintf(stderr, "Wrong packet terminate.");
+      print_debug("Wrong packet terminate.");
       uv_close(reinterpret_cast<uv_handle_t*>(&THIS.pipe), Worker::on_close);
       return;
     }
@@ -203,10 +203,9 @@ void Worker::on_recv(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
     picojson::value v;
     std::string err;
     picojson::parse(v, THIS.recv_buffer.data() + 4, THIS.recv_buffer.data() + 4 + psize, &err);
-    printf("Worker::on_recv : %s\n", THIS.recv_buffer.data() + 4);
     if (!err.empty()) {
       /// @todo error
-      fprintf(stderr, "on_read:%s\n", err.c_str());
+      print_debug("on_read:%s\n", err.c_str());
       uv_close(reinterpret_cast<uv_handle_t*>(&THIS.pipe), Worker::on_close);
       return;
     }
@@ -231,7 +230,7 @@ void Worker::on_write_end(uv_write_t *req, int status) {
 
   if (status < 0) {
     /// @todo error
-    fprintf(stderr, "error on uv_write\n");
+    print_debug("error on uv_write\n");
     uv_close(reinterpret_cast<uv_handle_t*>(&handler->THIS->pipe), Worker::on_close);
   }
 }
@@ -327,7 +326,7 @@ void Worker::connect_pipe(WorkerParameter& parameter) {
 
   if (r) {
     /// @todo error
-    fprintf(stderr, "Bind error %s\n", uv_err_name(r));
+    print_debug("Bind error %s\n", uv_err_name(r));
     assert(false);
   }
   pipe.data    = this;
@@ -361,7 +360,7 @@ void Worker::initialize_loop() {
   r = uv_idle_init(loop, &idle);
   if (r) {
     /// @todo error
-    fprintf(stderr, "idle init %s\n", uv_err_name(r));
+    print_debug("idle init %s\n", uv_err_name(r));
     assert(false);
   }
 
@@ -369,7 +368,7 @@ void Worker::initialize_loop() {
   r = uv_idle_start(&idle, Worker::on_idle);
   if (r) {
     /// @todo error
-    fprintf(stderr, "idle start %s\n", uv_err_name(r));
+    print_debug("idle start %s\n", uv_err_name(r));
     assert(false);
   }
 }

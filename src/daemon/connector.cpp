@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "connector.hpp"
+#include "util.hpp"
 
 namespace processwarp {
 /**
@@ -47,12 +48,12 @@ void Connector::initialize(uv_loop_t* loop_, const std::string& path) {
 
   if ((r = uv_pipe_bind(&listener, path.c_str()))) {
     /// @todo error
-    fprintf(stderr, "Bind error %s\n", uv_err_name(r));
+    print_debug("Bind error %s\n", uv_err_name(r));
     return;
   }
   if ((r = uv_listen(reinterpret_cast<uv_stream_t*>(&listener), 128, Connector::on_connect))) {
     /// @todo error
-    fprintf(stderr, "Listen error %s\n", uv_err_name(r));
+    print_debug("Listen error %s\n", uv_err_name(r));
     return;
   }
 }
@@ -141,7 +142,7 @@ void Connector::on_recv(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf)
   if (nread < 0) {
     if (nread != UV_EOF) {
       /// @todo error
-      fprintf(stderr, "Read error %s\n", uv_err_name(nread));
+      print_debug("Read error %s\n", uv_err_name(nread));
     }
     uv_close(reinterpret_cast<uv_handle_t*>(client), Connector::on_close);
     return;
@@ -157,7 +158,7 @@ void Connector::on_recv(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf)
 
     if (client_buffer.data()[4 + psize] != 0) {
       /// @todo error
-      fprintf(stderr, "Wrong packet terminate.");
+      print_debug("Wrong packet terminate.");
       uv_close(reinterpret_cast<uv_handle_t*>(client), Connector::on_close);
       return;
     }
@@ -165,10 +166,9 @@ void Connector::on_recv(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf)
     picojson::value v;
     std::string err;
     picojson::parse(v, client_buffer.data() + 4, client_buffer.data() + 4 + psize, &err);
-    printf("recv connector:%s\n", client_buffer.data() + 4);
     if (!err.empty()) {
       /// @todo err
-      fprintf(stderr, "on_read:%s\n", err.c_str());
+      print_debug("on_read:%s\n", err.c_str());
       uv_close(reinterpret_cast<uv_handle_t*>(client), Connector::on_close);
       return;
     }
@@ -193,7 +193,7 @@ void Connector::on_write_end(uv_write_t *req, int status) {
 
   if (status < 0) {
     /// @todo err
-    fprintf(stderr, "error on uv_write\n");
+    print_debug("error on uv_write\n");
     uv_close(reinterpret_cast<uv_handle_t*>(handler->pipe), Connector::on_close);
   }
 }

@@ -109,7 +109,7 @@ void WorkerConnector::create_vm(const vpid_t& pid, vtid_t root_tid, vaddr_t proc
   int r = uv_spawn(loop, &property.process, &options);
   if (r) {
     /// @todo error
-    fprintf(stderr, "%s\n", uv_err_name(r));
+    print_debug("%s\n", uv_err_name(r));
     assert(false);
   }
 }

@@ -211,7 +211,7 @@ void WorkerDummy::initialize_loop() {
   r = uv_idle_init(loop, &idle);
   if (r) {
     /// @todo error
-    fprintf(stderr, "idle init %s\n", uv_err_name(r));
+    print_debug("idle init %s\n", uv_err_name(r));
     assert(false);
   }
 
@@ -219,7 +219,7 @@ void WorkerDummy::initialize_loop() {
   r = uv_idle_start(&idle, WorkerDummy::on_idle);
   if (r) {
     /// @todo error
-    fprintf(stderr, "idle start %s\n", uv_err_name(r));
+    print_debug("idle start %s\n", uv_err_name(r));
     assert(false);
   }
 }
