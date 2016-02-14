@@ -40,16 +40,17 @@ void WorkerDummy::initialize(uv_loop_t* loop_, const std::string& pipe_path_,
  * @param root_tid Root thread-id for new vm.
  * @param proc_addr Address of process information for new vm.
  * @param master_nid Node-id of master node for new vm.
+ * @param name Process name for new vm.
  */
 void WorkerDummy::create_vm(const vpid_t& pid, vtid_t root_tid, vaddr_t proc_addr,
-                            const nid_t& master_nid) {
+                            const nid_t& master_nid, const std::string& name) {
   assert(vms.find(pid) == vms.end());
 
   Router& router = Router::get_instance();
 
   std::unique_ptr<VMachine> vm(new VMachine(*this, *this,
                                             router.get_my_nid(), libs, lib_filter));
-  vm->initialize(pid, root_tid, proc_addr, master_nid);
+  vm->initialize(pid, root_tid, proc_addr, master_nid, name);
   vm->initialize_gui(*this);
 
   vms.insert(std::make_pair(pid, std::move(vm)));
