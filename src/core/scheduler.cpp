@@ -228,6 +228,8 @@ void Scheduler::recv_command_activate(const CommandPacket& packet) {
 void Scheduler::recv_command_create_gui(const CommandPacket& packet) {
   assert(packet.pid != SpecialPID::BROADCAST);
 
+  std::time_t now = time(nullptr);
+
   if (packet.src_nid != my_info.nid) {
     /// @todo error
     assert(false);
@@ -240,10 +242,12 @@ void Scheduler::recv_command_create_gui(const CommandPacket& packet) {
     info.pid = packet.pid;
     info.gui_nid = my_info.nid;
     info.having_vm = false;
+    info.heartbeat = now;
     processes.insert(std::make_pair(info.pid, info));
 
   } else {
     it_info->second.gui_nid = my_info.nid;
+    it_info->second.heartbeat = now;
   }
 
   delegate->scheduler_create_gui(*this, packet.pid);
@@ -318,6 +322,7 @@ void Scheduler::recv_command_distribute(const CommandPacket& packet) {
 void Scheduler::recv_command_heartbeat_gui(const CommandPacket& packet) {
   assert(packet.pid != SpecialPID::BROADCAST);
 
+  std::time_t now = time(nullptr);
   auto it_info = processes.find(packet.pid);
 
   if (it_info == processes.end()) {
@@ -325,10 +330,12 @@ void Scheduler::recv_command_heartbeat_gui(const CommandPacket& packet) {
     info.pid = packet.pid;
     info.gui_nid = packet.src_nid;
     info.having_vm = false;
+    info.heartbeat = now;
     processes.insert(std::make_pair(packet.pid, info));
 
   } else {
     it_info->second.gui_nid = packet.src_nid;
+    it_info->second.heartbeat = now;
   }
 }
 
@@ -439,15 +446,19 @@ void Scheduler::recv_command_require_processes_info(const CommandPacket& packet)
  */
 void Scheduler::recv_command_warp_gui(const CommandPacket& packet) {
   auto it_info = processes.find(packet.pid);
+  std::time_t now = time(nullptr);
+
   if (it_info == processes.end()) {
     ProcessInfo info;
     info.pid = packet.pid;
     info.gui_nid = my_info.nid;
     info.having_vm = false;
+    info.heartbeat = now;
     processes.insert(std::make_pair(packet.pid, info));
 
   } else {
     it_info->second.gui_nid = my_info.nid;
+    it_info->second.heartbeat = now;
   }
 
   delegate->scheduler_create_gui(*this, packet.pid);
@@ -478,8 +489,10 @@ void Scheduler::recv_command_warp_thread(const CommandPacket& packet) {
     info.gui_nid = SpecialNID::NONE;
     info.having_vm = true;
     info.heartbeat = now;
-
     processes.insert(std::make_pair(packet.pid, info));
+
+  } else {
+    it_info->second.heartbeat = now;
   }
 
   vtid_t tid = Convert::json2vtid(packet.content.at("tid"));
