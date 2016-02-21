@@ -158,66 +158,83 @@ public class Router implements Runnable {
      * @param isFromServer Set true if packet was passed by server.
      */
     public void relayCommand(CommandPacket packet, boolean isFromServer) {
-        // Update to real node-id if packet is from another modules in this node.
-        if (!isFromServer) {
-            if (SpecialNid.THIS.equals(packet.dstNid)) {
-                packet.dstNid = myNid;
+        handler.post(new Runnable() {
+            private Router caller;
+            private CommandPacket packet;
+            private boolean isFromServer;
 
-            } else if (SpecialNid.NONE.equals(packet.dstNid)) {
-                lock.lock();
-                try {
-                    Assert.assertNotNull(packet.pid);
-                    packet.dstNid = schedulerGetDstNid(packet.pid, packet.module);
-                } finally {
-                    lock.unlock();
+            public Runnable initialize(Router caller, CommandPacket packet, boolean isFromServer) {
+                this.caller = caller;
+                this.packet = packet;
+                this.isFromServer = isFromServer;
+
+                return this;
+            }
+
+            @Override
+            public void run() {
+                // Update to real node-id if packet is from another modules in this node.
+                if (!isFromServer) {
+                    if (SpecialNid.THIS.equals(packet.dstNid)) {
+                        packet.dstNid = myNid;
+
+                    } else if (SpecialNid.NONE.equals(packet.dstNid)) {
+                        lock.lock();
+                        try {
+                            Assert.assertNotNull(packet.pid);
+                            packet.dstNid = schedulerGetDstNid(packet.pid, packet.module);
+                        } finally {
+                            lock.unlock();
+                        }
+                    }
+                    packet.srcNid = myNid;
+                }
+
+                // Relay command packet to capable module, if destination node is this node.
+                if (packet.dstNid.equals(myNid) || packet.dstNid.equals(SpecialNid.BROADCAST)) {
+                    switch (packet.module) {
+                        case Module.MEMORY:
+                        case Module.VM:
+                            delegate.routerRelayWorkerPacket(caller, packet);
+                            break;
+
+                        case Module.SCHEDULER:
+                            lock.lock();
+                            try {
+                                Assert.assertNotNull(packet.pid);
+                                Assert.assertNotNull(packet.dstNid);
+                                Assert.assertNotNull(packet.srcNid);
+                                Assert.assertNotNull(packet.content);
+                                schedulerRecvCommand(
+                                        packet.pid, packet.dstNid, packet.srcNid,
+                                        packet.module, packet.content);
+                            } finally {
+                                lock.unlock();
+                            }
+                            break;
+
+                        case Module.CONTROLLER:
+                            delegate.routerRelayControllerPacket(caller, packet);
+                            break;
+
+                        case Module.GUI:
+                            delegate.routerRelayGuiPacket(caller, packet);
+                            break;
+
+                        default:
+                            // TODO
+                            Assert.fail();
+                            return;
+                    }
+                }
+
+                // Relay command packet by through server,
+                // if destination node isn't this node and not from server.
+                if (!packet.dstNid.equals(myNid) && !isFromServer) {
+                    server.sendRelayCommand(packet);
                 }
             }
-            packet.srcNid = myNid;
-        }
-
-        // Relay command packet to capable module, if destination node is this node.
-        if (packet.dstNid.equals(myNid) || packet.dstNid.equals(SpecialNid.BROADCAST)) {
-            switch (packet.module) {
-                case Module.MEMORY:
-                case Module.VM:
-                    delegate.routerRelayWorkerPacket(this, packet);
-                    break;
-
-                case Module.SCHEDULER:
-                    lock.lock();
-                    try {
-                        Assert.assertNotNull(packet.pid);
-                        Assert.assertNotNull(packet.dstNid);
-                        Assert.assertNotNull(packet.srcNid);
-                        Assert.assertNotNull(packet.content);
-                        schedulerRecvCommand(
-                                packet.pid, packet.dstNid, packet.srcNid,
-                                packet.module, packet.content);
-                    } finally {
-                        lock.unlock();
-                    }
-                    break;
-
-                case Module.CONTROLLER:
-                    delegate.routerRelayControllerPacket(this, packet);
-                    break;
-
-                case Module.GUI:
-                    delegate.routerRelayGuiPacket(this, packet);
-                    break;
-
-                default:
-                    // TODO
-                    Assert.fail();
-                    return;
-            }
-        }
-
-        // Relay command packet by through server,
-        // if destination node isn't this node and not from server.
-        if (!packet.dstNid.equals(myNid) && !isFromServer) {
-            server.sendRelayCommand(packet);
-        }
+        }.initialize(this, packet, isFromServer));
     }
 
     /**

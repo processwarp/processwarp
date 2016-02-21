@@ -81,7 +81,9 @@ public class Worker implements Runnable {
         } finally {
             lock.unlock();
         }
-        handler.postDelayed(this, 1);
+
+        // handler.postDelayed(this, 1);
+        handler.post(this);
     }
 
     /**
@@ -101,12 +103,34 @@ public class Worker implements Runnable {
      */
     public void relayWorkerCommand(String pid, String dstNid, String srcNid,
                                    int module, String content) {
-        lock.lock();
-        try {
-            vmRelayCommand(pid, dstNid, srcNid, module, content);
-        } finally {
-            lock.unlock();
-        }
+
+        handler.post(new Runnable() {
+            private String pid;
+            private String dstNid;
+            private String srcNid;
+            private int module;
+            private String content;
+
+            public Runnable initialize(String pid, String dstNid, String srcNid, int module, String content) {
+                this.pid = pid;
+                this.dstNid = dstNid;
+                this.srcNid = srcNid;
+                this.module = module;
+                this.content = content;
+
+                return this;
+            }
+
+            @Override
+            public void run() {
+                lock.lock();
+                try {
+                    vmRelayCommand(pid, dstNid, srcNid, module, content);
+                } finally {
+                    lock.unlock();
+                }
+            }
+        }.initialize(pid, dstNid, srcNid, module, content));
     }
 
     /**
