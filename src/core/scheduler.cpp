@@ -6,6 +6,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <vector>
 
 #include "convert.hpp"
 #include "scheduler.hpp"
@@ -268,52 +269,22 @@ void Scheduler::recv_command_distribute(const CommandPacket& packet) {
     assert(false);
   }
 
+  std::vector<nid_t> nids;
+  for (auto& it_node : nodes) {
+    const nid_t& nid = it_node.second.nid;
+    if (nid != my_info.nid) nids.push_back(nid);
+  }
+
+  int i = 0;
   for (auto& it_proc : processes) {
     ProcessInfo& proc = it_proc.second;
-    std::map<nid_t, int> counts;
 
     for (auto& it_thread : proc.threads) {
-      const nid_t& nid = it_thread.second.nid;
-      if (counts.find(nid) == counts.end()) {
-        counts.insert(make_pair(nid, 1));
-      } else {
-        counts.at(nid)++;
+      if (it_thread.second.nid == my_info.nid) {
+        const nid_t& target_nid = nids.at(i % nids.size());
+        send_command_require_warp_thread(proc.pid, it_thread.first, target_nid);
+        i++;
       }
-    }
-
-    if (counts.find(my_info.nid) == counts.end()) continue;
-
-    for (auto& it_node : nodes) {
-      NodeInfo& node = it_node.second;
-      if (counts.find(node.nid) == counts.end()) {
-        counts.insert(make_pair(node.nid, 0));
-      }
-    }
-
-    int average = static_cast<int>(floor(static_cast<double>(proc.threads.size()) /
-                                         static_cast<double>(nodes.size())));
-    int over = counts.at(my_info.nid) - average;
-    if (over <= 0) break;
-
-    for (auto& it_thread : proc.threads) {
-      // For thread running in this node.
-      if (it_thread.second.nid != my_info.nid) continue;
-
-      nid_t nid = SpecialNID::NONE;
-      int min_count = average;
-      for (auto& it_count : counts) {
-        int count = it_count.second;
-        if (count < min_count) {
-          min_count = count;
-          nid = it_count.first;
-        }
-      }
-      assert(nid != SpecialNID::NONE);
-      send_command_require_warp_thread(proc.pid, it_thread.first, nid);
-      counts.at(nid)++;
-
-      // Finish loop if require count is over.
-      if ((--over) == 0) break;
     }
   }
 }
