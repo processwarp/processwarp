@@ -28,6 +28,9 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   else()
     find_library(FFI_LIBRARY NAMES ffi)
     set(extra_libs ${extra_libs} ${FFI_LIBRARY})
+    if(FFI_INCLUDE_DIR)
+      include_directories(${FFI_INCLUDE_DIR})
+    endif()
   endif()
 
   # OpenSSL
