@@ -11,7 +11,7 @@
 namespace processwarp {
 
 static const FuncStore::NormalProp DUMMY_PROP = {};
-static const BuiltinFuncParam DUMMY_BUILTIN_PARAM = {.ptr = nullptr};
+static const BuiltinFuncParam DUMMY_BUILTIN_PARAM = {};
 
 //
 FuncStore::FuncStore(vaddr_t addr_,
