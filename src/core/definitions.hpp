@@ -77,9 +77,6 @@ typedef uint64_t longest_int_t;
 /** 最長のuintを1うめしたもの */
 // static longest_uint_t LONGEST_UINT_FILL = 0xFFFFFFFFFFFFFFFF;
 
-/** ライブラリなど外部関数の関数の型 */
-typedef void (*external_func_t)();
-
 /** NULLのアドレス */
 static const vaddr_t VADDR_NULL = 0x00000000;
 /** アドレスに何も割り当てられていない状態の定数 */

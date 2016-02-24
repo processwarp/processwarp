@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "definitions.hpp"
+#include "dynamic_library.hpp"
 #include "symbols.hpp"
 #include "vmemory.hpp"
 
@@ -47,7 +48,7 @@ class FuncStore {
 
   // ライブラリなど外部の関数の場合利用するメンバ
   /// ライブラリなど外部の関数のポインタ
-  external_func_t external;
+  DynamicLibrary::external_func_t external;
 
   /**
    * Allocate a new normal function to memory.

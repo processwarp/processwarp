@@ -65,6 +65,7 @@ endif
 LOCAL_SRC_FILES  += router_jni.cpp
 LOCAL_SRC_FILES  += worker_jni.cpp
 LOCAL_SRC_FILES  += $(CORE_PATH)/convert.cpp
+LOCAL_SRC_FILES  += $(CORE_PATH)/dynamic_library.cpp
 LOCAL_SRC_FILES  += $(CORE_PATH)/error.cpp
 LOCAL_SRC_FILES  += $(CORE_PATH)/func_store.cpp
 LOCAL_SRC_FILES  += $(CORE_PATH)/finally.cpp
