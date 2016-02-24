@@ -5,6 +5,7 @@
 #include <utility>
 
 #include "convert.hpp"
+#include "definitions.hpp"
 #include "func_store.hpp"
 #include "process.hpp"
 
