@@ -10,6 +10,11 @@ link_directories("${SIO_DIR}/lib/Release")
 list(APPEND extra_libs "sioclient_tls")
 
 # Boost
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  set(Boost_USE_STATIC_LIBS ON)
+  set(Boost_USE_MULTITHREADED ON)
+  set(Boost_USE_STATIC_RUNTIME OFF)
+endif()
 find_package(Boost REQUIRED COMPONENTS system date_time random)
 include_directories(${Boost_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
@@ -33,19 +38,40 @@ include_directories(${OPENSSL_INCLUDE_DIR})
 list(APPEND extra_libs ${OPENSSL_LIBRARIES})
 
 # libuv
-pkg_search_module(UV libuv REQUIRED)
+pkg_search_module(UV libuv)
 if(UV_FOUND)
   include_directories(${UV_INCLUDE_DIRS})
   string(REPLACE ";" " " UV_CFLAGS_STR "${UV_CFLAGS}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${UV_CFLAGS_STR}")
   list(APPEND extra_libs ${UV_LIBRARIES})
+else()
+  include_directories(${UV_INCLUDE_DIRS})
 endif()
 
-# C++ options
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wno-unused-parameter")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWORKER_DUMMY")
 
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
+# C++ options
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  # MaxOSX
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wno-unused-parameter")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
+
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
+  # FreeBSD
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wno-unused-parameter")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
+
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+  # Linux
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wno-unused-parameter")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
+
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  # Windows
+endif()
 
 # Compile & link
 file(GLOB HEADER_FILES "*.hpp")
