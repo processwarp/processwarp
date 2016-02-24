@@ -9,6 +9,7 @@
 #include <utility>
 #include <vector>
 
+#include "dynamic_library.hpp"
 #include "error.hpp"
 #include "func_store.hpp"
 #include "symbols.hpp"
@@ -54,7 +55,7 @@ class Process {
   const vtid_t root_tid;
 
   /** Loaded external libraries for ffi. */
-  const std::vector<void*>& libs;
+  const std::vector<DynamicLibrary::lib_handler_t>& libs;
   /** Map of API name call from and call for that can access. */
   const std::map<std::string, std::string>& lib_filter;
   /** Map of API name and built-in function pointer and parameter. */
@@ -92,7 +93,7 @@ class Process {
   alloc(ProcessDelegate& delegate,
         const vpid_t& pid,
         vtid_t root_tid,
-        const std::vector<void*>& libs,
+        const std::vector<DynamicLibrary::lib_handler_t>& libs,
         const std::map<std::string, std::string>& lib_filter,
         const std::map<std::string, std::pair<builtin_func_t, BuiltinFuncParam>>& builtin_funcs);
 
@@ -100,7 +101,7 @@ class Process {
   alloc(ProcessDelegate& delegate,
         const vpid_t& pid,
         vtid_t root_tid,
-        const std::vector<void*>& libs,
+        const std::vector<DynamicLibrary::lib_handler_t>& libs,
         const std::map<std::string, std::string>& lib_filter,
         const std::map<std::string, std::pair<builtin_func_t, BuiltinFuncParam>>& builtin_funcs,
         vaddr_t proc_addr,
@@ -119,7 +120,7 @@ class Process {
   read(ProcessDelegate& delegate,
        std::unique_ptr<VMemory::Accessor> memory,
        vaddr_t addr,
-       const std::vector<void*>& libs,
+       const std::vector<DynamicLibrary::lib_handler_t>& libs,
        const std::map<std::string, std::string>& lib_filter,
        const std::map<std::string, std::pair<builtin_func_t, BuiltinFuncParam>>& builtin_funcs);
 
@@ -213,7 +214,7 @@ class Process {
    * @param name 関数の名称
    * @return 関数へのポインタ
    */
-  external_func_t get_external_func(const Symbols::Symbol& name);
+  DynamicLibrary::external_func_t get_external_func(const Symbols::Symbol& name);
 
   /**
    * 組み込み関数用に引数を取り出す(ポインタ)。
@@ -318,7 +319,7 @@ class Process {
           const vaddr_t addr,
           const vpid_t& pid,
           const vtid_t& root_tid,
-          const std::vector<void*>& libs,
+          const std::vector<DynamicLibrary::lib_handler_t>& libs,
           const std::map<std::string, std::string>& lib_filter,
           const std::map<std::string, std::pair<builtin_func_t, BuiltinFuncParam>>& builtin_funcs);
 };

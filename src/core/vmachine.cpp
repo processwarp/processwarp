@@ -42,7 +42,7 @@ VMachineDelegate::~VMachineDelegate() {
 VMachine::VMachine(VMachineDelegate& delegate_,
                    VMemoryDelegate& memory_delegate,
                    const nid_t& my_nid_,
-                   const std::vector<void*>& libs_,
+                   const std::vector<DynamicLibrary::lib_handler_t>& libs_,
                    const std::map<std::string, std::string>& lib_filter_) :
     my_nid(my_nid_),
     vmemory(memory_delegate, my_nid_),

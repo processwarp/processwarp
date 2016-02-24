@@ -284,11 +284,9 @@ void Worker::read_config(const std::string& config_file) {
   if (config.find("libs") != config.end()) {
     const picojson::array& lib_paths = config.at("libs").get<picojson::array>();
     for (auto lib : lib_paths) {
-      void* dl_handle = dlopen(lib.get<std::string>().c_str(), RTLD_LAZY);
-      if (!dl_handle) {
-        throw_error_message(Error::EXT_LIBRARY, dlerror());
-      }
-      libs.push_back(dl_handle);
+      DynamicLibrary::lib_handler_t lib_handler =
+          DynamicLibrary::open_lib(lib.get<std::string>());
+      libs.push_back(lib_handler);
     }
   }
 

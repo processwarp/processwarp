@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "builtin_gui.hpp"
+#include "dynamic_library.hpp"
 #include "vmachine.hpp"
 #include "vmemory.hpp"
 
@@ -43,7 +44,7 @@ class Worker : public VMachineDelegate, public VMemoryDelegate, public BuiltinGu
   std::vector<uint8_t> recv_buffer;
 
   /** Dynamic link libraries. */
-  std::vector<void*> libs;
+  std::vector<DynamicLibrary::lib_handler_t> libs;
   /** Map of API name call from and call for that can access. */
   std::map<std::string, std::string> lib_filter;
   std::unique_ptr<VMachine> vm;

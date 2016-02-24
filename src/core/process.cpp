@@ -6,9 +6,7 @@
 #include <ffi.h>
 #endif
 
-#ifndef EMSCRIPTEN
-#include <dlfcn.h>
-#else
+#ifdef EMSCRIPTEN
 #include <emscripten/emscripten.h>
 #endif
 
@@ -89,7 +87,7 @@ Process::Process(ProcessDelegate& delegate_,
                  const vaddr_t addr_,
                  const vpid_t& pid_,
                  const vtid_t& root_tid_,
-                 const std::vector<void*>& libs_,
+                 const std::vector<DynamicLibrary::lib_handler_t>& libs_,
                  const std::map<std::string, std::string>& lib_filter_,
                  const std::map<std::string,
                  std::pair<builtin_func_t, BuiltinFuncParam>>& builtin_funcs_) :
@@ -107,7 +105,7 @@ Process::Process(ProcessDelegate& delegate_,
 std::unique_ptr<Process> Process::alloc(ProcessDelegate& delegate,
                                         const vpid_t& pid,
                                         vtid_t root_tid,
-                                        const std::vector<void*>& libs,
+                                        const std::vector<DynamicLibrary::lib_handler_t>& libs,
                                         const std::map<std::string, std::string>& lib_filter,
                                         const std::map<std::string, std::pair
                                         <builtin_func_t, BuiltinFuncParam>>& builtin_funcs) {
@@ -128,7 +126,7 @@ std::unique_ptr<Process> Process::alloc(ProcessDelegate& delegate,
 std::unique_ptr<Process> Process::alloc(ProcessDelegate& delegate,
                                         const vpid_t& pid,
                                         vtid_t root_tid,
-                                        const std::vector<void*>& libs,
+                                        const std::vector<DynamicLibrary::lib_handler_t>& libs,
                                         const std::map<std::string, std::string>& lib_filter,
                                         const std::map<std::string, std::pair
                                         <builtin_func_t, BuiltinFuncParam>>& builtin_funcs,
@@ -151,7 +149,7 @@ std::unique_ptr<Process> Process::alloc(ProcessDelegate& delegate,
 std::unique_ptr<Process> Process::read(ProcessDelegate& delegate,
                                        std::unique_ptr<VMemory::Accessor> memory,
                                        vaddr_t addr,
-                                       const std::vector<void*>& libs,
+                                       const std::vector<DynamicLibrary::lib_handler_t>& libs,
                                        const std::map<std::string, std::string>& lib_filter,
                                        const std::map<std::string, std::pair
                                        <builtin_func_t, BuiltinFuncParam>>& builtin_funcs) {
@@ -1188,28 +1186,26 @@ void Process::terminate() {
 }
 
 // ライブラリなど、外部の関数へのポインタを取得する。
-external_func_t Process::get_external_func(const Symbols::Symbol& name) {
+DynamicLibrary::external_func_t Process::get_external_func(const Symbols::Symbol& name) {
   print_debug("get external func:%s\n", name.str().c_str());
   if (lib_filter.find(name.str()) == lib_filter.end()) {
     throw_error_message(Error::SYM_NOT_FOUND, name.str());
   }
 #ifndef EMSCRIPTEN
-  const char* sym_char = lib_filter.at(name.str()).c_str();
+  const std::string& symbol = lib_filter.at(name.str());
   // Search function that have the same name by dlsym.
-  void* sym = dlsym(RTLD_DEFAULT, sym_char);
-  if (sym == nullptr) {
+  DynamicLibrary::external_func_t func = DynamicLibrary::get_func(nullptr, symbol);
+  if (func == nullptr) {
     for (auto it : libs) {
-      sym = dlsym(it, sym_char);
-      if (sym != nullptr) {
+      func = DynamicLibrary::get_func(it, symbol);
+      if (func != nullptr) {
         break;
       }
     }
   }
-  if (sym == nullptr) {
-    throw_error_message(Error::EXT_LIBRARY, dlerror());
+  if (func == nullptr) {
+    throw_error_message(Error::EXT_LIBRARY, symbol);
   }
-
-  external_func_t func = reinterpret_cast<external_func_t>(sym);
 
   return func;
 

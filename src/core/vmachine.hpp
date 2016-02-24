@@ -9,6 +9,7 @@
 #include <utility>
 #include <vector>
 
+#include "dynamic_library.hpp"
 #include "process.hpp"
 #include "vmemory.hpp"
 
@@ -43,7 +44,7 @@ class VMachine : private ProcessDelegate {
   VMachine(VMachineDelegate& delegate_,
            VMemoryDelegate& memory_delegate,
            const nid_t& my_nid_,
-           const std::vector<void*>& libs_,
+           const std::vector<DynamicLibrary::lib_handler_t>& libs_,
            const std::map<std::string, std::string>& lib_filter_);
   void initialize(const vpid_t& pid, const vtid_t& root_tid, vaddr_t proc_addr,
                   const nid_t& master_nid, const std::string& name);
@@ -63,7 +64,7 @@ class VMachine : private ProcessDelegate {
   /** Event assignee */
   VMachineDelegate& delegate;
   /** Loaded external libraries for ffi. */
-  const std::vector<void*>& libs;
+  const std::vector<DynamicLibrary::lib_handler_t>& libs;
   /**
    * Map of API name call from and call for that can access.
    * Key:API nam call from application.
