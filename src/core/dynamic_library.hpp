@@ -21,7 +21,7 @@ typedef void* lib_handler_t;
 /** Type for external function pointer. */
 typedef void (*external_func_t)();
 
-lib_handler_t open_lib(const std::string& name);
+lib_handler_t open_lib(const std::string& fname);
 external_func_t get_func(lib_handler_t handler, const std::string& name);
 void close_lib(lib_handler_t handler);
 
