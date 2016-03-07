@@ -256,10 +256,13 @@ public class ServerConnector {
     }
 
     /**
-     * When receive relay_command packet from server, check if me should receive it, and relay to capable modules.
+     * When receive relay_command packet from server, check if me should receive it,
+     * and relay to capable modules.
+     * If connection was not established, drop any packets from the server.
      * @param data Received data.
      */
     private void recvRelayCommand(JSONObject data) {
+        if (!isConnected) return;
         String myNid = router.getMyNid();
 
         try {
