@@ -43,6 +43,12 @@ class VMemory {
     PT_PROGRAM,
   };
 
+  /** History of copy command for some page. */
+  struct SendCopyHistory {
+    uint64_t key;
+    std::time_t time;
+  };
+
   /** */
   struct Page {
     /** */
@@ -57,6 +63,10 @@ class VMemory {
     std::set<nid_t> hint;
     /** Reference count to use to master. */
     int master_count;
+    /** Access count for change owner or occasion to copy. */
+    int referral_count;
+    /** History of copy command for some node. */
+    std::map<nid_t, SendCopyHistory> send_copy_history;
 
     /**
      * Constructor with value by string.
@@ -151,6 +161,7 @@ class VMemory {
   }
 
   void send_command_copy(const nid_t& dst_nid, Space& space, Page& page, vaddr_t addr);
+  void send_command_copy_reply(const nid_t& dst_nid, Space& space, vaddr_t addr, uint64_t key);
   void send_command_free(const nid_t& dst_nid, Space& space, vaddr_t addr);
   void send_command_give(Space& space, Page& page, vaddr_t addr, const nid_t& dst);
   void send_command_release(Space& space, std::set<vaddr_t> addrs);
@@ -204,6 +215,7 @@ class VMemory {
         throw InterruptMemoryRequire(addr);
       }
       assert(page->second.type == PT_MASTER || page->second.master_count == 0);
+      page->second.referral_count = 0;
       return page->second;
     }
 
@@ -501,12 +513,14 @@ class VMemory {
   VMemory& operator=(const VMemory&);
 
   void recv_command_copy(const CommandPacket& packet);
+  void recv_command_copy_reply(const CommandPacket& packet);
   void recv_command_free(const CommandPacket& packet);
+  void recv_command_give(const CommandPacket& packet);
   void recv_command_require(const CommandPacket& packet);
   void recv_command_reserve(const CommandPacket& packet);
   void recv_command_stand(const CommandPacket& packet);
+  void recv_command_unwant(const CommandPacket& packet);
   void recv_command_update(const CommandPacket& packet);
-  void recv_command_give(const CommandPacket& packet);
   void send_memory_command(const std::string& name, const nid_t& dst_nid,
                            const std::string& command, picojson::object& param);
 };

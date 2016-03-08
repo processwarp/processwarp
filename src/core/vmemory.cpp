@@ -55,6 +55,9 @@ void VMemory::recv_command(const CommandPacket& packet) {
   if (command == "copy") {
     recv_command_copy(packet);
 
+  } else if (command == "copy_reply") {
+    recv_command_copy_reply(packet);
+
   } else if (command == "require") {
     recv_command_require(packet);
 
@@ -76,6 +79,9 @@ void VMemory::recv_command(const CommandPacket& packet) {
   } else if (command == "give") {
     recv_command_give(packet);
 
+  } else if (command == "unwant") {
+    recv_command_unwant(packet);
+
   } else {
     /// @todo error
     assert(false);
@@ -90,6 +96,7 @@ void VMemory::recv_command(const CommandPacket& packet) {
 void VMemory::recv_command_copy(const CommandPacket& packet) {
   vaddr_t addr = Convert::json2vaddr(packet.content.at("addr"));
   const std::string& value = Convert::json2bin(packet.content.at("value"));
+  uint64_t key = Convert::json2int<uint64_t>(packet.content.at("key"));
 
   if (get_upper_addr(addr) != addr) {
     /// @todo error
@@ -98,7 +105,7 @@ void VMemory::recv_command_copy(const CommandPacket& packet) {
 
   auto it_space = spaces.find(packet.pid);
   if (it_space == spaces.end()) {
-    send_command_unwant(packet.pid, packet.src_nid, addr);
+    send_command_unwant(packet.src_nid, packet.pid, addr);
     return;
   }
 
@@ -115,6 +122,10 @@ void VMemory::recv_command_copy(const CommandPacket& packet) {
                          (addr, Page(is_program(addr) ? PT_PROGRAM : PT_COPY,
                                      true, value, hint)));
       space.requiring.erase(it_ri);
+      send_command_copy_reply(packet.src_nid, space, addr, key);
+
+    } else {
+      send_command_unwant(packet.src_nid, packet.pid, addr);
     }
 
   } else {
@@ -124,6 +135,12 @@ void VMemory::recv_command_copy(const CommandPacket& packet) {
 
     if (page.type != PT_COPY) {
       return;
+
+    } else if (page.referral_count >= MEMORY_REFERRAL_LIMIT &&
+               space.requiring.find(addr) == space.requiring.end()) {
+      send_command_unwant(packet.src_nid, packet.pid, addr);
+      space.pages.erase(addr);
+
     } else if (value.size() != 0) {
       if (page.size != value.size()) {
         page.size = value.size();
@@ -131,6 +148,8 @@ void VMemory::recv_command_copy(const CommandPacket& packet) {
       }
       std::memcpy(page.value.get(), value.data(), page.size);
       page.flg_update = true;
+      page.referral_count++;
+      send_command_copy_reply(packet.src_nid, space, addr, key);
 
     } else {
       space.pages.erase(addr);
@@ -143,6 +162,35 @@ void VMemory::recv_command_copy(const CommandPacket& packet) {
   }
 
   delegate.vmemory_recv_update(*this, addr);
+}
+
+/**
+ * When receive copy reply command, check history and send new packet if a page was updated.
+ * @param packet Packet command containing target address and key code that was send by a copy command.
+ */
+void VMemory::recv_command_copy_reply(const CommandPacket& packet) {
+  vaddr_t addr = Convert::json2vaddr(packet.content.at("addr"));
+  uint64_t key = Convert::json2int<uint64_t>(packet.content.at("key"));
+  assert(addr == get_upper_addr(addr));
+
+  auto it_space = spaces.find(packet.pid);
+  if (it_space == spaces.end()) return;
+
+  Space& space = *it_space->second;
+  auto it_page = space.pages.find(addr);
+  if (it_page == space.pages.end()) return;
+
+  Page& page = it_page->second;
+  auto it_history = page.send_copy_history.find(packet.src_nid);
+  if (it_history == page.send_copy_history.end()) return;
+
+  if (it_history->second.key == key) {
+    page.send_copy_history.erase(it_history);
+
+  } else {
+    page.send_copy_history.erase(it_history);
+    send_command_copy(packet.src_nid, space, page, addr);
+  }
 }
 
 /**
@@ -214,7 +262,7 @@ void VMemory::recv_command_give(const CommandPacket& packet) {
       assert(false);
 
     } else {
-      send_command_unwant(packet.pid, dst_nid, addr);
+      send_command_unwant(dst_nid, packet.pid, addr);
       /// @todo send_unwant and relay packet to dst.
       assert(false);
       return;
@@ -252,6 +300,7 @@ void VMemory::recv_command_give(const CommandPacket& packet) {
       }
       std::memcpy(page.value.get(), value.data(), page.size);
       page.hint = hint;
+      page.referral_count = 0;
     }
 
     auto it_ri = space.requiring.find(addr);
@@ -263,7 +312,7 @@ void VMemory::recv_command_give(const CommandPacket& packet) {
 
   } else {
     if (it_page == space.pages.end()) {
-      send_command_unwant(packet.pid, dst_nid, addr);
+      send_command_unwant(dst_nid, packet.pid, addr);
 
     } else {
       Page& page = it_page->second;
@@ -387,8 +436,34 @@ void VMemory::recv_command_stand(const CommandPacket& packet) {
 }
 
 /**
+ * When receive unwant command, remove source node from a set of hint(copy target) and history.
+ * @param packet Command packet containing target address.
+ */
+void VMemory::recv_command_unwant(const CommandPacket& packet) {
+  vaddr_t addr = Convert::json2vaddr(packet.content.at("addr"));
+
+  auto it_space = spaces.find(packet.pid);
+  if (it_space == spaces.end()) return;
+
+  Space& space = *it_space->second;
+  auto it_page = space.pages.find(get_upper_addr(addr));
+  if (it_page == space.pages.end()) return;
+
+  Page& page = it_page->second;
+  auto it_hint = page.hint.find(packet.src_nid);
+  if (it_hint != page.hint.end()) {
+    page.hint.erase(it_hint);
+  }
+  auto it_copy = page.send_copy_history.find(packet.src_nid);
+  if (it_copy != page.send_copy_history.end()) {
+    page.send_copy_history.erase(it_copy);
+  }
+}
+
+/**
  * When receive update command, check and update master value on target address.
  * Relay update command to master node if this node isn't master.
+ * Send give command if this node is master of the page and referal count is more than threshold.
  * @param packet Command packet containing target address and value to update.
  */
 void VMemory::recv_command_update(const CommandPacket& packet) {
@@ -418,6 +493,17 @@ void VMemory::recv_command_update(const CommandPacket& packet) {
       return;
     }
     std::memcpy(page.value.get() + get_lower_addr(addr), value.data(), value.size());
+
+    page.referral_count++;
+    if (page.referral_count >= MEMORY_REFERRAL_LIMIT && page.master_count == 0) {
+      assert(page.flg_update == true);
+      send_command_give(space, page, get_upper_addr(addr), packet.src_nid);
+
+      page.type = PT_COPY;
+      page.hint.clear();
+      page.hint.insert(packet.src_nid);
+    }
+
     delegate.vmemory_recv_update(*this, get_upper_addr(addr));
 
   } else if (page.type == PT_COPY) {
@@ -470,6 +556,9 @@ void VMemory::send_memory_command(const std::string& name, const nid_t& dst_nid,
 /**
  * Send copy command for update page value in another copy node.
  * This command is used to copy value from master to copy node.
+ * Inhibit command if responce (for previous copy command) was not received and
+ * didn't spend interval time yet.
+ * Update key code and timestamp if command was send.
  * @param dst_nid Destination node-id.
  * @param space Target memory space.
  * @param page Target page having value.
@@ -479,12 +568,44 @@ void VMemory::send_command_copy(const nid_t& dst_nid, Space& space, Page& page, 
   assert(page.type != PT_COPY);
   assert(dst_nid != my_nid);
   assert(get_upper_addr(addr) == addr);
+  std::time_t now = time(nullptr);
+  uint64_t key = space.rnd();
+  auto history = page.send_copy_history.find(dst_nid);
+
+  if (history == page.send_copy_history.end() ||
+      history->second.time + MEMORY_REQUIRE_INTERVAL < now) {
+    picojson::object param;
+    param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
+    param.insert(std::make_pair("value", Convert::bin2json(page.value.get(), page.size)));
+    param.insert(std::make_pair("key", Convert::int2json(key)));
+    send_memory_command(space.name, dst_nid, "copy", param);
+
+    if (history != page.send_copy_history.end()) {
+      history->second.time = now;
+    }
+  }
+
+  if (history == page.send_copy_history.end()) {
+    SendCopyHistory new_history;
+    new_history.key  = key;
+    new_history.time = now;
+    page.send_copy_history.insert(std::make_pair(dst_nid, new_history));
+
+  } else {
+    history->second.key = key;
+  }
+}
+
+void VMemory::send_command_copy_reply(const nid_t& dst_nid, Space& space,
+                                      vaddr_t addr, uint64_t key) {
+  assert(dst_nid != my_nid);
+  assert(get_upper_addr(addr) == addr);
 
   picojson::object param;
   param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
-  param.insert(std::make_pair("value", Convert::bin2json(page.value.get(), page.size)));
+  param.insert(std::make_pair("key", Convert::int2json(key)));
 
-  send_memory_command(space.name, dst_nid, "copy", param);
+  send_memory_command(space.name, dst_nid, "copy_reply", param);
 }
 
 /**
@@ -971,7 +1092,8 @@ VMemory::Page::Page(PageType type_, bool flg_update_,
     value(new uint8_t[value_str.size()]),
     size(value_str.size()),
     hint(hint_),
-    master_count(0) {
+    master_count(0),
+    referral_count(0) {
   std::memcpy(value.get(), value_str.data(), size);
 }
 
@@ -981,7 +1103,8 @@ VMemory::Page::Page(PageType type_, bool flg_update_, const std::set<nid_t>& hin
     flg_update(flg_update_),
     size(0),
     hint(hint_),
-    master_count(0) {
+    master_count(0),
+    referral_count(0) {
 }
 
 // Constructor with name and random.

@@ -97,6 +97,8 @@ typedef pw_int_t vm_int_t;
 /** VM内のint相当のint型 */
 typedef pw_uint_t vm_uint_t;
 
+/** Threshold of access count for change owner or occasion to copy. */
+static const int MEMORY_REFERRAL_LIMIT = 5;
 /** Interval time of send require packet (sec). */
 static const int MEMORY_REQUIRE_INTERVAL = 5;
 /** Heartbeat interval.(sec) */
