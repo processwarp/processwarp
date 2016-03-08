@@ -24,7 +24,6 @@ int Worker::entry(int argc, char* argv[]) {
   read_config(parameter.config_file);
   connect_pipe(parameter);
   initialize_vm(parameter);
-  initialize_loop();
 
   return uv_run(loop, UV_RUN_DEFAULT);
 }
@@ -151,6 +150,7 @@ void Worker::on_connect(uv_connect_t* connect, int status) {
   packet.insert(std::make_pair("command", picojson::value(std::string("connect_worker"))));
   packet.insert(std::make_pair("pid", Convert::vpid2json(THIS.parameter.pid)));
   THIS.send_data(packet);
+  THIS.initialize_loop();
 }
 
 /**
