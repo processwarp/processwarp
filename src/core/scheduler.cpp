@@ -269,21 +269,25 @@ void Scheduler::recv_command_distribute(const CommandPacket& packet) {
     assert(false);
   }
 
-  std::vector<nid_t> nids;
+  nid_t target_nid = SpecialNID::NONE;
   for (auto& it_node : nodes) {
-    const nid_t& nid = it_node.second.nid;
-    if (nid != my_info.nid) nids.push_back(nid);
+    if (it_node.second.nid != my_info.nid) {
+      target_nid = it_node.second.nid;
+      break;
+    }
   }
 
-  int i = 0;
+  // Skip if another node are not exist.
+  if (target_nid == my_info.nid) {
+    return;
+  }
+
   for (auto& it_proc : processes) {
     ProcessInfo& proc = it_proc.second;
 
     for (auto& it_thread : proc.threads) {
       if (it_thread.second.nid == my_info.nid) {
-        const nid_t& target_nid = nids.at(i % nids.size());
         send_command_require_warp_thread(proc.pid, it_thread.first, target_nid);
-        i++;
       }
     }
   }
