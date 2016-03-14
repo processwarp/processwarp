@@ -9,7 +9,7 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   
     include_directories(${LLVM_INCLUDE_DIRS})
     if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-      list(APPEND llvm_libs "-lLLVMIRReader -lLLVMBitReader -lLLVMAsmParser -lLLVMCore -lLLVMSupport -lcurses")
+      list(APPEND llvm_libs "-L/usr/lib/llvm-3.6/lib/ -lLLVMIRReader -lLLVMBitReader -lLLVMAsmParser -lLLVMCore -lLLVMSupport -lcurses")
     else()
       llvm_map_components_to_libnames(llvm_libs support core irreader)
     endif()
@@ -97,6 +97,9 @@ set(PWCORE_FILES
   dynamic_library.cpp
   format.cpp
   interrupt_memory_require.cpp
+  logger.cpp
+  logger_syslog.cpp
+  message.cpp
   process.cpp
   scheduler.cpp
   stackinfo.cpp

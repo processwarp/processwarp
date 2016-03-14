@@ -4,6 +4,7 @@ build/
 conf/conf.json
 doc/
 tmp/
+src/const/loader_mid*
 src/electron/node_modules/
 
 # Compiled Object files

@@ -1,0 +1,6 @@
+ID	c
+L2001	start loader(llvm_version=%s)
+L2002	start to load (parameter=%s)
+L2003	failed to read command (message=%s)
+L2004	succeeded to load (result=%d, root_tid=%{tid})
+L2005	failed to load (result=%d, reason=%d, message=%s)

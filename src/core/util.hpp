@@ -31,6 +31,7 @@ std::string calc_sha256(const std::string& src);
 std::string file_basename(const std::string& path, bool cutoff_ext = false);
 std::string file_dirname(const std::string& path);
 std::string get_my_fullpath();
+void replace_string(std::string* str, const std::string& from, const std::string& to);
 
 
 /**

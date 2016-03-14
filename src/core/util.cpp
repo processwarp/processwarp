@@ -172,6 +172,20 @@ std::string Util::get_my_fullpath() {
 #endif
 }
 
+/**
+ * Replace all the string in a string.
+ * @param str Target string.
+ * @param from String befor replace.
+ * @param to String after replace.
+ */
+void Util::replace_string(std::string* str, const std::string& from, const std::string& to) {
+  std::string::size_type pos = str->find(from);
+  while (pos != std::string::npos) {
+    str->replace(pos, from.size(), to);
+    pos = str->find(from, pos + to.size());
+  }
+}
+
 // Convert instruction code to readable string.
 std::string Util::code2str(instruction_t code) {
   std::string opcode  = OPCODE_STR[Instruction::get_opcode(code)];

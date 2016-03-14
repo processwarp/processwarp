@@ -15,6 +15,10 @@
 #include "definitions.hpp"
 #include "error.hpp"
 #include "llvm_asm_loader.hpp"
+#include "loader_mid.hpp"
+#include "logger.hpp"
+#include "logger_syslog.hpp"
+#include "message.hpp"
 #include "process.hpp"
 #include "vmemory.hpp"
 
@@ -63,6 +67,99 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
    */
   Loader() :
       vmemory(*this, SpecialNID::SERVER) {
+  }
+
+  /**
+   * Entry point of loader.
+   * At first of loop read load instruction json by stdin stream, and launch loader instance.
+   * At last of loop, write result json for stdout stream.
+   * @param argc
+   * @param argv
+   * @return Exit code of loader.
+   */
+  int entry(int argc, char* argv[]) {
+    // Read stdin and separate by '\0'.
+    std::string line;
+    picojson::object result;
+
+    // Create logger.
+    Logger::Syslog logger;
+    logger.initialize("loader");
+    Logger::set_logger_delegate(&logger);
+
+    // Load messages.
+    Message::load("loader_message.json");
+    Logger::i(LoaderMid::L2001, std::string(LLVM_VERSION_STRING).c_str());
+
+    while (std::getline(std::cin, line, '\0')) {
+      // Convert json string to picojson instance.
+      picojson::value v;
+      std::istringstream is(line);
+      std::string err = picojson::parse(v, is);
+      if (!err.empty()) {
+        Logger::e(LoaderMid::L2003, err.c_str());
+      }
+      result = v.get<picojson::object>();
+      Logger::i(LoaderMid::L2002, is.str().c_str());
+
+      try {
+        // Make loader.
+        Loader loader;
+        // Read information from json.
+        loader.in_pid  = Convert::json2vpid(result.at("pid"));
+        loader.in_name = result.at("name").get<std::string>();
+        loader.in_dst_nid = Convert::json2nid(result.at("dst_nid"));
+        loader.in_src_nid = Convert::json2nid(result.at("src_nid"));
+        loader.in_src_account = result.at("src_account").get<std::string>();
+        loader.in_type        = result.at("type").get<std::string>();
+
+        // Convert arguments.
+        std::vector<std::string> args;
+        for (auto& it : result.at("args").get<picojson::array>()) {
+          args.push_back(it.get<std::string>());
+        }
+        // Load.
+        loader.load(args);
+
+        // Show result.
+        result.insert(std::make_pair("result", picojson::value(0.0)));
+        result.insert(std::make_pair("root_tid", Convert::vtid2json(loader.out_root_tid)));
+
+        std::cout << picojson::value(result).serialize() << '\0';
+        Logger::i(LoaderMid::L2004, 0, loader.out_root_tid);
+      } catch(const Error& ex) {
+        // Show error information.
+        result.insert(std::make_pair("result", picojson::value(-1.0)));
+        result.insert(std::make_pair("reason", picojson::value(std::to_string(ex.reason))));
+        result.insert(std::make_pair("message", picojson::value(ex.mesg)));
+        result.insert(std::make_pair("llvm_version",
+                                     picojson::value(std::string(LLVM_VERSION_STRING))));
+        std::cout << picojson::value(result).serialize() << '\0';
+        Logger::w(LoaderMid::L2005, -1, ex.reason, ex.mesg.c_str());
+      } catch(const std::exception& ex) {
+        // Show error information.
+        result.insert(std::make_pair("result", picojson::value(-1.0)));
+        result.insert(std::make_pair("reason", picojson::value(std::to_string(-1))));
+        result.insert(std::make_pair("message", picojson::value(std::string(ex.what()))));
+        result.insert(std::make_pair("llvm_version",
+                                     picojson::value(std::string(LLVM_VERSION_STRING))));
+        std::cout << picojson::value(result).serialize() << '\0';
+        Logger::w(LoaderMid::L2005, -1, -1, ex.what());
+      } catch (...) {
+        int errsv = errno;
+        // Show error information.
+        result.insert(std::make_pair("result", picojson::value(-1.0)));
+        result.insert(std::make_pair("reason", picojson::value(std::to_string(-2))));
+        result.insert(std::make_pair("message",
+                                     picojson::value(std::string(std::strerror(errsv)))));
+        result.insert(std::make_pair("llvm_version",
+                                     picojson::value(std::string(LLVM_VERSION_STRING))));
+        std::cout << picojson::value(result).serialize() << '\0';
+        Logger::w(LoaderMid::L2005, -1, -2, std::strerror(errsv));
+      }
+    }
+
+    return 0;
   }
 
   /**
@@ -199,98 +296,13 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
 }  // namespace processwarp
 
 /**
- * Entry point of loader.
- * At first of loop read load instruction json by stdin stream, and launch loader instance.
- * At last of loop, write result json for stdout stream.
- * @param argc
- * @param argv
- * @return Exit code of loader.
+ * Entry point, call actual entry process.
+ * @param argc Count of command line option.
+ * @param argv Strings of command line options.
+ * @return Exit status.
  */
 int main(int argc, char* argv[]) {
-  // Read stdin and separate by '\0'.
-  std::string line;
-  picojson::object result;
+  processwarp::Loader THIS;
 
-  while (std::getline(std::cin, line, '\0')) {
-    // Convert json string to picojson instance.
-    picojson::value v;
-    std::istringstream is(line);
-    std::string err = picojson::parse(v, is);
-    if (!err.empty()) {
-      std::cerr << err << std::endl;
-      exit(EXIT_FAILURE);
-    }
-    result = v.get<picojson::object>();
-
-    try {
-      // Make loader.
-      processwarp::Loader loader;
-      // Read information from json.
-      loader.in_pid  = processwarp::Convert::json2vpid(result.at("pid"));
-      loader.in_name = result.at("name").get<std::string>();
-      loader.in_dst_nid =
-          processwarp::Convert::json2nid(result.at("dst_nid"));
-      loader.in_src_nid =
-          processwarp::Convert::json2nid(result.at("src_nid"));
-      loader.in_src_account = result.at("src_account").get<std::string>();
-      loader.in_type       = result.at("type").get<std::string>();
-
-      // Convert arguments.
-      std::vector<std::string> args;
-      for (auto& it : result.at("args").get<picojson::array>()) {
-        args.push_back(it.get<std::string>());
-      }
-      // Load.
-      loader.load(args);
-
-      // Show result.
-      result.insert(std::make_pair("result",
-                                   picojson::value(0.0)));
-      result.insert(std::make_pair("root_tid",
-                                   processwarp::Convert::vtid2json
-                                   (loader.out_root_tid)));
-
-      std::cout << picojson::value(result).serialize() << '\0';
-    } catch(const processwarp::Error& ex) {
-      // Show error information.
-      result.insert(std::make_pair("result",
-                                   picojson::value(-1.0)));
-      result.insert
-          (std::make_pair("reason",
-                          picojson::value(std::to_string(ex.reason))));
-      result.insert(std::make_pair("message",   picojson::value(ex.mesg)));
-      result.insert
-          (std::make_pair("llvm_version",
-                          picojson::value(std::string(LLVM_VERSION_STRING))));
-      std::cout << picojson::value(result).serialize() << '\0';
-    } catch(const std::exception& ex) {
-      // Show error information.
-      result.insert(std::make_pair("result",
-                                   picojson::value(-1.0)));
-      result.insert(std::make_pair("reason",
-                                   picojson::value(std::to_string(-1))));
-      result.insert(std::make_pair("message",
-                                   picojson::value(std::string(ex.what()))));
-      result.insert
-          (std::make_pair("llvm_version",
-                          picojson::value(std::string(LLVM_VERSION_STRING))));
-      std::cout << picojson::value(result).serialize() << '\0';
-    } catch (...) {
-      int errsv = errno;
-      // Show error information.
-      result.insert(std::make_pair("result",
-                                   picojson::value(-1.0)));
-      result.insert(std::make_pair("reason",
-                                   picojson::value(std::to_string(-2))));
-      result.insert
-          (std::make_pair("message",
-                          picojson::value(std::string(std::strerror(errsv)))));
-      result.insert
-          (std::make_pair("llvm_version",
-                          picojson::value(std::string(LLVM_VERSION_STRING))));
-      std::cout << picojson::value(result).serialize() << '\0';
-    }
-  }
-
-  return 0;
+  return THIS.entry(argc, argv);
 }
