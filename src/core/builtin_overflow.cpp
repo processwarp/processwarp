@@ -4,7 +4,7 @@
 #include "builtin_overflow.hpp"
 #include "process.hpp"
 
-#ifdef __clang__
+#if defined(__clang__) && (__clang_major__ > 3 || (__clang_major__ == 3 && __clang_minor__ >= 6))
 #  pragma clang diagnostic push
 #  pragma clang diagnostic ignored "-Wunused-local-typedef"
 #  include "safeint3.hpp"
