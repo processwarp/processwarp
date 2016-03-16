@@ -17,9 +17,11 @@
 #include "builtin_warp.hpp"
 
 #include "convert.hpp"
+#include "core_mid.hpp"
 #include "definitions.hpp"
 #include "error.hpp"
 #include "finally.hpp"
+#include "logger.hpp"
 #include "vmachine.hpp"
 #include "vmemory.hpp"
 
@@ -144,8 +146,8 @@ void VMachine::execute() {
         thread->memory->write_out();
       });
 
-    print_debug("loop pid=%s tid=%016" PRIx64 " status=%d\n",
-                process->pid.c_str(), tid, thread->status);
+    Logger::dbg_vm(CoreMid::L1001, "loop pid=%s tid=%016" PRIx64 " status=%d",
+                   process->pid.c_str(), tid, thread->status);
 
     // Setting of warpuot to thread if need.
     if (process->waiting_warp_setup.find(tid) != process->waiting_warp_setup.end()) {
@@ -159,7 +161,7 @@ void VMachine::execute() {
         thread->status == Thread::AFTER_WARP) {
       // run thread
       process->execute(*thread, 100);
-      print_debug("loop finish status=%d\n", thread->status);
+      Logger::dbg_vm(CoreMid::L1001, "loop finish status=%d", thread->status);
 
     } else if (thread->status == Thread::WARP) {
       process->waiting_warp_result.insert(std::make_pair(thread->tid, now));
@@ -190,7 +192,8 @@ void VMachine::execute() {
     // Skip thread because waiting to update memroy data.
     assert(e.type == Interrupt::MEMORY_REQUIRE);
     vaddr_t waiting_addr = static_cast<InterruptMemoryRequire&>(e).addr;
-    print_debug("memory need:%s\n", Convert::vaddr2str(waiting_addr).c_str());
+    Logger::dbg_mem(CoreMid::L1002, "memory need (addr=%s)",
+                    Convert::vaddr2str(waiting_addr).c_str());
     if (waiting_addr != VADDR_NULL) {
       process->waiting_addr.insert(std::make_pair(tid, waiting_addr));
     }

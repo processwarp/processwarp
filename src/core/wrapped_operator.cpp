@@ -4,7 +4,9 @@
 #include <cstdint>
 #include <cstring>
 
+#include "core_mid.hpp"
 #include "error.hpp"
+#include "logger.hpp"
 #include "type_store.hpp"
 #include "util.hpp"
 #include "wrapped_operator.hpp"
@@ -93,16 +95,16 @@ void WrappedPrimitiveOperator<T>::bit_cast(vaddr_t dst, size_t size, vaddr_t src
   longest_uint_t buffer = 0;
   *reinterpret_cast<T*>(buffer) = memory.read<T>(src);
   memory.write_copy(dst, reinterpret_cast<const uint8_t*>(&buffer), size);
-  // print_debug("bitcast %" PRId64 " (%016" PRIx64 " <- %016" PRIx64 ")\n", buffer, dst, src);
+  Logger::dbg_vm(CoreMid::L1001, "bitcast %" PRId64 " (%016" PRIx64 " <- %016" PRIx64 ")",
+                 buffer, dst, src);
 }
 
 // 値をコピーする。
 template <typename T>
 void WrappedPrimitiveOperator<T>::copy_value(vaddr_t dst, vaddr_t src) {
   memory.write<T>(dst, memory.read<T>(src));
-  /*
-    print_debug("copy_value %" PRId64 " (%016" PRIx64 " <- %016" PRIx64")\n",
-    static_cast<longest_int_t>(memory.read<T>(src)), dst, src);//*/
+  Logger::dbg_vm(CoreMid::L1001, "copy_value %" PRId64 " (%016" PRIx64 " <- %016" PRIx64")",
+                 static_cast<longest_int_t>(memory.read<T>(src)), dst, src);
 }
 
 // 値を読み込む
@@ -150,7 +152,7 @@ bool WrappedPrimitiveOperator<float>::is_or_nans(vaddr_t a, vaddr_t b) {
 #define M_BINARY_OPERATOR_TYPE_EXTENDED(op, infix)                      \
   template <typename T>                                                 \
   void WrappedPrimitiveOperator<T>::op(vaddr_t dst, vaddr_t a, vaddr_t b) { \
-    memory.write<T>(dst, memory.read<T>(a) infix memory.read<T>(b));        \
+    memory.write<T>(dst, memory.read<T>(a) infix memory.read<T>(b));    \
   }
 
 M_BINARY_OPERATOR_TYPE_EXTENDED(op_add, +);     // 加算
@@ -234,11 +236,10 @@ void WrappedPrimitiveOperator<double>::op_not_nans(vaddr_t dst, vaddr_t a, vaddr
   } else {
     memory.write<uint8_t>(dst, I8_FALSE);
   }
-  /*
-    print_debug("not_nans %016" PRIx64 " : %d = %" PRId64 " not_nans %" PRId64 "\n", dst,
-    memory.read<uint8_t>(dst),
-    static_cast<longest_int_t>(memory.read<double>(a)),
-    static_cast<longest_int_t>(memory.read<double>(b)));//*/
+  Logger::dbg_vm(CoreMid::L1001, "not_nans %016" PRIx64 " : %d = %" PRId64 " not_nans %" PRId64,
+                 dst, memory.read<uint8_t>(dst),
+                 static_cast<longest_int_t>(memory.read<double>(a)),
+                 static_cast<longest_int_t>(memory.read<double>(b)));
 }
 
 // 比較命令(!isnan(a) && !isnan(b))に対応した演算を行う。
@@ -251,33 +252,30 @@ void WrappedPrimitiveOperator<float>::op_not_nans(vaddr_t dst, vaddr_t a, vaddr_
   } else {
     memory.write<uint8_t>(dst, I8_FALSE);
   }
-  /*
-    print_debug("not_nans %016" PRIx64 " : %d = %" PRId64 " not_nans %" PRId64 "\n", dst,
-    memory.read<uint8_t>(dst),
-    static_cast<longest_int_t>(memory.read<float>(a)),
-    static_cast<longest_int_t>(memory.read<float>(b)));//*/
+  Logger::dbg_vm(CoreMid::L1001, "not_nans %016" PRIx64 " : %d = %" PRId64 " not_nans %" PRId64,
+                 dst, memory.read<uint8_t>(dst),
+                 static_cast<longest_int_t>(memory.read<float>(a)),
+                 static_cast<longest_int_t>(memory.read<float>(b)));
 }
 
 // shl命令に対応した加算を行う。
 template <typename T>
 void WrappedPrimitiveOperator<T>::op_shl(vaddr_t dst, vaddr_t a, vaddr_t b) {
   memory.write<T>(dst, memory.read<T>(a) << static_cast<unsigned>(memory.read<T>(b)));
-  /*
-    print_debug("shl %016" PRIx64 " : %d = %" PRId64 " << %" PRId64 "\n", dst,
-    memory.read<uint8_t>(dst),
-    static_cast<longest_int_t>(memory.read<float>(a)),
-    static_cast<longest_int_t>(memory.read<float>(b)));//*/
+  Logger::dbg_vm(CoreMid::L1001, "shl %016" PRIx64 " : %d = %" PRId64 " << %" PRId64, dst,
+                 memory.read<uint8_t>(dst),
+                 static_cast<longest_int_t>(memory.read<float>(a)),
+                 static_cast<longest_int_t>(memory.read<float>(b)));
 }
 
 // shr命令に対応した加算を行う。
 template <typename T>
 void WrappedPrimitiveOperator<T>::op_shr(vaddr_t dst, vaddr_t a, vaddr_t b) {
   memory.write<T>(dst, memory.read<T>(a) >> static_cast<unsigned>(memory.read<T>(b)));
-  /*
-    print_debug("shl %016" PRIx64 " : %d = %" PRId64 " >> %" PRId64 "\n", dst,
-    memory.read<uint8_t>(dst),
-    static_cast<longest_int_t>(memory.read<float>(a)),
-    static_cast<longest_int_t>(memory.read<float>(b)));//*/
+  Logger::dbg_vm(CoreMid::L1001, "shl %016" PRIx64 " : %d = %" PRId64 " >> %" PRId64, dst,
+                 memory.read<uint8_t>(dst),
+                 static_cast<longest_int_t>(memory.read<float>(a)),
+                 static_cast<longest_int_t>(memory.read<float>(b)));
 }
 
 // type_cast命令に対応したキャスト演算を行う。
@@ -321,10 +319,9 @@ void WrappedPrimitiveOperator<T>::type_cast(vaddr_t dst, vaddr_t type, vaddr_t s
       throw_error_message(Error::CAST_VIOLATION, Util::vaddr2str(type));
     } break;
   }
-  /*
-    print_debug("type_cast:%" PRId64 " <- %" PRId64 "\n",
-    memory.read<longest_int_t>(dst),
-    static_cast<longest_int_t>(memory.read<T>(src)));//*/
+  Logger::dbg_vm(CoreMid::L1001, "type_cast:%" PRId64 " <- %" PRId64,
+                 memory.read<longest_int_t>(dst),
+                 static_cast<longest_int_t>(memory.read<T>(src)));
 }
 
 // Constructor with memory accessor.
@@ -337,17 +334,15 @@ void WrappedPointerOperator::bit_cast(vaddr_t dst, size_t size, vaddr_t src) {
   // コピーサイズはvaddr_tのサイズと同じはず
   assert(size == sizeof(vaddr_t));
   memory.write<vaddr_t>(dst, memory.read<vaddr_t>(src));
-  /*
-    print_debug("bitcast %016" PRIx64 " (%016" PRIx64 " <- %016" PRIx64 ")\n",
-    memory.read<vaddr_t>(dst), dst, src);//*/
+  Logger::dbg_vm(CoreMid::L1001, "bitcast %016" PRIx64 " (%016" PRIx64 " <- %016" PRIx64 ")",
+                 memory.read<vaddr_t>(dst), dst, src);
 }
 
 // 値をコピーする。
 void WrappedPointerOperator::copy_value(vaddr_t dst, vaddr_t src) {
   memory.write<vaddr_t>(dst, memory.read<vaddr_t>(src));
-  /*
-    print_debug("copy_value %016" PRIx64 " (%016" PRIx64 " <- %016" PRIx64 ")\n",
-    memory.read<vaddr_t>(dst), dst, src);//*/
+  Logger::dbg_vm(CoreMid::L1001, "copy_value %016" PRIx64 " (%016" PRIx64 " <- %016" PRIx64 ")",
+                 memory.read<vaddr_t>(dst), dst, src);
 }
 
 // 比較命令(a==b)に対応した演算を行う。
@@ -358,10 +353,9 @@ void WrappedPointerOperator::op_equal(vaddr_t dst, vaddr_t a, vaddr_t b) {
   } else {
     memory.write<uint8_t>(dst, I8_FALSE);
   }
-  /*
-    print_debug("%016" PRIx64 " : %d = %016" PRIx64 " == %016" PRIx64 "\n", dst,
-    memory.read<uint8_t>(dst),
-    memory.read<vaddr_t>(a), memory.read<vaddr_t>(b));//*/
+  Logger::dbg_vm(CoreMid::L1001, "%016" PRIx64 " : %d = %016" PRIx64 " == %016" PRIx64, dst,
+                 memory.read<uint8_t>(dst),
+                 memory.read<vaddr_t>(a), memory.read<vaddr_t>(b));
 }
 
 bool WrappedPointerOperator::is_equal(vaddr_t a, vaddr_t b) {
@@ -376,10 +370,9 @@ void WrappedPointerOperator::op_greater(vaddr_t dst, vaddr_t a, vaddr_t b) {
   } else {
     memory.write<uint8_t>(dst, I8_FALSE);
   }
-  /*
-    print_debug("%016" PRIx64 " : %d = %016" PRIx64 " > %016" PRIx64 "\n", dst,
-    memory.read<uint8_t>(dst),
-    memory.read<vaddr_t>(a), memory.read<vaddr_t>(b));//*/
+  Logger::dbg_vm(CoreMid::L1001, "%016" PRIx64 " : %d = %016" PRIx64 " > %016" PRIx64, dst,
+                 memory.read<uint8_t>(dst),
+                 memory.read<vaddr_t>(a), memory.read<vaddr_t>(b));
 }
 
 // 比較命令(a>=b)に対応した演算を行う。
@@ -390,10 +383,9 @@ void WrappedPointerOperator::op_greater_equal(vaddr_t dst, vaddr_t a, vaddr_t b)
   } else {
     memory.write<uint8_t>(dst, I8_FALSE);
   }
-  /*
-    print_debug("%016" PRIx64 " : %d = %016" PRIx64 " >= %016" PRIx64 "\n", dst,
-    memory.read<uint8_t>(dst),
-    memory.read<vaddr_t>(a), memory.read<vaddr_t>(b));//*/
+  Logger::dbg_vm(CoreMid::L1001, "%016" PRIx64 " : %d = %016" PRIx64 " >= %016" PRIx64, dst,
+                 memory.read<uint8_t>(dst),
+                 memory.read<vaddr_t>(a), memory.read<vaddr_t>(b));
 }
 
 // 比較命令(a!=b)に対応した演算を行う。
@@ -404,9 +396,9 @@ void WrappedPointerOperator::op_not_equal(vaddr_t dst, vaddr_t a, vaddr_t b) {
     memory.write<uint8_t>(dst, I8_FALSE);
   }
 
-  print_debug("%016" PRIx64 " : %d = %016" PRIx64 " >= %016" PRIx64 "\n", dst,
-              memory.read<uint8_t>(dst),
-              memory.read<vaddr_t>(a), memory.read<vaddr_t>(b));
+  Logger::dbg_vm(CoreMid::L1001, "%016" PRIx64 " : %d = %016" PRIx64 " >= %016" PRIx64, dst,
+                 memory.read<uint8_t>(dst),
+                 memory.read<vaddr_t>(a), memory.read<vaddr_t>(b));
 }
 
 // type_cast命令に対応したキャスト演算を行う。
@@ -435,10 +427,9 @@ void WrappedPointerOperator::type_cast(vaddr_t dst, vaddr_t type, vaddr_t src) {
     default:
       throw_error_message(Error::CAST_VIOLATION, Util::vaddr2str(type));
   }
-  /*
-    print_debug("type_cast:%" PRId64 " <- %016" PRIx64 "\n",
-    memory.read<longest_int_t>(dst),
-    memory.read<vaddr_t>(src));//*/
+  Logger::dbg_vm(CoreMid::L1001, "type_cast:%" PRId64 " <- %016" PRIx64,
+                 memory.read<longest_int_t>(dst),
+                 memory.read<vaddr_t>(src));
 }
 
 // Constructor with memory accessor.

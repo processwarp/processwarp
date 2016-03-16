@@ -36,12 +36,10 @@ void Syslog::output(Level lv, const std::string& file, unsigned int line,
                     Message::Type mid, const std::string& message) {
   int priority;
   switch (lv) {
-    case Level::ERROR:   priority = LOG_ERR;     break;
-    case Level::APP:     priority = LOG_WARNING; break;
-    case Level::WARN:    priority = LOG_WARNING; break;
-    case Level::INFO:    priority = LOG_INFO;    break;
-    case Level::DEBUG:   priority = LOG_DEBUG;   break;
-    case Level::VERBOSE: priority = LOG_DEBUG;   break;
+    case Level::ERROR: priority = LOG_ERR;     break;
+    case Level::WARN:  priority = LOG_WARNING; break;
+    case Level::INFO:  priority = LOG_INFO;    break;
+    case Level::DEBUG: priority = LOG_DEBUG;   break;
     default:
       assert(false);
       return;

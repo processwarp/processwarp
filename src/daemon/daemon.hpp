@@ -23,6 +23,8 @@ class Daemon {
   uv_loop_t* loop;
 
   int daemonize();
+  bool initialize_logger();
+  bool initialize_message();
   int main_loop();
   bool read_config(const std::string& file);
   bool read_options(int argc, char* argv[]);

@@ -9,6 +9,8 @@
 #include <vector>
 
 #include "convert.hpp"
+#include "core_mid.hpp"
+#include "logger.hpp"
 #include "scheduler.hpp"
 
 namespace processwarp {
@@ -106,8 +108,10 @@ void Scheduler::recv_command(const CommandPacket& packet) {
     recv_command_warp_thread(packet);
 
   } else {
-    /// @todo error
-    print_debug("recv unknown command:%s\n", command.c_str());
+    Logger::warn(CoreMid::L1003);
+    Logger::dbg(CoreMid::L1005,
+                packet.pid.c_str(), packet.dst_nid.c_str(), packet.src_nid.c_str(),
+                packet.module, picojson::value(packet.content).serialize().c_str());
     assert(false);
   }
 }

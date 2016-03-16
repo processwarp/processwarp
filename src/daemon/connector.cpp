@@ -6,6 +6,8 @@
 #include <vector>
 
 #include "connector.hpp"
+#include "daemon_mid.hpp"
+#include "logger.hpp"
 #include "util.hpp"
 
 namespace processwarp {
@@ -48,12 +50,12 @@ void Connector::initialize(uv_loop_t* loop_, const std::string& path) {
 
   if ((r = uv_pipe_bind(&listener, path.c_str()))) {
     /// @todo error
-    print_debug("Bind error %s\n", uv_err_name(r));
+    Logger::err(DaemonMid::L3001, uv_err_name(r), path.c_str());
     return;
   }
   if ((r = uv_listen(reinterpret_cast<uv_stream_t*>(&listener), 128, Connector::on_connect))) {
     /// @todo error
-    print_debug("Listen error %s\n", uv_err_name(r));
+    Logger::err(DaemonMid::L3002, uv_err_name(r), path.c_str());
     return;
   }
 }
@@ -142,7 +144,7 @@ void Connector::on_recv(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf)
   if (nread < 0) {
     if (nread != UV_EOF) {
       /// @todo error
-      print_debug("Read error %s\n", uv_err_name(nread));
+      Logger::err(DaemonMid::L3003, uv_err_name(nread));
     }
     uv_close(reinterpret_cast<uv_handle_t*>(client), Connector::on_close);
     return;
@@ -157,9 +159,9 @@ void Connector::on_recv(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf)
     if (client_buffer.size() < 4 + psize + 1) return;
 
     if (client_buffer.data()[4 + psize] != 0) {
-      /// @todo error
-      print_debug("Wrong packet terminate.");
+      Logger::warn(DaemonMid::L3004);
       uv_close(reinterpret_cast<uv_handle_t*>(client), Connector::on_close);
+      assert(false);
       return;
     }
 
@@ -167,9 +169,8 @@ void Connector::on_recv(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf)
     std::string err;
     picojson::parse(v, client_buffer.data() + 4, client_buffer.data() + 4 + psize, &err);
     if (!err.empty()) {
-      /// @todo err
-      print_debug("on_read:%s\n", err.c_str());
-      uv_close(reinterpret_cast<uv_handle_t*>(client), Connector::on_close);
+      Logger::warn(DaemonMid::L3004);
+      Logger::dbg(DaemonMid::L3005, client_buffer.data() + 4);
       return;
     }
 
@@ -193,7 +194,7 @@ void Connector::on_write_end(uv_write_t *req, int status) {
 
   if (status < 0) {
     /// @todo err
-    print_debug("error on uv_write\n");
+    Logger::err(DaemonMid::L3006, uv_err_name(status));
     uv_close(reinterpret_cast<uv_handle_t*>(handler->pipe), Connector::on_close);
   }
 }

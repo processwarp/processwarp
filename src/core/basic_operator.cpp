@@ -5,7 +5,9 @@
 #include <cstring>
 
 #include "basic_operator.hpp"
+#include "core_mid.hpp"
 #include "error.hpp"
+#include "logger.hpp"
 #include "type_store.hpp"
 #include "util.hpp"
 
@@ -72,16 +74,16 @@ void PrimitiveOperator<T>::bit_cast(uint8_t* dst, size_t size, uint8_t* src) con
   longest_uint_t buffer = 0;
   std::memcpy(&buffer, src, sizeof(T));
   std::memcpy(dst, &buffer, size);
-  print_debug("bitcast %s (%p <- %p)\n",
-              Util::numptr2str(&buffer, size).c_str(), dst, src);
+  Logger::dbg_vm(CoreMid::L1001, "bitcast %s (%p <- %p)",
+                 Util::numptr2str(&buffer, size).c_str(), dst, src);
 }
 
 // 値をコピーする。
 template <typename T>
 void PrimitiveOperator<T>::copy_value(uint8_t* dst, uint8_t* src) const {
   *reinterpret_cast<T*>(dst) = *reinterpret_cast<T*>(src);
-  print_debug("copy_value %s (%p <- %p)\n",
-              Util::numptr2str(dst, sizeof(T)).c_str(), dst, src);
+  Logger::dbg_vm(CoreMid::L1001, "copy_value %s (%p <- %p)",
+                 Util::numptr2str(dst, sizeof(T)).c_str(), dst, src);
 }
 
 // 比較命令(isnan(a) || isnan(b))に対応した演算を行う。
@@ -122,10 +124,10 @@ bool PrimitiveOperator<float>::is_or_nans(uint8_t* a, uint8_t* b) const {
   template <typename T>                                                 \
   void PrimitiveOperator<T>::op(uint8_t* dst, uint8_t* a, uint8_t* b) const { \
     *reinterpret_cast<T*>(dst) = *reinterpret_cast<T*>(a) infix *reinterpret_cast<T*>(b); \
-    print_debug("%p : %s = %s %s %s\n",                                 \
-                dst, Util::numptr2str(dst, sizeof(T)).c_str(),          \
-                Util::numptr2str(a, sizeof(T)).c_str(), #infix,         \
-                Util::numptr2str(b, sizeof(T)).c_str());                \
+    Logger::dbg_vm(CoreMid::L1001, "%p : %s = %s %s %s",              \
+                   dst, Util::numptr2str(dst, sizeof(T)).c_str(),       \
+                   Util::numptr2str(a, sizeof(T)).c_str(), #infix,      \
+                   Util::numptr2str(b, sizeof(T)).c_str());             \
   }
 
 M_BINARY_OPERATOR_TYPE_EXTENDED(op_add, +);     // 加算
@@ -148,12 +150,12 @@ M_BINARY_OPERATOR_TYPE_EXTENDED(op_xor, ^);     // xor
   template <typename T>                                                 \
   void PrimitiveOperator<T>::op(uint8_t* dst, uint8_t* a, uint8_t* b) const { \
     *reinterpret_cast<uint8_t*>(dst) = (*reinterpret_cast<T*>(a) infix *reinterpret_cast<T*>(b)) ? \
-                                       0x01 : 0x00;                     \
-    print_debug("%p : %s = %s %s %s\n", dst,                            \
-                Util::numptr2str(dst, 1).c_str(),                       \
-                Util::numptr2str(a, sizeof(T)).c_str(), #infix,         \
-                Util::numptr2str(b, sizeof(T)).c_str());                \
-  }
+      0x01 : 0x00;                                                      \
+    Logger::dbg_vm(CoreMid::L1001, "%p : %s = %s %s %s", dst,         \
+                   Util::numptr2str(dst, 1).c_str(),                    \
+                   Util::numptr2str(a, sizeof(T)).c_str(), #infix,      \
+                   Util::numptr2str(b, sizeof(T)).c_str());             \
+                   }
 
 M_COMP_OPERATOR_TYPE_EXTENDED(op_equal,         ==);    // a==b
 M_COMP_OPERATOR_TYPE_EXTENDED(op_greater,       >);     // a>b
@@ -207,10 +209,10 @@ void PrimitiveOperator<double>::op_not_nans(uint8_t* dst, uint8_t* a, uint8_t* b
   } else {
     *dst = I8_FALSE;
   }
-  print_debug("not_nans %p : %s = %s not_nans %s\n", dst,
-              Util::numptr2str(dst, 1).c_str(),
-              Util::numptr2str(a, sizeof(double)).c_str(),
-              Util::numptr2str(b, sizeof(double)).c_str());
+  Logger::dbg_vm(CoreMid::L1001, "not_nans %p : %s = %s not_nans %s", dst,
+                 Util::numptr2str(dst, 1).c_str(),
+                 Util::numptr2str(a, sizeof(double)).c_str(),
+                 Util::numptr2str(b, sizeof(double)).c_str());
 }
 
 // 比較命令(!isnan(a) && !isnan(b))に対応した演算を行う。
@@ -222,32 +224,32 @@ void PrimitiveOperator<float>::op_not_nans(uint8_t* dst, uint8_t* a, uint8_t* b)
   } else {
     *dst = I8_FALSE;
   }
-  print_debug("not_nans %p : %s = %s not_nans %s\n", dst,
-              Util::numptr2str(dst, 1).c_str(),
-              Util::numptr2str(a, sizeof(float)).c_str(),
-              Util::numptr2str(b, sizeof(float)).c_str());
+  Logger::dbg_vm(CoreMid::L1001, "not_nans %p : %s = %s not_nans %s", dst,
+                 Util::numptr2str(dst, 1).c_str(),
+                 Util::numptr2str(a, sizeof(float)).c_str(),
+                 Util::numptr2str(b, sizeof(float)).c_str());
 }
 
 // shl命令に対応した加算を行う。
 template <typename T>
 void PrimitiveOperator<T>::op_shl(uint8_t* dst, uint8_t* a, uint8_t* b) const {
   *reinterpret_cast<T*>(dst) = *reinterpret_cast<T*>(a) <<
-                               static_cast<unsigned>(*reinterpret_cast<T*>(b));
-  print_debug("shl %p : %s = %s << %s\n", dst,
-              Util::numptr2str(dst, sizeof(T)).c_str(),
-              Util::numptr2str(a, sizeof(T)).c_str(),
-              Util::numptr2str(b, sizeof(T)).c_str());
+    static_cast<unsigned>(*reinterpret_cast<T*>(b));
+  Logger::dbg_vm(CoreMid::L1001, "shl %p : %s = %s << %s", dst,
+                 Util::numptr2str(dst, sizeof(T)).c_str(),
+                 Util::numptr2str(a, sizeof(T)).c_str(),
+                 Util::numptr2str(b, sizeof(T)).c_str());
 }
 
 // shr命令に対応した加算を行う。
 template <typename T>
 void PrimitiveOperator<T>::op_shr(uint8_t* dst, uint8_t* a, uint8_t* b) const {
   *reinterpret_cast<T*>(dst) =
-      *reinterpret_cast<T*>(a) >> static_cast<unsigned>(*reinterpret_cast<T*>(b));
-  print_debug("shr %p : %s = %s << %s\n", dst,
-              Util::numptr2str(dst, sizeof(T)).c_str(),
-              Util::numptr2str(a, sizeof(T)).c_str(),
-              Util::numptr2str(b, sizeof(T)).c_str());
+    *reinterpret_cast<T*>(a) >> static_cast<unsigned>(*reinterpret_cast<T*>(b));
+  Logger::dbg_vm(CoreMid::L1001, "shr %p : %s = %s << %s", dst,
+                 Util::numptr2str(dst, sizeof(T)).c_str(),
+                 Util::numptr2str(a, sizeof(T)).c_str(),
+                 Util::numptr2str(b, sizeof(T)).c_str());
 }
 
 // type_cast命令に対応したキャスト演算を行う。
@@ -280,9 +282,9 @@ void PrimitiveOperator<T>::type_cast(uint8_t* dst, vaddr_t type, uint8_t* src)  
     } break;
   }
 
-  print_debug("type_cast:%s <- %s\n",
-              Util::numptr2str(dst, 8).c_str(),
-              Util::numptr2str(src, sizeof(T)).c_str());
+  Logger::dbg_vm(CoreMid::L1001, "type_cast:%s <- %s",
+                 Util::numptr2str(dst, 8).c_str(),
+                 Util::numptr2str(src, sizeof(T)).c_str());
 }
 
 // bit_cast命令に対応したキャスト演算を行う。
@@ -290,15 +292,15 @@ void PointerOperator::bit_cast(uint8_t* dst, size_t size, uint8_t* src) const {
   // コピーサイズはvaddr_tのサイズと同じはず
   assert(size == sizeof(vaddr_t));
   *reinterpret_cast<vaddr_t*>(dst) = *reinterpret_cast<vaddr_t*>(src);
-  print_debug("bitcast %s (%p <- %p)\n",
-              Util::numptr2str(dst, size).c_str(), dst, src);
+  Logger::dbg_vm(CoreMid::L1001, "bitcast %s (%p <- %p)",
+                 Util::numptr2str(dst, size).c_str(), dst, src);
 }
 
 // 値をコピーする。
 void PointerOperator::copy_value(uint8_t* dst, uint8_t* src) const {
   *reinterpret_cast<vaddr_t*>(dst) = *reinterpret_cast<vaddr_t*>(src);
-  print_debug("copy_value %s (%p <- %p)\n",
-              Util::numptr2str(dst, sizeof(vaddr_t)).c_str(), dst, src);
+  Logger::dbg_vm(CoreMid::L1001, "copy_value %s (%p <- %p)",
+                 Util::numptr2str(dst, sizeof(vaddr_t)).c_str(), dst, src);
 }
 
 // 比較命令(a==b)に対応した演算を行う。
@@ -308,10 +310,10 @@ void PointerOperator::op_equal(uint8_t* dst, uint8_t* a, uint8_t* b) const {
   } else {
     *reinterpret_cast<uint8_t*>(dst) = I8_FALSE;
   }
-  print_debug("%p : %s = %s == %s\n", dst,
-              Util::numptr2str(dst, 1).c_str(),
-              Util::numptr2str(a, sizeof(vaddr_t)).c_str(),
-              Util::numptr2str(b, sizeof(vaddr_t)).c_str());
+  Logger::dbg_vm(CoreMid::L1001, "%p : %s = %s == %s", dst,
+                 Util::numptr2str(dst, 1).c_str(),
+                 Util::numptr2str(a, sizeof(vaddr_t)).c_str(),
+                 Util::numptr2str(b, sizeof(vaddr_t)).c_str());
 }
 
 // 比較命令(a>b)に対応した演算を行う。
@@ -321,10 +323,10 @@ void PointerOperator::op_greater(uint8_t* dst, uint8_t* a, uint8_t* b) const {
   } else {
     *reinterpret_cast<uint8_t*>(dst) = I8_FALSE;
   }
-  print_debug("%p : %s = %s > %s\n", dst,
-              Util::numptr2str(dst, 1).c_str(),
-              Util::numptr2str(a, sizeof(vaddr_t)).c_str(),
-              Util::numptr2str(b, sizeof(vaddr_t)).c_str());
+  Logger::dbg_vm(CoreMid::L1001, "%p : %s = %s > %s", dst,
+                 Util::numptr2str(dst, 1).c_str(),
+                 Util::numptr2str(a, sizeof(vaddr_t)).c_str(),
+                 Util::numptr2str(b, sizeof(vaddr_t)).c_str());
 }
 
 // 比較命令(a>=b)に対応した演算を行う。
@@ -334,10 +336,10 @@ void PointerOperator::op_greater_equal(uint8_t* dst, uint8_t* a, uint8_t* b) con
   } else {
     *reinterpret_cast<uint8_t*>(dst) = I8_FALSE;
   }
-  print_debug("%p : %s = %s >= %s\n", dst,
-              Util::numptr2str(dst, 1).c_str(),
-              Util::numptr2str(a, sizeof(vaddr_t)).c_str(),
-              Util::numptr2str(b, sizeof(vaddr_t)).c_str());
+  Logger::dbg_vm(CoreMid::L1001, "%p : %s = %s >= %s", dst,
+                 Util::numptr2str(dst, 1).c_str(),
+                 Util::numptr2str(a, sizeof(vaddr_t)).c_str(),
+                 Util::numptr2str(b, sizeof(vaddr_t)).c_str());
 }
 
 // 比較命令(a!=b)に対応した演算を行う。
@@ -347,10 +349,10 @@ void PointerOperator::op_not_equal(uint8_t* dst, uint8_t* a, uint8_t* b) const {
   } else {
     *reinterpret_cast<uint8_t*>(dst) = I8_TRUE;
   }
-  print_debug("%p : %s = %s != %s\n", dst,
-              Util::numptr2str(dst, 1).c_str(),
-              Util::numptr2str(a, sizeof(vaddr_t)).c_str(),
-              Util::numptr2str(b, sizeof(vaddr_t)).c_str());
+  Logger::dbg_vm(CoreMid::L1001, "%p : %s = %s != %s", dst,
+                 Util::numptr2str(dst, 1).c_str(),
+                 Util::numptr2str(a, sizeof(vaddr_t)).c_str(),
+                 Util::numptr2str(b, sizeof(vaddr_t)).c_str());
 }
 
 // type_cast命令に対応したキャスト演算を行う。
@@ -359,34 +361,34 @@ void PointerOperator::type_cast(uint8_t* dst, vaddr_t type, uint8_t* src) const 
     case BasicTypeAddress::UI8:
     case BasicTypeAddress::SI8:
       *reinterpret_cast<uint8_t*>(dst) =
-          static_cast<uint8_t>(*reinterpret_cast<vaddr_t*>(src));
+        static_cast<uint8_t>(*reinterpret_cast<vaddr_t*>(src));
       break;
 
     case BasicTypeAddress::UI16:
     case BasicTypeAddress::SI16:
       *reinterpret_cast<uint16_t*>(dst) =
-          static_cast<uint16_t>(*reinterpret_cast<vaddr_t*>(src));
+        static_cast<uint16_t>(*reinterpret_cast<vaddr_t*>(src));
       break;
 
     case BasicTypeAddress::UI32:
     case BasicTypeAddress::SI32:
       *reinterpret_cast<uint32_t*>(dst) =
-          static_cast<uint32_t>(*reinterpret_cast<vaddr_t*>(src));
+        static_cast<uint32_t>(*reinterpret_cast<vaddr_t*>(src));
       break;
 
     case BasicTypeAddress::UI64:
     case BasicTypeAddress::SI64:
       *reinterpret_cast<uint64_t*>(dst) =
-          static_cast<uint64_t>(*reinterpret_cast<vaddr_t*>(src));
+        static_cast<uint64_t>(*reinterpret_cast<vaddr_t*>(src));
       break;
 
     default:
       throw_error_message(Error::CAST_VIOLATION, Util::vaddr2str(type));
   }
 
-  print_debug("type_cast:%s <- %s\n",
-              Util::numptr2str(dst, 8).c_str(),
-              Util::numptr2str(src, sizeof(vaddr_t)).c_str());
+  Logger::dbg_vm(CoreMid::L1001, "type_cast:%s <- %s",
+                 Util::numptr2str(dst, 8).c_str(),
+                 Util::numptr2str(src, sizeof(vaddr_t)).c_str());
 }
 
 // 明示的テンプレートのインスタンス化

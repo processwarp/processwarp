@@ -6,6 +6,8 @@
 #include <iostream>
 #include <string>
 
+#include "daemon_mid.hpp"
+#include "logger.hpp"
 #include "router.hpp"
 #include "worker_dummy.hpp"
 
@@ -212,7 +214,7 @@ void WorkerDummy::initialize_loop() {
   r = uv_idle_init(loop, &idle);
   if (r) {
     /// @todo error
-    print_debug("idle init %s\n", uv_err_name(r));
+    Logger::err(DaemonMid::L3007, "uv_idle_init", uv_err_name(r));
     assert(false);
   }
 
@@ -220,7 +222,7 @@ void WorkerDummy::initialize_loop() {
   r = uv_idle_start(&idle, WorkerDummy::on_idle);
   if (r) {
     /// @todo error
-    print_debug("idle start %s\n", uv_err_name(r));
+    Logger::err(DaemonMid::L3007, "uv_idle_start", uv_err_name(r));
     assert(false);
   }
 }

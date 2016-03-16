@@ -4,10 +4,10 @@
 
 namespace processwarp {
 
-#define throw_std_error(N) {                                            \
-    vm_int_t e = (N);                                                   \
-    print_debug("std error (no:%d, file:%s, line:%d)\n", e, __FILE__, __LINE__); \
-    throw StdError(e);                                                  \
+#define throw_std_error(N) {                    \
+    vm_int_t e = (N);                           \
+    Logger::dbg(CoreMid::L1006, e);             \
+    throw StdError(e);                          \
   }
 
 /**

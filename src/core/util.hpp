@@ -111,32 +111,6 @@ inline const char* get_filename(const std::string fullpath) {
   return file_cstr;
 }
 
-/**
- * Show debug message when NEBUG isn't defined.
- * @param ... Messages to show (format is the same to printf).
- */
-#ifdef NDEBUG
-#  define print_debug(...)  //
-
-#elif defined(__ANDROID__)
-#  ifndef PRIu64
-#    define PRIu64 "llu"
-#  endif
-#  ifndef PRIx64
-#    define PRIx64 "llx"
-#  endif
-
-#  define print_debug(...) {                                              \
-    __android_log_print(ANDROID_LOG_DEBUG, "processwarp", "" __VA_ARGS__); \
-  }
-
-#else  // NDEBUG
-#  define print_debug(...) {                                              \
-    fprintf(stderr, "debug [%d@%s] ", __LINE__, Util::get_filename(__FILE__)); \
-    fprintf(stderr, "" __VA_ARGS__);                                    \
-  }
-#endif  // NDEBUG
-
 #if !defined(ENABLE_LLVM) || defined(NDEBUG) || defined(EMSCRIPTEN)
 #define save_llvm_instruction(I)  //
 #define print_llvm_instruction()  //

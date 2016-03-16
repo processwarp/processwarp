@@ -14,6 +14,8 @@
 #include "error.hpp"
 #include "instruction.hpp"
 #include "llvm_asm_loader.hpp"
+#include "loader_mid.hpp"
+#include "logger.hpp"
 #include "process.hpp"
 #include "util.hpp"
 
@@ -361,7 +363,7 @@ void LlvmAsmLoader::load_constant(FunctionContext& fc, ValueDest dst, const llvm
       // case llvm::Value::InlineAsmVal: {} break;
       // case llvm::Value::InstructionVal: {} break;
     default: {
-      print_debug("unsupport type : %d\n", src->getValueID());
+      Logger::err(LoaderMid::L2006, "type", std::to_string(src->getValueID()).c_str());
       src->dump();
       throw_error(Error::UNSUPPORT);
     } break;
@@ -538,8 +540,7 @@ void LlvmAsmLoader::load_expr(FunctionContext& fc, ValueDest dst,
 
     default: {
       print_llvm_instruction();
-      print_debug("unsupport expr : %d %s\n",
-                  src->getOpcode(), src->getOpcodeName());
+      Logger::err(LoaderMid::L2006, "expr", src->getOpcodeName());
       throw_error(Error::UNSUPPORT);
     } break;
   }
@@ -557,7 +558,7 @@ void LlvmAsmLoader::load_float(FunctionContext& fc, ValueDest dst, const llvm::C
     } break;
 
     default: {
-      print_debug("unsupport type : %d\n", src->getType()->getTypeID());
+      Logger::err(LoaderMid::L2006, "type", std::to_string(src->getValueID()).c_str());
       src->dump();
       throw_error(Error::UNSUPPORT);
     } break;
@@ -850,7 +851,7 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
           } break;
 
           default: {
-            print_debug("unsupport instruction : %s\n", i->getOpcodeName());
+            Logger::err(LoaderMid::L2006, "instruction", i->getOpcodeName());
             throw_error_message(Error::UNSUPPORT,
                                 "instruction:" +
                                 Util::num2dec_str(i->getOpcode()));
@@ -995,7 +996,8 @@ void LlvmAsmLoader::load_globals
 void LlvmAsmLoader::load_int(FunctionContext& fc, ValueDest dst,
                              const llvm::ConstantInt* src) {
   if (src->getBitWidth() <= 0 || 512 < src->getBitWidth()) {
-    print_debug("unsupport bit width : %d\n", src->getBitWidth());
+    Logger::err(LoaderMid::L2006, "bitwidth",
+                Convert::int2str(src->getBitWidth()).c_str());
     throw_error(Error::UNSUPPORT);
   }
 
@@ -1006,8 +1008,6 @@ void LlvmAsmLoader::load_int(FunctionContext& fc, ValueDest dst,
 // LLVMのモジュールを仮想マシンにロードする。
 void LlvmAsmLoader::load_module(llvm::Module* module) {
   /// @todo DataLayout, Tripleのチェック
-  print_debug("DataLayout: %s\n", module->getDataLayoutStr().c_str());
-  print_debug("Triple: %s\n",     module->getTargetTriple().c_str());
 
   // データレイアウトの取得
 #if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 6
@@ -1842,7 +1842,7 @@ void LlvmAsmLoader::convert_inst_fcmp(FunctionContext& fc,
     } break;
 
     default: {
-      print_debug("predicate %d\n", inst.getPredicate());
+      Logger::err(LoaderMid::L2006, "predicate", std::to_string(inst.getPredicate()).c_str());
       assert(false);
     } break;
   }

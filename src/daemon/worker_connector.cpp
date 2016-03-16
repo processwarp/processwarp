@@ -6,6 +6,8 @@
 #include <string>
 
 #include "convert.hpp"
+#include "daemon_mid.hpp"
+#include "logger.hpp"
 #include "router.hpp"
 #include "frontend_connector.hpp"
 #include "server_connector.hpp"
@@ -62,7 +64,6 @@ void WorkerConnector::create_vm(const vpid_t& pid, vtid_t root_tid, vaddr_t proc
 
   // Exists vm for pid yet.
   if (properties.find(pid) != properties.end()) {
-    print_debug("duplicate vm\n");
     return;
   }
 
@@ -109,7 +110,7 @@ void WorkerConnector::create_vm(const vpid_t& pid, vtid_t root_tid, vaddr_t proc
   int r = uv_spawn(loop, &property.process, &options);
   if (r) {
     /// @todo error
-    print_debug("%s\n", uv_err_name(r));
+    Logger::err(DaemonMid::L3007, "uv_spawn", uv_err_name(r));
     assert(false);
   }
 }

@@ -14,7 +14,10 @@
 #include <string>
 
 #include "daemon.hpp"
+#include "daemon_mid.hpp"
 #include "frontend_connector.hpp"
+#include "logger.hpp"
+#include "logger_syslog.hpp"
 #include "router.hpp"
 #include "server_connector.hpp"
 #include "worker_connector.hpp"
@@ -41,18 +44,23 @@ int Daemon::entry(int argc, char* argv[]) {
     return EXIT_FAILURE;
   }
 
+  if (!initialize_logger() ||
+      !initialize_message()) {
+    return EXIT_FAILURE;
+  }
+
   switch (run_mode) {
-    case processwarp::DaemonRunMode::CONSOLE: {
+    case DaemonRunMode::CONSOLE: {
       // Do nothing.
     } break;
 
-    case processwarp::DaemonRunMode::DAEMON: {
+    case DaemonRunMode::DAEMON: {
       if (daemonize() != 0) {
         return EXIT_FAILURE;
       }
     } break;
 
-    case processwarp::DaemonRunMode::HELP: {
+    case DaemonRunMode::HELP: {
       show_help(false, argv[0]);
       return EXIT_SUCCESS;
     } break;
@@ -160,6 +168,28 @@ int Daemon::daemonize() {
 }
 
 /**
+ * Initialize logger.
+ * @return True if initialize was succeed.
+ */
+bool Daemon::initialize_logger() {
+  // Create logger.
+  Logger::Syslog logger;
+  logger.initialize("native");
+  Logger::set_logger_delegate(&logger);
+  return true;
+}
+
+/**
+ * Initialize message.
+ * Load message file selected by configure.
+ * @return True if initialize was succeed.
+ */
+bool Daemon::initialize_message() {
+  // Load messages.
+  return Message::load(config.at("message").get<std::string>());
+}
+
+/**
  * Main loop of daemon process.
  * Initialize libuv, Router, ServerConnector, FrontendConnector, WorkerConector
  * and start libuv's event loop.
@@ -172,8 +202,10 @@ int Daemon::main_loop() {
   ServerConnector& server = ServerConnector::get_instance();
   WorkerConnector& worker = WorkerConnector::get_instance();
 
-  server.initialize(loop,
-                    config.at("server").get<std::string>());
+  Logger::info(DaemonMid::L3009,
+               (run_mode == DaemonRunMode::DAEMON ? "daemon" : "console"));
+
+  server.initialize(loop, config.at("server").get<std::string>());
   router.initialize(loop, config);
   frontend.initialize(loop, config.at("frontend-pipe").get<std::string>());
   worker.initialize(loop, config.at("worker-pipe").get<std::string>(), config_file);

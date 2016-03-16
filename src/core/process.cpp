@@ -22,10 +22,12 @@
 #include <vector>
 
 #include "convert.hpp"
+#include "core_mid.hpp"
 #include "error.hpp"
 #include "finally.hpp"
 #include "func_store.hpp"
 #include "instruction.hpp"
+#include "logger.hpp"
 #include "process.hpp"
 #include "stackinfo.hpp"
 #include "type_store.hpp"
@@ -247,9 +249,9 @@ re_entry: {
         });
 
       instruction_t code = insts.at(stackinfo.pc);
-      print_debug("pc:%d, insts:%" PRIu64 ", code:%08x %s\n",
-                  stackinfo.pc, static_cast<longest_uint_t>(insts.size()),
-                  code, Util::code2str(code).c_str());
+      Logger::dbg_vm(CoreMid::L1001, "pc:%d, insts:%" PRIu64 ", code:%08x %s",
+                     stackinfo.pc, static_cast<longest_uint_t>(insts.size()),
+                     code, Util::code2str(code).c_str());
 
       // call命令の判定(call命令の場合falseに変える)
       bool is_tailcall = true;
@@ -330,7 +332,7 @@ re_entry: {
             args += 1;
           }
 
-          print_debug("call %s\n", new_func->name.str().c_str());
+          Logger::dbg_vm(CoreMid::L1001, "call %s", new_func->name.str().c_str());
           if (new_func->type == FunctionType::NORMAL) {
             // 可変長引数でない場合、引数の数をチェック
             if (args < new_func->arg_num ||
@@ -422,17 +424,17 @@ re_entry: {
           assert(stackinfo.type_operator != nullptr);
           stackinfo.type = store->addr;
           stackinfo.type_store.swap(store);
-          print_debug("set_type = %016" PRIx64 "\n", stackinfo.type);
+          Logger::dbg_vm(CoreMid::L1001, "set_type = %016" PRIx64, stackinfo.type);
         } break;
 
         case Opcode::SET_OUTPUT: {
           stackinfo.output = get_operand(code, op_param);
-          print_debug("output = %016" PRIx64 "\n", stackinfo.output);
+          Logger::dbg_vm(CoreMid::L1001, "output = %016" PRIx64, stackinfo.output);
         } break;
 
         case Opcode::SET_VALUE: {
           stackinfo.value = get_operand(code, op_param);
-          print_debug("value = %016" PRIx64 "\n", stackinfo.value);
+          Logger::dbg_vm(CoreMid::L1001, "value = %016" PRIx64, stackinfo.value);
         } break;
 
           M_BINARY_OPERATOR(ADD, op_add);  // 加算
@@ -450,8 +452,8 @@ re_entry: {
           stackinfo.value        = memory.read<vaddr_t>(get_operand(code, op_param));
           stackinfo.type_operator->copy_value(stackinfo.output, stackinfo.value);
           stackinfo.output       = stackinfo.value;
-          print_debug("output = %016" PRIx64 "\n", stackinfo.output);
-          print_debug("value = %016" PRIx64 "\n", stackinfo.value);
+          Logger::dbg_vm(CoreMid::L1001, "output = %016" PRIx64, stackinfo.output);
+          Logger::dbg_vm(CoreMid::L1001, "value = %016" PRIx64, stackinfo.value);
         } break;
 
         case Opcode::SET: {
@@ -462,12 +464,12 @@ re_entry: {
 
         case Opcode::SET_PTR: {
           stackinfo.address = memory.read<vaddr_t>(get_operand(code, op_param));
-          print_debug("address = %016" PRIx64 "\n", stackinfo.address);
+          Logger::dbg_vm(CoreMid::L1001, "address = %016" PRIx64, stackinfo.address);
         } break;
 
         case Opcode::SET_ADR: {
           stackinfo.address = get_operand(code, op_param);
-          print_debug("address = %016" PRIx64 "\n", stackinfo.address);
+          Logger::dbg_vm(CoreMid::L1001, "address = %016" PRIx64, stackinfo.address);
         } break;
 
         case Opcode::SET_ALIGN: {
@@ -478,33 +480,33 @@ re_entry: {
         case Opcode::ADD_ADR: {
           int operand = Instruction::get_operand_value(code);
           stackinfo.address += operand;
-          print_debug("+%d address = %016" PRIx64 "\n", operand, stackinfo.address);
+          Logger::dbg_vm(CoreMid::L1001, "+%d address = %016" PRIx64, operand, stackinfo.address);
         } break;
 
         case Opcode::MUL_ADR: {
           int operand = Instruction::get_operand_value(code);
           const vm_int_t diff = operand * stackinfo.type_operator->get(stackinfo.value);
           stackinfo.address += diff;
-          print_debug("+%d * %" PRIu64 " address = %16" PRIx64 "\n",
+          Logger::dbg_vm(CoreMid::L1001, "+%d * %" PRIu64 " address = %16" PRIx64,
                       operand, stackinfo.type_operator->get(stackinfo.value), stackinfo.address);
         } break;
 
         case Opcode::GET_ADR: {
           memory.write<vaddr_t>(get_operand(code, op_param), stackinfo.address);
-          print_debug("*%016" PRIx64 " = %016" PRIx64 "\n",
+          Logger::dbg_vm(CoreMid::L1001, "*%016" PRIx64 " = %016" PRIx64,
                       get_operand(code, op_param), stackinfo.address);
         } break;
 
         case Opcode::LOAD: {
           stackinfo.type_operator->copy_value(get_operand(code, op_param), stackinfo.address);
-          print_debug("*%016" PRIx64 " = *%016" PRIx64 "(size = %" PRIu64 ")\n",
+          Logger::dbg_vm(CoreMid::L1001, "*%016" PRIx64 " = *%016" PRIx64 "(size = %" PRIu64 ")",
                       get_operand(code, op_param), stackinfo.address,
                       static_cast<longest_uint_t>(stackinfo.type_store->size));
         } break;
 
         case Opcode::STORE: {
           stackinfo.type_operator->copy_value(stackinfo.address, get_operand(code, op_param));
-          print_debug("store %016" PRIx64 "\n", stackinfo.address);
+          Logger::dbg_vm(CoreMid::L1001, "store %016" PRIx64, stackinfo.address);
         } break;
 
         case Opcode::CMPXCHG: {
@@ -537,8 +539,9 @@ re_entry: {
           memory.write<vaddr_t>(stackinfo.output, addr);
           // allocaで確保した領域はスタック終了時に開放できるように記録しておく
           stackinfo.alloca_addrs.push_back(addr);
-          print_debug("alloca *%016" PRIx64 " = %016" PRIx64 "(%" PRIu64 " byte)\n",
-                      stackinfo.output, addr, static_cast<longest_uint_t>(size));
+          Logger::dbg_vm(CoreMid::L1001,
+                         "alloca *%016" PRIx64 " = %016" PRIx64 "(%" PRIu64 " byte)",
+                         stackinfo.output, addr, static_cast<longest_uint_t>(size));
         } break;
 
         case Opcode::TEST: {
@@ -547,7 +550,7 @@ re_entry: {
           if (memory.read<uint8_t>(get_operand(code, op_param))) {
             stackinfo.phi0 = stackinfo.phi1;
             stackinfo.phi1 = stackinfo.pc = Instruction::get_operand(code2);
-            print_debug("pc = %d\n", stackinfo.pc);
+            Logger::dbg_vm(CoreMid::L1001, "pc = %d", stackinfo.pc);
             continue;
 
           } else {
@@ -564,7 +567,7 @@ re_entry: {
           if (res) {
             stackinfo.phi0 = stackinfo.phi1;
             stackinfo.phi1 = stackinfo.pc = Instruction::get_operand(code2);
-            print_debug("pc = %d\n", stackinfo.pc);
+            Logger::dbg_vm(CoreMid::L1001, "pc = %d", stackinfo.pc);
             continue;
 
           } else {
@@ -575,7 +578,7 @@ re_entry: {
         case Opcode::JUMP: {
           stackinfo.phi0 = stackinfo.phi1;
           stackinfo.phi1 = stackinfo.pc = Instruction::get_operand(code);
-          print_debug("pc = %d\n", stackinfo.pc);
+          Logger::dbg_vm(CoreMid::L1001, "pc = %d", stackinfo.pc);
           continue;
         } break;
 
@@ -584,7 +587,7 @@ re_entry: {
           stackinfo.phi1 =
               stackinfo.pc =
               static_cast<unsigned int>(memory.read<vaddr_t>(get_operand(code, op_param)));
-          print_debug("pc = %d\n", stackinfo.pc);
+          Logger::dbg_vm(CoreMid::L1001, "pc = %d", stackinfo.pc);
           continue;
         } break;
 
@@ -987,7 +990,7 @@ void Process::call_external(Thread& thread,
     } break;
   }
 
-  print_debug("asm:%s\n", asm_code.str().c_str());
+  Logger::dbg_vm(CoreMid::L1001, "asm:%s", asm_code.str().c_str());
   // JavaScript経由でEMSCRIPTENの関数を利用する
   emscripten_run_script(asm_code.str().c_str());
 
@@ -1187,7 +1190,7 @@ void Process::terminate() {
 
 // ライブラリなど、外部の関数へのポインタを取得する。
 DynamicLibrary::external_func_t Process::get_external_func(const Symbols::Symbol& name) {
-  print_debug("get external func:%s\n", name.str().c_str());
+  Logger::dbg_vm(CoreMid::L1001, "get external func:%s", name.str().c_str());
   if (lib_filter.find(name.str()) == lib_filter.end()) {
     throw_error_message(Error::SYM_NOT_FOUND, name.str());
   }
@@ -1410,6 +1413,6 @@ void Process::setup() {
   // ネイティブポインタペアリング用アドレスを予約
   native_ptr.insert(std::make_pair(VADDR_NULL, nullptr));
 
-  print_debug("finish setup.\n");
+  Logger::dbg_vm(CoreMid::L1001, "finish setup");
 }
 }  // namespace processwarp

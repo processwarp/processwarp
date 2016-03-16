@@ -5,8 +5,10 @@
 #include <string>
 
 #include "convert.hpp"
+#include "core_mid.hpp"
 #include "error.hpp"
 #include "finally.hpp"
+#include "logger.hpp"
 #include "util.hpp"
 #include "vmemory.hpp"
 
@@ -1056,29 +1058,36 @@ void VMemory::Accessor::print_dump() {
   for (auto& it_page : space.pages) {
     vaddr_t addr = it_page.first;
     Page& page = it_page.second;
-    print_debug("addr:%s\n", Convert::vaddr2str(addr).c_str());
+
+    Logger::dbg_raw(CoreMid::L1007, "addr:%s", Convert::vaddr2str(addr).c_str());
     if ((addr & AddrType::MASK) == AddrType::META) {
-      print_debug("value:%s\n",
-                  std::string(reinterpret_cast<const char*>(page.value.get()), page.size).
-                  c_str());
+      Logger::dbg_raw(CoreMid::L1007, "value:%s",
+                      std::string(reinterpret_cast<const char*>(page.value.get()), page.size).
+                      c_str());
 
     } else if ((addr & AddrType::MASK) == AddrType::PROGRAM) {
       picojson::value v;
       picojson::parse(v, std::string(reinterpret_cast<char*>(page.value.get()), page.size));
-      std::cerr << v.serialize(true) << std::endl;;
+      Logger::dbg_raw(CoreMid::L1007, v.serialize(true));
       if (v.get<picojson::object>().at("program_type").get<std::string>() == "01") {
-        std::cerr << "code:" << std::endl;
+        Logger::dbg_raw(CoreMid::L1007, "code:");
         for (auto& code : v.get<picojson::object>().at("code").get<picojson::array>()) {
-          std::cerr << "  " << Util::code2str(Convert::json2code(code)) << std::endl;;
+          Logger::dbg_raw(CoreMid::L1007, "  %s", Util::code2str(Convert::json2code(code)).c_str());
         }
       }
     } else {
-      print_debug("value(size=%" PRIu64 "):", page.size);
+      Logger::dbg_raw(CoreMid::L1007, "value(size=%" PRIu64 "):", page.size);
+      std::string tmp;
       for (unsigned int i = 0; i < page.size; i ++) {
-        if (i % 16 == 0) fprintf(stderr, "\n%016" PRIx64 " : ", addr + i);
-        fprintf(stderr, "%02x ", 0xFF & page.value[i]);
+        if (i % 16 == 0) {
+          if (i != 0) {
+            Logger::dbg_raw(CoreMid::L1007, tmp);
+          }
+          tmp = Convert::vaddr2str(addr + i) + " : ";
+        }
+        tmp += Convert::int2str(0xFF & page.value[i]) + " ";
       }
-      fprintf(stderr, "\n");
+      Logger::dbg_raw(CoreMid::L1007, tmp);
     }
   }
 #endif

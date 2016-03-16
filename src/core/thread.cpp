@@ -4,6 +4,8 @@
 #include <utility>
 
 #include "convert.hpp"
+#include "core_mid.hpp"
+#include "logger.hpp"
 #include "thread.hpp"
 
 namespace processwarp {
@@ -226,8 +228,8 @@ bool Thread::require_warp(const nid_t& target_nid) {
   // Status must be normal when warp.
   if (status != NORMAL) return false;
 
-  print_debug("setup_warp(this=%p, tid=%s, target=%s)\n",
-              this, Convert::vtid2str(tid).c_str(), target_nid.c_str());
+  Logger::dbg_vm(CoreMid::L1001, "setup_warp (this=%p, tid=%s, target=%s)",
+                 this, Convert::vtid2str(tid).c_str(), target_nid.c_str());
 
   if (warp_parameter[PW_KEY_WARP_TIMING] == PW_VAL_ON_ANYTIME) {
     warp_stack_size = stack.size();

@@ -8,6 +8,7 @@ CORE_PATH := $(ROOT_PATH)/src/core
 LOCAL_C_INCLUDES += $(CORE_PATH)
 LOCAL_C_INCLUDES += $(ROOT_PATH)/include
 
+LOCAL_CPPFLAGS   += -I$(ROOT_PATH)/src/const
 LOCAL_CPPFLAGS   += -I$(ROOT_PATH)/src/third_party/picojson
 LOCAL_CPPFLAGS   += -D PICOJSON_USE_LOCALE=0
 LOCAL_CPPFLAGS   += -I$(ROOT_PATH)/src/third_party/safeint
@@ -80,6 +81,8 @@ LOCAL_SRC_FILES  += $(CORE_PATH)/builtin_va_arg.cpp
 LOCAL_SRC_FILES  += $(CORE_PATH)/builtin_warp.cpp
 LOCAL_SRC_FILES  += $(CORE_PATH)/format.cpp
 LOCAL_SRC_FILES  += $(CORE_PATH)/interrupt_memory_require.cpp
+LOCAL_SRC_FILES  += $(CORE_PATH)/logger.cpp
+LOCAL_SRC_FILES  += $(CORE_PATH)/message.cpp
 LOCAL_SRC_FILES  += $(CORE_PATH)/process.cpp
 LOCAL_SRC_FILES  += $(CORE_PATH)/scheduler.cpp
 LOCAL_SRC_FILES  += $(CORE_PATH)/stackinfo.cpp

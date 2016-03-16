@@ -10,11 +10,9 @@ namespace Logger {
 /** Log level. */
 enum class Level : int {
   ERROR,
-  APP,
   WARN,
   INFO,
-  DEBUG,
-  VERBOSE
+  DEBUG
 };
 
 class Delegate {
@@ -29,19 +27,46 @@ void output(Level lv, const char* file, const std::size_t line,
             Message::Type mid, int dummy, ...);
 void output_raw(Level lv, const char* file, const std::size_t line,
                 Message::Type mid, const std::string& message);
+void output_raw(Level lv, const char* file, const std::size_t line,
+                Message::Type mid, const std::string& message, int dummy, ...);
 void set_logger_delegate(Delegate* delegate_);
+// For dummy to avoid error that "expected unqualified-id".
+inline void do_nothing() {}
 }  // namespace Logger
 
+#ifdef __ANDROID__
+#  ifndef PRIu64
+#    define PRIu64 "llu"
+#  endif
+#  ifndef PRIx64
+#    define PRIx64 "llx"
+#  endif
+#endif
+
 // Macros to access logger, ex: Logger.e(mid, params);
-#define e(MID, ...) output(Logger::Level::ERROR, __FILE__, __LINE__, MID, 0, __VA_ARGS__);
-#define a(MID, ...) output(Logger::Level::APP,   __FILE__, __LINE__, MID, 0, __VA_ARGS__);
-#define w(MID, ...) output(Logger::Level::WARN,  __FILE__, __LINE__, MID, 0, __VA_ARGS__);
-#define i(MID, ...) output(Logger::Level::INFO,  __FILE__, __LINE__, MID, 0, __VA_ARGS__);
-#ifndef NDEBUG
-#  define d(MID, ...) output(Logger::Level::DEBUG,   __FILE__, __LINE__, MID, 0, __VA_ARGS__);
-#  define v(MID, ...) output(Logger::Level::VERBOSE, __FILE__, __LINE__, MID, 0, __VA_ARGS__);
+#define err(MID, ...) output(Logger::Level::ERROR, __FILE__, __LINE__, MID, 0, ##__VA_ARGS__)
+#define warn(MID, ...) output(Logger::Level::WARN,  __FILE__, __LINE__, MID, 0, ##__VA_ARGS__)
+#define info(MID, ...) output(Logger::Level::INFO,  __FILE__, __LINE__, MID, 0, ##__VA_ARGS__)
+#ifdef NDEBUG
+#  define dbg(MID, ...) do_nothing()
+#  define dbg_raw(MID, MSG, ...) do_nothing()
 #else
-#  define d(MID, ...) /* Do nothing. */
-#  define v(MID, ...) /* Do nothing. */
+#  define dbg(MID, ...) output(Logger::Level::DEBUG,   __FILE__, __LINE__, MID, 0, ##__VA_ARGS__)
+#  define dbg_raw(MID, MSG, ...)                                        \
+  output_raw(Logger::Level::DEBUG, __FILE__, __LINE__, MID, MSG, 0, ##__VA_ARGS__)
+#endif
+
+#if defined(NDEBUG) || !defined(DEBUG_VM)
+#  define dbg_vm(MID, MSG, ...) do_nothing()
+#else
+#  define dbg_vm(MID, MSG, ...)                                         \
+  output_raw(Logger::Level::DEBUG, __FILE__, __LINE__, MID, MSG, 0, ##__VA_ARGS__)
+#endif
+
+#if defined(NDEBUG) || !defined(DEBUG_MEM)
+#  define dbg_mem(MID, MSG, ...) do_nothing()
+#else
+#  define dbg_mem(MID, MSG, ...)                                        \
+  output_raw(Logger::Level::DEBUG, __FILE__, __LINE__, MID, MSG, 0, ##__VA_ARGS__)
 #endif
 }  // namespace processwarp

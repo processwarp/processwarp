@@ -1,6 +1,7 @@
 
 #include <cassert>
 #include <string>
+#include <vector>
 
 #include "logger.hpp"
 #include "util.hpp"
@@ -10,11 +11,9 @@ namespace Logger {
 /** Strings of log levels.  */
 static const std::string LOG_NAMES[] = {
   "error",
-  "app",
   "warn",
   "info",
-  "debug",
-  "verbose"
+  "debug"
 };
 /** Saving delegater. */
 static Delegate* delegate = nullptr;
@@ -68,6 +67,35 @@ void output_raw(Level lv, const char* file, const std::size_t line,
                 Message::Type mid, const std::string& message) {
   assert(delegate != nullptr);
   delegate->output(lv, Util::get_filename(file), line, mid, message);
+}
+
+/**
+ * Output log direct, without Message module.
+ * @param lv Log level.
+ * @param file File name that output log from.
+ * @param line Line number at file.
+ * @param mid Log message-id.
+ * @param message Log message.
+ * @param dummy Dummy parameter to va_args.
+ * @param ... Parameters similter to printf.
+ */
+void output_raw(Level lv, const char* file, const std::size_t line,
+                Message::Type mid, const std::string& message, int dummy, ...) {
+  assert(delegate != nullptr);
+
+  // Generate message.
+  std::vector<char> buffer;
+  buffer.resize(message.size() * 1.2);
+  int r = 0;
+  va_list args;
+  va_start(args, dummy);
+  while ((r = vsnprintf(buffer.data(), buffer.size(), message.c_str(), args)) >= 0 &&
+         static_cast<unsigned int>(r) >= buffer.size()) {
+    buffer.resize(r + 1);
+  }
+  va_end(args);
+
+  delegate->output(lv, Util::get_filename(file), line, mid, std::string(buffer.data()));
 }
 
 /**

@@ -89,7 +89,7 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
 
     // Load messages.
     Message::load("loader_message.json");
-    Logger::i(LoaderMid::L2001, std::string(LLVM_VERSION_STRING).c_str());
+    Logger::info(LoaderMid::L2001, std::string(LLVM_VERSION_STRING).c_str());
 
     while (std::getline(std::cin, line, '\0')) {
       // Convert json string to picojson instance.
@@ -97,10 +97,10 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
       std::istringstream is(line);
       std::string err = picojson::parse(v, is);
       if (!err.empty()) {
-        Logger::e(LoaderMid::L2003, err.c_str());
+        Logger::err(LoaderMid::L2003, err.c_str());
       }
       result = v.get<picojson::object>();
-      Logger::i(LoaderMid::L2002, is.str().c_str());
+      Logger::info(LoaderMid::L2002, is.str().c_str());
 
       try {
         // Make loader.
@@ -126,7 +126,7 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
         result.insert(std::make_pair("root_tid", Convert::vtid2json(loader.out_root_tid)));
 
         std::cout << picojson::value(result).serialize() << '\0';
-        Logger::i(LoaderMid::L2004, 0, loader.out_root_tid);
+        Logger::info(LoaderMid::L2004, 0, loader.out_root_tid);
       } catch(const Error& ex) {
         // Show error information.
         result.insert(std::make_pair("result", picojson::value(-1.0)));
@@ -135,7 +135,7 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
         result.insert(std::make_pair("llvm_version",
                                      picojson::value(std::string(LLVM_VERSION_STRING))));
         std::cout << picojson::value(result).serialize() << '\0';
-        Logger::w(LoaderMid::L2005, -1, ex.reason, ex.mesg.c_str());
+        Logger::warn(LoaderMid::L2005, -1, ex.reason, ex.mesg.c_str());
       } catch(const std::exception& ex) {
         // Show error information.
         result.insert(std::make_pair("result", picojson::value(-1.0)));
@@ -144,7 +144,7 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
         result.insert(std::make_pair("llvm_version",
                                      picojson::value(std::string(LLVM_VERSION_STRING))));
         std::cout << picojson::value(result).serialize() << '\0';
-        Logger::w(LoaderMid::L2005, -1, -1, ex.what());
+        Logger::warn(LoaderMid::L2005, -1, -1, ex.what());
       } catch (...) {
         int errsv = errno;
         // Show error information.
@@ -155,7 +155,7 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
         result.insert(std::make_pair("llvm_version",
                                      picojson::value(std::string(LLVM_VERSION_STRING))));
         std::cout << picojson::value(result).serialize() << '\0';
-        Logger::w(LoaderMid::L2005, -1, -2, std::strerror(errsv));
+        Logger::warn(LoaderMid::L2005, -1, -2, std::strerror(errsv));
       }
     }
 
