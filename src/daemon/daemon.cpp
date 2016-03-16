@@ -44,17 +44,19 @@ int Daemon::entry(int argc, char* argv[]) {
     return EXIT_FAILURE;
   }
 
-  if (!initialize_logger() ||
-      !initialize_message()) {
-    return EXIT_FAILURE;
-  }
-
   switch (run_mode) {
     case DaemonRunMode::CONSOLE: {
-      // Do nothing.
+      if (!initialize_logger() ||
+          !initialize_message()) {
+        return EXIT_FAILURE;
+      }
     } break;
 
     case DaemonRunMode::DAEMON: {
+      if (!initialize_logger() ||
+          !initialize_message()) {
+        return EXIT_FAILURE;
+      }
       if (daemonize() != 0) {
         return EXIT_FAILURE;
       }
