@@ -26,11 +26,15 @@ static std::map<_Type, std::string> messages;
 std::string vformat(Type mid, va_list args) {
   const std::string& raw_message = get(mid);
   std::vector<char> buffer;
-  buffer.resize(raw_message.size() * 1.2);
-  int r = 0;
-  while ((r = vsnprintf(buffer.data(), buffer.size(), raw_message.c_str(), args)) >= 0 &&
-         static_cast<unsigned int>(r) >= buffer.size()) {
+  buffer.resize(raw_message.size() * 2);
+RETRY:
+  va_list args_copy;
+  va_copy(args_copy, args);
+  int r = vsnprintf(buffer.data(), buffer.size(), raw_message.c_str(), args_copy);
+  va_end(args_copy);
+  if (r >= 0 && static_cast<unsigned int>(r) >= buffer.size()) {
     buffer.resize(r + 1);
+    goto RETRY;
   }
   return std::string(buffer.data());
 }

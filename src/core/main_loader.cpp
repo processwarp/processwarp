@@ -94,13 +94,12 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
     while (std::getline(std::cin, line, '\0')) {
       // Convert json string to picojson instance.
       picojson::value v;
-      std::istringstream is(line);
-      std::string err = picojson::parse(v, is);
+      std::string err = picojson::parse(v, line);
       if (!err.empty()) {
         Logger::err(LoaderMid::L2003, err.c_str());
       }
       result = v.get<picojson::object>();
-      Logger::info(LoaderMid::L2002, is.str().c_str());
+      Logger::info(LoaderMid::L2002, line.c_str());
 
       try {
         // Make loader.
