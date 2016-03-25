@@ -601,59 +601,59 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
                           std::map<std::pair<const llvm::Type*, bool>, int>()};
 
     // 引数を変数の先頭に登録
-    for (auto arg = function->getArgumentList().begin();
-         arg != function->getArgumentList().end(); arg ++) {
-      stack_values.insert(std::make_pair(arg, fc.stack_sum));
+    for (auto& arg : function->getArgumentList()) {
+      stack_values.insert(std::make_pair(&arg, fc.stack_sum));
 
-      assert(data_layout->getTypeStoreSize(arg->getType()) <=
-             data_layout->getTypeAllocSize(arg->getType()));
-      fc.stack_sum += data_layout->getTypeAllocSize(arg->getType());
+      assert(data_layout->getTypeStoreSize(arg.getType()) <=
+             data_layout->getTypeAllocSize(arg.getType()));
+      fc.stack_sum += data_layout->getTypeAllocSize(arg.getType());
     }
 
     // ブロックの名称を最初に作っておく
     unsigned int alias = 0;
-    for (auto b = function->begin(); b != function->end(); b ++) {
-      block_alias.insert(std::make_pair(b, alias ++));
+    for (auto& b : *function) {
+      block_alias.insert(std::make_pair(&b, alias ++));
     }
 
-    for (auto block = function->begin(); block != function->end(); block ++) {
+    for (auto& block : *function) {
       // ブロックの開始位置を格納しておく
-      block_start.insert(std::make_pair(block_alias.at(block), fc.code.size()));
-      auto func_info = std::make_pair(function, block);
+      block_start.insert(std::make_pair(block_alias.at(&block), fc.code.size()));
+      std::pair<const llvm::Function*, const llvm::BasicBlock*> func_info =
+        std::make_pair(function, &block);
       block_addrs_start.insert(std::make_pair(func_info, fc.code.size()));
 
       // 命令を解析する
-      for (auto i = block->begin(); i != block->end(); i ++) {
-        save_llvm_instruction(i);  // デバッグ用に命令を保存
+      for (auto& i : block) {
+        save_llvm_instruction(&i);  // デバッグ用に命令を保存
         // LLVMに対応した命令に置き換え
-        switch (i->getOpcode()) {
+        switch (i.getOpcode()) {
           case llvm::Instruction::Ret: {
-            const llvm::ReturnInst& inst = static_cast<const llvm::ReturnInst&>(*i);
+            const llvm::ReturnInst& inst = static_cast<const llvm::ReturnInst&>(i);
             convert_inst_ret(fc, inst);
           } break;
 
           case llvm::Instruction::Call: {
-            const llvm::CallInst& inst = static_cast<const llvm::CallInst&>(*i);
+            const llvm::CallInst& inst = static_cast<const llvm::CallInst&>(i);
             convert_inst_call(fc, inst);
           } break;
 
           case llvm::Instruction::Br: {
-            const llvm::BranchInst& inst = static_cast<const llvm::BranchInst&>(*i);
+            const llvm::BranchInst& inst = static_cast<const llvm::BranchInst&>(i);
             convert_inst_br(fc, inst);
           } break;
 
           case llvm::Instruction::Switch: {
-            const llvm::SwitchInst& inst = static_cast<const llvm::SwitchInst&>(*i);
+            const llvm::SwitchInst& inst = static_cast<const llvm::SwitchInst&>(i);
             convert_inst_switch(fc, inst);
           } break;
 
           case llvm::Instruction::IndirectBr: {
-            const llvm::IndirectBrInst& inst = static_cast<const llvm::IndirectBrInst&>(*i);
+            const llvm::IndirectBrInst& inst = static_cast<const llvm::IndirectBrInst&>(i);
             convert_inst_indirectbr(fc, inst);
           } break;
 
           case llvm::Instruction::Invoke: {
-            const llvm::InvokeInst& inst = static_cast<const llvm::InvokeInst&>(*i);
+            const llvm::InvokeInst& inst = static_cast<const llvm::InvokeInst&>(i);
             convert_inst_invoke(fc, inst);
           } break;
 
@@ -663,7 +663,7 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
           } break;
 
           case llvm::Instruction::PHI: {
-            const llvm::PHINode& inst = static_cast<const llvm::PHINode&>(*i);
+            const llvm::PHINode& inst = static_cast<const llvm::PHINode&>(i);
             convert_inst_phi(fc, inst);
           } break;
 
@@ -673,7 +673,7 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
              * @param sign 符号考慮の場合true
              */
 #define M_BIN_OPERATOR(opcode, sign)                                    \
-            const llvm::BinaryOperator& inst = static_cast<const llvm::BinaryOperator&>(*i); \
+            const llvm::BinaryOperator& inst = static_cast<const llvm::BinaryOperator&>(i); \
             assert(inst.getNumOperands() == 2);                         \
             /* set_type <ty> */                                         \
             push_code(fc, Opcode::SET_TYPE, assign_type(fc, inst.getType(), sign)); \
@@ -757,57 +757,57 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
 #undef M_BIN_OPERATOR
 
           case llvm::Instruction::ExtractElement: {
-            const llvm::ExtractElementInst& inst = static_cast<const llvm::ExtractElementInst&>(*i);
+            const llvm::ExtractElementInst& inst = static_cast<const llvm::ExtractElementInst&>(i);
             convert_inst_extract_element(fc, inst);
           } break;
 
           case llvm::Instruction::InsertElement: {
-            const llvm::InsertElementInst& inst = static_cast<const llvm::InsertElementInst&>(*i);
+            const llvm::InsertElementInst& inst = static_cast<const llvm::InsertElementInst&>(i);
             convert_inst_insert_element(fc, inst);
           } break;
 
           case llvm::Instruction::ShuffleVector: {
-            const llvm::ShuffleVectorInst& inst = static_cast<const llvm::ShuffleVectorInst&>(*i);
+            const llvm::ShuffleVectorInst& inst = static_cast<const llvm::ShuffleVectorInst&>(i);
             convert_inst_shuffle_vector(fc, inst);
           } break;
 
           case llvm::Instruction::ExtractValue: {
-            const llvm::ExtractValueInst& inst = static_cast<const llvm::ExtractValueInst&>(*i);
+            const llvm::ExtractValueInst& inst = static_cast<const llvm::ExtractValueInst&>(i);
             convert_inst_extract_value(fc, inst);
           } break;
 
           case llvm::Instruction::InsertValue: {
-            const llvm::InsertValueInst& inst = static_cast<const llvm::InsertValueInst&>(*i);
+            const llvm::InsertValueInst& inst = static_cast<const llvm::InsertValueInst&>(i);
             convert_inst_insert_value(fc, inst);
           } break;
 
           case llvm::Instruction::Alloca: {
-            const llvm::AllocaInst& inst = static_cast<const llvm::AllocaInst&>(*i);
+            const llvm::AllocaInst& inst = static_cast<const llvm::AllocaInst&>(i);
             convert_inst_alloca(fc, inst);
           } break;
 
           case llvm::Instruction::Load: {
-            const llvm::LoadInst& inst = static_cast<const llvm::LoadInst&>(*i);
+            const llvm::LoadInst& inst = static_cast<const llvm::LoadInst&>(i);
             convert_inst_load(fc, inst);
           } break;
 
           case llvm::Instruction::Store: {
-            const llvm::StoreInst& inst = static_cast<const llvm::StoreInst&>(*i);
+            const llvm::StoreInst& inst = static_cast<const llvm::StoreInst&>(i);
             convert_inst_store(fc, inst);
           } break;
 
           case llvm::Instruction::AtomicCmpXchg: {
-            const llvm::AtomicCmpXchgInst& inst = static_cast<const llvm::AtomicCmpXchgInst&>(*i);
+            const llvm::AtomicCmpXchgInst& inst = static_cast<const llvm::AtomicCmpXchgInst&>(i);
             convert_inst_atomic_cmp_xchg(fc, inst);
           } break;
 
           case llvm::Instruction::AtomicRMW: {
-            const llvm::AtomicRMWInst& inst = static_cast<const llvm::AtomicRMWInst&>(*i);
+            const llvm::AtomicRMWInst& inst = static_cast<const llvm::AtomicRMWInst&>(i);
             convert_inst_rmw(fc, inst);
           } break;
 
           case llvm::Instruction::GetElementPtr: {
-            const llvm::GetElementPtrInst& inst = static_cast<const llvm::GetElementPtrInst&>(*i);
+            const llvm::GetElementPtrInst& inst = static_cast<const llvm::GetElementPtrInst&>(i);
             convert_inst_get_element_ptr(fc, inst);
           } break;
 
@@ -819,42 +819,42 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
           case llvm::Instruction::UIToFP:
           case llvm::Instruction::PtrToInt:
           case llvm::Instruction::IntToPtr: {
-            const llvm::CastInst& inst = static_cast<const llvm::CastInst&>(*i);
+            const llvm::CastInst& inst = static_cast<const llvm::CastInst&>(i);
             convert_inst_cast(fc, inst);
           } break;
 
           case llvm::Instruction::SExt:
           case llvm::Instruction::FPToSI:
           case llvm::Instruction::SIToFP: {
-            const llvm::SExtInst& inst = static_cast<const llvm::SExtInst&>(*i);
+            const llvm::SExtInst& inst = static_cast<const llvm::SExtInst&>(i);
             convert_inst_sext(fc, inst);
           } break;
 
           case llvm::Instruction::BitCast: {
-            const llvm::BitCastInst& inst = static_cast<const llvm::BitCastInst&>(*i);
+            const llvm::BitCastInst& inst = static_cast<const llvm::BitCastInst&>(i);
             convert_inst_bit_cast(fc, inst);
           } break;
 
           case llvm::Instruction::ICmp: {
-            const llvm::ICmpInst& inst = static_cast<const llvm::ICmpInst&>(*i);
+            const llvm::ICmpInst& inst = static_cast<const llvm::ICmpInst&>(i);
             convert_inst_icmp(fc, inst);
           } break;
 
           case llvm::Instruction::FCmp: {
-            const llvm::FCmpInst& inst = static_cast<const llvm::FCmpInst&>(*i);
+            const llvm::FCmpInst& inst = static_cast<const llvm::FCmpInst&>(i);
             convert_inst_fcmp(fc, inst);
           } break;
 
           case llvm::Instruction::Select: {
-            const llvm::SelectInst& inst = static_cast<const llvm::SelectInst&>(*i);
+            const llvm::SelectInst& inst = static_cast<const llvm::SelectInst&>(i);
             convert_inst_select(fc, inst);
           } break;
 
           default: {
-            Logger::err(LoaderMid::L2006, "instruction", i->getOpcodeName());
+            Logger::err(LoaderMid::L2006, "instruction", i.getOpcodeName());
             throw_error_message(Error::UNSUPPORT,
                                 "instruction:" +
-                                Util::num2dec_str(i->getOpcode()));
+                                Util::num2dec_str(i.getOpcode()));
           } break;
         }
       }
@@ -935,24 +935,24 @@ void LlvmAsmLoader::load_globals
   // 実際の値をロードする前に割当先アドレスを決定する。
   // 定数の合計サイズを計算する
   vaddr_t sum = 0;
-  for (auto gl = variables.begin(); gl != variables.end(); gl ++) {
+  for (auto& gl : variables) {
     // 異なる変数に同一のアドレスを割り当てないように最低1byteを確保する。
-    size_t size = data_layout->getTypeAllocSize(gl->getType()->getElementType());
+    size_t size = data_layout->getTypeAllocSize(gl.getType()->getElementType());
     if (size == 0) size = 1;
 
     // 割り当てサイズの確認
-    assert(data_layout->getTypeStoreSize(gl->getType()->getElementType()) <=
-           data_layout->getTypeAllocSize(gl->getType()->getElementType()));
+    assert(data_layout->getTypeStoreSize(gl.getType()->getElementType()) <=
+           data_layout->getTypeAllocSize(gl.getType()->getElementType()));
 
-    if (gl->isConstant()) {
+    if (gl.isConstant()) {
       // 定数の場合、仮のアドレスを割り当てる
-      map_global.insert(std::make_pair(gl, sum));
+      map_global.insert(std::make_pair(&gl, sum));
       sum += size;
 
     } else {
       // 変数の場合、それぞれのアドレスを確保する
       vaddr_t new_addr = memory.alloc(size);
-      map_global.insert(std::make_pair(gl, new_addr));
+      map_global.insert(std::make_pair(&gl, new_addr));
     }
   }
 
@@ -963,10 +963,10 @@ void LlvmAsmLoader::load_globals
       global_addr = memory.alloc(sum);
     }
     // 割り当てたアドレスを元に仮のアドレスから実際のアドレスに変更する
-    for (auto it = map_global.begin(); it != map_global.end(); it ++) {
-      if (static_cast<const llvm::GlobalVariable*>(it->first)->isConstant()) {
+    for (auto& it : map_global) {
+      if (static_cast<const llvm::GlobalVariable*>(it.first)->isConstant()) {
         assert(global_addr != VADDR_NON);
-        it->second += global_addr;
+        it.second += global_addr;
       }
     }
   }
@@ -980,13 +980,13 @@ void LlvmAsmLoader::load_globals
                         std::map<const llvm::Value*, int>(),
                         std::map<std::pair<const llvm::Type*, bool>, int>()};
   // 初期値がある場合は値をロードする
-  for (auto it = map_global.begin(); it != map_global.end(); it ++) {
+  for (auto& it : map_global) {
     const llvm::GlobalVariable* gl =
-        static_cast<const llvm::GlobalVariable*>(it->first);
+        static_cast<const llvm::GlobalVariable*>(it.first);
     if (gl->hasInitializer()) {
       ValueDest dst;
       dst.is_k = false;
-      dst.addr.ptr = memory.read_writable(it->second);
+      dst.addr.ptr = memory.read_writable(it.second);
       load_constant(fc, dst, gl->getInitializer());
     }
   }
@@ -1019,12 +1019,12 @@ void LlvmAsmLoader::load_module(llvm::Module* module) {
   load_globals(module->getGlobalList());
 
   // 関数のアドレスを予約しておく
-  for (auto fn = module->begin(); fn != module->end(); fn ++) {
+  for (auto& fn : *module) {
     vaddr_t addr = memory.reserve_program_area();
-    map_func.insert(std::make_pair(fn, addr));
-    left_func.insert(fn);
+    map_func.insert(std::make_pair(&fn, addr));
+    left_func.insert(&fn);
     /// @todo: スレッドローカル、セクション、公開の扱い
-    proc.set_global_value(fn->getName().str(), addr);
+    proc.set_global_value(fn.getName().str(), addr);
   }
 
   // 関数の読み込み
