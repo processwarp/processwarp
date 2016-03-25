@@ -169,7 +169,7 @@ WrappedOperator* Thread::get_operator(vaddr_t type) {
 
   } else {
     // 複合型の場合、complex_operatorを使う。
-    complex_operator.type_store = std::move(TypeStore::read(*memory, type));
+    complex_operator.type_store = TypeStore::read(*memory, type);
     return &complex_operator;
   }
 }

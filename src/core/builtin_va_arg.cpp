@@ -21,7 +21,7 @@ BuiltinPostProc::Type BuiltinVaArg::bi_arg(Process& proc, Thread& thread,
   vaddr_t va_arg = thread.memory->read<vaddr_t>(arglist);
   // 型情報を取得
   vaddr_t type = thread.memory->read<vaddr_t>(va_arg);
-  std::unique_ptr<TypeStore> type_store(std::move(TypeStore::read(*thread.memory, type)));
+  std::unique_ptr<TypeStore> type_store(TypeStore::read(*thread.memory, type));
   // 値のアドレスを取得
   vaddr_t value;
   if (arg_size <= sizeof(vaddr_t)) {

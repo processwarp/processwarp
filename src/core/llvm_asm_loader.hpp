@@ -1,6 +1,13 @@
 #pragma once
 
-#include <llvm/IR/Constants.h>
+#if defined(__clang__) && (__clang_major__ > 3 || (__clang_major__ == 3 && __clang_minor__ >= 6))
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wredundant-move"
+#  include <llvm/IR/Constants.h>
+#  pragma clang diagnostic pop
+#else
+#  include <llvm/IR/Constants.h>
+#endif
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Instructions.h>

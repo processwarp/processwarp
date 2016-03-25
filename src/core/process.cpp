@@ -51,11 +51,11 @@ inline std::unique_ptr<FuncStore> get_function(instruction_t code,
     // 定数の場合1の補数表現からの復元
     vaddr_t addr =
         param.memory.read<vaddr_t>(param.k + (FILL_OPERAND - operand));
-    return std::move(FuncStore::read(param.proc, param.memory, addr));
+    return FuncStore::read(param.proc, param.memory, addr);
 
   } else {
     vaddr_t addr = param.memory.read<vaddr_t>(param.stack + operand);
-    return std::move(FuncStore::read(param.proc, param.memory, addr));
+    return FuncStore::read(param.proc, param.memory, addr);
   }
 }
 
@@ -74,7 +74,7 @@ inline std::unique_ptr<TypeStore> get_type(instruction_t code,
                                            OperandParam& param) {
   int operand = Instruction::get_operand(code);
   vaddr_t addr = param.memory.read<vaddr_t>(param.k + (FILL_OPERAND - operand));
-  return std::move(TypeStore::read(param.memory, addr));
+  return TypeStore::read(param.memory, addr);
 }
 
 /**
@@ -272,7 +272,7 @@ re_entry: {
           is_tailcall = false;
 
         case Opcode::TAILCALL: {
-          std::unique_ptr<FuncStore> new_func(std::move(get_function(code, op_param)));
+          std::unique_ptr<FuncStore> new_func(get_function(code, op_param));
 
           assert(!is_tailcall);  /// @todo 動きを確認する。
 
@@ -313,7 +313,7 @@ re_entry: {
                  == Opcode::EXTRA &&
                  Instruction::get_opcode(value_inst = insts.at(stackinfo.pc + 4 + args * 2))
                  == Opcode::EXTRA) {
-            std::unique_ptr<TypeStore> type(std::move(get_type(type_inst, op_param)));
+            std::unique_ptr<TypeStore> type(get_type(type_inst, op_param));
             vaddr_t value = get_operand(value_inst, op_param);
 
             if (new_func->type == FunctionType::NORMAL && args < new_func->arg_num) {
@@ -418,7 +418,7 @@ re_entry: {
         } break;
 
         case Opcode::SET_TYPE: {
-          std::unique_ptr<TypeStore> store(std::move(get_type(code, op_param)));
+          std::unique_ptr<TypeStore> store(get_type(code, op_param));
           stackinfo.type_operator = thread.get_operator(store->addr);
           /// @todo 未対応の型
           assert(stackinfo.type_operator != nullptr);
@@ -613,14 +613,14 @@ re_entry: {
         } break;
 
         case Opcode::TYPE_CAST: {
-          std::unique_ptr<TypeStore> type(std::move(get_type(code, op_param)));
+          std::unique_ptr<TypeStore> type(get_type(code, op_param));
           stackinfo.type_operator->type_cast(stackinfo.output,
                                              type->addr,
                                              stackinfo.value);
         } break;
 
         case Opcode::BIT_CAST: {
-          std::unique_ptr<TypeStore> type(std::move(get_type(code, op_param)));
+          std::unique_ptr<TypeStore> type(get_type(code, op_param));
           stackinfo.type_operator->bit_cast(stackinfo.output,
                                             type->size,
                                             stackinfo.value);
@@ -1068,7 +1068,7 @@ void Process::warp_out_thread(vtid_t tid) {
 
 // Create a new thread.
 vtid_t Process::create_thread(vaddr_t func_addr, vaddr_t arg_addr) {
-  std::unique_ptr<FuncStore> func(std::move(FuncStore::read(*this, *proc_memory, func_addr)));
+  std::unique_ptr<FuncStore> func(FuncStore::read(*this, *proc_memory, func_addr));
 
   // check function type
   if (func->type != FunctionType::NORMAL) {
@@ -1081,8 +1081,7 @@ vtid_t Process::create_thread(vaddr_t func_addr, vaddr_t arg_addr) {
   vaddr_t root_stack = thread.memory->alloc(sizeof(vaddr_t));
   vaddr_t root_stackaddr =
       StackInfo::alloc(*thread.memory, VADDR_NON, VADDR_NON, 0, 0, root_stack);
-  std::unique_ptr<StackInfo> root_stackinfo(std::move(StackInfo::read(*thread.memory,
-                                                                      root_stackaddr)));
+  std::unique_ptr<StackInfo> root_stackinfo(StackInfo::read(*thread.memory, root_stackaddr));
   root_stackinfo->output = root_stack;
   root_stackinfo->write(*thread.memory);
   thread.push_stack(root_stackaddr, std::move(root_stackinfo));
@@ -1252,14 +1251,14 @@ M_READ_BUILTIN_PARAM(read_builtin_param_i64, uint64_t, BasicTypeAddress::UI64);
 void Process::resolve_stackinfo_cache(Thread& thread, StackInfo* stackinfo) {
   // 関数
   if (stackinfo->func != VADDR_NON) {
-    stackinfo->func_store = std::move(FuncStore::read(*this, *thread.memory, stackinfo->func));
+    stackinfo->func_store = FuncStore::read(*this, *thread.memory, stackinfo->func);
   } else {
     stackinfo->func_store.reset(nullptr);
   }
   // 操作対象の型
   if (stackinfo->type != VADDR_NON) {
     stackinfo->type_operator = thread.get_operator(stackinfo->type);
-    stackinfo->type_store = std::move(TypeStore::read(*thread.memory, stackinfo->type));
+    stackinfo->type_store = TypeStore::read(*thread.memory, stackinfo->type);
 
   } else {
     stackinfo->type_operator = nullptr;
@@ -1285,8 +1284,7 @@ void Process::run(const std::vector<std::string>& args,
   auto it_main_func = globals.find(&symbols.get("main"));
   if (it_main_func == globals.end())
     throw_error_message(Error::SYM_NOT_FOUND, "main");
-  std::unique_ptr<FuncStore> main_func(std::move(FuncStore::read(*this, *proc_memory,
-                                                                 it_main_func->second)));
+  std::unique_ptr<FuncStore> main_func(FuncStore::read(*this, *proc_memory, it_main_func->second));
 
   // main関数用のスタックを確保する
   vaddr_t main_stack = VADDR_NULL;

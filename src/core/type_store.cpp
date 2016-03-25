@@ -164,7 +164,7 @@ std::pair<size_t, unsigned int> TypeStore::calc_type_size(VMemory::Accessor& mem
   unsigned int odd;
 
   for (int i = 0, member_size = member.size(); i < member_size; i ++) {
-    std::unique_ptr<TypeStore> type(std::move(TypeStore::read(memory, member.at(i))));
+    std::unique_ptr<TypeStore> type(TypeStore::read(memory, member.at(i)));
     // メンバ中で一番大きなアライメントを保持
     if (type->alignment > max_alignment) max_alignment = type->alignment;
     // パディングを計算する
@@ -181,7 +181,7 @@ std::pair<size_t, unsigned int> TypeStore::calc_type_size(VMemory::Accessor& mem
 // Calucuate a size and alignment for some type.
 std::pair<size_t, unsigned int> TypeStore::calc_type_size(VMemory::Accessor& memory,
                                                           vaddr_t type) {
-  std::unique_ptr<TypeStore> t(std::move(TypeStore::read(memory, type)));
+  std::unique_ptr<TypeStore> t(TypeStore::read(memory, type));
 
   return std::make_pair(t->size, t->alignment);
 }

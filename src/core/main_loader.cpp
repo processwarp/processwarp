@@ -169,7 +169,7 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
    */
   std::unique_ptr<VMemory::Accessor> process_assign_accessor(const vpid_t& pid) override {
     assert(!in_pid.empty());
-    return std::move(vmemory.get_accessor(Convert::vpid2str(pid)));
+    return vmemory.get_accessor(Convert::vpid2str(pid));
   }
 
   /**

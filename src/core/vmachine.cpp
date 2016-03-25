@@ -65,8 +65,8 @@ VMachine::VMachine(VMachineDelegate& delegate_,
 void VMachine::initialize(const vpid_t& pid, const vtid_t& root_tid, vaddr_t proc_addr,
                           const nid_t& master_nid, const std::string& name) {
   assert(process.get() == nullptr);
-  process = std::move(Process::alloc(*this, pid, root_tid, libs, lib_filter,
-                                     builtin_funcs, proc_addr, master_nid));
+  process = Process::alloc(*this, pid, root_tid, libs, lib_filter, builtin_funcs,
+                           proc_addr, master_nid);
   process->setup();
   process->name = name;
   initialize_builtin();
@@ -263,7 +263,7 @@ Process& VMachine::get_process() {
 }
 
 std::unique_ptr<VMemory::Accessor> VMachine::process_assign_accessor(const vpid_t& pid) {
-  return std::move(vmemory.get_accessor(Convert::vpid2str(pid)));
+  return vmemory.get_accessor(Convert::vpid2str(pid));
 }
 
 /**
