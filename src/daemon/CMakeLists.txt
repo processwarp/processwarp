@@ -87,6 +87,7 @@ add_executable(daemon
   worker_connector.cpp
   worker_dummy.cpp
   )
+add_dependencies(daemon const_daemon)
 target_link_libraries(daemon
   ${extra_libs}
   pwcore
