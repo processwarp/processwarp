@@ -26,20 +26,23 @@ add_custom_target(cpplint
   )
 
 # Generate develop document.
-find_package(Doxygen)
+option(WITH_DOCUMENT "Generate document by doxygen" OFF)
+if (WITH_DOCUMENT)
+  find_package(Doxygen)
 
-if (DOXYGEN_FOUND)
-  set(DOXYGEN_INPUT "Doxyfile")
-  set(DOXYGEN_OUTPUT "doc")
+  if (DOXYGEN_FOUND)
+    set(DOXYGEN_INPUT "Doxyfile")
+    set(DOXYGEN_OUTPUT "doc")
     
-  add_custom_target(doc
-    COMMAND ${CMAKE_COMMAND} -E echo_append "Building API Documentation..."
-    COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_INPUT}
-    COMMAND ${CMAKE_COMMAND} -E echo "Done."
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    DEPENDS ${DOXYGEN_INPUT}
-    )
-endif (DOXYGEN_FOUND)
+    add_custom_target(doc
+      COMMAND ${CMAKE_COMMAND} -E echo_append "Building API Documentation..."
+      COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_INPUT}
+      COMMAND ${CMAKE_COMMAND} -E echo "Done."
+      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+      DEPENDS ${DOXYGEN_INPUT}
+      )
+  endif (DOXYGEN_FOUND)
+endif (WITH_DOCUMENT)
 
 # Compile.
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D PICOJSON_USE_LOCALE=0")
@@ -58,6 +61,9 @@ add_custom_target(sample
 
 # Test
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
-  enable_testing()
-  add_subdirectory(test)
+  option(WITH_TEST "Compile test program" ON)
+  if (WITH_TEST)
+    enable_testing()
+    add_subdirectory(test)
+  endif (WITH_TEST)
 endif()

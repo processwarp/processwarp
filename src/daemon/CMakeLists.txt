@@ -8,6 +8,7 @@ endif()
 include_directories("${SIO_DIR}/include")
 link_directories("${SIO_DIR}/lib/Release")
 list(APPEND extra_libs "sioclient_tls")
+list(APPEND extra_libs "pthread")
 
 # Boost
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
@@ -29,7 +30,7 @@ if(FFI_FOUND)
   list(APPEND extra_libs ${FFI_LIBRARIES})
 else()
   find_library(FFI_LIBRARY NAMES ffi)
-  set(extra_libs ${extra_libs} ${FFI_LIBRARY})
+  list(APPEND extra_libs ${FFI_LIBRARY})
 endif()
 
 # OpenSSL
@@ -46,28 +47,25 @@ if(UV_FOUND)
   list(APPEND extra_libs ${UV_LIBRARIES})
 else()
   include_directories(${UV_INCLUDE_DIRS})
+  list(APPEND extra_libs ${UV_LIBRARIES})
 endif()
 
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWORKER_DUMMY")
 
 # C++ options
+list(APPEND extra_libs "dl")
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wno-unused-parameter")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
+
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   # MaxOSX
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wno-unused-parameter")
-  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
 
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
   # FreeBSD
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wno-unused-parameter")
-  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
 
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   # Linux
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wno-unused-parameter")
-  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
 
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   # Windows
@@ -88,6 +86,8 @@ add_executable(daemon
   worker_dummy.cpp
   )
 add_dependencies(daemon const_daemon)
+set_property(TARGET daemon PROPERTY CXX_STANDARD 11)
+set_property(TARGET daemon PROPERTY CXX_STANDARD_REQUIRED ON)
 target_link_libraries(daemon
   ${extra_libs}
   pwcore
@@ -97,6 +97,9 @@ add_executable(worker
   ${HEADER_FILES}
   worker.cpp
   )
+add_dependencies(worker const_daemon)
+set_property(TARGET worker PROPERTY CXX_STANDARD 11)
+set_property(TARGET worker PROPERTY CXX_STANDARD_REQUIRED ON)
 target_link_libraries(worker
   ${extra_libs}
   pwcore
