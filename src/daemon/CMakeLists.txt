@@ -55,6 +55,7 @@ endif()
 # C++ options
 list(APPEND extra_libs "dl")
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wno-unused-parameter")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
 
@@ -86,8 +87,6 @@ add_executable(daemon
   worker_dummy.cpp
   )
 add_dependencies(daemon const_daemon)
-set_property(TARGET daemon PROPERTY CXX_STANDARD 11)
-set_property(TARGET daemon PROPERTY CXX_STANDARD_REQUIRED ON)
 target_link_libraries(daemon
   ${extra_libs}
   pwcore
@@ -98,8 +97,6 @@ add_executable(worker
   worker.cpp
   )
 add_dependencies(worker const_daemon)
-set_property(TARGET worker PROPERTY CXX_STANDARD 11)
-set_property(TARGET worker PROPERTY CXX_STANDARD_REQUIRED ON)
 target_link_libraries(worker
   ${extra_libs}
   pwcore
