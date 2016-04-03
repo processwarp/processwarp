@@ -102,7 +102,8 @@ void Router::load_llvm(const std::string& filename, const std::vector<std::strin
   }
   ifs.close();
 
-  server.send_load_llvm(Util::file_basename(filename, true), file.str(), args, my_nid);
+  server.send_load_llvm(Util::file_basename(filename, true), file.str(), args,
+                        scheduler.get_new_pid(), my_nid);
 }
 
 /**

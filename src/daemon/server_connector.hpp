@@ -33,6 +33,7 @@ class ServerConnector {
   void send_load_llvm(const std::string& name,
                       const std::string& file,
                       const std::vector<std::string>& args,
+                      const vpid_t& pid,
                       const nid_t& dst_nid);
   void send_relay_command(const CommandPacket& packet);
   void send_test_console(const vpid_t& pid,

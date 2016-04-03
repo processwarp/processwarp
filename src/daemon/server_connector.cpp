@@ -231,7 +231,8 @@ void ServerConnector::send_connect_node(const std::string& account,
  * Packet format: {
  *   name: &lt;Application name&gt;,
  *   file: &lt;File content(binary)&gt;,
- *   args: [&lt;arg1&gt;, &lt;arg2&gt;,...]
+ *   args: [&lt;arg1&gt;, &lt;arg2&gt;,...],
+ *   pid: &lt;pid&gt;,
  *   dst_nid: &lt;Destination node-id&gt;
  * }
  * @param name Application name.
@@ -242,6 +243,7 @@ void ServerConnector::send_connect_node(const std::string& account,
 void ServerConnector::send_load_llvm(const std::string& name,
                                      const std::string& file,
                                      const std::vector<std::string>& args,
+                                     const vpid_t& pid,
                                      const nid_t& dst_nid) {
   sio::message::ptr data(sio::object_message::create());
   sio::message::ptr args_ptr(sio::array_message::create());
@@ -255,6 +257,7 @@ void ServerConnector::send_load_llvm(const std::string& name,
     args_vtr.push_back(sio::string_message::create(arg));
   }
   map.insert(std::make_pair("args", args_ptr));
+  map.insert(std::make_pair("pid", get_sio_by_pid(pid)));
   map.insert(std::make_pair("dst_nid", get_sio_by_nid(dst_nid)));
 
   socket->emit("load_llvm", data);

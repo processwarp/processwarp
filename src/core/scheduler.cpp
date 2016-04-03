@@ -23,7 +23,8 @@ SchedulerDelegate::~SchedulerDelegate() {
 /**
  * Constructor, set default property.
  */
-Scheduler::Scheduler() {
+Scheduler::Scheduler() :
+    rnd(std::random_device()()) {
   my_info.nid  = SpecialNID::NONE;
   my_info.name = "";
   my_info.heartbeat = 0;
@@ -67,6 +68,25 @@ nid_t Scheduler::get_dst_nid(const vpid_t& pid, Module::Type module) {
     } break;
   }
 }
+
+/**
+ * Get a new process-id that is not used by another process yet.
+ * @return A new process-id.
+ */
+#if !defined(__ANDROID__)
+vpid_t Scheduler::get_new_pid() {
+  std::string seed = Convert::nid2str(my_info.nid) +
+    std::to_string(clock()) + std::to_string(rnd());
+  vpid_t pid;
+
+  do {
+    seed = Util::calc_sha256(seed);
+    pid  = Convert::str2vpid(seed);
+  } while (processes.find(pid) != processes.end());
+
+  return pid;
+}
+#endif
 
 /**
  * When receive command from another module in this node or another node,

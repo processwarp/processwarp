@@ -3,6 +3,7 @@
 #include <picojson.h>
 
 #include <map>
+#include <random>
 #include <string>
 
 #include "definitions.hpp"
@@ -25,6 +26,7 @@ class Scheduler {
   Scheduler();
   void initialize(SchedulerDelegate& delegate_);
   nid_t get_dst_nid(const vpid_t& pid, Module::Type module);
+  vpid_t get_new_pid();
   void recv_command(const CommandPacket& packet);
   void set_node_information(const nid_t& nid, const std::string& name);
   void execute();
@@ -38,6 +40,8 @@ class Scheduler {
   std::map<vpid_t, ProcessInfo> processes;
   /** All node information as far as I can connect. */
   std::map<nid_t, NodeInfo> nodes;
+  /** Random value generator. */
+  std::mt19937_64 rnd;
 
   void cleanup_unresponsive_node();
   void cleanup_unresponsive_process();
