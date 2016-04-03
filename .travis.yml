@@ -56,7 +56,7 @@ before_install:
 script:
   - mkdir build
   - cd build
-  - CC=clang-3.5 CXX=clang++-3.5 cmake -D SIO_DIR=$TRAVIS_BUILD_DIR/socket.io-client-cpp/build ..
+  - CC=clang-3.5 CXX=clang++-3.5 cmake -D WITH_DOCUMENT=ON -D SIO_DIR=$TRAVIS_BUILD_DIR/socket.io-client-cpp/build ..
   - make
   - make doc
   - make cpplint
