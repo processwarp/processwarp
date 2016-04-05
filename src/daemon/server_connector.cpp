@@ -150,11 +150,8 @@ ServerConnector::ServerConnector() :
  * Destructor, close Socket.IO.
  */
 ServerConnector::~ServerConnector() {
-  client.sync_close();
-  client.clear_con_listeners();
-  uv_close(reinterpret_cast<uv_handle_t*>(&async_receive), nullptr);
+  disconnect();
 }
-
 
 /**
  * Initialize for ServerConnector.
@@ -168,6 +165,15 @@ void ServerConnector::initialize(uv_loop_t* loop_, const std::string& url) {
   status = ServerStatus::SETUP;
   initialize_async();
   initialize_socketio(url);
+}
+
+/**
+ * Disconnect from the server.
+ */
+void ServerConnector::disconnect() {
+  client.sync_close();
+  client.clear_con_listeners();
+  uv_close(reinterpret_cast<uv_handle_t*>(&async_receive), nullptr);
 }
 
 /**
@@ -358,11 +364,16 @@ void ServerConnector::on_recv(uv_async_t* handle) {
 
 /**
  * Event listener for Socket.IO's close event.
+ * Change status to CLOSE without CONNECT_FAILD or BIND_FAILED.
+ * Because CONNECT_FAILD and BIND_FAILED are containing CLOSE status,
+ * and these status tell why had the node closed by server.
  */
 void ServerConnector::on_close() {
   std::lock_guard<std::mutex> guard(sio_mutex);
   sio_cond.notify_all();
-  status = ServerStatus::CLOSE;
+  if (status != ServerStatus::CONNECT_FAILED && status != ServerStatus::BIND_FAILED) {
+    status = ServerStatus::CLOSE;
+  }
 }
 
 /**
@@ -455,8 +466,11 @@ void ServerConnector::recv_bind_node(sio::message::ptr data) {
     router.recv_bind_node(get_nid_by_map(data, "nid"));
 
   } else {
-    /// @todo error
-    assert(false);
+    {
+      std::lock_guard<std::mutex> guard(sio_mutex);
+      status = ServerStatus::BIND_FAILED;
+    }
+    disconnect();
   }
 }
 
@@ -479,8 +493,11 @@ void ServerConnector::recv_connect_node(sio::message::ptr data) {
     router.recv_connect_node();
 
   } else {
-    /// @todo error
-    assert(false);
+    {
+      std::lock_guard<std::mutex> guard(sio_mutex);
+      status = ServerStatus::CONNECT_FAILED;
+    }
+    disconnect();
   }
 }
 

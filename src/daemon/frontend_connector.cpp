@@ -9,6 +9,7 @@
 #include "daemon_define.hpp"
 #include "frontend_connector.hpp"
 #include "router.hpp"
+#include "server_connector.hpp"
 #include "worker_connector.hpp"
 
 namespace processwarp {
@@ -34,11 +35,13 @@ FrontendConnector::FrontendConnector() :
 /**
  * Initialize for FrontendConnector.
  * Create UNIX domain socket for controller.
+ * Initialize timer to deal with the connect_frontend packet.
  * @param loop libuv's loop for WorkerConnector.
  * @param pipe_path Path of pipe that for connecting with worker.
  */
 void FrontendConnector::initialize(uv_loop_t* loop, const std::string& pipe_path) {
   Connector::initialize(loop, pipe_path);
+  initialize_connect_timer();
 }
 
 
@@ -89,6 +92,83 @@ void FrontendConnector::relay_frontend_command(const CommandPacket& packet) {
 }
 
 /**
+ * When timer event has happen and after connecting server,
+ * send reply for clients send a connect_frontend packet.
+ * After send reply to all clients, turn off the timer event.
+ * @param handle Libuv's event handler.
+ */
+void FrontendConnector::on_connect_timer(uv_timer_t* handle) {
+  FrontendConnector& THIS = FrontendConnector::get_instance();
+  Router& router = Router::get_instance();
+  ServerConnector &server = ServerConnector::get_instance();
+
+  switch (server.get_status()) {
+    case ServerStatus::SETUP:
+    case ServerStatus::APPROACH1:
+    case ServerStatus::APPROACH2:
+      return;
+
+    case ServerStatus::CONNECT: {
+      for (auto& it_property : THIS.properties) {
+        uv_pipe_t* client = it_property.first;
+        FrontendProperty& property = it_property.second;
+
+        // Skip if pipe has accept.
+        if (property.status == PipeStatus::CONNECT ||
+            property.account.empty()) {
+          continue;
+        }
+
+        if (router.check_account(property.account, property.password)) {
+          if (property.type == FrontendType::GUI) {
+            if (THIS.gui_pipe == nullptr) {
+              THIS.gui_pipe = client;
+
+            } else {
+              THIS.send_connect_frontend(*client, -1, SpecialNID::NONE);
+              THIS.close(*client);
+              continue;
+            }
+          }
+
+          THIS.send_connect_frontend(*client, 0, router.get_my_nid());
+          property.status = PipeStatus::CONNECT;
+          property.account.clear();
+          property.password.clear();
+
+        } else {
+          THIS.send_connect_frontend(*client, -1, SpecialNID::NONE);
+          THIS.close(*client);
+        }
+      }
+    } break;
+
+    case ServerStatus::CONNECT_FAILED:
+    case ServerStatus::BIND_FAILED: {
+      for (auto& it_property : THIS.properties) {
+        uv_pipe_t* client = it_property.first;
+        FrontendProperty& property = it_property.second;
+
+        assert(property.status == PipeStatus::SETUP || !property.account.empty());
+
+        THIS.send_connect_frontend(*client, -1, SpecialNID::NONE);
+      }
+    } break;
+
+    case ServerStatus::CLOSE:
+    case ServerStatus::ERROR:
+      /// @todo send error
+      assert(false);
+
+    default:
+      assert(false);
+  }
+
+  uv_timer_stop(&(THIS.connect_timer));
+  THIS.connect_timer_enable = false;
+}
+
+/**
  * Create pipe for controller when accept connecting.
  * Set status to SETUP.
  * @param client Pipe connect with controller by libuv.
@@ -136,19 +216,28 @@ void FrontendConnector::on_close(uv_pipe_t& client) {
 }
 
 /**
- * When receive connect-frontend command from frontend, check account.
- * Reply code 0 if account is valid, and change status to CONNECT.
- * Reply code -1 if account is invalid.
- * If client type is GUI, set GUI pipe to this pipe.
+ * Initialize timer event handler but don't start timer.
+ * Timer start at connect_frontend command has received to avoid too much processes.
+ */
+void FrontendConnector::initialize_connect_timer() {
+  connect_timer_enable = false;
+  uv_timer_init(loop, &connect_timer);
+}
+
+/**
+ * When receive connect_frontend command from frontend, change client status that
+ * the account and password are stored to property, and start timer.
  * @param client Frontend that passed this request.
  * @param param Parameter contain account, password, frontend type.
  */
 void FrontendConnector::recv_connect_frontend(uv_pipe_t& client, picojson::object& param) {
-  Router& router = Router::get_instance();
   const std::string& type = param.at("type").get<std::string>();
+  const std::string& account  = param.at("account").get<std::string>();
+  const std::string& password = param.at("password").get<std::string>();
   FrontendProperty& property = properties.at(&client);
 
   assert(property.status == PipeStatus::SETUP);
+  assert(!account.empty() && !password.empty());
 
   if (type == "gui") {
     property.type = FrontendType::GUI;
@@ -161,29 +250,17 @@ void FrontendConnector::recv_connect_frontend(uv_pipe_t& client, picojson::objec
     assert(false);
   }
 
-  if (router.check_account(param.at("account").get<std::string>(),
-                           param.at("password").get<std::string>())) {
-    if (property.type == FrontendType::GUI) {
-      if (gui_pipe == nullptr) {
-        gui_pipe = &client;
+  property.account  = account;
+  property.password = password;
 
-      } else {
-        send_connect_frontend(client, -1, SpecialNID::NONE);
-        close(client);
-        return;
-      }
-    }
-    send_connect_frontend(client, 0, router.get_my_nid());
-    property.status = PipeStatus::CONNECT;
-
-  } else {
-    send_connect_frontend(client, -1, SpecialNID::NONE);
-    close(client);
+  if (!connect_timer_enable) {
+    uv_timer_start(&connect_timer, on_connect_timer, 0, 1000);
+    connect_timer_enable = true;
   }
 }
 
 /**
- * When receive open-file command from frontend, pass capable method on Router.
+ * When receive open_file command from frontend, pass capable method on Router.
  * @param client Frontend that passed this request.
  * @param param Parameter contain a filename to open.
  */

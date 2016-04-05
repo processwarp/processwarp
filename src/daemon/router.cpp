@@ -51,24 +51,24 @@ void Router::initialize(uv_loop_t* loop_, const picojson::object& config_) {
 
 /**
  * Check account is eaual to the same to connecting it.
- * @param account_ Target account name.
- * @param password_ Target password.
+ * @param account Target account name.
+ * @param password Target password.
  * @return True if account and password is eaual to the same to connecting it.
  */
-bool Router::check_account(const std::string& account_, const std::string& password_) {
+bool Router::check_account(const std::string& account, const std::string& password) {
   ServerConnector& server = ServerConnector::get_instance();
   if (server.get_status() != ServerStatus::CONNECT) {
     /// @todo error
     assert(false);
   }
 
-  std::string hash_password = password_;
+  std::string hash_password = password;
   for (int i = 0; i < 10; i ++) {
     hash_password = Util::calc_sha256(hash_password);
   }
   hash_password = "[10sha256]" + hash_password;
 
-  if (account_ == config.at("account").get<std::string>() &&
+  if (account == config.at("account").get<std::string>() &&
       hash_password == config.at("password").get<std::string>()) {
     return true;
   } else {
@@ -122,7 +122,7 @@ const nid_t& Router::get_my_nid() {
 void Router::recv_connect_node() {
   ServerConnector& server = ServerConnector::get_instance();
 
-  server.send_bind_node(my_nid, config.at("node-name").get<std::string>());
+  server.send_bind_node(my_nid, config.at("node_name").get<std::string>());
 }
 
 /**

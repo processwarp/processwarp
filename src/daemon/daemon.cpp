@@ -20,6 +20,7 @@
 #include "logger_syslog.hpp"
 #include "router.hpp"
 #include "server_connector.hpp"
+#include "util.hpp"
 #include "worker_connector.hpp"
 
 namespace processwarp {
@@ -27,7 +28,7 @@ namespace processwarp {
  * Constructor, set default parameters value.
  */
 Daemon::Daemon() {
-  run_mode = DaemonRunMode::DAEMON;
+  run_mode = DaemonRunMode::CONSOLE;
 }
 
 /**
@@ -58,6 +59,14 @@ int Daemon::entry(int argc, char* argv[]) {
         return EXIT_FAILURE;
       }
       if (daemonize() != 0) {
+        return EXIT_FAILURE;
+      }
+    } break;
+
+    case DaemonRunMode:: SUBPROCESS: {
+      if (!subprocess_config() ||
+          !initialize_logger() ||
+          !initialize_message()) {
         return EXIT_FAILURE;
       }
     } break;
@@ -209,8 +218,11 @@ int Daemon::main_loop() {
 
   server.initialize(loop, config.at("server").get<std::string>());
   router.initialize(loop, config);
-  frontend.initialize(loop, config.at("frontend-pipe").get<std::string>());
-  worker.initialize(loop, config.at("worker-pipe").get<std::string>(), config_file);
+  frontend.initialize(loop, config.at("frontend_pipe").get<std::string>());
+  worker.initialize(loop,
+                    config.at("worker_pipe").get<std::string>(),
+                    config.at("libs").get<picojson::array>(),
+                    config.at("lib_filter").get<picojson::array>());
 
   server.send_connect_node(config.at("account").get<std::string>(),
                            config.at("password").get<std::string>());
@@ -228,8 +240,9 @@ int Daemon::main_loop() {
 void Daemon::show_help(bool is_error, const std::string& command) {
   std::ostream& out = (is_error ? std::cerr : std::cout);
   out << "usage: " << command << " [options]" << std::endl;
-  out << "  -c --console      Run process warp node as console application." << std::endl;
-  out << "  -d --daemon       Run process warp node as daemon (default)." << std::endl;
+  out << "  -c --console      Run process warp node as console application (default)." << std::endl;
+  out << "  -d --daemon       Run process warp node as daemon." << std::endl;
+  out << "  -s --subprocess   Run process warp node as a sub-process of the frontend." << std::endl;
   out << "  -f <config>       Uses the configure in the file config on run." << std::endl;
   out << "  -h --help         Show available options." << std::endl;
 }
@@ -271,13 +284,14 @@ bool Daemon::read_config(const std::string& file) {
 bool Daemon::read_options(int argc, char* argv[]) {
   int opt, option_index;
   option long_options[] = {
-    {"console", no_argument, nullptr, 'c'},
-    {"daemon",  no_argument, nullptr, 'd'},
-    {"help",    no_argument, nullptr, 'h'},
+    {"console",     no_argument, nullptr, 'c'},
+    {"daemon",      no_argument, nullptr, 'd'},
+    {"help",        no_argument, nullptr, 'h'},
+    {"subprocess",  no_argument, nullptr, 's'},
     {0, 0, 0, 0}
   };
 
-  while ((opt = getopt_long(argc, argv, "cdf:h", long_options, &option_index)) != -1) {
+  while ((opt = getopt_long(argc, argv, "cdf:hs", long_options, &option_index)) != -1) {
     switch (opt) {
       case 'c': {
         run_mode = DaemonRunMode::CONSOLE;
@@ -288,12 +302,15 @@ bool Daemon::read_options(int argc, char* argv[]) {
       } break;
 
       case 'f': {
-        config_file = std::string(optarg);
-        if (!read_config(config_file)) return false;
+        if (!read_config(std::string(optarg))) return false;
       } break;
 
       case 'h': {
         run_mode = DaemonRunMode::HELP;
+      } break;
+
+      case 's': {
+        run_mode = DaemonRunMode::SUBPROCESS;
       } break;
 
       case ':':
@@ -302,6 +319,30 @@ bool Daemon::read_options(int argc, char* argv[]) {
       } break;
     }
   }
+  return true;
+}
+
+/**
+ * Read JSON formated configuration from stdin for subprocess mode.
+ * @return True if reading configuration has success.
+ */
+bool Daemon::subprocess_config() {
+  picojson::value v;
+  std::string err = picojson::parse(v, std::cin);
+  if (!err.empty()) {
+    std::cerr << err << std::endl;
+    return false;
+  }
+
+  config = v.get<picojson::object>();
+
+  // Override password to hashed one.
+  std::string hash_password = config.at("password").get<std::string>();
+  for (int i = 0; i < 10; i ++) {
+    hash_password = Util::calc_sha256(hash_password);
+  }
+  config.at("password") = picojson::value("[10sha256]" + hash_password);
+
   return true;
 }
 }  // namespace processwarp

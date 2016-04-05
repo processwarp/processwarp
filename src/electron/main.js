@@ -1,13 +1,22 @@
 'use strict';
 
+// Load constant value.
+const CONFIG    = require('./config.json');
+
+// Load modules.
 var app = require('app');
 var BrowserWindow = require('browser-window');
 var dialog = require('dialog');
 var ipc = require('electron').ipcMain;
 var fs = require('fs');
 var net = require('net');
+var path = require('path');
+var spawn = require('child_process').spawn;
+var os = require('os');
 
 require('crash-reporter').start();
+
+const CONNECT_BACKEND_TIMEOUT = 10;
 
 const CONNECT_STATUS = {
   SETUP:    0,  ///< Goint to open socket.
@@ -38,14 +47,15 @@ const PID = {
   BROADCAST: '*',
 };
 
-var controller    = null;
-var backendSocket = null;
-var backendBuffer = new Buffer(0);
-var accountInfo   = {};
-var configure     = null;
-var connectStatus = CONNECT_STATUS.CLOSE;
-var contexts      = {};
-var myNid         = NID.NONE;
+var controller      = null;
+var backendProcess  = null;
+var backendPipePath = null;
+var backendSocket   = null;
+var backendBuffer   = new Buffer(0);
+var accountInfo     = {};
+var connectStatus   = CONNECT_STATUS.CLOSE;
+var contexts        = {};
+var myNid           = NID.NONE;
 
 /**
  * Quit main process when all window was closed.
@@ -57,10 +67,9 @@ app.on('window-all-closed', function() {
 });
 
 /**
- * On start application, create new window.
+ * On start application, set event listener and create controller window.
  */
 app.on('ready', function() {
-  readConfigure();
   initializeIpc();
   initializeController();
 });
@@ -116,7 +125,8 @@ function onActionQuit() {
 
 /**
  * When connect action is done in the interface,
- * store account infromation to connect and start connecting to the backend.
+ * store account infromation to connect.
+ * Start the backend process and connect to it.
  * @param param.account {string} Accoutn ID.
  * @param param.password {string} Password.
  * @return {void}
@@ -127,7 +137,8 @@ function onActionConnect(sender, param) {
   accountInfo.account  = param.account;
   accountInfo.password = param.password;
 
-  connectBackend();
+  startBackend();
+  connectBackend(0);
 }
 
 /**
@@ -164,22 +175,33 @@ function onActionOpenFile() {
 }
 
 /**
- * Connect to the backend by socket and set event emitter.
- * Change connect status to SETUP.
+ * Try to connect until CONNECT_BACKEND_TIMEOUT[sec] has not passed.
+ * If connect to the backend by a the pipe has success, set event listener.
+ * @param tryCount {number} Count of trying to connect to backend process.
  * @return {void}
  */
-function connectBackend() {
+function connectBackend(tryCount) {
   console.assert(connectStatus == CONNECT_STATUS.CLOSE, connectStatus);
 
-  connectStatus = CONNECT_STATUS.APPROACH;
-  backendSocket = new net.Socket();
+  if (fs.existsSync(backendPipePath)) {
+    connectStatus = CONNECT_STATUS.APPROACH;
+    backendSocket = new net.Socket();
 
-  backendSocket.on('connect', onBackendConnect);
-  backendSocket.on('close',   onBackendClose);
-  backendSocket.on('data',    onBackendRecvData);
-  backendSocket.on('error',   onBackendError);
+    backendSocket.on('connect', onBackendConnect);
+    backendSocket.on('close',   onBackendClose);
+    backendSocket.on('data',    onBackendRecvData);
+    backendSocket.on('error',   onBackendError);
 
-  backendSocket.connect(configure['frontend-pipe']);
+    backendSocket.connect(backendPipePath);
+
+  } else if (tryCount < CONNECT_BACKEND_TIMEOUT) {
+    setTimeout(function() { connectBackend(tryCount + 1) },
+               1000);
+
+  } else {
+    /// @todo error
+    console.assert(false, 'connect backend failed.');
+  }
 }
 
 /**
@@ -249,35 +271,6 @@ function onBackendError() {
   connectStatus = CONNECT_STATUS.CLOSE;
 
   console.log('connection error.');
-}
-
-/**
- * Read configuration.
- * @return {void}
- */
-function readConfigure() {
-  var is_next_config = false;
-  var filename = false;
-  process.argv.forEach(function(val, index) {
-    if (val === '-f') {
-      is_next_config = true;
-
-    } else if (is_next_config) {
-      is_next_config = false;
-      filename = val;
-    }
-  });
-
-  if (!filename) return;
-
-  fs.readFile(filename, 'utf8', function(err, text) {
-    if (err != null) {
-      console.log(err);
-      console.assert(false, 'todo');
-    }
-
-    configure = JSON.parse(text);
-  });
 }
 
 /**
@@ -454,6 +447,48 @@ function sendCommandActivate() {
  */
 function sendCommandRequireProcessesInfo() {
   sendCommand(PID.BROADCAST, NID.THIS, MODULE.SCHEDULER, 'require_processes_info', {});
+}
+
+/**
+ * Execute backend process as a child process, and pass configuration data by JSON format string.
+ * @return {void}
+ */
+function startBackend() {
+  // Spawn backend process.
+  var backendProcess = spawn(path.join(__dirname, 'daemon'), ['--subprocess']);
+
+  // Setup stdout, stderr and event listener.
+  backendProcess.stdout.setEncoding('utf8');
+  backendProcess.stdout.on('data', function(data) {
+    process.stdout.write(data);
+  });
+
+  backendProcess.stderr.setEncoding('utf8');
+  backendProcess.stderr.on('data', function(data) {
+    process.stderr.write(data);
+  });
+
+  backendProcess.on('exit', function(code) {
+    // @todo error
+  });
+
+  // Generate configure for the backend process.
+  backendPipePath = path.join(os.tmpdir(), 'pw-frontend-' + process.pid + '.pipe');
+  var config = {
+    server:     CONFIG.SERVER,
+    account:    accountInfo.account,
+    password:   accountInfo.password,
+    message:    path.join(__dirname, '..', 'const', 'daemon_mid_c.json'),
+    node_name:  CONFIG.NODE_NAME || os.hostname(),
+    worker_pipe:    path.join(os.tmpdir(), 'pw-worker-' + process.pid + '.pipe'),
+    frontend_pipe:  backendPipePath,
+    libs:       CONFIG.LIBS || [],
+    lib_filter: CONFIG.LIB_FILTER ||
+    [path.join(__dirname, '..', '..', 'conf', 'libfilter_' + os.platform() + '.json')]
+  };
+
+  // Pass configure.
+  backendProcess.stdin.write(JSON.stringify(config));
 }
 
 /**

@@ -17,23 +17,11 @@ class Worker : public VMachineDelegate, public VMemoryDelegate, public BuiltinGu
   int entry(int argc, char* argv[]);
 
  private:
-  struct WorkerParameter {
-    std::string config_file;
-    std::string pipe_path;
-    vpid_t pid;
-    vtid_t root_tid;
-    vaddr_t proc_addr;
-    nid_t master_nid;
-    nid_t my_nid;
-    std::string name;
-  };
-
   struct WriteHandler {
     Worker* THIS;
     char* buffer;
   };
 
-  WorkerParameter parameter;
   /** Main loop of libuv. */
   uv_loop_t* loop;
   /** Pipe connect to backend. */
@@ -42,11 +30,18 @@ class Worker : public VMachineDelegate, public VMemoryDelegate, public BuiltinGu
   uv_idle_t idle;
   uv_connect_t connect;
   std::vector<uint8_t> recv_buffer;
+  /** Pipe path to connect to backend. */
+  std::string pipe_path;
 
+  /** My node-id. */
+  nid_t my_nid;
+  /** My process-id. */
+  vpid_t my_pid;
   /** Dynamic link libraries. */
   std::vector<DynamicLibrary::lib_handler_t> libs;
   /** Map of API name call from and call for that can access. */
   std::map<std::string, std::string> lib_filter;
+  /** Instance of virtual-machine. */
   std::unique_ptr<VMachine> vm;
 
   void vmachine_send_command(VMachine& vm, const CommandPacket& packet) override;
@@ -68,12 +63,15 @@ class Worker : public VMachineDelegate, public VMemoryDelegate, public BuiltinGu
   static void on_recv(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf);
   static void on_write_end(uv_write_t *req, int status);
 
-  WorkerParameter read_options(int argc, char* argv[]);
-  void read_config(const std::string& config_file);
-  void connect_pipe(WorkerParameter& parameter);
-  void initialize_vm(WorkerParameter& parameter);
+  void read_options(int argc, char* argv[]);
+  void connect_pipe();
+  void initialize_libs(const picojson::array& config);
+  void initialize_lib_filter(const picojson::array& config);
   void initialize_loop();
+  void initialize_vm(vtid_t root_tid, vaddr_t proc_addr,
+                     const nid_t& master_nid, const std::string name);
   void recv_data(const picojson::object& data);
+  void recv_connect_worker(const picojson::object& content);
   void recv_relay_command(const picojson::object& content);
   void send_command(const CommandPacket& packet);
   void send_data(const picojson::object& data);

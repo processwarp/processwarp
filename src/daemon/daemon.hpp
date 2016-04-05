@@ -16,7 +16,6 @@ class Daemon {
  private:
   /** Daemon run mode. */
   DaemonRunMode::Type run_mode;
-  std::string config_file;
   /** Configuration. */
   picojson::object config;
   /** Main loop of libuv. */
@@ -29,5 +28,6 @@ class Daemon {
   bool read_config(const std::string& file);
   bool read_options(int argc, char* argv[]);
   void show_help(bool is_error, const std::string& command);
+  bool subprocess_config();
 };
 }  // namespace processwarp

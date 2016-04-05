@@ -20,12 +20,10 @@ namespace processwarp {
  * @return Exit status.
  */
 int Worker::entry(int argc, char* argv[]) {
-  parameter = read_options(argc, argv);
+  read_options(argc, argv);
   loop = uv_default_loop();
 
-  read_config(parameter.config_file);
-  connect_pipe(parameter);
-  initialize_vm(parameter);
+  connect_pipe();
 
   return uv_run(loop, UV_RUN_DEFAULT);
 }
@@ -70,7 +68,7 @@ void Worker::vmemory_send_command(VMemory& memory, const nid_t& dst_nid, Module:
   param.insert(std::make_pair("command", picojson::value(command)));
 
   CommandPacket packet = {
-    parameter.pid,
+    my_pid,
     dst_nid,
     SpecialNID::NONE,
     module,
@@ -107,7 +105,7 @@ void Worker::builtin_gui_send_command(Process& proc, const nid_t& dst_nid, Modul
   param.insert(std::make_pair("command", picojson::value(command)));
 
   CommandPacket packet = {
-    parameter.pid,
+    my_pid,
     dst_nid,
     SpecialNID::NONE,
     module,
@@ -138,9 +136,11 @@ void Worker::on_close(uv_handle_t* handle) {
 }
 
 /**
- * When connect pipe to backend, send connect_worker command and tell pid.
- * @param connect
- * @param status
+ * When connect pipe to backend, send connect_worker command and
+ * tell virtual-process-id that this worker assigned.
+ * Before that, bind receive function to libuv's connecter instance.
+ * @param connect Libuv's connecter instance.
+ * @param status Connect status ? (not used.)
  */
 void Worker::on_connect(uv_connect_t* connect, int status) {
   Worker& THIS = *reinterpret_cast<Worker*>(connect->data);
@@ -150,9 +150,8 @@ void Worker::on_connect(uv_connect_t* connect, int status) {
 
   picojson::object packet;
   packet.insert(std::make_pair("command", picojson::value(std::string("connect_worker"))));
-  packet.insert(std::make_pair("pid", Convert::vpid2json(THIS.parameter.pid)));
+  packet.insert(std::make_pair("pid", Convert::vpid2json(THIS.my_pid)));
   THIS.send_data(packet);
-  THIS.initialize_loop();
 }
 
 /**
@@ -241,87 +240,18 @@ void Worker::on_write_end(uv_write_t *req, int status) {
  * Get options by reading command line arguments.
  * @param argc Count of command line arguments.
  * @param argv Values of command line arguments.
- * @return Read options are storead in the structure.
  */
-Worker::WorkerParameter Worker::read_options(int argc, char* argv[]) {
-  WorkerParameter parameter;
+void Worker::read_options(int argc, char* argv[]) {
+  assert(argc == 3);
 
-  if (argc != 9) {
-    /// @todo error
-    assert(false);
-  }
-
-  parameter.config_file = std::string(argv[1]);
-  parameter.pipe_path = std::string(argv[2]);
-  parameter.pid = Convert::str2vpid(argv[3]);
-  parameter.root_tid = Convert::str2vtid(argv[4]);
-  parameter.proc_addr = Convert::str2vaddr(argv[5]);
-  parameter.master_nid = Convert::str2nid(argv[6]);
-  parameter.my_nid = Convert::str2nid(argv[7]);
-  parameter.name = std::string(argv[8]);
-
-  return parameter;
+  pipe_path = std::string(argv[1]);
+  my_pid = Convert::str2vpid(argv[2]);
 }
 
 /**
- * Read configure from file and setup libs and api filter.
- * @param config_file File name of configuration.
+ * Connect a pipe with the backend process.
  */
-void Worker::read_config(const std::string& config_file) {
-  std::ifstream ifs(config_file);
-  picojson::value v;
-  if (!ifs.is_open()) {
-    /// @todo error
-    assert(false);
-  }
-  std::string err = picojson::parse(v, ifs);
-  ifs.close();
-  if (!err.empty()) {
-    /// @todo error
-    assert(false);
-  }
-  picojson::object& config = v.get<picojson::object>();
-
-  // Load dynamic link libraries.
-  if (config.find("libs") != config.end()) {
-    const picojson::array& lib_paths = config.at("libs").get<picojson::array>();
-    for (auto lib : lib_paths) {
-      DynamicLibrary::lib_handler_t lib_handler =
-          DynamicLibrary::open_lib(lib.get<std::string>());
-      libs.push_back(lib_handler);
-    }
-  }
-
-  // Load api filter.
-  if (config.find("lib-filter") != config.end()) {
-    const picojson::array& filter_files =
-        config.at("lib-filter").get<picojson::array>();
-    for (auto filter : filter_files) {
-      std::ifstream ifs(filter.get<std::string>());
-      if (!ifs.is_open()) {
-        throw_error_message(Error::CONFIGURE, filter.get<std::string>());
-      }
-      picojson::value v;
-      std::string err = picojson::parse(v, ifs);
-      ifs.close();
-      if (!err.empty()) {
-        throw_error_message(Error::CONFIGURE, err);
-      }
-
-      picojson::object& o = v.get<picojson::object>();
-      for (auto& it : o) {
-        lib_filter.insert(std::make_pair(it.first,
-                                         it.second.get<std::string>()));
-      }
-    }
-  }
-}
-
-/**
- * Connect pipe to backend.
- * @param parameter Parameters storeing the path of pipe to backend.
- */
-void Worker::connect_pipe(WorkerParameter& parameter) {
+void Worker::connect_pipe() {
   int r = uv_pipe_init(loop, &pipe, 0);
 
   if (r) {
@@ -331,22 +261,61 @@ void Worker::connect_pipe(WorkerParameter& parameter) {
   }
   pipe.data    = this;
   connect.data = this;
-  uv_pipe_connect(&connect, &pipe, parameter.pipe_path.c_str(), on_connect);
+  uv_pipe_connect(&connect, &pipe, pipe_path.c_str(), on_connect);
 }
 
 /**
- * Initialize virtual machine.
- * @param parameter Parameters storeing any parameter to create vm.
+ * Initialize dynamic link libraries by reading configurations.
+ * @param config Configurations that is passed by the backed process.
  */
-void Worker::initialize_vm(WorkerParameter& parameter) {
+void Worker::initialize_libs(const picojson::array& config) {
+  for (auto lib : config) {
+    DynamicLibrary::lib_handler_t lib_handler =
+      DynamicLibrary::open_lib(lib.get<std::string>());
+    libs.push_back(lib_handler);
+  }
+}
+
+/**
+ * Initialize library filter.
+ * Virtual-processes are able to call allowed apis these are listed in library filter.
+ * @param config Configurations that is passed by the backed process.
+ */
+void Worker::initialize_lib_filter(const picojson::array& config) {
+  for (auto filter : config) {
+    std::ifstream ifs(filter.get<std::string>());
+    if (!ifs.is_open()) {
+      throw_error_message(Error::CONFIGURE, filter.get<std::string>());
+    }
+
+    picojson::value v;
+    std::string err = picojson::parse(v, ifs);
+    ifs.close();
+    if (!err.empty()) {
+      throw_error_message(Error::CONFIGURE, err);
+    }
+
+    picojson::object& o = v.get<picojson::object>();
+    for (auto& it : o) {
+      lib_filter.insert(std::make_pair(it.first,
+                                       it.second.get<std::string>()));
+    }
+  }
+}
+
+/**
+ * Create new instance of virtual machine. And initialize this virtual machine.
+ * @param root_tid Root thread-id for a process that it execute in the new vm.
+ * @param proc_addr Address of the process infromation is stored.
+ * @param master_nid Node-id that is owner of the process. 
+ * @param name Process name.
+ */
+void Worker::initialize_vm(vtid_t root_tid, vaddr_t proc_addr,
+                           const nid_t& master_nid, const std::string name) {
   assert(vm.get() == nullptr);
 
-  vm.reset(new VMachine(*this, *this, parameter.my_nid, libs, lib_filter));
-  vm->initialize(parameter.pid,
-                 parameter.root_tid,
-                 parameter.proc_addr,
-                 parameter.master_nid,
-                 parameter.name);
+  vm.reset(new VMachine(*this, *this, my_nid, libs, lib_filter));
+  vm->initialize(my_pid, root_tid, proc_addr, master_nid, name);
   vm->initialize_gui(*this);
 }
 
@@ -384,10 +353,40 @@ void Worker::recv_data(const picojson::object& data) {
   if (command == "relay_command") {
     recv_relay_command(data);
 
+  } else if (command == "connect_worker") {
+    recv_connect_worker(data);
+
   } else {
     /// @todo
     assert(false);
   }
+}
+
+/**
+ * When receive connect_worker, read configuration from packet,
+ * and create a virtual machine, start libuv's loop.
+ * @param content Packet content that contain configuration to a new virtual machine.
+ */
+void Worker::recv_connect_worker(const picojson::object& content) {
+  // Save my node-id.
+  my_nid = Convert::json2nid(content.at("my_nid"));
+
+  // Load dynamic link libraries.
+  if (content.find("libs") != content.end()) {
+    initialize_libs(content.at("libs").get<picojson::array>());
+  }
+
+  // Load api filter.
+  if (content.find("lib_filter") != content.end()) {
+    initialize_lib_filter(content.at("lib_filter").get<picojson::array>());
+  }
+
+  // Create virtual machine.
+  initialize_vm(Convert::json2vtid(content.at("root_tid")),
+                Convert::json2vaddr(content.at("proc_addr")),
+                Convert::json2nid(content.at("master_nid")),
+                content.at("name").get<std::string>());
+  initialize_loop();
 }
 
 /**
@@ -427,7 +426,7 @@ void Worker::send_command(const CommandPacket& packet) {
   picojson::object data;
 
   data.insert(std::make_pair("command", picojson::value(std::string("relay_command"))));
-  data.insert(std::make_pair("pid", Convert::vpid2json(parameter.pid)));
+  data.insert(std::make_pair("pid", Convert::vpid2json(my_pid)));
   data.insert(std::make_pair("dst_nid", Convert::nid2json(packet.dst_nid)));
   data.insert(std::make_pair("src_nid", Convert::nid2json(packet.src_nid)));
   data.insert(std::make_pair("module", Convert::int2json<Module::Type>(packet.module)));

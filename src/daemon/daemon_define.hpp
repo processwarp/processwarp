@@ -8,6 +8,7 @@ namespace DaemonRunMode {
 enum Type {
   CONSOLE,  ///< Node program run as console application.
   DAEMON,   ///< Node program run as daemon.
+  SUBPROCESS,   ///< Node programe run as a sub-process of frontend.
   HELP,     ///< Show help.
 };
 }  // namespace DaemonRunMode
@@ -41,8 +42,10 @@ enum Type {
   APPROACH1,  ///< Opened pipe but not replied connect-node command.
   APPROACH2,  ///< Replied connect-node command but not replied bind-node command.
   CONNECT,    ///< Success both connect-node and bind-node command, can pass other packets.
+  CONNECT_FAILED,   ///< Failed by connect-node and disconnected.
+  BIND_FAILED,      ///< Failed by bind-node and disconnected.
   CLOSE,      ///< Disconnect from server.
   ERROR,      ///< Error was occurred.
 };
-};
+}  // namespace ServerStatus
 }  // namespace processwarp

@@ -25,6 +25,7 @@ class ServerConnector {
   static ServerConnector& get_instance();
 
   void initialize(uv_loop_t* loop_, const std::string& url);
+  void disconnect();
   ServerStatus::Type get_status();
   void send_connect_node(const std::string& account,
                          const std::string& password);

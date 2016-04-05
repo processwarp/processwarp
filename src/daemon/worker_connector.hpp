@@ -22,7 +22,8 @@ class WorkerConnector : public Connector {
  public:
   static WorkerConnector& get_instance();
 
-  void initialize(uv_loop_t* loop, const std::string& pipe_path_, const std::string& config_file_);
+  void initialize(uv_loop_t* loop, const std::string& pipe_path_,
+                  const picojson::array& libs, const picojson::array& lib_filter);
   void create_vm(const vpid_t& pid, vtid_t root_tid, vaddr_t proc_addr,
                  const nid_t& master_nid, const std::string& name);
   void relay_command(const CommandPacket& packet);
@@ -39,8 +40,10 @@ class WorkerConnector : public Connector {
   std::map<uv_pipe_t*, const vpid_t> pid_map;
   /** Map of pid and propertiy. */
   std::map<const vpid_t, WorkerProperty> properties;
-  /** Config filename to pass worker. */
-  std::string config_file;
+  /** Library pathes to dynamic link on worker. */
+  picojson::array config_libs;
+  /** Library filter that list of api names to allow virtual machine to call. */
+  picojson::array config_lib_filter;
   /** Path of pipe that for connecting with worker. */
   std::string pipe_path;
 
