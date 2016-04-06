@@ -10,7 +10,7 @@
   "author": "Yuji Ito",
   "license": "MIT",
   "dependencies": {
-    "material-design-icons": "^2.1.1",
-    "material-design-lite": "^1.0.6"
+    "material-design-icons": "^2.2.3",
+    "material-design-lite": "^1.1.3"
   }
 }
