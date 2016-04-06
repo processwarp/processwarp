@@ -1,15 +1,5 @@
 find_package(PkgConfig)
 
-# socket.io
-if(NOT SIO_DIR)
-  message("SIO_DIR must be set.")
-  return()
-endif()
-include_directories("${SIO_DIR}/include")
-link_directories("${SIO_DIR}/lib/Release")
-list(APPEND extra_libs "sioclient_tls")
-list(APPEND extra_libs "pthread")
-
 # Boost
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(Boost_USE_STATIC_LIBS ON)
@@ -92,6 +82,7 @@ add_dependencies(processwarp const_processwarp)
 target_link_libraries(processwarp
   ${extra_libs}
   pwcore
+  sioclient_tls
   )
 
 add_executable(worker

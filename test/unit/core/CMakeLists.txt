@@ -18,21 +18,21 @@ list(APPEND extra_libs pthread)
 list(APPEND extra_libs pwcore)
 
 # convert
-add_executable(test_convert_0
+add_executable(test_convert_0.test
   test_convert.cpp
   )
-target_link_libraries(test_convert_0 ${extra_libs})
+target_link_libraries(test_convert_0.test ${extra_libs})
 add_test(
   NAME test_convert
-  COMMAND $<TARGET_FILE:test_convert_0>
+  COMMAND $<TARGET_FILE:test_convert_0.test>
   )
 
 # util
-add_executable(test_util_0
+add_executable(test_util_0.test
   test_util.cpp
   )
-target_link_libraries(test_util_0 ${extra_libs})
+target_link_libraries(test_util_0.test ${extra_libs})
 add_test(
   NAME test_util
-  COMMAND $<TARGET_FILE:test_util_0>
+  COMMAND $<TARGET_FILE:test_util_0.test>
   )

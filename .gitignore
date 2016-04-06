@@ -9,6 +9,11 @@ src/const/daemon_mid*
 src/const/loader_mid*
 src/electron/node_modules/
 
+# Compiled files
+src/daemon/processwarp
+src/daemon/worker
+*.test
+
 # Compiled Object files
 *.slo
 *.lo
@@ -37,3 +42,13 @@ src/electron/node_modules/
 *.exe
 *.out
 *.app
+
+# Compiled python
+*.pyc
+
+# CMake files
+*.cmake
+CMakeFiles
+CMakeCache.txt
+install_manifest.txt
+Makefile

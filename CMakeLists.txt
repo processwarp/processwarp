@@ -44,13 +44,17 @@ if (WITH_DOCUMENT)
   endif (DOXYGEN_FOUND)
 endif (WITH_DOCUMENT)
 
+# Submodules.
+add_subdirectory(${PROJECT_SOURCE_DIR}/lib/socket.io-client-cpp)
+
 # Compile.
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D PICOJSON_USE_LOCALE=0")
-include_directories(include)
+include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/src/const)
 include_directories(${PROJECT_SOURCE_DIR}/src/core)
-include_directories(${PROJECT_SOURCE_DIR}/src/third_party/picojson)
-include_directories(${PROJECT_SOURCE_DIR}/src/third_party/safeint)
+include_directories(${PROJECT_SOURCE_DIR}/lib/picojson)
+include_directories(${PROJECT_SOURCE_DIR}/lib/safeint)
+include_directories(${PROJECT_SOURCE_DIR}/lib/socket.io-client-cpp/src)
 
 add_subdirectory(src)
 
