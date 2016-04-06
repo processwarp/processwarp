@@ -2,16 +2,16 @@
     "server":  "https://prev.processwarp.org/",
     "account": "<your account>",
     "password":"<your password>",
-    "device-name": "<device name>",
+    "node_name": "<node name>",
 
-    "worker-pipe": "<full path to pipe for worker>",
-    "frontend-pipe": "<full path to pipe for frontend>",
+    "worker_pipe": "<full path to pipe for worker>",
+    "frontend_pipe": "<full path to pipe for frontend>",
 
     "libs":[
 	"<full path to library for ffi>"
     ],
 
-    "lib-filter":[
+    "lib_filter":[
 	"<full path to library name filter file>"
     ],
 

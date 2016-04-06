@@ -1,6 +1,7 @@
 {
     "SERVER":   "https://prev.processwarp.org/",
-    "NODE_NAME":false,
+    "BACKEND":  null,
+    "NODE_NAME":null,
     "LANG":     "en",
     "LIBS":     []
 }

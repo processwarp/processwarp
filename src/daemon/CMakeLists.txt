@@ -53,7 +53,9 @@ endif()
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWORKER_DUMMY")
 
 # C++ options
+list(APPEND extra_libs "crypto")
 list(APPEND extra_libs "dl")
+list(APPEND extra_libs "ssl")
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wno-unused-parameter")
@@ -76,7 +78,7 @@ endif()
 file(GLOB HEADER_FILES "*.hpp")
 file(GLOB DAEMON_FILES "*.cpp")
 
-add_executable(daemon
+add_executable(processwarp
   ${HEADER_FILES}
   connector.cpp
   daemon.cpp
@@ -86,8 +88,8 @@ add_executable(daemon
   worker_connector.cpp
   worker_dummy.cpp
   )
-add_dependencies(daemon const_daemon)
-target_link_libraries(daemon
+add_dependencies(processwarp const_processwarp)
+target_link_libraries(processwarp
   ${extra_libs}
   pwcore
   )
@@ -96,8 +98,15 @@ add_executable(worker
   ${HEADER_FILES}
   worker.cpp
   )
-add_dependencies(worker const_daemon)
+add_dependencies(worker const_processwarp)
 target_link_libraries(worker
   ${extra_libs}
   pwcore
   )
+
+# Install
+if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
+  install(TARGETS processwarp DESTINATION ${PROJECT_SOURCE_DIR}/bin)
+  install(TARGETS worker DESTINATION ${PROJECT_SOURCE_DIR}/bin)
+endif()
+

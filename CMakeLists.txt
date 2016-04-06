@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
-project(processwarp-core)
+project(processwarp)
 
 if(NOT CMAKE_BUILD_TYPE)
   message("CMAKE_BUILD_TYPE was not set, Automatically set to Release." )

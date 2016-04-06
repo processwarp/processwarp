@@ -4,15 +4,15 @@
 const CONFIG    = require('./config.json');
 
 // Load modules.
-var app = require('app');
-var BrowserWindow = require('browser-window');
-var dialog = require('dialog');
-var ipc = require('electron').ipcMain;
-var fs = require('fs');
-var net = require('net');
-var path = require('path');
-var spawn = require('child_process').spawn;
-var os = require('os');
+var app     = require('app');
+var BrowserWindow   = require('browser-window');
+var dialog  = require('dialog');
+var fs      = require('fs');
+var ipc     = require('electron').ipcMain;
+var net     = require('net');
+var os      = require('os');
+var path    = require('path');
+var spawn   = require('child_process').spawn;
 
 require('crash-reporter').start();
 
@@ -455,7 +455,9 @@ function sendCommandRequireProcessesInfo() {
  */
 function startBackend() {
   // Spawn backend process.
-  var backendProcess = spawn(path.join(__dirname, 'daemon'), ['--subprocess']);
+  var backendProcess = spawn(CONFIG.BACKEND ||
+                             path.join(__dirname, '..', '..', 'bin', 'processwarp'),
+                             ['--subprocess']);
 
   // Setup stdout, stderr and event listener.
   backendProcess.stdout.setEncoding('utf8');
@@ -484,7 +486,7 @@ function startBackend() {
     frontend_pipe:  backendPipePath,
     libs:       CONFIG.LIBS || [],
     lib_filter: CONFIG.LIB_FILTER ||
-    [path.join(__dirname, '..', '..', 'conf', 'libfilter_' + os.platform() + '.json')]
+    [path.join(__dirname, '..', '..', 'etc', os.platform(), 'libfilter.json')]
   };
 
   // Pass configure.

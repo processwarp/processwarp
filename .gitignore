@@ -1,7 +1,7 @@
 .DS_Store
 .idea/
+bin/
 build/
-conf/conf.json
 doc/
 tmp/
 src/const/core_mid*

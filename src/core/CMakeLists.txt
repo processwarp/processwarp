@@ -123,6 +123,7 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
       ${extra_libs}
       pwcore
       )
+    install(TARGETS loader DESTINATION ${PROJECT_SOURCE_DIR}/bin)
   endif()
 endif()
 

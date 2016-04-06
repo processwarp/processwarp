@@ -23,5 +23,5 @@ add_custom_command(
   ARGS ${PROJECT_SOURCE_DIR}/script/gen_message.py c DaemonMid ${PROJECT_SOURCE_DIR}/src/const/daemon_mid ${PROJECT_SOURCE_DIR}/src/const/daemon_log.tsv
   DEPENDS ${PROJECT_SOURCE_DIR}/script/gen_message.py ${PROJECT_SOURCE_DIR}/src/const/daemon_log.tsv
   )
-add_custom_target(const_daemon
+add_custom_target(const_processwarp
   SOURCES ${PROJECT_SOURCE_DIR}/src/const/daemon_mid.hpp)
