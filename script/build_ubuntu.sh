@@ -54,7 +54,7 @@ if ! [ -e libuv-v1.8.0 ]; then
 fi
 cd libuv-v1.8.0
 sh autogen.sh
-CC=clang CXX=clang++ ./configure --prefix=${_root}/local
+./configure --prefix=${_root}/local
 make
 make install
 
