@@ -3,6 +3,11 @@
 _pwd=`pwd`
 _root=$(cd $(dirname $0)/.. && pwd)
 
+# Travis...
+if [ ${TRAVIS} = 'true' ]; then
+    alias wget='wget --no-check-certificate'
+fi
+
 # Install requirements package.
 apt-get install -y automake clang-3.6 libtool libssl-dev libboost-dev libboost-system-dev libboost-date-time-dev libboost-random-dev libffi-dev libncurses5-dev wget
 

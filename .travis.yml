@@ -20,9 +20,6 @@ before_install:
   # finish before
   - sudo ldconfig
   - cd $TRAVIS_BUILD_DIR
-  # update CA
-  - wget -q -O $HOME/.cacert.pem http://curl.haxx.se/ca/cacert.pem
-  - echo ca-certificate = $HOME/.cacert.pem >> $HOME/.wgetrc
 
 install:
   - sudo script/build.sh
