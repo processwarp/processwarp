@@ -6,7 +6,6 @@ _root=$(cd $(dirname $0)/.. && pwd)
 # Check clang.
 if ! type clang >/dev/null 2>&1; then
     echo "Please install clang before build processwarp."
-    clang
     exit 1
 fi
 
