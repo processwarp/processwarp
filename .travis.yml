@@ -5,7 +5,7 @@ compiler:
 
 before_install:
   - sudo apt-get update
-  - sudo apt-get upgrade
+  - sudo apt-get upgrade -y
   # install cpplint
   - curl https://raw.githubusercontent.com/google/styleguide/gh-pages/cpplint/cpplint.py > /tmp/cpplint.py
   - sudo mv /tmp/cpplint.py /usr/local/bin/
