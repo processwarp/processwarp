@@ -4,24 +4,30 @@ _pwd=`pwd`
 _root=$(cd $(dirname $0)/.. && pwd)
 
 # Install requirements package.
-sudo apt-get install -y automake libtool libssl-dev libboost-dev libboost-system-dev libboost-date-time-dev libboost-random-dev libffi-dev wget
-
-if ! type clang >/dev/null 2>&1; then
-    sudo apt-get install -y clang
-fi
+apt-get install -y automake clang-3.6 libtool libssl-dev libboost-dev libboost-system-dev libboost-date-time-dev libboost-random-dev libffi-dev libncurses5-dev wget
 
 if ! type python >/dev/null 2>&1; then
-    sudo apt-get install -y python
+    apt-get install -y python
 fi
 
 if ! type npm >/dev/null 2>&1; then
-    sudo apt-get install -y node
+    apt-get install -y npm
 fi
 
 cd ${_root}
+mkdir -p tmp
 mkdir -p local
+set +u
+export PATH=${_root}/local/bin:${PATH}
+export LD_LIBRARY_PATH=${_root}/local/lib:${LD_LIBRARY_PATH}
+set -u
+
+# Install llvm and clang
+export CC=$(which clang-3.6)
+export CXX=$(which clang++-3.6)
+
 # Compile cmake
-cd ${_root}/local
+cd ${_root}/tmp
 if ! [ -e cmake-3.5.0.tar.gz ]; then
     wget https://cmake.org/files/v3.5/cmake-3.5.0.tar.gz
 fi
@@ -29,12 +35,12 @@ if ! [ -e cmake-3.5.0 ]; then
     tar vzxf cmake-3.5.0.tar.gz
 fi
 cd cmake-3.5.0
-/configure --prefix=${_root}/local
+./configure --prefix=${_root}/local
 make
 make install
 
 # Compile libuv
-cd ${_root}/local
+cd ${_root}/tmp
 if ! [ -e libuv-v1.8.0.tar.gz ]; then
     wget http://dist.libuv.org/dist/v1.8.0/libuv-v1.8.0.tar.gz
 fi
@@ -47,12 +53,14 @@ CC=clang CXX=clang++ ./configure --prefix=${_root}/local
 make
 make install
 
-# Edit cmake of Socket.IO C++ Client.
+ldconfig
+
+# Edit cmake of Socket.IO C++ Client. #
 sed -i -e 's/set(BOOST_VER "1.55.0"/set(BOOST_VER "1.54.0"/' ${_root}/lib/socket.io-client-cpp/CMakeLists.txt
 
 # Compile native programes.
 cd ${_root}
-${_root}/local/bin/cmake .
+${_root}/local/bin/cmake -DCMAKE_EXE_LINKER_FLAGS="-L${_root}/local/lib/ -stdlib=libc++" -DLLVM_ROOT=${_root}/local/share/llvm/cmake -DUV_INCLUDE_DIRS=${_root}/local/include/ -DUV_LIBRARIES=uv .
 make
 make install
 

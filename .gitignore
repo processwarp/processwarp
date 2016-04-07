@@ -1,8 +1,8 @@
 .DS_Store
 .idea/
 bin/
-build/
 doc/
+local/
 tmp/
 src/const/core_mid*
 src/const/daemon_mid*
