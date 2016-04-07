@@ -22,7 +22,7 @@ before_install:
   - cd $TRAVIS_BUILD_DIR
 
 install:
-  - sudo script/build.sh
+  - alias wget="wget --no-check-certificate" && sudo script/build.sh
   
 script:
   - make cpplint
