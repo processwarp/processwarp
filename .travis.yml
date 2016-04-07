@@ -18,11 +18,6 @@ before_install:
   - curl https://raw.githubusercontent.com/google/styleguide/gh-pages/cpplint/cpplint.py > /tmp/cpplint.py
   - sudo mv /tmp/cpplint.py /usr/local/bin/
   - sudo chmod 755 /usr/local/bin/cpplint.py
-  # patch ubuntu llvm
-  - curl https://launchpadlibrarian.net/221945609/fix-llvm-3.5-dev-debian.bash > fix-llvm-3.5-dev-debian.bash
-  - sed -i -e 's/llvm-config/llvm-config-3.5/' ./fix-llvm-3.5-dev-debian.bash
-  - sh fix-llvm-3.5-dev-debian.bash
-  - cd $TRAVIS_BUILD_DIR
   # finish before
   - sudo ldconfig
   - cd $TRAVIS_BUILD_DIR
