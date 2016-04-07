@@ -2,6 +2,7 @@
 #include <picojson.h>
 
 #include <cassert>
+#include <cstdarg>
 #include <fstream>
 #include <iostream>
 #include <map>
