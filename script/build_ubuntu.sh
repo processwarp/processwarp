@@ -4,12 +4,14 @@ _pwd=`pwd`
 _root=$(cd $(dirname $0)/.. && pwd)
 
 # Travis...
-if [ ${TRAVIS} = 'true' ]; then
+set +u
+if [ -n "${TRAVIS}" ]; then
     alias wget='wget --no-check-certificate'
 fi
+set -u
 
 # Install requirements package.
-apt-get install -y automake clang-3.6 libtool libssl-dev libboost-dev libboost-system-dev libboost-date-time-dev libboost-random-dev libffi-dev libncurses5-dev wget
+apt-get install -y automake build-essential libtool libssl-dev libboost-dev libboost-system-dev libboost-date-time-dev libboost-random-dev libffi-dev libncurses5-dev wget libc++1 libc++abi1
 
 if ! type python >/dev/null 2>&1; then
     apt-get install -y python
@@ -24,12 +26,10 @@ mkdir -p tmp
 mkdir -p local
 set +u
 export PATH=${_root}/local/bin:${PATH}
-export LD_LIBRARY_PATH=${_root}/local/lib:${LD_LIBRARY_PATH}
+export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:${_root}/local/lib:${LD_LIBRARY_PATH}
 set -u
-
-# Install llvm and clang
-export CC=$(which clang-3.6)
-export CXX=$(which clang++-3.6)
+export CC=$(which gcc)
+export CXX=$(which g++)
 
 # Compile cmake
 cd ${_root}/tmp
@@ -65,7 +65,7 @@ sed -i -e 's/set(BOOST_VER "1.55.0"/set(BOOST_VER "1.54.0"/' ${_root}/lib/socket
 
 # Compile native programes.
 cd ${_root}
-${_root}/local/bin/cmake -DCMAKE_EXE_LINKER_FLAGS="-L${_root}/local/lib/ -stdlib=libc++" -DLLVM_ROOT=${_root}/local/share/llvm/cmake -DUV_INCLUDE_DIRS=${_root}/local/include/ -DUV_LIBRARIES=uv .
+${_root}/local/bin/cmake -DCMAKE_EXE_LINKER_FLAGS="-L/usr/lib/x86_64-linux-gnu -L${_root}/local/lib -stdlib=libc++" -DLLVM_ROOT=${_root}/local/share/llvm/cmake -DUV_INCLUDE_DIRS=${_root}/local/include/ -DUV_LIBRARIES=uv .
 make
 make install
 
