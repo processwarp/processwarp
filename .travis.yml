@@ -12,6 +12,7 @@ addons:
     packages:
       - clang-3.7
       - cmake
+      - gtest
 
 before_install:
   # install cpplint
