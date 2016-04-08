@@ -15,8 +15,11 @@ git submodule init
 git submodule update
 
 # Install requirements package.
-apt-get install -y automake build-essential libtool libssl-dev libboost-dev libboost-system-dev libboost-date-time-dev libboost-random-dev libffi-dev libncurses5-dev wget
-
+apt-get install -y automake build-essential libtool libssl-dev libffi-dev libncurses5-dev wget
+if [ -z "${TRAVIS}" ]; then
+    apt-get install -y libboost-dev libboost-system-dev libboost-date-time-dev libboost-random-dev
+fi
+ 
 if ! type python >/dev/null 2>&1; then
     apt-get install -y python
 fi
