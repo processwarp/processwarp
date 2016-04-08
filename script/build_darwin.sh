@@ -9,6 +9,14 @@ if ! type clang >/dev/null 2>&1; then
     exit 1
 fi
 
+# Download submodules
+cd ${_root}
+git submodule init
+git submodule update
+cd ${_root}/lib/socket.io-client-cpp
+git submodule init
+git submodule update
+
 # Install requirement packages.
 if ! type brew >/dev/null 2>&1; then
     ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"

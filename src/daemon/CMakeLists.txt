@@ -43,7 +43,7 @@ endif()
 # RE2
 if(WITH_RE2)
   include_directories(${PROJECT_SOURCE_DIR}/lib/re2)
-  link_directories(${PROJECT_SOURCE_DIR}/lib/re2)
+  link_directories(${PROJECT_SOURCE_DIR}/tmp/re2/src/RE2-build)
   list(APPEND extra_libs re2)
 endif()
 

@@ -10,7 +10,7 @@ elif [ -e /etc/debian_version ] ||
          [ -e /etc/debian_release ]; then
     if [ -e /etc/lsb-release ]; then
         # Ubuntu
-        sudo bash -eu $(dirname $0)/build_ubuntu.sh
+        sudo -E bash -eu $(dirname $0)/build_ubuntu.sh
 
     else
         # Debian
