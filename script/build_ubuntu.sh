@@ -3,6 +3,8 @@
 _pwd=`pwd`
 _root=$(cd $(dirname $0)/.. && pwd)
 
+env
+
 # Download submodules
 cd ${_root}
 git submodule init
