@@ -9,16 +9,16 @@ LOCAL_C_INCLUDES += $(CORE_PATH)
 LOCAL_C_INCLUDES += $(ROOT_PATH)/include
 
 LOCAL_CPPFLAGS   += -I$(ROOT_PATH)/src/const
-LOCAL_CPPFLAGS   += -I$(ROOT_PATH)/src/third_party/picojson
+LOCAL_CPPFLAGS   += -I$(ROOT_PATH)/lib/picojson
 LOCAL_CPPFLAGS   += -D PICOJSON_USE_LOCALE=0
-LOCAL_CPPFLAGS   += -I$(ROOT_PATH)/src/third_party/safeint
+LOCAL_CPPFLAGS   += -I$(ROOT_PATH)/lib/safeint
 
 LOCAL_LDLIBS     += -llog
 LOCAL_LDLIBS     += -latomic
 
 LOCAL_MODULE     := processwarp_jni
 
-LIBFFI_PATH      := $(ROOT_PATH)/src/third_party/libffi
+LIBFFI_PATH      := $(ROOT_PATH)/lib/libffi
 LOCAL_CFLAGS     += -I$(LIBFFI_PATH)/include
 LOCAL_SRC_FILES  += $(LIBFFI_PATH)/src/types.c
 LOCAL_SRC_FILES  += $(LIBFFI_PATH)/src/prep_cif.c
