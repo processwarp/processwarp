@@ -15,17 +15,13 @@ git submodule init
 git submodule update
 
 # Install requirements package.
-apt-get install -y automake build-essential libtool libssl-dev libffi-dev libncurses5-dev wget
+sudo apt-get install -y automake build-essential libtool libssl-dev libffi-dev libncurses5-dev curl wget
 if [ -z "${TRAVIS}" ]; then
-    apt-get install -y libboost-dev libboost-system-dev libboost-date-time-dev libboost-random-dev
+    sudo apt-get install -y libboost-dev libboost-system-dev libboost-date-time-dev libboost-random-dev
 fi
  
 if ! type python >/dev/null 2>&1; then
-    apt-get install -y python
-fi
-
-if ! type npm >/dev/null 2>&1; then
-    apt-get install -y npm
+    sudo apt-get install -y python
 fi
 
 cd ${_root}
@@ -61,6 +57,26 @@ sh autogen.sh
 make
 make install
 
+# Node.js
+cd ${_root}/tmp
+if [ $(uname -m) = "x86_64" ]; then
+    if ! [ -e node-v4.4.2-linux-x64.tar.xz ]; then
+	wget https://nodejs.org/dist/v4.4.2/node-v4.4.2-linux-x64.tar.xz
+    fi
+    if ! [ -e node-v4.4.2-linux-x64 ]; then
+	tar Jxf node-v4.4.2-linux-x64.tar.xz
+    fi
+    cp -Rfp node-v4.4.2-linux-x64/* ${_root}/local/
+else
+    if ! [ -e node-v4.4.2-linux-x86.tar.xz ]; then
+	wget https://nodejs.org/dist/v4.4.2/node-v4.4.2-linux-x86.tar.xz
+    fi
+    if ! [ -e node-v4.4.2-linux-x86 ]; then
+	tar Jxf node-v4.4.2-linux-x86.tar.xz
+    fi
+    cp -Rfp node-v4.4.2-linux-x86/* ${_root}/local/
+fi
+
 ldconfig
 
 # Edit cmake of Socket.IO C++ Client.
@@ -68,20 +84,20 @@ sed -i -e 's/set(BOOST_VER "1.55.0"/set(BOOST_VER "1.54.0"/' ${_root}/lib/socket
 
 # Compile native programes.
 cd ${_root}
-${_root}/local/bin/cmake -DCMAKE_EXE_LINKER_FLAGS="-L${_root}/local/lib" -DUV_INCLUDE_DIRS=${_root}/local/include/ -DUV_LIBRARIES=uv -DWITH_RE2=ON -DCMAKE_BUILD_TYPE=Debug .
+${_root}/local/bin/cmake -DCMAKE_EXE_LINKER_FLAGS="-L${_root}/local/lib" -DUV_INCLUDE_DIRS=${_root}/local/include/ -DUV_LIBRARIES=uv -DWITH_RE2=ON -DWITH_TEST=OFF -DCMAKE_BUILD_TYPE=Debug .
 make
 make install
 
 # Install electron and requirement modules.
 if ! type electron >/dev/null 2>&1; then
-    npm -g install electron-prebuilt
+    sudo ${_root}/local/bin/npm -g install electron-prebuilt
 fi
 
 cd ${_root}/src/electron
 if [ -e node_modules ]; then
-    npm update
+    ${_root}/local/bin/npm update
 else
-    npm install
+    ${_root}/local/bin/npm install
 fi
 
 # Finish.
@@ -89,4 +105,4 @@ cd ${_pwd}
 
 echo "Finish to build processwarp."
 echo "Please input like below to run processwarp."
-echo "  python <processwarp path>/script/run_gui.py"
+echo "  <processwarp path>/script/run_gui.sh"

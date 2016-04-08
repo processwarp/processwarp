@@ -54,4 +54,4 @@ cd ${_pwd}
 
 echo "Finish to build processwarp."
 echo "Please input like below to run processwarp."
-echo "  python <processwarp path>/script/run_gui.py"
+echo "  <processwarp path>/script/run_gui.sh"

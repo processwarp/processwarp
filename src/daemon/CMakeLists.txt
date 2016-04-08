@@ -66,6 +66,7 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
 
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   # Linux
+  list(APPEND extra_libs "pthread")
 
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   # Windows
@@ -87,9 +88,9 @@ add_executable(processwarp
   )
 add_dependencies(processwarp const_processwarp)
 target_link_libraries(processwarp
-  ${extra_libs}
   pwcore
   sioclient_tls
+  ${extra_libs}
   )
 
 add_executable(worker
@@ -98,8 +99,8 @@ add_executable(worker
   )
 add_dependencies(worker const_processwarp)
 target_link_libraries(worker
-  ${extra_libs}
   pwcore
+  ${extra_libs}
   )
 
 # Install
