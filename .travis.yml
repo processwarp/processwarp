@@ -15,9 +15,9 @@ addons:
       - gcc-4.8
       - clang-3.6
       - clang-format-3.6
-      - libboost-system1.54-dev
-      - libboost-date-time1.54-dev
-      - libboost-random1.54-dev
+      - libboost-system1.55-dev
+      - libboost-date-time1.55-dev
+      - libboost-random1.55-dev
 
 before_install:
   # install cpplint
