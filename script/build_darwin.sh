@@ -25,7 +25,7 @@ fi
 
 # Compile native programes.
 cd ${_root}
-cmake .
+cmake -DCMAKE_BUILD_TYPE=Debug .
 make
 make install
 

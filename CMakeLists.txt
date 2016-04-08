@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 2.8)
 project(processwarp)
 
+include(ExternalProject)
+
+# Options.
 if(NOT CMAKE_BUILD_TYPE)
   message("CMAKE_BUILD_TYPE was not set, Automatically set to Release." )
   set(CMAKE_BUILD_TYPE Release )
@@ -9,6 +12,9 @@ elseif(NOT (${CMAKE_BUILD_TYPE} STREQUAL "Release" OR ${CMAKE_BUILD_TYPE} STREQU
   message("CMAKE_BUILD_TYPE must be either Release or Debug.")
   return()
 endif()
+
+option(WITH_DOCUMENT "Generate document by doxygen" OFF)
+option(WITH_RE2 "Use RE2 library for regular expression instead of standerd C++ library" OFF)
 
 # Check for Google Coding Style.
 add_custom_target(cpplint
@@ -26,7 +32,6 @@ add_custom_target(cpplint
   )
 
 # Generate develop document.
-option(WITH_DOCUMENT "Generate document by doxygen" OFF)
 if (WITH_DOCUMENT)
   find_package(Doxygen)
 
@@ -44,8 +49,18 @@ if (WITH_DOCUMENT)
   endif (DOXYGEN_FOUND)
 endif (WITH_DOCUMENT)
 
-# Submodules.
+# Socket.io
 add_subdirectory(${PROJECT_SOURCE_DIR}/lib/socket.io-client-cpp)
+
+# RE2
+if (WITH_RE2)
+  ExternalProject_Add(
+    RE2
+    PREFIX ${PROJECT_SOURCE_DIR}/tmp/re2
+    SOURCE_DIR ${PROJECT_SOURCE_DIR}/lib/re2
+    INSTALL_COMMAND echo "Nothing for install RE2."
+    )
+endif (WITH_RE2)
 
 # Compile.
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D PICOJSON_USE_LOCALE=0")

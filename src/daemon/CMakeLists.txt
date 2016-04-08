@@ -40,6 +40,13 @@ else()
   list(APPEND extra_libs ${UV_LIBRARIES})
 endif()
 
+# RE2
+if(WITH_RE2)
+  include_directories(${PROJECT_SOURCE_DIR}/lib/re2)
+  link_directories(${PROJECT_SOURCE_DIR}/lib/re2)
+  list(APPEND extra_libs re2)
+endif()
+
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWORKER_DUMMY")
 
 # C++ options

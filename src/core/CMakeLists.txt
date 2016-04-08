@@ -37,6 +37,12 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   find_package(OpenSSL)
   include_directories(${OPENSSL_INCLUDE_DIR})
   list(APPEND extra_libs ${OPENSSL_LIBRARIES})
+
+  # RE2
+  if(WITH_RE2)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWITH_RE2=1")
+    include_directories(${PROJECT_SOURCE_DIR}/lib/re2)
+  endif()
 endif()
 
 # C++ options

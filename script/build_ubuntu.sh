@@ -11,7 +11,7 @@ fi
 set -u
 
 # Install requirements package.
-apt-get install -y automake build-essential libtool libssl-dev libboost-dev libboost-system-dev libboost-date-time-dev libboost-random-dev libffi-dev libncurses5-dev wget libc++1 libc++abi1
+apt-get install -y automake build-essential libtool libssl-dev libboost-dev libboost-system-dev libboost-date-time-dev libboost-random-dev libffi-dev libncurses5-dev wget
 
 if ! type python >/dev/null 2>&1; then
     apt-get install -y python
@@ -28,8 +28,6 @@ set +u
 export PATH=${_root}/local/bin:${PATH}
 export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:${_root}/local/lib:${LD_LIBRARY_PATH}
 set -u
-export CC=$(which gcc)
-export CXX=$(which g++)
 
 # Compile cmake
 cd ${_root}/tmp
@@ -60,12 +58,12 @@ make install
 
 ldconfig
 
-# Edit cmake of Socket.IO C++ Client. #
+# Edit cmake of Socket.IO C++ Client.
 sed -i -e 's/set(BOOST_VER "1.55.0"/set(BOOST_VER "1.54.0"/' ${_root}/lib/socket.io-client-cpp/CMakeLists.txt
 
 # Compile native programes.
 cd ${_root}
-${_root}/local/bin/cmake -DCMAKE_EXE_LINKER_FLAGS="-L/usr/lib/x86_64-linux-gnu -L${_root}/local/lib -stdlib=libc++" -DLLVM_ROOT=${_root}/local/share/llvm/cmake -DUV_INCLUDE_DIRS=${_root}/local/include/ -DUV_LIBRARIES=uv .
+${_root}/local/bin/cmake -DCMAKE_EXE_LINKER_FLAGS="-L${_root}/local/lib" -DUV_INCLUDE_DIRS=${_root}/local/include/ -DUV_LIBRARIES=uv -DWITH_RE2=ON -DCMAKE_BUILD_TYPE=Debug .
 make
 make install
 
