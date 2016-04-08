@@ -1,9 +1,10 @@
-#!/bin/bash -eu
+#!/bin/bash -ex
 
 _pwd=`pwd`
 _root=$(cd $(dirname $0)/.. && pwd)
 
-env
+echo $(which $CC)
+echo $(which $CXX)
 
 # Download submodules
 cd ${_root}
@@ -27,10 +28,8 @@ fi
 cd ${_root}
 mkdir -p tmp
 mkdir -p local
-set +u
 export PATH=${_root}/local/bin:${PATH}
 export LD_LIBRARY_PATH=${_root}/local/lib:${LD_LIBRARY_PATH}
-set -u
 
 # Compile cmake
 cd ${_root}/tmp

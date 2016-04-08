@@ -4,13 +4,13 @@ _pwd=`pwd`
 
 if [ "$(uname -s)" == 'Darwin' ]; then
     # Mac OSX
-    bash -eu $(dirname $0)/build_darwin.sh
+    bash -ex $(dirname $0)/build_darwin.sh
 
 elif [ -e /etc/debian_version ] ||
          [ -e /etc/debian_release ]; then
     if [ -e /etc/lsb-release ]; then
         # Ubuntu
-        sudo -E bash -eu $(dirname $0)/build_ubuntu.sh
+        sudo -E bash -ex $(dirname $0)/build_ubuntu.sh
 
     else
         # Debian
