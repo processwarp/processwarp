@@ -1,7 +1,7 @@
 language: cpp
 
 compiler:
-  - gcc
+  - clang
 
 addons:
   apt:
@@ -22,8 +22,8 @@ addons:
 before_install:
   - sudo add-apt-repository -y ppa:boost-latest/ppa
   - sudo apt-get update -yqq
-  - export CC=gcc-4.8
-  - export CXX=g++-4.8
+  - export CC=clang-3.6
+  - export CXX=clang++-3.6
   # install cpplint
   - curl https://raw.githubusercontent.com/google/styleguide/gh-pages/cpplint/cpplint.py > /tmp/cpplint.py
   - sudo mv /tmp/cpplint.py /usr/local/bin/
