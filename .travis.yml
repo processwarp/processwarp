@@ -39,6 +39,7 @@ install:
   - sudo script/build.sh
   
 script:
-  - make cpplint
   - ls -l bin
+  - export PATH=$TRAVIS_BUILD_DIR/local/bin:$PATH
+  - export LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR/local/lib:$LD_LIBRARY_PATH
   - bin/processwarp --help
