@@ -10,6 +10,7 @@ src/const/loader_mid*
 src/electron/node_modules/
 
 # Compiled files
+src/core/loader
 src/daemon/processwarp
 src/daemon/worker
 *.test

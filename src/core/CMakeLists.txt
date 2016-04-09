@@ -126,8 +126,8 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
       )
     add_dependencies(loader const_loader)
     target_link_libraries(loader
-      ${extra_libs}
       pwcore
+      ${extra_libs}
       )
     install(TARGETS loader DESTINATION ${PROJECT_SOURCE_DIR}/bin)
   endif()
