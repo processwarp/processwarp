@@ -58,7 +58,7 @@ if (WITH_RE2)
     RE2
     PREFIX ${PROJECT_SOURCE_DIR}/tmp/re2
     SOURCE_DIR ${PROJECT_SOURCE_DIR}/lib/re2
-    CMAKE_ARGS -DLDFLAGS="-lrt"
+    CMAKE_ARGS -DEXTRA_TARGET_LINK_LIBRARIES="rt"
     INSTALL_COMMAND echo "Nothing for install RE2."
     )
 endif (WITH_RE2)

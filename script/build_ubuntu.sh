@@ -77,7 +77,7 @@ else
     cp -Rfp node-v4.4.2-linux-x86/* ${_root}/local/
 fi
 
-ldconfig
+sudo ldconfig
 
 # Edit cmake of Socket.IO C++ Client.
 sed -i -e 's/set(BOOST_VER "1.55.0"/set(BOOST_VER "1.54.0"/' ${_root}/lib/socket.io-client-cpp/CMakeLists.txt
