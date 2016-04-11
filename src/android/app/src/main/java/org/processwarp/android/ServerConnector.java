@@ -69,7 +69,7 @@ public class ServerConnector {
 
             // Setup Socket.IO
             IO.setDefaultSSLContext(sslContext);
-            socket = IO.socket("http://10.0.2.2/");
+            socket = IO.socket("https://prev.processwarp.org/");
 
         } catch (Exception e) {
             Log.e(this.getClass().getName(), "Wrong in configuration ?", e);
