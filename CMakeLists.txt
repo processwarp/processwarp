@@ -54,13 +54,23 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/lib/socket.io-client-cpp)
 
 # RE2
 if (WITH_RE2)
-  ExternalProject_Add(
-    RE2
-    PREFIX ${PROJECT_SOURCE_DIR}/tmp/re2
-    SOURCE_DIR ${PROJECT_SOURCE_DIR}/lib/re2
-    CMAKE_ARGS -DEXTRA_TARGET_LINK_LIBRARIES="rt"
-    INSTALL_COMMAND echo "Nothing for install RE2."
-    )
+  if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    # Linux
+    ExternalProject_Add(
+      RE2
+      PREFIX ${PROJECT_SOURCE_DIR}/tmp/re2
+      SOURCE_DIR ${PROJECT_SOURCE_DIR}/lib/re2
+      CMAKE_ARGS -DEXTRA_TARGET_LINK_LIBRARIES="rt"
+      INSTALL_COMMAND echo "Nothing for install RE2."
+      )
+  else()
+    ExternalProject_Add(
+      RE2
+      PREFIX ${PROJECT_SOURCE_DIR}/tmp/re2
+      SOURCE_DIR ${PROJECT_SOURCE_DIR}/lib/re2
+      INSTALL_COMMAND echo "Nothing for install RE2."
+      )
+  endif()
 endif (WITH_RE2)
 
 # Compile.
