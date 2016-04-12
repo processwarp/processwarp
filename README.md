@@ -18,12 +18,17 @@ Make it possible to use any number of computer resources to disperse the task an
 
 ## Installation and start
 
-### Installing PROCESS WARP
-Installing on MacOS X, Ubuntu Linux, Linux Mint.
+### Installing on MacOS X, Ubuntu Linux, Linux Mint.
 
     $ cd <PROCESS WARP working dir>
     $ git clone https://github.com/processwarp/processwarp.git
     $ script/build.sh
+
+### Installing on Android.
+
+Download from [link](https://prev.processwarp.org/processwarp.apk) by browser on your android and install.
+
+*ATTENTION : Please kill process explicitly after try PROCESS WARP.*
 
 ### Create account
 Create account by [sign-up page](https://prev.processwarp.org/signup_en.html) or [日本語ページ](https://prev.processwarp.org/signup_ja.html).
