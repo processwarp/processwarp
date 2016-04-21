@@ -6,6 +6,7 @@
 #include <string>
 
 #include "daemon_define.hpp"
+#include "logger_syslog.hpp"
 
 namespace processwarp {
 class Daemon {
@@ -14,6 +15,8 @@ class Daemon {
   int entry(int argc, char* argv[]);
 
  private:
+  /** Syslog logger. */
+  Logger::Syslog logger;
   /** Daemon run mode. */
   DaemonRunMode::Type run_mode;
   /** Configuration. */
