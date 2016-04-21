@@ -17,7 +17,6 @@
 #include "daemon_mid.hpp"
 #include "frontend_connector.hpp"
 #include "logger.hpp"
-#include "logger_syslog.hpp"
 #include "router.hpp"
 #include "server_connector.hpp"
 #include "util.hpp"
@@ -183,8 +182,6 @@ int Daemon::daemonize() {
  * @return True if initialize was succeed.
  */
 bool Daemon::initialize_logger() {
-  // Create logger.
-  Logger::Syslog logger;
   logger.initialize("native");
   Logger::set_logger_delegate(&logger);
   return true;
@@ -212,9 +209,14 @@ int Daemon::main_loop() {
   Router& router = Router::get_instance();
   ServerConnector& server = ServerConnector::get_instance();
   WorkerConnector& worker = WorkerConnector::get_instance();
-
-  Logger::info(DaemonMid::L3009,
-               (run_mode == DaemonRunMode::DAEMON ? "daemon" : "console"));
+  std::string run_mode_string;
+  switch (run_mode) {
+    case DaemonRunMode::DAEMON: run_mode_string = "daemon"; break;
+    case DaemonRunMode::CONSOLE: run_mode_string = "console"; break;
+    case DaemonRunMode::SUBPROCESS: run_mode_string = "subprocess"; break;
+    default: assert(false); break;
+  }
+  Logger::info(DaemonMid::L3009, run_mode_string.c_str());
 
   server.initialize(loop, config.at("server").get<std::string>());
   router.initialize(loop, config);
