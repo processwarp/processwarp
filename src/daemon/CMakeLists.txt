@@ -24,7 +24,7 @@ else()
 endif()
 
 # OpenSSL
-find_package(OpenSSL)
+find_package(OpenSSL REQUIRED)
 include_directories(${OPENSSL_INCLUDE_DIR})
 list(APPEND extra_libs ${OPENSSL_LIBRARIES})
 

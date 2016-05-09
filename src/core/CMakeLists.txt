@@ -34,7 +34,7 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   endif()
 
   # OpenSSL
-  find_package(OpenSSL)
+  find_package(OpenSSL REQUIRED)
   include_directories(${OPENSSL_INCLUDE_DIR})
   list(APPEND extra_libs ${OPENSSL_LIBRARIES})
 

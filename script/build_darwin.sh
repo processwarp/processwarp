@@ -22,6 +22,7 @@ if ! type brew >/dev/null 2>&1; then
     ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 fi
 brew install cmake boost libffi libuv openssl
+brew link openssl
 
 if ! type python >/dev/null 2>&1; then
     brew install python
