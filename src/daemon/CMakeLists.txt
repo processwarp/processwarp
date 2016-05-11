@@ -47,8 +47,6 @@ if(WITH_RE2)
   list(APPEND extra_libs re2)
 endif()
 
-# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWORKER_DUMMY")
-
 # C++ options
 list(APPEND extra_libs "crypto")
 list(APPEND extra_libs "dl")
@@ -84,7 +82,6 @@ add_executable(processwarp
   router.cpp
   server_connector.cpp
   worker_connector.cpp
-  worker_dummy.cpp
   )
 add_dependencies(processwarp
   const_processwarp
