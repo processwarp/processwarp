@@ -22,7 +22,8 @@
 #include <vector>
 
 #include "basic_operator.hpp"
-#include "definitions.hpp"
+#include "constant_vm.hpp"
+#include "type.hpp"
 #include "vmemory.hpp"
 
 namespace llvm {

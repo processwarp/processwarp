@@ -11,8 +11,9 @@
 #include <utility>
 #include <vector>
 
+#include "constant.hpp"
+#include "constant_vm.hpp"
 #include "convert.hpp"
-#include "definitions.hpp"
 #include "error.hpp"
 #include "llvm_asm_loader.hpp"
 #include "loader_mid.hpp"
@@ -20,6 +21,7 @@
 #include "logger_syslog.hpp"
 #include "message.hpp"
 #include "process.hpp"
+#include "type.hpp"
 #include "vmemory.hpp"
 
 #ifndef LLVM_VERSION_STRING
@@ -37,7 +39,7 @@ static const std::string LLVM_VERSION_STRING =
 
 namespace processwarp {
 
-static const std::string pool_path("/tmp/");
+static const char* POOL_PATH = "/tmp/";
 
 /**
  * Load program from LLVM-IR and write a dump file.
@@ -66,7 +68,7 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
    * Constructor, initialize virtual-memory instance.
    */
   Loader() :
-      vmemory(*this, SpecialNID::SERVER) {
+      vmemory(*this, NID::SERVER) {
   }
 
   /**
@@ -217,7 +219,7 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
     std::map<std::string, std::string> lib_filter;
     std::map<std::string,
              std::pair<builtin_func_t, BuiltinFuncParam>> builtin_funcs;
-    std::unique_ptr<Process> proc(Process::alloc(*this, in_pid, JOIN_WAIT_ROOT,
+    std::unique_ptr<Process> proc(Process::alloc(*this, in_pid, JoinWaitStatus::ROOT,
                                                  libs, lib_filter,
                                                  builtin_funcs));
     proc->setup();
@@ -226,10 +228,10 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
     LlvmAsmLoader loader(*proc);
 
     if (in_type == "LL") {
-      loader.load_ir_file(pool_path + Convert::vpid2str(in_pid) + ".llvm");
+      loader.load_ir_file(POOL_PATH + Convert::vpid2str(in_pid) + ".llvm");
 
     } else if (in_type == "BC") {
-      loader.load_bc_file(pool_path + Convert::vpid2str(in_pid) + ".llvm");
+      loader.load_bc_file(POOL_PATH + Convert::vpid2str(in_pid) + ".llvm");
 
     } else {
       throw_error(Error::SERVER_SYS);
@@ -259,7 +261,7 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
       packet.insert(std::make_pair("pid", Convert::vpid2json(in_pid)));
       packet.insert(std::make_pair("root_tid", Convert::vtid2json(proc->root_tid)));
       packet.insert(std::make_pair("proc_addr", Convert::vaddr2json(proc->addr)));
-      packet.insert(std::make_pair("master_nid", Convert::nid2json(SpecialNID::SERVER)));
+      packet.insert(std::make_pair("master_nid", Convert::nid2json(NID::SERVER)));
       packet.insert(std::make_pair("name", picojson::value(in_name)));
       packet.insert(std::make_pair("tid", Convert::vtid2json(proc->root_tid)));
       packet.insert(std::make_pair("dst_nid", Convert::nid2json(in_dst_nid)));
@@ -282,13 +284,13 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
       packet.insert(std::make_pair("value",
                                    Convert::bin2json(it.second.value.get(), it.second.size)));
       packet.insert(std::make_pair("dst_nid", Convert::nid2json(in_dst_nid)));
-      packet.insert(std::make_pair("src_nid", Convert::nid2json(SpecialNID::SERVER)));
+      packet.insert(std::make_pair("src_nid", Convert::nid2json(NID::SERVER)));
       packet.insert(std::make_pair("hint_nid", picojson::value(picojson::array())));
       js_memory_packet.push_back(picojson::value(picojson::value(packet).serialize()));
     }
     body.insert(std::make_pair("memory_packet", picojson::value(js_memory_packet)));
 
-    std::ofstream ofs(pool_path + Convert::vpid2str(in_pid) + ".out");
+    std::ofstream ofs(POOL_PATH + Convert::vpid2str(in_pid) + ".out");
     ofs << picojson::value(body).serialize();
   }
 };

@@ -869,7 +869,7 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
         {                                                               \
           instruction_t& target = fc.code.at(code_at);                  \
           instruction_t label   = Instruction::get_operand(target);     \
-          if (label != FILL_OPERAND) {                                  \
+          if (label != OperandMask::FILL) {                                  \
             target = Instruction::rewrite_operand(target, block_start.at(label)); \
           }                                                             \
         }
@@ -915,8 +915,8 @@ void LlvmAsmLoader::load_function(const llvm::Function* function) {
     memory.write_copy(prop.k, k.data(), k.size());
 
     // 定数、変数の数がオペランドで表現可能な上限を超えた場合エラー
-    if (stack_values.size() > ((FILL_OPERAND >> 1) - 1) ||
-        k.size() > ((FILL_OPERAND >> 1) - 1)) {
+    if (stack_values.size() > ((OperandMask::FILL >> 1) - 1) ||
+        k.size() > ((OperandMask::FILL >> 1) - 1)) {
       throw_error_message(Error::TOO_MANY_VALUE, function->getName().str());
     }
 
@@ -958,14 +958,14 @@ void LlvmAsmLoader::load_globals
 
   // 定数領域を割り当て
   if (map_global.size() != 0) {
-    vaddr_t global_addr = VADDR_NON;
+    vaddr_t global_addr = VADDR_NULL;
     if (sum != 0) {
       global_addr = memory.alloc(sum);
     }
     // 割り当てたアドレスを元に仮のアドレスから実際のアドレスに変更する
     for (auto& it : map_global) {
       if (static_cast<const llvm::GlobalVariable*>(it.first)->isConstant()) {
-        assert(global_addr != VADDR_NON);
+        assert(global_addr != VADDR_NULL);
         it.second += global_addr;
       }
     }
@@ -1227,7 +1227,7 @@ void LlvmAsmLoader::convert_inst_ret(FunctionContext& fc,
   if (inst.getReturnValue() == nullptr) {
     // 戻り値がない場合
     // return (0xff..)
-    push_code(fc, Opcode::RETURN, FILL_OPERAND);
+    push_code(fc, Opcode::RETURN, OperandMask::FILL);
 
   } else {
     // set_type <type>
@@ -1255,8 +1255,8 @@ void LlvmAsmLoader::convert_inst_call(FunctionContext& fc,
   int func_operand = assign_operand(fc, inst.getCalledValue());
   push_code(fc, Opcode::CALL, func_operand);
   // 戻り値の型、格納先の命令を追加
-  push_code(fc, Opcode::EXTRA, FILL_OPERAND);
-  push_code(fc, Opcode::EXTRA, FILL_OPERAND);
+  push_code(fc, Opcode::EXTRA, OperandMask::FILL);
+  push_code(fc, Opcode::EXTRA, OperandMask::FILL);
 
   // 引数部分の命令(引数の型、引数〜)を追加
   for (unsigned int arg_idx = 0, num = inst.getNumArgOperands();
