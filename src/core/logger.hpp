@@ -22,7 +22,7 @@ class Delegate {
                       Message::Type mid, const std::string& mesage) = 0;
 };
 
-const std::string& get_level_string(Level lv);
+const char* get_level_string(Level lv);
 void output(Level lv, const char* file, const std::size_t line,
             Message::Type mid, int dummy, ...);
 void output_raw(Level lv, const char* file, const std::size_t line,

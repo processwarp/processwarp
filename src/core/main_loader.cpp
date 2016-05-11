@@ -25,16 +25,22 @@
 #include "vmemory.hpp"
 
 #ifndef LLVM_VERSION_STRING
-#ifdef LLVM_VERSION_PATCH
-static const std::string LLVM_VERSION_STRING =
-    std::to_string(LLVM_VERSION_MAJOR) + "." +
-    std::to_string(LLVM_VERSION_MINOR) + "." +
-    std::to_string(LLVM_VERSION_PATCH);
-#else
-static const std::string LLVM_VERSION_STRING =
-    std::to_string(LLVM_VERSION_MAJOR) + "." +
-    std::to_string(LLVM_VERSION_MINOR);
-#endif
+#  define EVAL(f, v) f(v)
+#  define TO_STR_HELPER(s) #s
+#  define TO_STR(s) EVAL(TO_STR_HELPER, s)
+#  ifdef LLVM_VERSION_PATCH
+static const char* LLVM_VERSION_STRING =
+  TO_STR(LLVM_VERSION_MAJOR) "."
+  TO_STR(LLVM_VERSION_MINOR) "."
+  TO_STR(LLVM_VERSION_PATCH);
+#  else
+static const char* LLVM_VERSION_STRING =
+  TO_STR(LLVM_VERSION_MAJOR) "."
+  TO_STR(LLVM_VERSION_MINOR);
+#  endif
+#  undef EVAL
+#  undef TO_STR_HELPER
+#  undef TO_STR
 #endif
 
 namespace processwarp {

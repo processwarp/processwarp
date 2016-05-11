@@ -9,6 +9,7 @@ src/const/daemon_mid*
 src/const/loader_mid*
 src/core/constant.hpp
 src/electron/node_modules/
+Testing/
 
 # Compiled files
 src/core/loader

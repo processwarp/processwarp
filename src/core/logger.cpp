@@ -10,7 +10,7 @@
 namespace processwarp {
 namespace Logger {
 /** Strings of log levels.  */
-static const std::string LOG_NAMES[] = {
+static const char* LOG_NAMES[] = {
   "error",
   "warn",
   "info",
@@ -29,7 +29,7 @@ Delegate::~Delegate() {
  * Get string to show by log level.
  * @param lv Log level.
  */
-const std::string& get_level_string(Level lv) {
+const char* get_level_string(Level lv) {
   return LOG_NAMES[static_cast<int>(lv)];
 }
 

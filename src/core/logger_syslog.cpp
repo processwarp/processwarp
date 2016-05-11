@@ -50,7 +50,7 @@ void Syslog::output(Level lv, const std::string& file, unsigned int line,
          get_level_string(lv).c_str(), type.c_str(), file.c_str(), mid.c_str(), message.c_str());
 #else
   syslog(priority, "lv=%s type=%s class=%s line=%d mid=%s message=%s",
-         get_level_string(lv).c_str(), type.c_str(), file.c_str(), line,
+         get_level_string(lv), type.c_str(), file.c_str(), line,
          mid.c_str(), message.c_str());
 #endif
 }
