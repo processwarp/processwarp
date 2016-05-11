@@ -2,8 +2,8 @@
 
 #include <string>
 
-#include "definitions.hpp"
 #include "message.hpp"
+#include "type.hpp"
 
 namespace processwarp {
 namespace Logger {

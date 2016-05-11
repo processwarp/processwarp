@@ -4,7 +4,7 @@
 #include <utility>
 #include <vector>
 
-#include "definitions.hpp"
+#include "type.hpp"
 #include "vmemory.hpp"
 
 namespace processwarp {

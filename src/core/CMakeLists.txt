@@ -117,14 +117,20 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     ${HEADER_FILES}
     ${PWCORE_FILES}
     )
-  add_dependencies(pwcore const_core)
+  add_dependencies(pwcore
+    const_core
+    const_core_constant
+    )
 
   if(LLVM_FOUND)
     add_executable(loader
       llvm_asm_loader.cpp
       main_loader.cpp
       )
-    add_dependencies(loader const_loader)
+    add_dependencies(loader
+      const_loader
+      const_core_constant
+      )
     target_link_libraries(loader
       pwcore
       ${extra_libs}
@@ -139,6 +145,9 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     ${PWCORE_FILES}
     main_webfront.cpp
     )
-  add_dependencies(webfront const_core)
+  add_dependencies(webfront
+    const_core
+    const_core_constant
+    )
   target_link_libraries(webfront)
 endif()

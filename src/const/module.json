@@ -1,0 +1,25 @@
+{
+    "camel_name":"Module",
+    "snake_name":"MODULE",
+    "description":"Modules those are target of send command.",
+    "type":"enum",
+    "c_type":"int",
+    "c_typedef":"Type",
+    "values":[
+        {
+            "name":"MEMORY"
+        },
+        {
+            "name":"VM"
+        },
+        {
+            "name":"SCHEDULER"
+        },
+        {
+            "name":"CONTROLLER"
+        },
+        {
+            "name":"GUI"
+        }
+    ]
+}

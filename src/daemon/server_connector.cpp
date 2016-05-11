@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "constant.hpp"
 #include "convert.hpp"
 #include "error.hpp"
 #include "router.hpp"
@@ -514,7 +515,7 @@ void ServerConnector::recv_relay_command(sio::message::ptr data) {
   assert(status == ServerStatus::CONNECT);
 
   if (dst_nid == my_nid ||
-      (dst_nid == SpecialNID::BROADCAST && src_nid != my_nid)) {
+      (dst_nid == NID::BROADCAST && src_nid != my_nid)) {
     const vpid_t& pid = get_pid_by_map(data, "pid");
     Module::Type module = Convert::str2int<Module::Type>(get_str_by_map(data, "module", true));
     const std::string& content = get_str_by_map(data, "content", true);

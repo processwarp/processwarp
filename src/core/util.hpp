@@ -30,7 +30,7 @@
 #include <iomanip>
 #include <iostream>
 
-#include "definitions.hpp"
+#include "type.hpp"
 
 namespace processwarp {
 namespace Util {

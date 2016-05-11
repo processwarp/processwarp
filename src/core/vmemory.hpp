@@ -11,9 +11,11 @@
 #include <set>
 #include <string>
 
+#include "constant.hpp"
+#include "constant_vm.hpp"
 #include "convert.hpp"
-#include "definitions.hpp"
 #include "interrupt_memory_require.hpp"
+#include "type.hpp"
 #include "util.hpp"
 
 namespace processwarp {
@@ -91,7 +93,7 @@ class VMemory {
   }
 
   static bool is_program(vaddr_t addr) {
-    return (addr & AddrType::MASK) == AddrType::PROGRAM;
+    return (addr & AddressRegion::MASK) == AddressRegion::PROGRAM;
   }
 
   /** Bundle pages in memory space. */
@@ -121,7 +123,7 @@ class VMemory {
      * Get a new address to allocate a new memory.
      * @param type Address-type of memory.
      */
-    vaddr_t assign_addr(AddrType::Type type);
+    vaddr_t assign_addr(AddressRegion::Type type);
 
     /**
      * Release a binded address for be used memory to be unused.
@@ -148,16 +150,16 @@ class VMemory {
   /**
    *
    */
-  static AddrType::Type get_addr_type(uint64_t size) {
-    if (size <= 0x0000000000FF) return AddrType::VALUE_08;
-    if (size <= 0x00000000FFFF) return AddrType::VALUE_16;
-    if (size <= 0x000000FFFFFF) return AddrType::VALUE_24;
-    if (size <= 0x0000FFFFFFFF) return AddrType::VALUE_32;
-    if (size <= 0x00FFFFFFFFFF) return AddrType::VALUE_40;
-    if (size <= 0xFFFFFFFFFFFF) return AddrType::VALUE_48;
+  static AddressRegion::Type get_addr_type(uint64_t size) {
+    if (size <= 0x0000000000FF) return AddressRegion::VALUE_08;
+    if (size <= 0x00000000FFFF) return AddressRegion::VALUE_16;
+    if (size <= 0x000000FFFFFF) return AddressRegion::VALUE_24;
+    if (size <= 0x0000FFFFFFFF) return AddressRegion::VALUE_32;
+    if (size <= 0x00FFFFFFFFFF) return AddressRegion::VALUE_40;
+    if (size <= 0xFFFFFFFFFFFF) return AddressRegion::VALUE_48;
     /// @todo error
     assert(false);
-    return AddrType::VALUE_08;
+    return AddressRegion::VALUE_08;
   }
 
   void send_command_copy(const nid_t& dst_nid, Space& space, Page& page, vaddr_t addr);
@@ -200,13 +202,13 @@ class VMemory {
      */
     Page& get_page(vaddr_t addr, bool readable) {
       assert(addr != VADDR_NULL);
-      assert((addr & AddrType::MASK) == AddrType::META ||
-             (addr & AddrType::MASK) == AddrType::PROGRAM ||
+      assert((addr & AddressRegion::MASK) == AddressRegion::META ||
+             (addr & AddressRegion::MASK) == AddressRegion::PROGRAM ||
              addr == get_upper_addr(addr));
       auto page = space.pages.find(addr);
 
       if (page == space.pages.end()) {
-        vmemory.send_command_require(SpecialNID::BROADCAST, space, addr);
+        vmemory.send_command_require(NID::BROADCAST, space, addr);
         throw InterruptMemoryRequire(addr);
 
       } else if (readable && page->second.flg_update == false) {

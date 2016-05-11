@@ -2,8 +2,8 @@
 
 #include <vector>
 
-#include "definitions.hpp"
 #include "process.hpp"
+#include "type.hpp"
 #include "vmachine.hpp"
 
 namespace processwarp {

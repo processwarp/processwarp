@@ -3,8 +3,8 @@
 #include <memory>
 #include <vector>
 
-#include "definitions.hpp"
 #include "func_store.hpp"
+#include "type.hpp"
 #include "type_store.hpp"
 #include "wrapped_operator.hpp"
 

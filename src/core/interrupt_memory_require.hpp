@@ -1,7 +1,7 @@
 #pragma once
 
-#include "definitions.hpp"
 #include "interrupt.hpp"
+#include "type.hpp"
 
 namespace processwarp {
 /**

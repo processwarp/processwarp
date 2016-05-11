@@ -16,12 +16,13 @@
 #include "builtin_va_arg.hpp"
 #include "builtin_warp.hpp"
 
+#include "constant.hpp"
 #include "convert.hpp"
 #include "core_mid.hpp"
-#include "definitions.hpp"
 #include "error.hpp"
 #include "finally.hpp"
 #include "logger.hpp"
+#include "type.hpp"
 #include "vmachine.hpp"
 #include "vmemory.hpp"
 
@@ -326,7 +327,7 @@ void VMachine::recv_command_heartbeat_vm(const CommandPacket& packet) {
 void VMachine::recv_command_require_warp_thread(const CommandPacket& packet) {
   vtid_t tid = Convert::json2vtid(packet.content.at("tid"));
   const nid_t& target_nid = Convert::json2nid(packet.content.at("target_nid"));
-  assert(target_nid != SpecialNID::NONE);
+  assert(target_nid != NID::NONE);
 
   if (process->active_threads.find(tid) != process->active_threads.end()) {
     Thread& thread = process->get_thread(tid);
@@ -362,7 +363,7 @@ void VMachine::send_command(const vpid_t& pid, const nid_t& dst_nid, Module::Typ
          param.at("command").get<std::string>() == command);
 
   param.insert(std::make_pair("command", picojson::value(command)));
-  delegate.vmachine_send_command(*this, {pid, dst_nid, SpecialNID::NONE, module, param});
+  delegate.vmachine_send_command(*this, {pid, dst_nid, NID::NONE, module, param});
 }
 
 /**
@@ -383,8 +384,8 @@ void VMachine::send_command_heartbeat_vm() {
   picojson::object param;
   param.insert(std::make_pair("name", picojson::value(process->name)));
   param.insert(std::make_pair("threads", picojson::value(threads)));
-  send_command(process->pid, SpecialNID::BROADCAST, Module::VM, "heartbeat_vm", param);
-  send_command(process->pid, SpecialNID::BROADCAST, Module::SCHEDULER, "heartbeat_vm", param);
+  send_command(process->pid, NID::BROADCAST, Module::VM, "heartbeat_vm", param);
+  send_command(process->pid, NID::BROADCAST, Module::SCHEDULER, "heartbeat_vm", param);
 }
 
 /**
@@ -392,7 +393,7 @@ void VMachine::send_command_heartbeat_vm() {
  * @param thread Target thread to warp.
  */
 void VMachine::send_command_warp_thread(Thread& thread) {
-  assert(thread.warp_dst != SpecialNID::NONE);
+  assert(thread.warp_dst != NID::NONE);
 
   picojson::object param;
   param.insert(std::make_pair("root_tid", Convert::vtid2json(process->root_tid)));

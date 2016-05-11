@@ -8,11 +8,13 @@
 #include <string>
 #include <vector>
 
-#include "definitions.hpp"
+#include "constant.hpp"
+#include "constant_vm.hpp"
 #include "frontend_connector.hpp"
 #include "router.hpp"
 #include "scheduler.hpp"
 #include "server_connector.hpp"
+#include "type.hpp"
 #include "util.hpp"
 #include "worker_connector.hpp"
 
@@ -133,9 +135,9 @@ void Router::recv_bind_node(const nid_t& nid) {
   my_nid = nid;
 
   // get local hostname
-  char hostname[NODE_NAME_MAX + 1];
+  char hostname[Definition::NODE_NAME_MAX + 1];
   std::memset(hostname, 0, sizeof(hostname));
-  gethostname(hostname, NODE_NAME_MAX);
+  gethostname(hostname, Definition::NODE_NAME_MAX);
 
   scheduler.set_node_information(nid, std::string(hostname));
 }
@@ -154,9 +156,9 @@ void Router::relay_command(const CommandPacket& packet, bool is_from_server) {
     src_nid = packet.src_nid;
 
   } else {
-    if (packet.dst_nid == SpecialNID::THIS) {
+    if (packet.dst_nid == NID::THIS) {
       dst_nid = my_nid;
-    } else if (packet.dst_nid == SpecialNID::NONE) {
+    } else if (packet.dst_nid == NID::NONE) {
       dst_nid = scheduler.get_dst_nid(packet.pid, packet.module);
     } else {
       dst_nid = packet.dst_nid;
@@ -172,7 +174,7 @@ void Router::relay_command(const CommandPacket& packet, bool is_from_server) {
     packet.content
   };
 
-  if (dst_nid == my_nid || dst_nid == SpecialNID::BROADCAST) {
+  if (dst_nid == my_nid || dst_nid == NID::BROADCAST) {
     switch (real_packet.module) {
       case Module::MEMORY:
       case Module::VM: {

@@ -8,8 +8,8 @@
 #include <vector>
 
 #include "daemon_define.hpp"
-#include "definitions.hpp"
 #include "scheduler.hpp"
+#include "type.hpp"
 
 namespace processwarp {
 class Router : public SchedulerDelegate {

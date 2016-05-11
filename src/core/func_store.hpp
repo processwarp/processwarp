@@ -3,9 +3,9 @@
 #include <memory>
 #include <vector>
 
-#include "definitions.hpp"
 #include "dynamic_library.hpp"
 #include "symbols.hpp"
+#include "type.hpp"
 #include "vmemory.hpp"
 
 namespace processwarp {

@@ -86,7 +86,10 @@ add_executable(processwarp
   worker_connector.cpp
   worker_dummy.cpp
   )
-add_dependencies(processwarp const_processwarp)
+add_dependencies(processwarp
+  const_processwarp
+  const_core_constant
+  )
 target_link_libraries(processwarp
   pwcore
   sioclient_tls
@@ -97,7 +100,10 @@ add_executable(worker
   ${HEADER_FILES}
   worker.cpp
   )
-add_dependencies(worker const_processwarp)
+add_dependencies(worker
+  const_processwarp
+  const_core_constant
+  )
 target_link_libraries(worker
   pwcore
   ${extra_libs}

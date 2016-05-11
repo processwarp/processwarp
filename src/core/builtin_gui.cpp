@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "builtin_gui.hpp"
+#include "constant.hpp"
 #include "format.hpp"
 
 namespace processwarp {
@@ -23,7 +24,7 @@ BuiltinPostProc::Type BuiltinGui::create(Process& proc, Thread& thread, BuiltinF
   BuiltinGuiDelegate& delegate = *reinterpret_cast<BuiltinGuiDelegate*>(p.ptr);
 
   picojson::object param;
-  delegate.builtin_gui_send_command(proc, SpecialNID::THIS, Module::SCHEDULER, "create_gui", param);
+  delegate.builtin_gui_send_command(proc, NID::THIS, Module::SCHEDULER, "create_gui", param);
 
   return BuiltinPostProc::NORMAL;
 }
@@ -46,7 +47,7 @@ BuiltinPostProc::Type BuiltinGui::flush(Process& proc, Thread& thread, BuiltinFu
       "global.canvas.height);"
       "global.context_fore.putImageData(image, 0, 0);";
   param.insert(std::make_pair("script", picojson::value(script)));
-  delegate.builtin_gui_send_command(proc, SpecialNID::NONE, Module::GUI, "script", param);
+  delegate.builtin_gui_send_command(proc, NID::NONE, Module::GUI, "script", param);
 
   return BuiltinPostProc::NORMAL;
 }
@@ -69,7 +70,7 @@ BuiltinPostProc::Type BuiltinGui::script(Process& proc, Thread& thread, BuiltinF
 
   picojson::object param;
   param.insert(std::make_pair("script", picojson::value(script)));
-  delegate.builtin_gui_send_command(proc, SpecialNID::NONE, Module::GUI, "script", param);
+  delegate.builtin_gui_send_command(proc, NID::NONE, Module::GUI, "script", param);
 
   return BuiltinPostProc::NORMAL;
 }

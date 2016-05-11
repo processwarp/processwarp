@@ -7,8 +7,9 @@
 #include <string>
 
 #include "connector.hpp"
-#include "definitions.hpp"
+#include "constant.hpp"
 #include "daemon_define.hpp"
+#include "type.hpp"
 
 namespace processwarp {
 class FrontendConnector : public Connector {

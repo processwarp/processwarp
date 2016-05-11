@@ -25,3 +25,13 @@ add_custom_command(
   )
 add_custom_target(const_processwarp
   SOURCES ${PROJECT_SOURCE_DIR}/src/const/daemon_mid.hpp)
+
+add_custom_command(
+  OUTPUT ${PROJECT_SOURCE_DIR}/src/core/constant.hpp
+  COMMAND python
+  ARGS ${PROJECT_SOURCE_DIR}/script/gen_constant.py --cpp-dst ${PROJECT_SOURCE_DIR}/src/core/constant.hpp ${PROJECT_SOURCE_DIR}/src/const/definition.json ${PROJECT_SOURCE_DIR}/src/const/nid.json ${PROJECT_SOURCE_DIR}/src/const/pid.json ${PROJECT_SOURCE_DIR}/src/const/module.json
+  DEPENDS ${PROJECT_SOURCE_DIR}/script/gen_constant.py ${PROJECT_SOURCE_DIR}/src/const/definition.json ${PROJECT_SOURCE_DIR}/src/const/nid.json ${PROJECT_SOURCE_DIR}/src/const/pid.json ${PROJECT_SOURCE_DIR}/src/const/module.json
+  )
+add_custom_target(const_core_constant
+  SOURCES ${PROJECT_SOURCE_DIR}/src/core/constant.hpp)
+

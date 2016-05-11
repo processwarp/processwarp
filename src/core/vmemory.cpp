@@ -4,6 +4,8 @@
 #include <set>
 #include <string>
 
+#include "constant.hpp"
+#include "constant_vm.hpp"
 #include "convert.hpp"
 #include "core_mid.hpp"
 #include "error.hpp"
@@ -281,7 +283,7 @@ void VMemory::recv_command_give(const CommandPacket& packet) {
         hint.insert(hint_node);
       }
     }
-    if (packet.src_nid != SpecialNID::SERVER) {
+    if (packet.src_nid != NID::SERVER) {
       hint.insert(packet.src_nid);
     }
 
@@ -340,13 +342,13 @@ void VMemory::recv_command_require(const CommandPacket& packet) {
 
   auto it_space = spaces.find(packet.pid);
   if (it_space == spaces.end()) {
-    if (src_nid != SpecialNID::BROADCAST && src_nid != my_nid) {
+    if (src_nid != NID::BROADCAST && src_nid != my_nid) {
       picojson::object param;
 
       param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
       param.insert(std::make_pair("src_nid", Convert::nid2json(src_nid)));
 
-      send_memory_command(packet.pid, SpecialNID::BROADCAST, "require", param);
+      send_memory_command(packet.pid, NID::BROADCAST, "require", param);
     }
     return;
   }
@@ -354,13 +356,13 @@ void VMemory::recv_command_require(const CommandPacket& packet) {
   Space& space = *it_space->second;
   auto it_page = space.pages.find(addr);
   if (it_page == space.pages.end()) {
-    if (src_nid != SpecialNID::BROADCAST && src_nid != my_nid) {
+    if (src_nid != NID::BROADCAST && src_nid != my_nid) {
       picojson::object param;
 
       param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
       param.insert(std::make_pair("src_nid", Convert::nid2json(src_nid)));
 
-      send_memory_command(packet.pid, SpecialNID::BROADCAST, "require", param);
+      send_memory_command(packet.pid, NID::BROADCAST, "require", param);
     }
     return;
   }
@@ -645,7 +647,7 @@ void VMemory::send_command_give(Space& space, Page& page, vaddr_t addr, const ni
   }
   param.insert(std::make_pair("hint_nid", picojson::value(hint)));
 
-  send_memory_command(space.name, SpecialNID::BROADCAST, "give", param);
+  send_memory_command(space.name, NID::BROADCAST, "give", param);
 }
 
 /**
@@ -662,7 +664,7 @@ void VMemory::send_command_release(Space& space, std::set<vaddr_t> addrs) {
   }
   param.insert(std::make_pair("addrs", picojson::value(js_addrs)));
 
-  send_memory_command(space.name, SpecialNID::BROADCAST, "release", param);
+  send_memory_command(space.name, NID::BROADCAST, "release", param);
 }
 
 /**
@@ -696,7 +698,7 @@ void VMemory::send_command_reserve(Space& space, std::set<vaddr_t> addrs) {
   }
   param.insert(std::make_pair("addrs", picojson::value(js_addrs)));
 
-  send_memory_command(space.name, SpecialNID::BROADCAST, "reserve", param);
+  send_memory_command(space.name, NID::BROADCAST, "reserve", param);
 }
 
 /**
@@ -767,7 +769,7 @@ const nid_t& VMemory::Accessor::get_master(vaddr_t addr) {
     default: {
       /// @todo error
       assert(false);
-      return SpecialNID::BROADCAST;
+      return NID::BROADCAST;
     } break;
   }
 }
@@ -804,7 +806,7 @@ VMemory::Accessor::MasterKey VMemory::Accessor::keep_master(vaddr_t addr) {
 // Set meta data.
 vaddr_t VMemory::Accessor::set_meta_area(const std::string& data, vaddr_t addr) {
   if (addr == VADDR_NULL) {
-    addr = space.assign_addr(AddrType::META);
+    addr = space.assign_addr(AddressRegion::META);
   }
   assert(space.pages.find(addr) == space.pages.end());
   space.pages.insert(std::make_pair(addr, Page(PT_MASTER, true, data,
@@ -826,7 +828,7 @@ vaddr_t VMemory::Accessor::set_meta_area(const std::string& data, vaddr_t addr,
 
 // Get meta data.
 std::string VMemory::Accessor::get_meta_area(vaddr_t addr) {
-  assert((AddrType::MASK & addr) == AddrType::META);
+  assert((AddressRegion::MASK & addr) == AddressRegion::META);
   Page& page = get_page(addr, true);
 
   return std::string(reinterpret_cast<char*>(page.value.get()), page.size);
@@ -834,7 +836,7 @@ std::string VMemory::Accessor::get_meta_area(vaddr_t addr) {
 
 // Change meta data.
 void VMemory::Accessor::update_meta_area(vaddr_t addr, const std::string& data) {
-  assert((AddrType::MASK & addr) == AddrType::META);
+  assert((AddressRegion::MASK & addr) == AddressRegion::META);
   Page& page = get_page(addr, true);
 
   if (page.size == data.size() &&
@@ -926,8 +928,8 @@ vaddr_t VMemory::Accessor::realloc(vaddr_t addr, uint64_t size) {
   Page& page = get_page(addr, false);
   switch (page.type) {
     case PT_MASTER: {
-      AddrType::Type old_type = static_cast<AddrType::Type>(addr & AddrType::MASK);
-      AddrType::Type new_type = get_addr_type(size);
+      AddressRegion::Type old_type = static_cast<AddressRegion::Type>(addr & AddressRegion::MASK);
+      AddressRegion::Type new_type = get_addr_type(size);
       if (old_type == new_type) {
         std::unique_ptr<uint8_t[]> tmp(new uint8_t[size]);
         if (page.size < size) {
@@ -986,7 +988,7 @@ vaddr_t VMemory::Accessor::reserve_program_area() {
   vaddr_t new_addr;
 
   do {
-    new_addr = AddrType::PROGRAM | (~AddrType::MASK & space.rnd());
+    new_addr = AddressRegion::PROGRAM | (~AddressRegion::MASK & space.rnd());
   } while (space.pages.find(new_addr) != space.pages.end());
 
   space.pages.insert(std::make_pair(new_addr, Page(PT_PROGRAM, true, std::set<nid_t>())));
@@ -996,7 +998,7 @@ vaddr_t VMemory::Accessor::reserve_program_area() {
 
 // Set program data to be selected address.
 void VMemory::Accessor::set_program_area(vaddr_t addr, const std::string& data) {
-  assert((AddrType::MASK & addr) == AddrType::PROGRAM);
+  assert((AddressRegion::MASK & addr) == AddressRegion::PROGRAM);
   auto it_page = space.pages.find(addr);
   if (it_page == space.pages.end()) {
     space.pages.insert(std::make_pair(addr, Page(PT_PROGRAM, true, data,
@@ -1060,12 +1062,12 @@ void VMemory::Accessor::print_dump() {
     Page& page = it_page.second;
 
     Logger::dbg_raw(CoreMid::L1007, "addr:%s", Convert::vaddr2str(addr).c_str());
-    if ((addr & AddrType::MASK) == AddrType::META) {
+    if ((addr & AddressRegion::MASK) == AddressRegion::META) {
       Logger::dbg_raw(CoreMid::L1007, "value:%s",
                       std::string(reinterpret_cast<const char*>(page.value.get()), page.size).
                       c_str());
 
-    } else if ((addr & AddrType::MASK) == AddrType::PROGRAM) {
+    } else if ((addr & AddressRegion::MASK) == AddressRegion::PROGRAM) {
       picojson::value v;
       picojson::parse(v, std::string(reinterpret_cast<char*>(page.value.get()), page.size));
       Logger::dbg_raw(CoreMid::L1007, v.serialize(true));
@@ -1125,23 +1127,23 @@ VMemory::Space::Space(const std::string& name_, std::mt19937_64& rnd_, VMemory& 
 }
 
 // Get a new address to allocate a new memory.
-vaddr_t VMemory::Space::assign_addr(AddrType::Type type) {
+vaddr_t VMemory::Space::assign_addr(AddressRegion::Type type) {
   std::deque<vaddr_t>& reserved_que = reserved[type >> 60];
   std::set<vaddr_t> new_reserve;
   Finally finally;
 
-  if (reserved_que.size() < VMEMORY_RESERVE_MIN) {
+  if (reserved_que.size() < VMemoryReserve::MIN) {
     std::set<vaddr_t> reserved_set;
     for (auto& it : reserved_que) {
       reserved_set.insert(it);
     }
 
     for (unsigned int retry = 0;
-         reserved_que.size() + new_reserve.size() < VMEMORY_RESERVE_BASE &&
-                              retry < VMEMORY_RESERVE_BASE * 2; retry ++) {
-      vaddr_t new_addr = get_upper_addr(type | (~AddrType::MASK & rnd()));
+         reserved_que.size() + new_reserve.size() < VMemoryReserve::BASE &&
+                              retry < VMemoryReserve::BASE * 2; retry ++) {
+      vaddr_t new_addr = get_upper_addr(type | (~AddressRegion::MASK & rnd()));
 
-      if (type == AddrType::META && new_addr <= 0xFF) {
+      if (type == AddressRegion::META && new_addr <= 0xFF) {
         continue;
       }
 
@@ -1181,10 +1183,10 @@ void VMemory::Space::release_addr(vaddr_t addr) {
   std::deque<vaddr_t>& reserved_que = reserved[addr >> 60];
   reserved_que.push_front(addr);
 
-  if (reserved_que.size() > VMEMORY_RESERVE_MAX) {
+  if (reserved_que.size() > VMemoryReserve::MAX) {
     std::set<vaddr_t> release_set;
 
-    while (reserved_que.size() > VMEMORY_RESERVE_BASE) {
+    while (reserved_que.size() > VMemoryReserve::BASE) {
       release_set.insert(reserved_que.back());
       reserved_que.pop_back();
     }

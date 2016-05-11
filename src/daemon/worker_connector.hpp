@@ -10,7 +10,7 @@
 
 #include "connector.hpp"
 #include "daemon_define.hpp"
-#include "definitions.hpp"
+#include "type.hpp"
 
 #ifdef WORKER_DUMMY
 #include "worker_dummy.hpp"

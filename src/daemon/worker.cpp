@@ -6,6 +6,7 @@
 #include <iostream>
 #include <string>
 
+#include "constant.hpp"
 #include "daemon_mid.hpp"
 #include "logger.hpp"
 #include "worker.hpp"
@@ -70,7 +71,7 @@ void Worker::vmemory_send_command(VMemory& memory, const nid_t& dst_nid, Module:
   CommandPacket packet = {
     my_pid,
     dst_nid,
-    SpecialNID::NONE,
+    NID::NONE,
     module,
     param
   };
@@ -107,7 +108,7 @@ void Worker::builtin_gui_send_command(Process& proc, const nid_t& dst_nid, Modul
   CommandPacket packet = {
     my_pid,
     dst_nid,
-    SpecialNID::NONE,
+    NID::NONE,
     module,
     param
   };

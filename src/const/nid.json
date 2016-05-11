@@ -1,0 +1,29 @@
+{
+    "camel_name":"NID",
+    "snake_name":"NID",
+    "description":"Specified node-id.",
+    "type":"string",
+    "c_type":"nid_t",
+    "values":[
+        {
+            "name":"NONE",
+            "value":"",
+            "description":"Set none if destination node-id is't yet determined."
+        },
+        {
+            "name":"THIS",
+            "value":".",
+            "description":"Send command to this(local) node."
+        },
+        {
+            "name":"BROADCAST",
+            "value":"*",
+            "description":"Send command to any node with the same account."
+        },
+        {
+            "name":"SERVER",
+            "value":"server",
+            "description":"Server is a special node."
+        }
+    ]
+}

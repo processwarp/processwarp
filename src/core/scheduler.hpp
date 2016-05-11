@@ -6,7 +6,7 @@
 #include <random>
 #include <string>
 
-#include "definitions.hpp"
+#include "type.hpp"
 
 namespace processwarp {
 class Scheduler;

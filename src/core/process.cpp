@@ -47,10 +47,10 @@ struct OperandParam {
 inline std::unique_ptr<FuncStore> get_function(instruction_t code,
                                                OperandParam& param) {
   int operand = Instruction::get_operand(code);
-  if ((operand & HEAD_OPERAND) != 0) {
+  if ((operand & OperandMask::HEAD) != 0) {
     // 定数の場合1の補数表現からの復元
     vaddr_t addr =
-        param.memory.read<vaddr_t>(param.k + (FILL_OPERAND - operand));
+        param.memory.read<vaddr_t>(param.k + (OperandMask::FILL - operand));
     return FuncStore::read(param.proc, param.memory, addr);
 
   } else {
@@ -61,9 +61,9 @@ inline std::unique_ptr<FuncStore> get_function(instruction_t code,
 
 inline vaddr_t get_operand(instruction_t code, OperandParam& param) {
   int operand = Instruction::get_operand(code);
-  if ((operand & HEAD_OPERAND) != 0) {
+  if ((operand & OperandMask::HEAD) != 0) {
     // 定数の場合1の補数表現からの復元
-    return param.k + (FILL_OPERAND - operand);
+    return param.k + (OperandMask::FILL - operand);
 
   } else {
     return param.stack + operand;
@@ -73,7 +73,7 @@ inline vaddr_t get_operand(instruction_t code, OperandParam& param) {
 inline std::unique_ptr<TypeStore> get_type(instruction_t code,
                                            OperandParam& param) {
   int operand = Instruction::get_operand(code);
-  vaddr_t addr = param.memory.read<vaddr_t>(param.k + (FILL_OPERAND - operand));
+  vaddr_t addr = param.memory.read<vaddr_t>(param.k + (OperandMask::FILL - operand));
   return TypeStore::read(param.memory, addr);
 }
 
@@ -197,7 +197,7 @@ re_entry: {
 
       } else {  // Non root thread.
         if (thread.status != Thread::ERROR) {
-          if (thread.join_waiting == JOIN_WAIT_DETACHED) {
+          if (thread.join_waiting == JoinWaitStatus::DETACHED) {
             thread.status = Thread::FINISH;
 
           } else {
@@ -286,16 +286,16 @@ re_entry: {
 
           Finally finally_call;
           // スタックのサイズの有無により作りを変える
-          vaddr_t new_stackaddr =
-              StackInfo::alloc(memory,
-                               new_func->addr,
-                               // tailcallの場合、戻り値の格納先を現行のものから引き継ぐ
-                               is_tailcall ? stackinfo.ret_addr : stackinfo.output,
-                               (normal_pc != FILL_OPERAND ? normal_pc : stackinfo.pc + next_pc),
-                               (unwind_pc != FILL_OPERAND ? unwind_pc : stackinfo.pc + next_pc),
-                               (new_func->normal_prop.stack_size != 0 ?
-                                memory.alloc(new_func->normal_prop.stack_size) :
-                                VADDR_NON));
+          vaddr_t new_stackaddr = StackInfo::alloc
+            (memory,
+             new_func->addr,
+             // tailcallの場合、戻り値の格納先を現行のものから引き継ぐ
+             is_tailcall ? stackinfo.ret_addr : stackinfo.output,
+             (normal_pc != OperandMask::FILL ? normal_pc : stackinfo.pc + next_pc),
+             (unwind_pc != OperandMask::FILL ? unwind_pc : stackinfo.pc + next_pc),
+             (new_func->normal_prop.stack_size != 0 ?
+              memory.alloc(new_func->normal_prop.stack_size) :
+              VADDR_NULL));
           finally_call.add([&] {
               memory.free(new_stackaddr);
             });
@@ -348,7 +348,7 @@ re_entry: {
               new_stackinfo->alloca_addrs.push_back(new_stackinfo->var_arg);
               memory.write_copy(new_stackinfo->var_arg, work.data(), work.size());
             } else {
-              new_stackinfo->var_arg = VADDR_NON;
+              new_stackinfo->var_arg = VADDR_NULL;
             }
 
             if (is_tailcall) {
@@ -398,7 +398,7 @@ re_entry: {
           StackInfo& upperinfo = thread.get_stackinfo(-2);
           resolve_stackinfo_cache(thread, &upperinfo);
 
-          if (Instruction::get_operand(code) == FILL_OPERAND) {
+          if (Instruction::get_operand(code) == OperandMask::FILL) {
             // 戻り値がないので何もしない
 
           } else {
@@ -1013,11 +1013,11 @@ void Process::call_setup_voidfunc(Thread& thread, vaddr_t func_addr) {
     vaddr_t stackaddr =
         StackInfo::alloc(*thread.memory,
                          func->addr,
-                         VADDR_NON,  // 戻り値なし
+                         VADDR_NULL,  // 戻り値なし
                          0, 0,  // 正常、異常終了時のpc設定もなし
                          (func->normal_prop.stack_size != 0 ?
                           thread.memory->alloc(func->normal_prop.stack_size) :
-                          VADDR_NON));
+                          VADDR_NULL));
     std::unique_ptr<StackInfo> stackinfo(StackInfo::read(*thread.memory, stackaddr));
     thread.push_stack(stackaddr, std::move(stackinfo));
 
@@ -1025,7 +1025,7 @@ void Process::call_setup_voidfunc(Thread& thread, vaddr_t func_addr) {
     // VM組み込み関数の呼び出し
     assert(func->builtin != nullptr);
     std::vector<uint8_t> work;
-    func->builtin(*this, thread, func->builtin_param, VADDR_NON, work);
+    func->builtin(*this, thread, func->builtin_param, VADDR_NULL, work);
 
   } else {
     if (func->external == nullptr) {
@@ -1080,7 +1080,7 @@ vtid_t Process::create_thread(vaddr_t func_addr, vaddr_t arg_addr) {
 
   vaddr_t root_stack = thread.memory->alloc(sizeof(vaddr_t));
   vaddr_t root_stackaddr =
-      StackInfo::alloc(*thread.memory, VADDR_NON, VADDR_NON, 0, 0, root_stack);
+      StackInfo::alloc(*thread.memory, VADDR_NULL, VADDR_NULL, 0, 0, root_stack);
   std::unique_ptr<StackInfo> root_stackinfo(StackInfo::read(*thread.memory, root_stackaddr));
   root_stackinfo->output = root_stack;
   root_stackinfo->write(*thread.memory);
@@ -1095,7 +1095,7 @@ vtid_t Process::create_thread(vaddr_t func_addr, vaddr_t arg_addr) {
 
   } else {
     func_stackaddr =
-        StackInfo::alloc(*thread.memory, func->addr, root_stack, 0, 0, VADDR_NON);
+        StackInfo::alloc(*thread.memory, func->addr, root_stack, 0, 0, VADDR_NULL);
   }
   thread.push_stack(func_stackaddr);
   thread.write();
@@ -1121,8 +1121,8 @@ void Process::exit_thread(Thread& thread, vaddr_t retval) {
 
 // Free a instance of thread, leave stack-top for join thread if need.
 bool Process::destroy_thread(Thread& thread) {
-  if (thread.join_waiting == JOIN_WAIT_DETACHED ||
-      thread.join_waiting == JOIN_WAIT_ROOT) {
+  if (thread.join_waiting == JoinWaitStatus::DETACHED ||
+      thread.join_waiting == JoinWaitStatus::ROOT) {
     while (thread.stack.size() > 0) {
       thread.pop_stack();
     }
@@ -1144,7 +1144,7 @@ bool Process::destroy_thread(Thread& thread) {
 bool Process::join_thread(vtid_t current, vtid_t target, vaddr_t retval) {
   Thread& target_thread  = get_thread(target);
   if (target_thread.join_waiting != current) {
-    if (target_thread.join_waiting != JOIN_WAIT_NONE) {
+    if (target_thread.join_waiting != JoinWaitStatus::NONE) {
       throw_std_error(StdError::PW_INVAL);
 
     } else if (target == current) {
@@ -1161,7 +1161,7 @@ bool Process::join_thread(vtid_t current, vtid_t target, vaddr_t retval) {
                                   (target_thread.get_stackinfo(0).stack));
     }
 
-    target_thread.join_waiting = JOIN_WAIT_DETACHED;
+    target_thread.join_waiting = JoinWaitStatus::DETACHED;
     target_thread.status = Thread::FINISH;
     target_thread.write();
     return true;
@@ -1250,13 +1250,13 @@ M_READ_BUILTIN_PARAM(read_builtin_param_i64, uint64_t, BasicTypeAddress::UI64);
 // StackInfoのキャッシュを解決し、実行前の状態にする。
 void Process::resolve_stackinfo_cache(Thread& thread, StackInfo* stackinfo) {
   // 関数
-  if (stackinfo->func != VADDR_NON) {
+  if (stackinfo->func != VADDR_NULL) {
     stackinfo->func_store = FuncStore::read(*this, *thread.memory, stackinfo->func);
   } else {
     stackinfo->func_store.reset(nullptr);
   }
   // 操作対象の型
-  if (stackinfo->type != VADDR_NON) {
+  if (stackinfo->type != VADDR_NULL) {
     stackinfo->type_operator = thread.get_operator(stackinfo->type);
     stackinfo->type_store = TypeStore::read(*thread.memory, stackinfo->type);
 
@@ -1278,7 +1278,7 @@ void Process::run(const std::vector<std::string>& args,
   VMemory::Accessor& memory = *root_thread.memory;
 
   // スレッドを初期化
-  root_thread.join_waiting = JOIN_WAIT_ROOT;
+  root_thread.join_waiting = JoinWaitStatus::ROOT;
 
   // main関数の取得
   auto it_main_func = globals.find(&symbols.get("main"));
@@ -1360,7 +1360,7 @@ void Process::run(const std::vector<std::string>& args,
 
   // mainのreturnを受け取るためのスタックを1段確保する
   vaddr_t root_stackaddr =
-      StackInfo::alloc(memory, VADDR_NON, VADDR_NON, 0, 0, root_stack);
+      StackInfo::alloc(memory, VADDR_NULL, VADDR_NULL, 0, 0, root_stack);
   std::unique_ptr<StackInfo> root_stackinfo(StackInfo::read(memory, root_stackaddr));
   root_stackinfo->output = root_stack;
   root_stackinfo->write(memory);

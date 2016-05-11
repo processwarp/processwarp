@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "constant.hpp"
 #include "convert.hpp"
 #include "daemon_define.hpp"
 #include "frontend_connector.hpp"
@@ -50,7 +51,7 @@ void FrontendConnector::initialize(uv_loop_t* loop, const std::string& pipe_path
  * @param pid Target process-id.
  */
 void FrontendConnector::create_gui(const vpid_t& pid) {
-  assert(pid != SpecialPID::BROADCAST);
+  assert(pid != PID::BROADCAST);
 
   if (gui_pipe == nullptr) {
     /// @todo error
@@ -125,7 +126,7 @@ void FrontendConnector::on_connect_timer(uv_timer_t* handle) {
               THIS.gui_pipe = client;
 
             } else {
-              THIS.send_connect_frontend(*client, -1, SpecialNID::NONE);
+              THIS.send_connect_frontend(*client, -1, NID::NONE);
               THIS.close(*client);
               continue;
             }
@@ -137,7 +138,7 @@ void FrontendConnector::on_connect_timer(uv_timer_t* handle) {
           property.password.clear();
 
         } else {
-          THIS.send_connect_frontend(*client, -1, SpecialNID::NONE);
+          THIS.send_connect_frontend(*client, -1, NID::NONE);
           THIS.close(*client);
         }
       }
@@ -151,7 +152,7 @@ void FrontendConnector::on_connect_timer(uv_timer_t* handle) {
 
         assert(property.status == PipeStatus::SETUP || !property.account.empty());
 
-        THIS.send_connect_frontend(*client, -1, SpecialNID::NONE);
+        THIS.send_connect_frontend(*client, -1, NID::NONE);
       }
     } break;
 
@@ -279,7 +280,7 @@ void FrontendConnector::recv_relay_command(uv_pipe_t& client, picojson::object& 
   CommandPacket packet = {
     Convert::json2vpid(content.at("pid")),
     Convert::json2nid(content.at("dst_nid")),
-    SpecialNID::NONE,
+    NID::NONE,
     Convert::json2int<Module::Type>(content.at("module")),
     content.at("content").get<picojson::object>()
   };

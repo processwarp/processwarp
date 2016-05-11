@@ -14,7 +14,7 @@
 #include <vector>
 
 #include "daemon_define.hpp"
-#include "definitions.hpp"
+#include "type.hpp"
 
 namespace processwarp {
 /**

@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-#include "definitions.hpp"
+#include "type.hpp"
 #include "util.hpp"
 
 namespace processwarp {

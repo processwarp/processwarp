@@ -1,0 +1,22 @@
+{
+    "camel_name":"Definition",
+    "snake_name":"DEFINITION",
+    "description":"Definitions in PROCESS WARP.",
+    "type":"int",
+    "values":[
+        {
+            "name":"PROTOCOL_VERSION_MAJOR",
+	    "value":0,
+	    "description":"Protocol major version."
+        },
+        {
+            "name":"PROTOCOL_VERSION_MINOR",
+	    "value":1,
+	    "description":"Protocol minor version."
+        },
+        {
+            "name":"NODE_NAME_MAX",
+	    "value":128
+        }
+    ]
+}

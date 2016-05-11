@@ -6,7 +6,7 @@
 #include <string>
 
 #include "convert.hpp"
-#include "definitions.hpp"
+#include "type.hpp"
 
 namespace processwarp {
 namespace JniUtil {

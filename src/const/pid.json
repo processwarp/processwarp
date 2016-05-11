@@ -1,0 +1,14 @@
+{
+    "camel_name":"PID",
+    "snake_name":"PID",
+    "description":"Specified process-id.",
+    "type":"string",
+    "c_type":"vpid_t",
+    "values":[
+        {
+            "name":"BROADCAST",
+            "value":"*",
+            "description":"Send data independent by process."
+        }
+    ]
+}

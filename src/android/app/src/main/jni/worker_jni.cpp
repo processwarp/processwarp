@@ -6,6 +6,7 @@
 #include <stack>
 #include <vector>
 
+#include "constant.hpp"
 #include "builtin_gui.hpp"
 #include "jni_util.hpp"
 #include "vmachine.hpp"
@@ -163,7 +164,7 @@ class WorkerJni : public VMachineDelegate, public VMemoryDelegate, public Builti
     assert(param.find("command") == param.end());
 
     param.insert(std::make_pair("command", picojson::value(command)));
-    send_command({my_pid, dst_nid, SpecialNID::NONE, module, param});
+    send_command({my_pid, dst_nid, NID::NONE, module, param});
   }
 
   /**
@@ -191,7 +192,7 @@ class WorkerJni : public VMachineDelegate, public VMemoryDelegate, public Builti
     assert(param.find("command") == param.end());
 
     param.insert(std::make_pair("command", picojson::value(command)));
-    send_command({my_pid, dst_nid, SpecialNID::NONE, module, param});
+    send_command({my_pid, dst_nid, NID::NONE, module, param});
   }
 
   /**

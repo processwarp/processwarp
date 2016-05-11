@@ -7,8 +7,8 @@
 #include <memory>
 #include <utility>
 
-#include "definitions.hpp"
 #include "stackinfo.hpp"
+#include "type.hpp"
 #include "type_store.hpp"
 #include "wrapped_operator.hpp"
 

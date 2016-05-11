@@ -5,6 +5,7 @@
 #include <cassert>
 #include <string>
 
+#include "constant.hpp"
 #include "convert.hpp"
 #include "daemon_mid.hpp"
 #include "logger.hpp"
@@ -228,7 +229,7 @@ void WorkerConnector::recv_relay_command(const vpid_t& pid, picojson::object& co
   CommandPacket packet = {
     pid,
     Convert::json2nid(content.at("dst_nid")),
-    SpecialNID::NONE,
+    NID::NONE,
     Convert::json2int<Module::Type>(content.at("module")),
     content.at("content").get<picojson::object>()
   };

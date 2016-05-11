@@ -1,6 +1,6 @@
 #pragma once
 
-#include "definitions.hpp"
+#include "type.hpp"
 #include "type_store.hpp"
 #include "vmemory.hpp"
 

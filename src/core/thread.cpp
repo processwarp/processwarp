@@ -3,6 +3,7 @@
 #include <string>
 #include <utility>
 
+#include "constant.hpp"
 #include "convert.hpp"
 #include "core_mid.hpp"
 #include "logger.hpp"
@@ -82,7 +83,7 @@ std::pair<vtid_t, std::unique_ptr<Thread>>
 
   js_thread.insert(std::make_pair("tid", Convert::vtid2json(tid)));
   js_thread.insert(std::make_pair("status", Convert::int2json<uint8_t>(NORMAL)));
-  js_thread.insert(std::make_pair("join_waiting", Convert::vtid2json(JOIN_WAIT_NONE)));
+  js_thread.insert(std::make_pair("join_waiting", Convert::vtid2json(JoinWaitStatus::NONE)));
   js_thread.insert(std::make_pair("stack", picojson::value(picojson::array())));
   js_thread.insert(std::make_pair("funcs_at_befor_warp",
                                   picojson::value(picojson::array())));
@@ -224,7 +225,7 @@ void Thread::setup_warpout() {
  * @param target_nid Destination node-id to thread.
  */
 bool Thread::require_warp(const nid_t& target_nid) {
-  assert(target_nid != SpecialNID::NONE);
+  assert(target_nid != NID::NONE);
   // Status must be normal when warp.
   if (status != NORMAL) return false;
 

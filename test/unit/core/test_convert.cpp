@@ -2,8 +2,9 @@
 
 #include <string>
 
+#include "constant_vm.hpp"
 #include "convert.hpp"
-#include "definitions.hpp"
+#include "type.hpp"
 
 namespace processwarp {
 class ConvertTest : public ::testing::Test {
