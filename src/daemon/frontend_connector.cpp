@@ -9,8 +9,8 @@
 #include "convert.hpp"
 #include "daemon_define.hpp"
 #include "frontend_connector.hpp"
+#include "network_connector.hpp"
 #include "router.hpp"
-#include "server_connector.hpp"
 #include "worker_connector.hpp"
 
 namespace processwarp {
@@ -93,7 +93,7 @@ void FrontendConnector::relay_frontend_command(const CommandPacket& packet) {
 }
 
 /**
- * When timer event has happen and after connecting server,
+ * When timer event has happen and after connecting network,
  * send reply for clients send a connect_frontend packet.
  * After send reply to all clients, turn off the timer event.
  * @param handle Libuv's event handler.
@@ -101,9 +101,9 @@ void FrontendConnector::relay_frontend_command(const CommandPacket& packet) {
 void FrontendConnector::on_connect_timer(uv_timer_t* handle) {
   FrontendConnector& THIS = FrontendConnector::get_instance();
   Router& router = Router::get_instance();
-  ServerConnector &server = ServerConnector::get_instance();
+  NetworkConnector &network = NetworkConnector::get_instance();
 
-  switch (server.get_status()) {
+  switch (network.get_status()) {
     case ServerStatus::SETUP:
     case ServerStatus::APPROACH1:
     case ServerStatus::APPROACH2:

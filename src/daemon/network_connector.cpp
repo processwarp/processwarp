@@ -8,8 +8,8 @@
 #include "constant.hpp"
 #include "convert.hpp"
 #include "error.hpp"
+#include "network_connector.hpp"
 #include "router.hpp"
-#include "server_connector.hpp"
 #include "util.hpp"
 
 namespace processwarp {
@@ -130,11 +130,11 @@ sio::message::ptr get_sio_by_nid(nid_t nid) {
 }
 
 /**
- * ServerConnector instance getter as singleton pattern.
- * @return The singleton instance of ServerConnector class.
+ * NetworkConnector instance getter as singleton pattern.
+ * @return The singleton instance of NetworkConnector class.
  */
-ServerConnector& ServerConnector::get_instance() {
-  static ServerConnector instance;
+NetworkConnector& NetworkConnector::get_instance() {
+  static NetworkConnector instance;
   return instance;
 }
 
@@ -143,23 +143,23 @@ ServerConnector& ServerConnector::get_instance() {
  * This class is singleton.
  * This method is private.
  */
-ServerConnector::ServerConnector() :
+NetworkConnector::NetworkConnector() :
     status(ServerStatus::CLOSE) {
 }
 
 /**
  * Destructor, close Socket.IO.
  */
-ServerConnector::~ServerConnector() {
+NetworkConnector::~NetworkConnector() {
   disconnect();
 }
 
 /**
- * Initialize for ServerConnector.
- * @param loop_ Loop for ServerConnector.
+ * Initialize for NetworkConnector.
+ * @param loop_ Loop for NetworkConnector.
  * @param url Server's URL.
  */
-void ServerConnector::initialize(uv_loop_t* loop_, const std::string& url) {
+void NetworkConnector::initialize(uv_loop_t* loop_, const std::string& url) {
   assert(status == ServerStatus::CLOSE);
 
   loop = loop_;
@@ -171,7 +171,7 @@ void ServerConnector::initialize(uv_loop_t* loop_, const std::string& url) {
 /**
  * Disconnect from the server.
  */
-void ServerConnector::disconnect() {
+void NetworkConnector::disconnect() {
   client.sync_close();
   client.clear_con_listeners();
   uv_close(reinterpret_cast<uv_handle_t*>(&async_receive), nullptr);
@@ -181,7 +181,7 @@ void ServerConnector::disconnect() {
  * Get server connection status.
  * @return ServerConnection status.
  */
-ServerStatus::Type ServerConnector::get_status() {
+ServerStatus::Type NetworkConnector::get_status() {
   std::lock_guard<std::mutex> guard(sio_mutex);
   return status;
 }
@@ -197,7 +197,7 @@ ServerStatus::Type ServerConnector::get_status() {
  * }
  * @param packet Command packet.
  */
-void ServerConnector::send_relay_command(const CommandPacket& packet) {
+void NetworkConnector::send_relay_command(const CommandPacket& packet) {
   sio::message::ptr sio_packet(sio::object_message::create());
   std::map<std::string, sio::message::ptr>& map = sio_packet->get_map();
 
@@ -220,7 +220,7 @@ void ServerConnector::send_relay_command(const CommandPacket& packet) {
  * @param account Account name.
  * @param password Passward for account.
  */
-void ServerConnector::send_connect_node(const std::string& account,
+void NetworkConnector::send_connect_node(const std::string& account,
                                         const std::string& password) {
   sio::message::ptr data(sio::object_message::create());
   std::map<std::string, sio::message::ptr>& map = data->get_map();
@@ -247,7 +247,7 @@ void ServerConnector::send_connect_node(const std::string& account,
  * @param args List of arguments for program.
  * @param dst_nid Destination node-id.
  */
-void ServerConnector::send_load_llvm(const std::string& name,
+void NetworkConnector::send_load_llvm(const std::string& name,
                                      const std::string& file,
                                      const std::vector<std::string>& args,
                                      const vpid_t& pid,
@@ -279,7 +279,7 @@ void ServerConnector::send_load_llvm(const std::string& name,
  * @param nid Node-id just using or empty string if not assigned.
  * @param node_name Name of node.
  */
-void ServerConnector::send_bind_node(const nid_t& nid,
+void NetworkConnector::send_bind_node(const nid_t& nid,
                                      const std::string& node_name) {
   sio::message::ptr data(sio::object_message::create());
   std::map<std::string, sio::message::ptr>& map = data->get_map();
@@ -300,7 +300,7 @@ void ServerConnector::send_bind_node(const nid_t& nid,
  * @param dev Device name (stdout/stderr).
  * @param payload output stream or text.
  */
-void ServerConnector::send_test_console(const vpid_t& pid,
+void NetworkConnector::send_test_console(const vpid_t& pid,
                                         const std::string& dev,
                                         const std::string& payload) {
 #ifndef NDEBUG
@@ -320,8 +320,8 @@ void ServerConnector::send_test_console(const vpid_t& pid,
  * When receive async event by Socket.IO's thread, expand a packet and call capable method.
  * @param handle Not use.
  */
-void ServerConnector::on_recv(uv_async_t* handle) {
-  ServerConnector& THIS = ServerConnector::get_instance();
+void NetworkConnector::on_recv(uv_async_t* handle) {
+  NetworkConnector& THIS = NetworkConnector::get_instance();
 
   while (true) {
     std::string name;
@@ -369,7 +369,7 @@ void ServerConnector::on_recv(uv_async_t* handle) {
  * Because CONNECT_FAILD and BIND_FAILED are containing CLOSE status,
  * and these status tell why had the node closed by server.
  */
-void ServerConnector::on_close() {
+void NetworkConnector::on_close() {
   std::lock_guard<std::mutex> guard(sio_mutex);
   sio_cond.notify_all();
   if (status != ServerStatus::CONNECT_FAILED && status != ServerStatus::BIND_FAILED) {
@@ -380,7 +380,7 @@ void ServerConnector::on_close() {
 /**
  * Event listener for Socket.IO's fail event.
  */
-void ServerConnector::on_fail() {
+void NetworkConnector::on_fail() {
   std::lock_guard<std::mutex> guard(sio_mutex);
   sio_cond.notify_all();
   status = ServerStatus::ERROR;
@@ -389,7 +389,7 @@ void ServerConnector::on_fail() {
 /**
  * Event listener for Socket.IO's connect event.
  */
-void ServerConnector::on_open() {
+void NetworkConnector::on_open() {
   std::lock_guard<std::mutex> guard(sio_mutex);
   sio_cond.notify_all();
   status = ServerStatus::APPROACH1;
@@ -398,7 +398,7 @@ void ServerConnector::on_open() {
 /**
  * Initialize synchronizer.
  */
-void ServerConnector::initialize_async() {
+void NetworkConnector::initialize_async() {
   uv_async_init(loop, &async_receive, on_recv);
 }
 
@@ -406,11 +406,11 @@ void ServerConnector::initialize_async() {
  * Initialize Socket.IO, bind event listener and connect to server.
  * @param url Server's URL.
  */
-void ServerConnector::initialize_socketio(const std::string& url) {
+void NetworkConnector::initialize_socketio(const std::string& url) {
   // Bind basic event to Socket.IO.
-  client.set_close_listener(std::bind(&ServerConnector::on_close, this));
-  client.set_fail_listener(std::bind(&ServerConnector::on_fail, this));
-  client.set_open_listener(std::bind(&ServerConnector::on_open, this));
+  client.set_close_listener(std::bind(&NetworkConnector::on_close, this));
+  client.set_fail_listener(std::bind(&NetworkConnector::on_fail, this));
+  client.set_open_listener(std::bind(&NetworkConnector::on_open, this));
 
   client.connect(url);
   {
@@ -454,7 +454,7 @@ void ServerConnector::initialize_socketio(const std::string& url) {
  * Receive data having member 'nid' is assigned node-id for this node.
  * @param data Receive data.
  */
-void ServerConnector::recv_bind_node(sio::message::ptr data) {
+void NetworkConnector::recv_bind_node(sio::message::ptr data) {
   Router& router = Router::get_instance();
 
   assert(status == ServerStatus::APPROACH2);
@@ -481,7 +481,7 @@ void ServerConnector::recv_bind_node(sio::message::ptr data) {
  * Receive data having member 'result',0 means success, other means error code.
  * @param data Receive data.
  */
-void ServerConnector::recv_connect_node(sio::message::ptr data) {
+void NetworkConnector::recv_connect_node(sio::message::ptr data) {
   Router& router = Router::get_instance();
 
   assert(status == ServerStatus::APPROACH1);
@@ -506,7 +506,7 @@ void ServerConnector::recv_connect_node(sio::message::ptr data) {
  * When receive relay_command packet from server, check if me should receive it, and relay to capable modules.
  * @param data Received data.
  */
-void ServerConnector::recv_relay_command(sio::message::ptr data) {
+void NetworkConnector::recv_relay_command(sio::message::ptr data) {
   Router& router = Router::get_instance();
   const nid_t& dst_nid = get_nid_by_map(data, "dst_nid");
   const nid_t& src_nid = get_nid_by_map(data, "src_nid");

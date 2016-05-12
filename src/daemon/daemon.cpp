@@ -17,8 +17,8 @@
 #include "daemon_mid.hpp"
 #include "frontend_connector.hpp"
 #include "logger.hpp"
+#include "network_connector.hpp"
 #include "router.hpp"
-#include "server_connector.hpp"
 #include "util.hpp"
 #include "worker_connector.hpp"
 
@@ -207,7 +207,7 @@ int Daemon::main_loop() {
   loop = uv_default_loop();
   FrontendConnector& frontend = FrontendConnector::get_instance();
   Router& router = Router::get_instance();
-  ServerConnector& server = ServerConnector::get_instance();
+  NetworkConnector& network = NetworkConnector::get_instance();
   WorkerConnector& worker = WorkerConnector::get_instance();
   std::string run_mode_string;
   switch (run_mode) {
@@ -218,7 +218,7 @@ int Daemon::main_loop() {
   }
   Logger::info(DaemonMid::L3009, run_mode_string.c_str());
 
-  server.initialize(loop, config.at("server").get<std::string>());
+  network.initialize(loop, config.at("server").get<std::string>());
   router.initialize(loop, config);
   frontend.initialize(loop, config.at("frontend_pipe").get<std::string>());
   worker.initialize(loop,
@@ -226,8 +226,8 @@ int Daemon::main_loop() {
                     config.at("libs").get<picojson::array>(),
                     config.at("lib_filter").get<picojson::array>());
 
-  server.send_connect_node(config.at("account").get<std::string>(),
-                           config.at("password").get<std::string>());
+  network.send_connect_node(config.at("account").get<std::string>(),
+                            config.at("password").get<std::string>());
 
   // Start libuv loop.
   return uv_run(loop, UV_RUN_DEFAULT);

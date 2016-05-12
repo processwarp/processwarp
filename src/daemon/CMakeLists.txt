@@ -79,8 +79,8 @@ add_executable(processwarp
   connector.cpp
   daemon.cpp
   frontend_connector.cpp
+  network_connector.cpp
   router.cpp
-  server_connector.cpp
   worker_connector.cpp
   )
 add_dependencies(processwarp

@@ -20,9 +20,9 @@ namespace processwarp {
 /**
  * Message sender by using Socket.IO.
  */
-class ServerConnector {
+class NetworkConnector {
  public:
-  static ServerConnector& get_instance();
+  static NetworkConnector& get_instance();
 
   void initialize(uv_loop_t* loop_, const std::string& url);
   void disconnect();
@@ -57,10 +57,10 @@ class ServerConnector {
   std::atomic<ServerStatus::Type> status;
   std::queue<std::pair<std::string, sio::message::ptr>> sio_queue;
 
-  ServerConnector();
-  ServerConnector(const ServerConnector&);
-  ServerConnector& operator=(const ServerConnector&);
-  virtual ~ServerConnector();
+  NetworkConnector();
+  NetworkConnector(const NetworkConnector&);
+  NetworkConnector& operator=(const NetworkConnector&);
+  virtual ~NetworkConnector();
 
   static void on_recv(uv_async_t* handle);
 

@@ -16,6 +16,9 @@
             "name":"SCHEDULER"
         },
         {
+            "name":"NETWORK"
+        },
+        {
             "name":"CONTROLLER"
         },
         {

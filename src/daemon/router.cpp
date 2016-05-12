@@ -11,9 +11,9 @@
 #include "constant.hpp"
 #include "constant_vm.hpp"
 #include "frontend_connector.hpp"
+#include "network_connector.hpp"
 #include "router.hpp"
 #include "scheduler.hpp"
-#include "server_connector.hpp"
 #include "type.hpp"
 #include "util.hpp"
 #include "worker_connector.hpp"
@@ -58,8 +58,8 @@ void Router::initialize(uv_loop_t* loop_, const picojson::object& config_) {
  * @return True if account and password is eaual to the same to connecting it.
  */
 bool Router::check_account(const std::string& account, const std::string& password) {
-  ServerConnector& server = ServerConnector::get_instance();
-  if (server.get_status() != ServerStatus::CONNECT) {
+  NetworkConnector& network = NetworkConnector::get_instance();
+  if (network.get_status() != ServerStatus::CONNECT) {
     /// @todo error
     assert(false);
   }
@@ -84,9 +84,9 @@ bool Router::check_account(const std::string& account, const std::string& passwo
  * @param args Arguments to pass application's entry point.
  */
 void Router::load_llvm(const std::string& filename, const std::vector<std::string>& args) {
-  ServerConnector& server = ServerConnector::get_instance();
+  NetworkConnector& network = NetworkConnector::get_instance();
 
-  if (server.get_status() != ServerStatus::CONNECT) {
+  if (network.get_status() != ServerStatus::CONNECT) {
     /// @todo error
     assert(false);
   }
@@ -104,8 +104,8 @@ void Router::load_llvm(const std::string& filename, const std::vector<std::strin
   }
   ifs.close();
 
-  server.send_load_llvm(Util::file_basename(filename, true), file.str(), args,
-                        scheduler.get_new_pid(), my_nid);
+  network.send_load_llvm(Util::file_basename(filename, true), file.str(), args,
+                         scheduler.get_new_pid(), my_nid);
 }
 
 /**
@@ -122,9 +122,9 @@ const nid_t& Router::get_my_nid() {
  * When connect is success, send bind_node packet with my-nid and node-name.
  */
 void Router::recv_connect_node() {
-  ServerConnector& server = ServerConnector::get_instance();
+  NetworkConnector& network = NetworkConnector::get_instance();
 
-  server.send_bind_node(my_nid, config.at("node_name").get<std::string>());
+  network.send_bind_node(my_nid, config.at("node_name").get<std::string>());
 }
 
 /**
@@ -200,8 +200,8 @@ void Router::relay_command(const CommandPacket& packet, bool is_from_server) {
   }
 
   if (dst_nid != my_nid && !is_from_server) {
-    ServerConnector& server = ServerConnector::get_instance();
-    server.send_relay_command(real_packet);
+    NetworkConnector& network = NetworkConnector::get_instance();
+    network.send_relay_command(real_packet);
   }
 }
 
