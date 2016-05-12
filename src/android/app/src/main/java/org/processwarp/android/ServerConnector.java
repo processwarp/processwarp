@@ -6,6 +6,7 @@ import junit.framework.Assert;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.processwarp.android.constant.NID;
 
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -270,7 +271,7 @@ public class ServerConnector {
             packet.dstNid = data.getString("dst_nid");
             packet.srcNid = data.getString("src_nid");
 
-            if ((!myNid.equals(packet.dstNid) && !SpecialNid.BROADCAST.equals(packet.dstNid)) ||
+            if ((!myNid.equals(packet.dstNid) && !NID.BROADCAST.equals(packet.dstNid)) ||
                     myNid.equals(packet.srcNid)) {
                 return;
             }

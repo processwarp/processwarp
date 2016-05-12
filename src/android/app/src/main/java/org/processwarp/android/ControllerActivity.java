@@ -23,6 +23,9 @@ import junit.framework.Assert;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.processwarp.android.constant.Module;
+import org.processwarp.android.constant.NID;
+import org.processwarp.android.constant.PID;
 
 import java.util.Iterator;
 
@@ -111,7 +114,7 @@ public class ControllerActivity extends AppCompatActivity implements ServiceConn
             case R.id.action_activate: {
                 JSONObject param = new JSONObject();
                 sendCommand(
-                        SpecialPid.BROADCAST, SpecialNid.BROADCAST, Module.SCHEDULER,
+                        PID.BROADCAST, NID.BROADCAST, Module.SCHEDULER,
                         "activate", param);
                 return true;
             }
@@ -119,7 +122,7 @@ public class ControllerActivity extends AppCompatActivity implements ServiceConn
             case R.id.action_distribute: {
                 JSONObject param = new JSONObject();
                 sendCommand(
-                        SpecialPid.BROADCAST, SpecialNid.THIS, Module.SCHEDULER,
+                        PID.BROADCAST, NID.THIS, Module.SCHEDULER,
                         "distribute", param);
                 return true;
             }
@@ -146,7 +149,7 @@ public class ControllerActivity extends AppCompatActivity implements ServiceConn
 
             } else {
                 sendCommand(
-                        SpecialPid.BROADCAST, SpecialNid.THIS, Module.SCHEDULER,
+                        PID.BROADCAST, NID.THIS, Module.SCHEDULER,
                         "require_processes_info", new JSONObject());
             }
 

@@ -136,11 +136,12 @@ if args.nodejs_dst:
 if args.java_dst:
     out = open(args.java_dst[0], 'w')
     out.write(HEADER)
-    out.write('package org.processwarp.android;\n\n')
+    out.write('package org.processwarp.android.constant;\n\n')
 
     for fname in args.input:
+        json_data = json.load(open(fname, 'r'))
         # Set default type of C/C++ if not set.
-        if not json_data['j_type']:
+        if 'j_type' not in json_data:
             if json_data['type'] == 'enum' or json_data['type'] == 'int':
                 json_data['j_type'] = 'int'
             elif json_data['type'] == 'string':
@@ -159,5 +160,5 @@ if args.java_dst:
             out.write(line)
 
         # Output end of class
-        out.write('}\n\n')
+        out.write('}\n')
     out.close()

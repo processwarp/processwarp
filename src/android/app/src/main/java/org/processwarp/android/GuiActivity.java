@@ -17,6 +17,9 @@ import junit.framework.Assert;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.processwarp.android.constant.Module;
+import org.processwarp.android.constant.NID;
+import org.processwarp.android.constant.PID;
 
 public class GuiActivity extends AppCompatActivity implements ServiceConnection {
     /** Heartbeat interval.(sec) */
@@ -157,7 +160,7 @@ public class GuiActivity extends AppCompatActivity implements ServiceConnection 
         @Override
         public void relayCommand(String pid, String dstNid, String srcNid,
                                  int module, String content) throws RemoteException {
-            Assert.assertTrue(pid.equals(myPid) || pid.equals(SpecialPid.BROADCAST));
+            Assert.assertTrue(pid.equals(myPid) || pid.equals(PID.BROADCAST));
             Assert.assertEquals(Module.GUI, module);
 
             CommandPacket packet = new CommandPacket();
@@ -307,9 +310,9 @@ public class GuiActivity extends AppCompatActivity implements ServiceConnection 
      * Send heartbeat_gui command to scheduler and GUI module on all nodes.
      */
     private void sendCommandHeartbeatGui() {
-        sendCommand(myPid, SpecialNid.BROADCAST, Module.SCHEDULER,
+        sendCommand(myPid, NID.BROADCAST, Module.SCHEDULER,
                 "heartbeat_gui", new JSONObject());
-        sendCommand(myPid, SpecialNid.BROADCAST, Module.GUI,
+        sendCommand(myPid, NID.BROADCAST, Module.GUI,
                 "heartbeat_gui", new JSONObject());
     }
 

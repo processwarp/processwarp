@@ -6,6 +6,9 @@ import android.util.Log;
 
 import junit.framework.Assert;
 
+import org.processwarp.android.constant.Module;
+import org.processwarp.android.constant.NID;
+
 import java.security.MessageDigest;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -120,7 +123,7 @@ public class Router implements Runnable {
 
         } else {
             // If connection is failed, tell connect status.
-            delegate.routerChangeConnectStatus(this, false, SpecialNid.NONE);
+            delegate.routerChangeConnectStatus(this, false, NID.NONE);
         }
     }
 
@@ -146,7 +149,7 @@ public class Router implements Runnable {
 
         } else {
             // If connection is failed, tell connect status.
-            delegate.routerChangeConnectStatus(this, false, SpecialNid.NONE);
+            delegate.routerChangeConnectStatus(this, false, NID.NONE);
         }
     }
 
@@ -175,10 +178,10 @@ public class Router implements Runnable {
             public void run() {
                 // Update to real node-id if packet is from another modules in this node.
                 if (!isFromServer) {
-                    if (SpecialNid.THIS.equals(packet.dstNid)) {
+                    if (NID.THIS.equals(packet.dstNid)) {
                         packet.dstNid = myNid;
 
-                    } else if (SpecialNid.NONE.equals(packet.dstNid)) {
+                    } else if (NID.NONE.equals(packet.dstNid)) {
                         lock.lock();
                         try {
                             Assert.assertNotNull(packet.pid);
@@ -191,7 +194,7 @@ public class Router implements Runnable {
                 }
 
                 // Relay command packet to capable module, if destination node is this node.
-                if (packet.dstNid.equals(myNid) || packet.dstNid.equals(SpecialNid.BROADCAST)) {
+                if (packet.dstNid.equals(myNid) || packet.dstNid.equals(NID.BROADCAST)) {
                     switch (packet.module) {
                         case Module.MEMORY:
                         case Module.VM:

@@ -4,6 +4,9 @@ bin/
 doc/
 local/
 tmp/
+src/android/app/src/main/java/org/processwarp/android/constant/Module.java
+src/android/app/src/main/java/org/processwarp/android/constant/NID.java
+src/android/app/src/main/java/org/processwarp/android/constant/PID.java
 src/const/core_mid*
 src/const/daemon_mid*
 src/const/loader_mid*

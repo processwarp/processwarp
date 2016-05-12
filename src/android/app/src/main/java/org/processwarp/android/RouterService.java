@@ -9,6 +9,8 @@ import android.util.Log;
 
 import junit.framework.Assert;
 
+import org.processwarp.android.constant.NID;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -255,7 +257,7 @@ public class RouterService extends Service implements Router.Delegate {
             CommandPacket packet = new CommandPacket();
             packet.pid = pid;
             packet.dstNid = dstNid;
-            packet.srcNid = SpecialNid.NONE;
+            packet.srcNid = NID.NONE;
             packet.module = module;
             packet.content = content;
 
