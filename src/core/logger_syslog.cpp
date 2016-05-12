@@ -47,7 +47,7 @@ void Syslog::output(Level lv, const std::string& file, unsigned int line,
 
 #ifdef NDEBUG
   syslog(priority, "lv=%s type=%s class=%s mid=%s message=%s",
-         get_level_string(lv).c_str(), type.c_str(), file.c_str(), mid.c_str(), message.c_str());
+         get_level_string(lv), type.c_str(), file.c_str(), mid.c_str(), message.c_str());
 #else
   syslog(priority, "lv=%s type=%s class=%s line=%d mid=%s message=%s",
          get_level_string(lv), type.c_str(), file.c_str(), line,
