@@ -8,6 +8,7 @@ src/const/core_mid*
 src/const/daemon_mid*
 src/const/loader_mid*
 src/core/constant.hpp
+src/electron/constant.js
 src/electron/node_modules/
 Testing/
 

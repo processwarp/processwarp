@@ -37,6 +37,7 @@ cd ${_root}
 cmake -DCMAKE_BUILD_TYPE=Debug .
 make
 make install
+make const_electron
 
 # Install electron and requirement modules.
 if ! type electron >/dev/null 2>&1; then

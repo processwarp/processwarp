@@ -1,6 +1,7 @@
 'use strict';
 
 // Load constant value.
+require('./constant');
 const CONFIG    = require('./config.json');
 
 // Load modules.
@@ -23,28 +24,6 @@ const CONNECT_STATUS = {
   APPROACH: 1,  ///< Send account info, but not response yet.
   CONNECT:  2,  ///< Approach was success, able to use.
   CLOSE:    3,  ///< Disconnect from backend.
-};
-
-/** Modules those are target of send command. */
-const MODULE = {
-  MEMORY:     0,
-  VM:         1,
-  SCHEDULER:  2,
-  CONTROLLER: 3,
-  GUI:        4,
-};
-
-/** Special node-id those are used to send command. */
-const NID = {
-  NONE:      '',
-  THIS:      '.',
-  BROADCAST: '*',
-  SERVER:    'server',
-};
-
-/** Special process-id those are used to send data. */
-const PID = {
-  BROADCAST: '*',
 };
 
 var controller      = null;

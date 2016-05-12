@@ -87,6 +87,7 @@ cd ${_root}
 ${_root}/local/bin/cmake -DCMAKE_EXE_LINKER_FLAGS="-L${_root}/local/lib" -DUV_INCLUDE_DIRS=${_root}/local/include/ -DUV_LIBRARIES=uv -DWITH_RE2=ON -DWITH_TEST=OFF -DCMAKE_BUILD_TYPE=Debug .
 make
 make install
+make const_electron
 
 # Install electron and requirement modules.
 if ! type electron >/dev/null 2>&1; then

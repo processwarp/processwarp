@@ -36,9 +36,12 @@ def padding(line):
     else:
         return ' ' * (4 - (len(line) % 4))
     
-def token_block_description(json_data):
+def token_block_description(json_data, head = ''):
     if 'description' in json_data:
-        return '/**\n * {}\n */\n'.format(json_data['description'])
+        desc =  head + '/**\n'
+        desc += head + ' * {}\n'.format(json_data['description'])
+        desc += head + ' */\n'
+        return desc
     else:
         return ''
 
@@ -100,23 +103,34 @@ if args.cpp_dst:
 
 if args.nodejs_dst:
     out = open(args.nodejs_dst[0], 'w')
+    names = []
     out.write(HEADER)
+    out.write('(function(global) {\n  "use strict";\n\n')
+
     for fname in args.input:
         json_data = json.load(open(fname, 'r'))
+        names.append(json_data['snake_name'])
         # Output name
-        out.write(token_block_description(json_data))
-        out.write('const ' + json_data['snake_name'] + '{\n')
+        out.write(token_block_description(json_data, '  '))
+        out.write('  global[\'{}\'] = {{\n'.format(json_data['snake_name']))
         
         for idx, v in enumerate(json_data['values']):
             # Output a value line
-            line = '  ' + v['name'] + ': '
+            line = '    ' + v['name'] + ': '
             line += padding(line)
             line += token_value(json_data['type'], idx, v, "'") + ','
             line += token_description(line, v) + '\n'
             out.write(line)
 
         # Output end of object
-        out.write('};\n\n')
+        out.write('  };\n\n')
+
+    out.write('  if (\'process\' in global) {\n')
+    for name in names:
+        out.write('    module[\'{}\'] = global[\'{}\'];\n'.format(name, name))
+    out.write('  }\n\n')
+
+    out.write('})((this || 0).self || global);\n')
     out.close()
 
 if args.java_dst:
