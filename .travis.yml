@@ -37,11 +37,11 @@ before_install:
 
 install:
   - script/build.sh
-  - cmake -DCMAKE_BUILD_TYPE=Debug .
+  - local/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DWITH_TEST=ON .
   - make
   - make test
   - make cpplint
-  - cmake -DCMAKE_BUILD_TYPE=Release .
+  - local/bin/cmake -DCMAKE_BUILD_TYPE=Release -DWITH_TEST=ON .
   - make
   - make test
   
