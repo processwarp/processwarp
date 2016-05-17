@@ -64,6 +64,7 @@ if args.cpp_dst:
     out = open(args.cpp_dst[0], 'w')
     out.write(HEADER)
     out.write('#pragma once\n\n'
+              '#include <string>\n\n'
               '#include "type.hpp"\n\n'
               'namespace processwarp {\n\n')
     for fname in args.input:
@@ -72,7 +73,7 @@ if args.cpp_dst:
         if 'c_type' not in json_data:
             if json_data['type'] == 'enum' or json_data['type'] == 'int':
                 json_data['c_type'] = 'int'
-            elif json_data.type == 'string':
+            elif json_data['type'] == 'string':
                 json_data['c_type'] = 'std::string'
 
         # Output namespace
