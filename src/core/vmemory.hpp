@@ -15,6 +15,7 @@
 #include "constant_vm.hpp"
 #include "convert.hpp"
 #include "interrupt_memory_require.hpp"
+#include "packet.hpp"
 #include "type.hpp"
 #include "util.hpp"
 
@@ -28,7 +29,7 @@ class VMemoryDelegate {
  public:
   virtual ~VMemoryDelegate();
 
-  virtual void vmemory_send_command(VMemory& memory, const nid_t& dst_nid, Module::Type module,
+  virtual void vmemory_send_command(VMemory& memory, const NodeID& dst_nid, Module::Type module,
                                     const std::string& command, picojson::object& param) = 0;
   virtual void vmemory_recv_update(VMemory& memory, vaddr_t addr) = 0;
 };
@@ -62,24 +63,24 @@ class VMemory {
     /** */
     uint64_t size;
     /** */
-    std::set<nid_t> hint;
+    std::set<NodeID> hint;
     /** Reference count to use to master. */
     int master_count;
     /** Access count for change owner or occasion to copy. */
     int referral_count;
     /** History of copy command for some node. */
-    std::map<nid_t, SendCopyHistory> send_copy_history;
+    std::map<NodeID, SendCopyHistory> send_copy_history;
 
     /**
      * Constructor with value by string.
      */
     Page(PageType type, bool flg_update,
-         const std::string& value_str, const std::set<nid_t>& hint);
+         const std::string& value_str, const std::set<NodeID>& hint);
 
     /**
      * Constructor without initialize value.
      */
-    Page(PageType type, bool flg_update, const std::set<nid_t>& hint);
+    Page(PageType type, bool flg_update, const std::set<NodeID>& hint);
   };
 
   static const vaddr_t UPPER_MASKS[];
@@ -162,21 +163,21 @@ class VMemory {
     return AddressRegion::VALUE_08;
   }
 
-  void send_command_copy(const nid_t& dst_nid, Space& space, Page& page, vaddr_t addr);
-  void send_command_copy_reply(const nid_t& dst_nid, Space& space, vaddr_t addr, uint64_t key);
-  void send_command_free(const nid_t& dst_nid, Space& space, vaddr_t addr);
-  void send_command_give(Space& space, Page& page, vaddr_t addr, const nid_t& dst);
+  void send_command_copy(const NodeID& dst_nid, Space& space, Page& page, vaddr_t addr);
+  void send_command_copy_reply(const NodeID& dst_nid, Space& space, vaddr_t addr, uint64_t key);
+  void send_command_free(const NodeID& dst_nid, Space& space, vaddr_t addr);
+  void send_command_give(Space& space, Page& page, vaddr_t addr, const NodeID& dst);
   void send_command_release(Space& space, std::set<vaddr_t> addrs);
-  void send_command_require(const nid_t& dst_nid, Space& space, vaddr_t addr);
+  void send_command_require(const NodeID& dst_nid, Space& space, vaddr_t addr);
   void send_command_reserve(Space& space, std::set<vaddr_t> addrs);
   void send_command_stand(Space& space, Page& page, vaddr_t addr);
-  void send_command_unwant(const nid_t& dst_nid, const std::string name, vaddr_t addr);
-  void send_command_update(const nid_t& dst_nid, Space& space, vaddr_t addr,
+  void send_command_unwant(const NodeID& dst_nid, const std::string name, vaddr_t addr);
+  void send_command_update(const NodeID& dst_nid, Space& space, vaddr_t addr,
                            const uint8_t* data, uint64_t size);
 
  public:
   /** This node's node-id. */
-  const nid_t my_nid;
+  const NodeID my_nid;
   /** Random value generator to use for generating address. */
   std::mt19937_64 rnd;
   /** Memory spaces. Space name and Space map. */
@@ -208,7 +209,7 @@ class VMemory {
       auto page = space.pages.find(addr);
 
       if (page == space.pages.end()) {
-        vmemory.send_command_require(NID::BROADCAST, space, addr);
+        vmemory.send_command_require(NodeID::BROADCAST, space, addr);
         throw InterruptMemoryRequire(addr);
 
       } else if (readable && page->second.flg_update == false) {
@@ -234,7 +235,7 @@ class VMemory {
      * @param addr
      * @return
      */
-    const nid_t& get_master(vaddr_t addr);
+    const NodeID& get_master(vaddr_t addr);
 
     typedef std::unique_ptr<int, std::function<void(int*)>> MasterKey;
     MasterKey keep_master(vaddr_t addr);
@@ -248,7 +249,7 @@ class VMemory {
      */
     vaddr_t set_meta_area(const std::string& data, vaddr_t addr);
 
-    vaddr_t set_meta_area(const std::string& data, vaddr_t addr, const nid_t& master);
+    vaddr_t set_meta_area(const std::string& data, vaddr_t addr, const NodeID& master);
 
     /**
      * Get meta data.
@@ -480,9 +481,9 @@ class VMemory {
    * @param delegate Delegate for controller.
    * @param nid Using node-id.
    */
-  VMemory(VMemoryDelegate& delegate, const nid_t& nid);
+  VMemory(VMemoryDelegate& delegate, const NodeID& nid);
 
-  void recv_command(const CommandPacket& packet);
+  void recv_command(const Packet& packet);
 
   /**
    * @param name Space name.
@@ -514,16 +515,16 @@ class VMemory {
   /** Block copy operator. */
   VMemory& operator=(const VMemory&);
 
-  void recv_command_copy(const CommandPacket& packet);
-  void recv_command_copy_reply(const CommandPacket& packet);
-  void recv_command_free(const CommandPacket& packet);
-  void recv_command_give(const CommandPacket& packet);
-  void recv_command_require(const CommandPacket& packet);
-  void recv_command_reserve(const CommandPacket& packet);
-  void recv_command_stand(const CommandPacket& packet);
-  void recv_command_unwant(const CommandPacket& packet);
-  void recv_command_update(const CommandPacket& packet);
-  void send_memory_command(const std::string& name, const nid_t& dst_nid,
+  void recv_command_copy(const Packet& packet);
+  void recv_command_copy_reply(const Packet& packet);
+  void recv_command_free(const Packet& packet);
+  void recv_command_give(const Packet& packet);
+  void recv_command_require(const Packet& packet);
+  void recv_command_reserve(const Packet& packet);
+  void recv_command_stand(const Packet& packet);
+  void recv_command_unwant(const Packet& packet);
+  void recv_command_update(const Packet& packet);
+  void send_memory_command(const std::string& name, const NodeID& dst_nid,
                            const std::string& command, picojson::object& param);
 };
 }  // namespace processwarp

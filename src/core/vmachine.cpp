@@ -44,7 +44,7 @@ VMachineDelegate::~VMachineDelegate() {
  */
 VMachine::VMachine(VMachineDelegate& delegate_,
                    VMemoryDelegate& memory_delegate,
-                   const nid_t& my_nid_,
+                   const NodeID& my_nid_,
                    const std::vector<DynamicLibrary::lib_handler_t>& libs_,
                    const std::map<std::string, std::string>& lib_filter_) :
     my_nid(my_nid_),
@@ -64,7 +64,7 @@ VMachine::VMachine(VMachineDelegate& delegate_,
  * @param name Process name for new vm.
  */
 void VMachine::initialize(const vpid_t& pid, const vtid_t& root_tid, vaddr_t proc_addr,
-                          const nid_t& master_nid, const std::string& name) {
+                          const NodeID& master_nid, const std::string& name) {
   assert(process.get() == nullptr);
   process = Process::alloc(*this, pid, root_tid, libs, lib_filter, builtin_funcs,
                            proc_addr, master_nid);
@@ -235,7 +235,7 @@ void VMachine::on_recv_update(vaddr_t addr) {
  * When receive command from other module in this node, read command and call capable method with parameter.
  * @param packet Command packet.
  */
-void VMachine::recv_command(const CommandPacket& packet) {
+void VMachine::recv_command(const Packet& packet) {
   const std::string& command = packet.content.at("command").get<std::string>();
 
   if (command == "heartbeat_vm") {
@@ -305,7 +305,7 @@ void VMachine::regist_builtin_func(const std::string& name,
  * When receive heartbeat_vm command, remove thread-id from waiting list if exisiting.
  * @param packet Command packet.
  */
-void VMachine::recv_command_heartbeat_vm(const CommandPacket& packet) {
+void VMachine::recv_command_heartbeat_vm(const Packet& packet) {
   if (packet.src_nid == my_nid) return;
 
   for (auto& it_thread : packet.content.at("threads").get<picojson::array>()) {
@@ -324,10 +324,10 @@ void VMachine::recv_command_heartbeat_vm(const CommandPacket& packet) {
  * When receive require_warp_thread command, setup to warp thread.
  * @param packet Command packet, containing target thread-id and node-id.
  */
-void VMachine::recv_command_require_warp_thread(const CommandPacket& packet) {
+void VMachine::recv_command_require_warp_thread(const Packet& packet) {
   vtid_t tid = Convert::json2vtid(packet.content.at("tid"));
-  const nid_t& target_nid = Convert::json2nid(packet.content.at("target_nid"));
-  assert(target_nid != NID::NONE);
+  const NodeID& target_nid = NodeID::from_json(packet.content.at("target_nid"));
+  assert(target_nid != NodeID::NONE);
 
   if (process->active_threads.find(tid) != process->active_threads.end()) {
     Thread& thread = process->get_thread(tid);
@@ -343,7 +343,7 @@ void VMachine::recv_command_require_warp_thread(const CommandPacket& packet) {
  * sending heartbeat_vm thread.
  * @param packet Command packet.
  */
-void VMachine::recv_command_warp_thread(const CommandPacket& packet) {
+void VMachine::recv_command_warp_thread(const Packet& packet) {
   vtid_t tid = Convert::json2vtid(packet.content.at("tid"));
   process->warp_out_thread(tid);
   send_command_heartbeat_vm();
@@ -357,13 +357,14 @@ void VMachine::recv_command_warp_thread(const CommandPacket& packet) {
  * @param command Command string.
  * @param param Parameter for command.
  */
-void VMachine::send_command(const vpid_t& pid, const nid_t& dst_nid, Module::Type module,
+void VMachine::send_command(const vpid_t& pid, const NodeID& dst_nid, Module::Type module,
                             const std::string& command, picojson::object& param) {
   assert(param.find("command") == param.end() ||
          param.at("command").get<std::string>() == command);
 
   param.insert(std::make_pair("command", picojson::value(command)));
-  delegate.vmachine_send_command(*this, {pid, dst_nid, NID::NONE, module, param});
+#warning TODO
+  // delegate.vmachine_send_command(*this, {pid, dst_nid, NodeID::NONE, module, param});
 }
 
 /**
@@ -384,8 +385,8 @@ void VMachine::send_command_heartbeat_vm() {
   picojson::object param;
   param.insert(std::make_pair("name", picojson::value(process->name)));
   param.insert(std::make_pair("threads", picojson::value(threads)));
-  send_command(process->pid, NID::BROADCAST, Module::VM, "heartbeat_vm", param);
-  send_command(process->pid, NID::BROADCAST, Module::SCHEDULER, "heartbeat_vm", param);
+  send_command(process->pid, NodeID::BROADCAST, Module::VM, "heartbeat_vm", param);
+  send_command(process->pid, NodeID::BROADCAST, Module::SCHEDULER, "heartbeat_vm", param);
 }
 
 /**
@@ -393,17 +394,17 @@ void VMachine::send_command_heartbeat_vm() {
  * @param thread Target thread to warp.
  */
 void VMachine::send_command_warp_thread(Thread& thread) {
-  assert(thread.warp_dst != NID::NONE);
+  assert(thread.warp_dst != NodeID::NONE);
 
   picojson::object param;
   param.insert(std::make_pair("root_tid", Convert::vtid2json(process->root_tid)));
   param.insert(std::make_pair("proc_addr", Convert::vaddr2json(process->addr)));
-  param.insert(std::make_pair("master_nid", Convert::nid2json
-                              (process->proc_memory->get_master(process->addr))));
+  param.insert(std::make_pair("master_nid",
+                              (process->proc_memory->get_master(process->addr).to_json())));
   param.insert(std::make_pair("name", picojson::value(process->name)));
   param.insert(std::make_pair("tid", Convert::vtid2json(thread.tid)));
-  param.insert(std::make_pair("dst_nid", Convert::nid2json(thread.warp_dst)));
-  param.insert(std::make_pair("src_nid", Convert::nid2json(my_nid)));
+  param.insert(std::make_pair("dst_nid", thread.warp_dst.to_json()));
+  param.insert(std::make_pair("src_nid", my_nid.to_json()));
 
   send_command(process->pid, thread.warp_dst, Module::SCHEDULER, "warp_thread", param);
 }

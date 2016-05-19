@@ -116,8 +116,8 @@ sio::message::ptr get_sio_by_addr(vaddr_t addr) {
  * @param key Key in map.
  * @return Value as node-id in map.
  */
-nid_t get_nid_by_map(sio::message::ptr data, const std::string& key) {
-  return Convert::str2nid(get_str_by_map(data, key));
+NodeID get_nid_by_map(sio::message::ptr data, const std::string& key) {
+  return NodeID::from_str(get_str_by_map(data, key));
 }
 
 /**
@@ -125,8 +125,14 @@ nid_t get_nid_by_map(sio::message::ptr data, const std::string& key) {
  * @param nid node-id.
  * @return Socket.IO value.
  */
-sio::message::ptr get_sio_by_nid(nid_t nid) {
-  return get_sio_by_str(Convert::nid2str(nid));
+sio::message::ptr get_sio_by_nid(const NodeID& nid) {
+  return get_sio_by_str(nid.to_str());
+}
+
+/**
+ * Simple destructor for vtable.
+ */
+NetworkConnectorConnectDelegate::~NetworkConnectorConnectDelegate() {
 }
 
 /**
@@ -144,7 +150,7 @@ NetworkConnector& NetworkConnector::get_instance() {
  * This method is private.
  */
 NetworkConnector::NetworkConnector() :
-    status(ServerStatus::CLOSE) {
+    connect_status(ConnectStatus::CLOSE) {
 }
 
 /**
@@ -155,17 +161,30 @@ NetworkConnector::~NetworkConnector() {
 }
 
 /**
- * Initialize for NetworkConnector.
- * @param loop_ Loop for NetworkConnector.
- * @param url Server's URL.
+ * Try to connect to the server by Socket.IO.
+ * Save account and hashed password, use for auth command after open the connection.
+ * @param delegate
+ * @param account_ The account string to sign-in.
+ * @param password_ The password row string to sign-in.
  */
-void NetworkConnector::initialize(uv_loop_t* loop_, const std::string& url) {
-  assert(status == ServerStatus::CLOSE);
+void NetworkConnector::connect(NetworkConnectorConnectDelegate* delegate,
+                               const std::string& account_, const std::string& password_) {
+  connect_delegate = delegate;
+  account = account_;
 
-  loop = loop_;
-  status = ServerStatus::SETUP;
-  initialize_async();
-  initialize_socketio(url);
+  std::string hash_password = password_;
+  for (int i = 0; i < 10; i ++) {
+    hash_password = Util::calc_sha256(hash_password);
+  }
+  password = "[10sha256]" + hash_password;
+  is_auth_yet = false;
+
+  if (connect_status != ConnectStatus::OPEN) {
+    connect_socketio();
+
+  } else {
+    send_auth();
+  }
 }
 
 /**
@@ -181,34 +200,24 @@ void NetworkConnector::disconnect() {
  * Get server connection status.
  * @return ServerConnection status.
  */
-ServerStatus::Type NetworkConnector::get_status() {
+ConnectStatus::Type NetworkConnector::get_status() {
   std::lock_guard<std::mutex> guard(sio_mutex);
-  return status;
+  return connect_status;
 }
 
 /**
- * Relay command to another node by throgh server.
- * Packet format: {
- *   pid: &lt;Target process-id&gt;
- *   dst_nid: &lt;Destination node-id&gt;
- *   src_nid: &lt;This node-id, added by server&gt;
- *   module: &lt;Module type&gt;
- *   content: &lt;Content of command packet&gt;
- * }
- * @param packet Command packet.
+ * Initialize for NetworkConnector.
+ * @param loop_ Loop for NetworkConnector.
+ * @param url_ Server's URL.
  */
-void NetworkConnector::send_relay_command(const CommandPacket& packet) {
-  sio::message::ptr sio_packet(sio::object_message::create());
-  std::map<std::string, sio::message::ptr>& map = sio_packet->get_map();
+void NetworkConnector::initialize(uv_loop_t* loop_, const std::string& url_) {
+  assert(connect_status == ConnectStatus::CLOSE);
 
-  map.insert(std::make_pair("pid", get_sio_by_pid(packet.pid)));
-  map.insert(std::make_pair("dst_nid", get_sio_by_nid(packet.dst_nid)));
-  map.insert(std::make_pair("module",
-                            get_sio_by_str(Convert::int2str<Module::Type>(packet.module))));
-  map.insert(std::make_pair("content",
-                            get_sio_by_str(picojson::value(packet.content).serialize())));
-
-  socket->emit("relay_command", sio_packet);
+  loop  = loop_;
+  url   = url_;
+  connect_delegate  = nullptr;
+  initialize_async();
+  initialize_socketio();
 }
 
 /**
@@ -220,17 +229,18 @@ void NetworkConnector::send_relay_command(const CommandPacket& packet) {
  * @param account Account name.
  * @param password Passward for account.
  */
-void NetworkConnector::send_connect_node(const std::string& account,
-                                        const std::string& password) {
+void NetworkConnector::send_auth() {
+  assert(connect_status == ConnectStatus::OPEN);
+
+  connect_status = ConnectStatus::AUTH;
+
   sio::message::ptr data(sio::object_message::create());
   std::map<std::string, sio::message::ptr>& map = data->get_map();
-
-  assert(status == ServerStatus::APPROACH1);
 
   map.insert(std::make_pair("account",  sio::string_message::create(account)));
   map.insert(std::make_pair("password", sio::string_message::create(password)));
 
-  socket->emit("connect_node", data);
+  socket->emit("auth", data);
 }
 
 /**
@@ -251,7 +261,7 @@ void NetworkConnector::send_load_llvm(const std::string& name,
                                      const std::string& file,
                                      const std::vector<std::string>& args,
                                      const vpid_t& pid,
-                                     const nid_t& dst_nid) {
+                                     const NodeID& dst_nid) {
   sio::message::ptr data(sio::object_message::create());
   sio::message::ptr args_ptr(sio::array_message::create());
   std::map<std::string, sio::message::ptr>& map = data->get_map();
@@ -268,30 +278,6 @@ void NetworkConnector::send_load_llvm(const std::string& name,
   map.insert(std::make_pair("dst_nid", get_sio_by_nid(dst_nid)));
 
   socket->emit("load_llvm", data);
-}
-
-/**
- * Send node bind command.
- * Packet format: {
- *   nid: &lt;Node-id just using or empty if not assigned&gt;,
- *   node_name: &lt;Name of node&gt;
- * }
- * @param nid Node-id just using or empty string if not assigned.
- * @param node_name Name of node.
- */
-void NetworkConnector::send_bind_node(const nid_t& nid,
-                                     const std::string& node_name) {
-  sio::message::ptr data(sio::object_message::create());
-  std::map<std::string, sio::message::ptr>& map = data->get_map();
-
-  assert(status == ServerStatus::APPROACH2);
-
-  if (!nid.empty()) {
-    map.insert(std::make_pair("nid", get_sio_by_nid(nid)));
-  }
-  map.insert(std::make_pair("node_name", sio::string_message::create(node_name)));
-
-  socket->emit("bind_node", data);
 }
 
 /**
@@ -343,14 +329,11 @@ void NetworkConnector::on_recv(uv_async_t* handle) {
       /// @todo
       assert(false);
 
-    } else if (name == "connect_node") {
-      THIS.recv_connect_node(data);
+    } else if (name == "auth") {
+      THIS.recv_auth(data);
 
-    } else if (name == "bind_node") {
-      THIS.recv_bind_node(data);
-
-    } else if (name == "relay_command") {
-      THIS.recv_relay_command(data);
+    } else if (name == "relay") {
+      THIS.recv_relay(data);
 
     } else if (name == "test_console") {
       /// @todo
@@ -372,9 +355,7 @@ void NetworkConnector::on_recv(uv_async_t* handle) {
 void NetworkConnector::on_close() {
   std::lock_guard<std::mutex> guard(sio_mutex);
   sio_cond.notify_all();
-  if (status != ServerStatus::CONNECT_FAILED && status != ServerStatus::BIND_FAILED) {
-    status = ServerStatus::CLOSE;
-  }
+  connect_status = ConnectStatus::CLOSE;
 }
 
 /**
@@ -383,7 +364,7 @@ void NetworkConnector::on_close() {
 void NetworkConnector::on_fail() {
   std::lock_guard<std::mutex> guard(sio_mutex);
   sio_cond.notify_all();
-  status = ServerStatus::ERROR;
+  connect_status = ConnectStatus::CLOSE;
 }
 
 /**
@@ -392,36 +373,24 @@ void NetworkConnector::on_fail() {
 void NetworkConnector::on_open() {
   std::lock_guard<std::mutex> guard(sio_mutex);
   sio_cond.notify_all();
-  status = ServerStatus::APPROACH1;
+  connect_status = ConnectStatus::OPEN;
 }
 
-/**
- * Initialize synchronizer.
- */
-void NetworkConnector::initialize_async() {
-  uv_async_init(loop, &async_receive, on_recv);
-}
+void NetworkConnector::connect_socketio() {
+  assert(connect_status == ConnectStatus::CLOSE);
 
-/**
- * Initialize Socket.IO, bind event listener and connect to server.
- * @param url Server's URL.
- */
-void NetworkConnector::initialize_socketio(const std::string& url) {
-  // Bind basic event to Socket.IO.
-  client.set_close_listener(std::bind(&NetworkConnector::on_close, this));
-  client.set_fail_listener(std::bind(&NetworkConnector::on_fail, this));
-  client.set_open_listener(std::bind(&NetworkConnector::on_open, this));
-
+  connect_status = ConnectStatus::BEGIN;
   client.connect(url);
   {
     std::lock_guard<std::mutex> guard(sio_mutex);
-    if (status == ServerStatus::SETUP) {
+    if (connect_status == ConnectStatus::BEGIN) {
       sio_cond.wait(sio_mutex);
     }
   }
 
-  if (status == ServerStatus::APPROACH1) {
+  if (connect_status == ConnectStatus::OPEN) {
     socket = client.socket();
+    send_auth();
 
   } else {
     throw_error(Error::NETWORK);
@@ -439,40 +408,29 @@ void NetworkConnector::initialize_socketio(const std::string& url) {
 
   M_BIND_SOCKETIO_EVENT("sys_error");
   M_BIND_SOCKETIO_EVENT("app_error");
-  M_BIND_SOCKETIO_EVENT("connect_node");
-  M_BIND_SOCKETIO_EVENT("bind_node");
-  M_BIND_SOCKETIO_EVENT("relay_command");
+  M_BIND_SOCKETIO_EVENT("auth");
+  M_BIND_SOCKETIO_EVENT("relay");
   M_BIND_SOCKETIO_EVENT("test_console");
 
 #undef M_BIND_SOCKETIO_EVENT
 }
 
 /**
- * When receive bind-node command's reply,
- * change status to CONNECT and call Router's method.
- * Receive data having member 'result',0 means success, other means error code.
- * Receive data having member 'nid' is assigned node-id for this node.
- * @param data Receive data.
+ * Initialize synchronizer.
  */
-void NetworkConnector::recv_bind_node(sio::message::ptr data) {
-  Router& router = Router::get_instance();
+void NetworkConnector::initialize_async() {
+  uv_async_init(loop, &async_receive, on_recv);
+}
 
-  assert(status == ServerStatus::APPROACH2);
-
-  if (data->get_map().at("result")->get_int() == 0) {
-    {
-      std::lock_guard<std::mutex> guard(sio_mutex);
-      status = ServerStatus::CONNECT;
-    }
-    router.recv_bind_node(get_nid_by_map(data, "nid"));
-
-  } else {
-    {
-      std::lock_guard<std::mutex> guard(sio_mutex);
-      status = ServerStatus::BIND_FAILED;
-    }
-    disconnect();
-  }
+/**
+ * Initialize Socket.IO, bind event listener and connect to server.
+ * @param url Server's URL.
+ */
+void NetworkConnector::initialize_socketio() {
+  // Bind basic event to Socket.IO.
+  client.set_close_listener(std::bind(&NetworkConnector::on_close, this));
+  client.set_fail_listener(std::bind(&NetworkConnector::on_fail, this));
+  client.set_open_listener(std::bind(&NetworkConnector::on_open, this));
 }
 
 /**
@@ -481,41 +439,47 @@ void NetworkConnector::recv_bind_node(sio::message::ptr data) {
  * Receive data having member 'result',0 means success, other means error code.
  * @param data Receive data.
  */
-void NetworkConnector::recv_connect_node(sio::message::ptr data) {
+void NetworkConnector::recv_auth(sio::message::ptr data) {
   Router& router = Router::get_instance();
 
-  assert(status == ServerStatus::APPROACH1);
+  assert(connect_status == ConnectStatus::AUTH);
 
   if (data->get_map().at("result")->get_int() == 0) {
     {
       std::lock_guard<std::mutex> guard(sio_mutex);
-      status = ServerStatus::APPROACH2;
+      connect_status = ConnectStatus::CONNECT;
     }
-    router.recv_connect_node();
 
+    if (!is_auth_yet) {
+      is_auth_yet = true;
+      connect_delegate->network_connector_connect_on_success(*this, NodeID::NONE);
+    }
+
+#warning TODO assign my nid
   } else {
     {
       std::lock_guard<std::mutex> guard(sio_mutex);
-      status = ServerStatus::CONNECT_FAILED;
+      connect_status = ConnectStatus::OPEN;
+      connect_delegate->network_connector_connect_on_failure(*this, -1);
     }
     disconnect();
   }
 }
 
 /**
- * When receive relay_command packet from server, check if me should receive it, and relay to capable modules.
+ * When receive relay packet from server, check if me should receive it, and relay to capable modules.
  * @param data Received data.
  */
-void NetworkConnector::recv_relay_command(sio::message::ptr data) {
+void NetworkConnector::recv_relay(sio::message::ptr data) {
   Router& router = Router::get_instance();
-  const nid_t& dst_nid = get_nid_by_map(data, "dst_nid");
-  const nid_t& src_nid = get_nid_by_map(data, "src_nid");
-  const nid_t& my_nid  = router.get_my_nid();
+  const NodeID& dst_nid = get_nid_by_map(data, "dst_nid");
+  const NodeID& src_nid = get_nid_by_map(data, "src_nid");
+  const NodeID& my_nid  = router.get_my_nid();
 
-  assert(status == ServerStatus::CONNECT);
+  assert(connect_status == ConnectStatus::CONNECT);
 
   if (dst_nid == my_nid ||
-      (dst_nid == NID::BROADCAST && src_nid != my_nid)) {
+      (dst_nid == NodeID::BROADCAST && src_nid != my_nid)) {
     const vpid_t& pid = get_pid_by_map(data, "pid");
     Module::Type module = Convert::str2int<Module::Type>(get_str_by_map(data, "module", true));
     const std::string& content = get_str_by_map(data, "content", true);
@@ -528,6 +492,8 @@ void NetworkConnector::recv_relay_command(sio::message::ptr data) {
       assert(false);
     }
 
+#warning TODO
+    /*
     CommandPacket packet = {
       pid,
       dst_nid,
@@ -537,6 +503,7 @@ void NetworkConnector::recv_relay_command(sio::message::ptr data) {
     };
 
     router.relay_command(packet, true);
+    */
   }
 }
 }  // namespace processwarp

@@ -59,9 +59,9 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
   /** Application name. */
   std::string in_name;
   /** Node-id warp to after loading. */
-  nid_t in_dst_nid;
+  NodeID in_dst_nid;
   /** Node-id that issued an order to load this process. */
-  nid_t in_src_nid;
+  NodeID in_src_nid;
   /** Account-id that issued an order to load this process. */
   std::string in_src_account;
   /** LLVM-IR type LL or BC. */
@@ -74,7 +74,7 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
    * Constructor, initialize virtual-memory instance.
    */
   Loader() :
-      vmemory(*this, NID::SERVER) {
+      vmemory(*this, NodeID::SERVER) {
   }
 
   /**
@@ -115,8 +115,8 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
         // Read information from json.
         loader.in_pid  = Convert::json2vpid(result.at("pid"));
         loader.in_name = result.at("name").get<std::string>();
-        loader.in_dst_nid = Convert::json2nid(result.at("dst_nid"));
-        loader.in_src_nid = Convert::json2nid(result.at("src_nid"));
+        loader.in_dst_nid = NodeID::from_json(result.at("dst_nid"));
+        loader.in_src_nid = NodeID::from_json(result.at("src_nid"));
         loader.in_src_account = result.at("src_account").get<std::string>();
         loader.in_type        = result.at("type").get<std::string>();
 
@@ -195,7 +195,7 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
    * @param command Not used.
    * @param param Not used.
    */
-  void vmemory_send_command(VMemory& memory, const nid_t& dst_nid, Module::Type module,
+  void vmemory_send_command(VMemory& memory, const NodeID& dst_nid, Module::Type module,
                             const std::string& command, picojson::object& param) override {
     assert(false);
   }
@@ -267,11 +267,11 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
       packet.insert(std::make_pair("pid", Convert::vpid2json(in_pid)));
       packet.insert(std::make_pair("root_tid", Convert::vtid2json(proc->root_tid)));
       packet.insert(std::make_pair("proc_addr", Convert::vaddr2json(proc->addr)));
-      packet.insert(std::make_pair("master_nid", Convert::nid2json(NID::SERVER)));
+      packet.insert(std::make_pair("master_nid", NodeID::SERVER.to_json()));
       packet.insert(std::make_pair("name", picojson::value(in_name)));
       packet.insert(std::make_pair("tid", Convert::vtid2json(proc->root_tid)));
-      packet.insert(std::make_pair("dst_nid", Convert::nid2json(in_dst_nid)));
-      packet.insert(std::make_pair("src_nid", Convert::nid2json(in_src_nid)));
+      packet.insert(std::make_pair("dst_nid", in_dst_nid.to_json()));
+      packet.insert(std::make_pair("src_nid", in_src_nid.to_json()));
       packet.insert(std::make_pair("src_account", picojson::value(in_src_account)));
       js_sched_packet.push_back(picojson::value(picojson::value(packet).serialize()));
     }
@@ -289,8 +289,8 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
       packet.insert(std::make_pair("addr", Convert::vaddr2json(it.first)));
       packet.insert(std::make_pair("value",
                                    Convert::bin2json(it.second.value.get(), it.second.size)));
-      packet.insert(std::make_pair("dst_nid", Convert::nid2json(in_dst_nid)));
-      packet.insert(std::make_pair("src_nid", Convert::nid2json(NID::SERVER)));
+      packet.insert(std::make_pair("dst_nid", in_dst_nid.to_json()));
+      packet.insert(std::make_pair("src_nid", NodeID::SERVER.to_json()));
       packet.insert(std::make_pair("hint_nid", picojson::value(picojson::array())));
       js_memory_packet.push_back(picojson::value(picojson::value(packet).serialize()));
     }

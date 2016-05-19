@@ -27,7 +27,25 @@ namespace processwarp {
  * Constructor, set default parameters value.
  */
 Daemon::Daemon() {
-  run_mode = DaemonRunMode::CONSOLE;
+  run_mode = RunMode::CONSOLE;
+}
+
+/**
+ * Read JSON formated configuration from stdin for subprocess mode.
+ * @return True if reading configuration has success.
+ */
+bool Daemon::config_subprocess() {
+  picojson::value v;
+  std::string err = picojson::parse(v, std::cin);
+  if (err.empty()) {
+    config = v.get<picojson::object>();
+
+  } else {
+    std::cerr << err << std::endl;
+    return false;
+  }
+
+  return true;
 }
 
 /**
@@ -45,32 +63,25 @@ int Daemon::entry(int argc, char* argv[]) {
   }
 
   switch (run_mode) {
-    case DaemonRunMode::CONSOLE: {
+    case RunMode::CONSOLE:
+    case RunMode::DAEMON: {
       if (!initialize_logger() ||
-          !initialize_message()) {
+          !initialize_message() ||
+          !initialize_cui()) {
         return EXIT_FAILURE;
       }
     } break;
 
-    case DaemonRunMode::DAEMON: {
-      if (!initialize_logger() ||
-          !initialize_message()) {
-        return EXIT_FAILURE;
-      }
-      if (daemonize() != 0) {
-        return EXIT_FAILURE;
-      }
-    } break;
-
-    case DaemonRunMode:: SUBPROCESS: {
-      if (!subprocess_config() ||
+    case RunMode:: SUBPROCESS: {
+      if (!config_subprocess() ||
           !initialize_logger() ||
-          !initialize_message()) {
+          !initialize_message() ||
+          !initialize_subprocess()) {
         return EXIT_FAILURE;
       }
     } break;
 
-    case DaemonRunMode::HELP: {
+    case RunMode::HELP: {
       show_help(false, argv[0]);
       return EXIT_SUCCESS;
     } break;
@@ -80,9 +91,8 @@ int Daemon::entry(int argc, char* argv[]) {
     } break;
   }
 
-  main_loop();
-
-  return EXIT_SUCCESS;
+  // Start libuv loop.
+  return !uv_run(loop, UV_RUN_DEFAULT);
 }
 
 /**
@@ -177,6 +187,36 @@ int Daemon::daemonize() {
   return 0;
 }
 
+bool Daemon::initialize_cui() {
+  assert(run_mode == RunMode::DAEMON || run_mode == RunMode::CONSOLE);
+
+  loop = uv_default_loop();
+  Router& router = Router::get_instance();
+  NetworkConnector& network = NetworkConnector::get_instance();
+  WorkerConnector& worker = WorkerConnector::get_instance();
+
+  network.initialize(loop, config.at("server").get<std::string>());
+  router.initialize(loop, config);
+  worker.initialize(loop,
+                    config.at("worker_pipe").get<std::string>(),
+                    config.at("libs").get<picojson::array>(),
+                    config.at("lib_filter").get<picojson::array>());
+
+#warning TODO
+  /*
+  network.send_connect_node(config.at("account").get<std::string>(),
+                            config.at("password").get<std::string>());
+  */
+
+  if (run_mode == RunMode::DAEMON) {
+    Logger::info(DaemonMid::L3009, "daemon");
+  } else {
+    Logger::info(DaemonMid::L3009, "console");
+  }
+
+  return true;
+}
+
 /**
  * Initialize logger.
  * @return True if initialize was succeed.
@@ -197,40 +237,28 @@ bool Daemon::initialize_message() {
   return Message::load(config.at("message").get<std::string>());
 }
 
-/**
- * Main loop of daemon process.
- * Initialize libuv, Router, ServerConnector, FrontendConnector, WorkerConector
- * and start libuv's event loop.
- * @return Return code of uv_run.
- */
-int Daemon::main_loop() {
+bool Daemon::initialize_subprocess() {
+  assert(run_mode == RunMode::SUBPROCESS);
+
   loop = uv_default_loop();
   FrontendConnector& frontend = FrontendConnector::get_instance();
   Router& router = Router::get_instance();
   NetworkConnector& network = NetworkConnector::get_instance();
   WorkerConnector& worker = WorkerConnector::get_instance();
-  std::string run_mode_string;
-  switch (run_mode) {
-    case DaemonRunMode::DAEMON: run_mode_string = "daemon"; break;
-    case DaemonRunMode::CONSOLE: run_mode_string = "console"; break;
-    case DaemonRunMode::SUBPROCESS: run_mode_string = "subprocess"; break;
-    default: assert(false); break;
-  }
-  Logger::info(DaemonMid::L3009, run_mode_string.c_str());
 
   network.initialize(loop, config.at("server").get<std::string>());
   router.initialize(loop, config);
-  frontend.initialize(loop, config.at("frontend_pipe").get<std::string>());
+  frontend.initialize(loop,
+                      config.at("frontend_pipe").get<std::string>(),
+                      config.at("frontend_key").get<std::string>());
   worker.initialize(loop,
                     config.at("worker_pipe").get<std::string>(),
                     config.at("libs").get<picojson::array>(),
                     config.at("lib_filter").get<picojson::array>());
 
-  network.send_connect_node(config.at("account").get<std::string>(),
-                            config.at("password").get<std::string>());
+  Logger::info(DaemonMid::L3009, "subprocess");
 
-  // Start libuv loop.
-  return uv_run(loop, UV_RUN_DEFAULT);
+  return true;
 }
 
 /**
@@ -275,10 +303,10 @@ bool Daemon::read_config(const std::string& file) {
 
 /**
  * Read command line arguments and set option values.
- * c(console) option was set, change run mode to DaemonRunMode::CONSOLE.<br>
- * d(daemon) option was set, change run mode to DaemonRunMode::DAEMON.<br>
+ * c(console) option was set, change run mode to RunMode::CONSOLE.<br>
+ * d(daemon) option was set, change run mode to RunMode::DAEMON.<br>
  * f option was set, read config file from file selected by argument.<br>
- * h(help) option was set, change run mode to DaemonRunMode::HELP.<br>
+ * h(help) option was set, change run mode to RunMode::HELP.<br>
  * @param argc Argc passed by entry function.
  * @param argv Argv passed by entry function.
  * @return False if options was wrong.
@@ -296,11 +324,11 @@ bool Daemon::read_options(int argc, char* argv[]) {
   while ((opt = getopt_long(argc, argv, "cdf:hs", long_options, &option_index)) != -1) {
     switch (opt) {
       case 'c': {
-        run_mode = DaemonRunMode::CONSOLE;
+        run_mode = RunMode::CONSOLE;
       } break;
 
       case 'd': {
-        run_mode = DaemonRunMode::DAEMON;
+        run_mode = RunMode::DAEMON;
       } break;
 
       case 'f': {
@@ -308,11 +336,11 @@ bool Daemon::read_options(int argc, char* argv[]) {
       } break;
 
       case 'h': {
-        run_mode = DaemonRunMode::HELP;
+        run_mode = RunMode::HELP;
       } break;
 
       case 's': {
-        run_mode = DaemonRunMode::SUBPROCESS;
+        run_mode = RunMode::SUBPROCESS;
       } break;
 
       case ':':
@@ -321,30 +349,6 @@ bool Daemon::read_options(int argc, char* argv[]) {
       } break;
     }
   }
-  return true;
-}
-
-/**
- * Read JSON formated configuration from stdin for subprocess mode.
- * @return True if reading configuration has success.
- */
-bool Daemon::subprocess_config() {
-  picojson::value v;
-  std::string err = picojson::parse(v, std::cin);
-  if (!err.empty()) {
-    std::cerr << err << std::endl;
-    return false;
-  }
-
-  config = v.get<picojson::object>();
-
-  // Override password to hashed one.
-  std::string hash_password = config.at("password").get<std::string>();
-  for (int i = 0; i < 10; i ++) {
-    hash_password = Util::calc_sha256(hash_password);
-  }
-  config.at("password") = picojson::value("[10sha256]" + hash_password);
-
   return true;
 }
 }  // namespace processwarp

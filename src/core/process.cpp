@@ -133,7 +133,7 @@ std::unique_ptr<Process> Process::alloc(ProcessDelegate& delegate,
                                         const std::map<std::string, std::pair
                                         <builtin_func_t, BuiltinFuncParam>>& builtin_funcs,
                                         vaddr_t proc_addr,
-                                        const nid_t& master_nid) {
+                                        const NodeID& master_nid) {
   picojson::object js_proc;
   std::unique_ptr<VMemory::Accessor> memory(delegate.process_assign_accessor(pid));
 

@@ -3,7 +3,6 @@
     "snake_name":"NID",
     "description":"Specified node-id.",
     "type":"string",
-    "c_type":"nid_t",
     "values":[
         {
             "name":"NONE",

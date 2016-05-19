@@ -105,7 +105,7 @@ class Process {
         const std::map<std::string, std::string>& lib_filter,
         const std::map<std::string, std::pair<builtin_func_t, BuiltinFuncParam>>& builtin_funcs,
         vaddr_t proc_addr,
-        const nid_t& master_nid);
+        const NodeID& master_nid);
 
   /**
    * Read out process information from memory.

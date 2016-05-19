@@ -44,7 +44,7 @@ class Thread {
   /** */
   WrappedComplexOperator complex_operator;
   /** */
-  nid_t owner;
+  NodeID owner;
   /// status of vm
   Status status;
   /// thread-id to join(0:none, 1:detached)
@@ -65,7 +65,7 @@ class Thread {
   vm_uint_t warp_stack_size;
   vm_uint_t warp_call_count;
   ///
-  nid_t warp_dst;
+  NodeID warp_dst;
 
   WrappedOperator* const OPERATORS[0x36];
 
@@ -132,7 +132,7 @@ class Thread {
    */
   void setup_warpout();
 
-  bool require_warp(const nid_t& target_nid);
+  bool require_warp(const NodeID& target_nid);
 
  private:
   /**

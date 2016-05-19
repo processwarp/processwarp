@@ -8,49 +8,47 @@
 
 #include "connector.hpp"
 #include "constant.hpp"
-#include "daemon_define.hpp"
+#include "constant_native.hpp"
+#include "network_connector.hpp"
+#include "packet.hpp"
 #include "type.hpp"
 
 namespace processwarp {
-class FrontendConnector : public Connector {
+class FrontendConnector : public Connector, public NetworkConnectorConnectDelegate {
  public:
   static FrontendConnector& get_instance();
 
-  void initialize(uv_loop_t* loop, const std::string& pipe_path);
+  void initialize(uv_loop_t* loop, const std::string& pipe_path, const std::string& common_key_);
   void create_gui(const vpid_t& pid);
-  void relay_frontend_command(const CommandPacket& packet);
+  void relay_frontend_command(const Packet& packet);
 
  private:
-  struct FrontendProperty {
-    PipeStatus::Type status;
-    FrontendType::Type type;
-    std::string account;
-    std::string password;
-  };
-
-  /** Map of pipe and propertiy. */
-  std::map<uv_pipe_t*, FrontendProperty> properties;
-  /** The pipe connectiong frontend that having gui */
-  uv_pipe_t* gui_pipe;
-  /** Timer switch, true if timer event has enabled. */
-  bool connect_timer_enable;
-  /** Libuv timer event handler. */
-  uv_timer_t connect_timer;
+  /** The pipe connectiong frontend. */
+  uv_pipe_t* pipe;
+  /** Frontend connect status. */
+  ConnectStatus::Type connect_status;
+  /** Frontend type. */
+  FrontendType::Type frontend_type;
+  /** The common key for authenticate. */
+  std::string common_key;
 
   FrontendConnector();
   FrontendConnector(const FrontendConnector&);
   FrontendConnector& operator=(const FrontendConnector&);
 
-  static void on_connect_timer(uv_timer_t* handle);
+  void network_connector_connect_on_success(NetworkConnector& network_connector,
+                                            const NodeID& my_nid) override;
+  void network_connector_connect_on_failure(NetworkConnector& network_connector, int code) override;
 
   void on_connect(uv_pipe_t& client) override;
   void on_recv_data(uv_pipe_t& client, picojson::object& data) override;
   void on_close(uv_pipe_t& client) override;
 
-  void initialize_connect_timer();
-  void recv_connect_frontend(uv_pipe_t& client, picojson::object& param);
+  void recv_authenticate(uv_pipe_t& client, picojson::object& param);
+  void recv_open(uv_pipe_t& client, picojson::object& param);
   void recv_open_file(uv_pipe_t& client, picojson::object& param);
   void recv_relay_command(uv_pipe_t& client, picojson::object& content);
-  void send_connect_frontend(uv_pipe_t& client, int result, const nid_t& my_nid);
+  void reply_authenticate(uv_pipe_t& client, int result, const NodeID& my_nid);
+  void reply_open(uv_pipe_t& client, int result);
 };
 }  // namespace processwarp

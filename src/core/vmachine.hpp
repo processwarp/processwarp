@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "dynamic_library.hpp"
+#include "packet.hpp"
 #include "process.hpp"
 #include "vmemory.hpp"
 
@@ -24,7 +25,7 @@ class VMachineDelegate {
  public:
   virtual ~VMachineDelegate();
 
-  virtual void vmachine_send_command(VMachine& vm, const CommandPacket& packet) = 0;
+  virtual void vmachine_send_command(VMachine& vm, const Packet& packet) = 0;
   virtual void vmachine_finish(VMachine& vm) = 0;
   virtual void vmachine_finish_thread(VMachine& vm, const vtid_t& tid) = 0;
   virtual void vmachine_error(VMachine& vm, const std::string& message) = 0;
@@ -36,23 +37,23 @@ class VMachineDelegate {
 class VMachine : private ProcessDelegate {
  public:
   /** VMachine's node-id. */
-  const nid_t my_nid;
+  const NodeID my_nid;
   /** Virtual memory for this virtual machine. */
   VMemory vmemory;
 
 
   VMachine(VMachineDelegate& delegate_,
            VMemoryDelegate& memory_delegate,
-           const nid_t& my_nid_,
+           const NodeID& my_nid_,
            const std::vector<DynamicLibrary::lib_handler_t>& libs_,
            const std::map<std::string, std::string>& lib_filter_);
   void initialize(const vpid_t& pid, const vtid_t& root_tid, vaddr_t proc_addr,
-                  const nid_t& master_nid, const std::string& name);
+                  const NodeID& master_nid, const std::string& name);
   void initialize_gui(BuiltinGuiDelegate& delegate);
   void execute();
 
   void on_recv_update(vaddr_t addr);
-  void recv_command(const CommandPacket& packet);
+  void recv_command(const Packet& packet);
   Process& get_process();
   void regist_builtin_func(const std::string& name, builtin_func_t func, int i64);
   void regist_builtin_func(const std::string& name, builtin_func_t func, void* ptr);
@@ -83,11 +84,11 @@ class VMachine : private ProcessDelegate {
   void initialize_builtin();
 
   /// @todo Clean up unused thread information.
-  void recv_command_heartbeat_vm(const CommandPacket& packet);
-  void recv_command_require_warp_thread(const CommandPacket& packet);
-  void recv_command_warp_thread(const CommandPacket& packet);
+  void recv_command_heartbeat_vm(const Packet& packet);
+  void recv_command_require_warp_thread(const Packet& packet);
+  void recv_command_warp_thread(const Packet& packet);
 
-  void send_command(const vpid_t& pid, const nid_t& dst_nid, Module::Type module,
+  void send_command(const vpid_t& pid, const NodeID& dst_nid, Module::Type module,
                     const std::string& command, picojson::object& param);
   void send_command_heartbeat_vm();
   void send_command_warp_thread(Thread& thread);

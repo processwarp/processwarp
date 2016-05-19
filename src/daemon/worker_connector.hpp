@@ -9,7 +9,8 @@
 #include <vector>
 
 #include "connector.hpp"
-#include "daemon_define.hpp"
+#include "constant_native.hpp"
+#include "packet.hpp"
 #include "type.hpp"
 
 namespace processwarp {
@@ -20,12 +21,12 @@ class WorkerConnector : public Connector {
   void initialize(uv_loop_t* loop, const std::string& pipe_path_,
                   const picojson::array& libs, const picojson::array& lib_filter);
   void create_vm(const vpid_t& pid, vtid_t root_tid, vaddr_t proc_addr,
-                 const nid_t& master_nid, const std::string& name);
-  void relay_command(const CommandPacket& packet);
+                 const NodeID& master_nid, const std::string& name);
+  void relay_command(const Packet& packet);
 
  private:
   struct WorkerProperty {
-    PipeStatus::Type status;
+    ConnectStatus::Type status;
     vpid_t pid;
     uv_pipe_t* pipe;
     uv_process_t process;

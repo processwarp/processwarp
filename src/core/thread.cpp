@@ -224,8 +224,8 @@ void Thread::setup_warpout() {
  * Setup to warp this thread.
  * @param target_nid Destination node-id to thread.
  */
-bool Thread::require_warp(const nid_t& target_nid) {
-  assert(target_nid != NID::NONE);
+bool Thread::require_warp(const NodeID& target_nid) {
+  assert(target_nid != NodeID::NONE);
   // Status must be normal when warp.
   if (status != NORMAL) return false;
 

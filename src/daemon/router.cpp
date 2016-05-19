@@ -52,33 +52,6 @@ void Router::initialize(uv_loop_t* loop_, const picojson::object& config_) {
 }
 
 /**
- * Check account is eaual to the same to connecting it.
- * @param account Target account name.
- * @param password Target password.
- * @return True if account and password is eaual to the same to connecting it.
- */
-bool Router::check_account(const std::string& account, const std::string& password) {
-  NetworkConnector& network = NetworkConnector::get_instance();
-  if (network.get_status() != ServerStatus::CONNECT) {
-    /// @todo error
-    assert(false);
-  }
-
-  std::string hash_password = password;
-  for (int i = 0; i < 10; i ++) {
-    hash_password = Util::calc_sha256(hash_password);
-  }
-  hash_password = "[10sha256]" + hash_password;
-
-  if (account == config.at("account").get<std::string>() &&
-      hash_password == config.at("password").get<std::string>()) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
-/**
  * Open the LLVM-IR file and send load-llvm command to server.
  * @param filename Filename of LLVM-IR.
  * @param args Arguments to pass application's entry point.
@@ -86,7 +59,7 @@ bool Router::check_account(const std::string& account, const std::string& passwo
 void Router::load_llvm(const std::string& filename, const std::vector<std::string>& args) {
   NetworkConnector& network = NetworkConnector::get_instance();
 
-  if (network.get_status() != ServerStatus::CONNECT) {
+  if (network.get_status() != ConnectStatus::CONNECT) {
     /// @todo error
     assert(false);
   }
@@ -112,26 +85,17 @@ void Router::load_llvm(const std::string& filename, const std::vector<std::strin
  * Get this node's node-id.
  * @return This node's node-id.
  */
-const nid_t& Router::get_my_nid() {
-  assert(!my_nid.empty());
+const NodeID& Router::get_my_nid() {
+  assert(my_nid != NodeID::NONE);
 
   return my_nid;
-}
-
-/**
- * When connect is success, send bind_node packet with my-nid and node-name.
- */
-void Router::recv_connect_node() {
-  NetworkConnector& network = NetworkConnector::get_instance();
-
-  network.send_bind_node(my_nid, config.at("node_name").get<std::string>());
 }
 
 /**
  * When bind is success, store assigned my node-id and hostname as node name.
  * @param nid Assigned node-id for this node.
  */
-void Router::recv_bind_node(const nid_t& nid) {
+void Router::recv_bind_node(const NodeID& nid) {
   my_nid = nid;
 
   // get local hostname
@@ -148,34 +112,36 @@ void Router::recv_bind_node(const nid_t& nid) {
  * @param packet Command packet.
  * @param is_from_server Set true if packet is relaied by server (send by another node).
  */
-void Router::relay_command(const CommandPacket& packet, bool is_from_server) {
-  nid_t dst_nid;
-  nid_t src_nid;
+void Router::relay_command(const Packet& packet, bool is_from_server) {
+  NodeID dst_nid;
+  NodeID src_nid;
   if (is_from_server) {
     dst_nid = packet.dst_nid;
     src_nid = packet.src_nid;
 
   } else {
-    if (packet.dst_nid == NID::THIS) {
+    if (packet.dst_nid == NodeID::THIS) {
       dst_nid = my_nid;
-    } else if (packet.dst_nid == NID::NONE) {
-      dst_nid = scheduler.get_dst_nid(packet.pid, packet.module);
+    } else if (packet.dst_nid == NodeID::NONE) {
+      dst_nid = scheduler.get_dst_nid(packet.pid, packet.dst_module);
     } else {
       dst_nid = packet.dst_nid;
     }
     src_nid = my_nid;
   }
 
-  CommandPacket real_packet = {
+#warning TODO
+  /*
+  Packet real_packet = {
     packet.pid,
     dst_nid,
     src_nid,
-    packet.module,
+    packet.dst_module,
     packet.content
   };
 
-  if (dst_nid == my_nid || dst_nid == NID::BROADCAST) {
-    switch (real_packet.module) {
+  if (dst_nid == my_nid || dst_nid == NodeID::BROADCAST) {
+    switch (real_packet.dst_module) {
       case Module::MEMORY:
       case Module::VM: {
         WorkerConnector& worker = WorkerConnector::get_instance();
@@ -203,6 +169,7 @@ void Router::relay_command(const CommandPacket& packet, bool is_from_server) {
     NetworkConnector& network = NetworkConnector::get_instance();
     network.send_relay_command(real_packet);
   }
+  */
 }
 
 /**
@@ -215,7 +182,7 @@ void Router::relay_command(const CommandPacket& packet, bool is_from_server) {
  * @param name Process name for new vm.
  */
 void Router::scheduler_create_vm(Scheduler& scheduler, const vpid_t& pid, vtid_t root_tid,
-                                 vaddr_t proc_addr, const nid_t& master_nid,
+                                 vaddr_t proc_addr, const NodeID& master_nid,
                                  const std::string& name) {
   WorkerConnector& worker = WorkerConnector::get_instance();
 
@@ -238,7 +205,7 @@ void Router::scheduler_create_gui(Scheduler& scheduler, const vpid_t& pid) {
  * @param scheduler Caller instance.
  * @param packet Command packet.
  */
-void Router::scheduler_send_command(Scheduler& scheduler, const CommandPacket& packet) {
+void Router::scheduler_send_command(Scheduler& scheduler, const Packet& packet) {
   relay_command(packet, false);
 }
 

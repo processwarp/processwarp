@@ -34,7 +34,7 @@ int Worker::entry(int argc, char* argv[]) {
  * @param vm Caller instance.
  * @param packet Command packet.
  */
-void Worker::vmachine_send_command(VMachine& vm, const CommandPacket& packet) {
+void Worker::vmachine_send_command(VMachine& vm, const Packet& packet) {
   send_command(packet);
 }
 
@@ -62,21 +62,24 @@ void Worker::vmachine_error(VMachine& vm, const std::string& message) {
  * @param command Command string.
  * @param param Parameter for command.
  */
-void Worker::vmemory_send_command(VMemory& memory, const nid_t& dst_nid, Module::Type module,
+void Worker::vmemory_send_command(VMemory& memory, const NodeID& dst_nid, Module::Type module,
                                   const std::string& command, picojson::object& param) {
   assert(param.find("command") == param.end());
 
   param.insert(std::make_pair("command", picojson::value(command)));
 
-  CommandPacket packet = {
+#warning TODO
+  /*
+  Packet packet = {
     my_pid,
     dst_nid,
-    NID::NONE,
+    NodeID::NONE,
     module,
     param
   };
 
   send_command(packet);
+  */
 }
 
 /**
@@ -99,21 +102,24 @@ void Worker::vmemory_recv_update(VMemory& memory, vaddr_t addr) {
  * @param command Command string.
  * @param param Parameter for command.
  */
-void Worker::builtin_gui_send_command(Process& proc, const nid_t& dst_nid, Module::Type module,
+void Worker::builtin_gui_send_command(Process& proc, const NodeID& dst_nid, Module::Type module,
                                       const std::string& command,  picojson::object& param) {
   assert(param.find("command") == param.end());
 
   param.insert(std::make_pair("command", picojson::value(command)));
 
-  CommandPacket packet = {
+#warning TODO
+  /*
+  Packet packet = {
     my_pid,
     dst_nid,
-    NID::NONE,
+    NodeID::NONE,
     module,
     param
   };
 
   send_command(packet);
+  */
 }
 
 /**
@@ -312,7 +318,7 @@ void Worker::initialize_lib_filter(const picojson::array& config) {
  * @param name Process name.
  */
 void Worker::initialize_vm(vtid_t root_tid, vaddr_t proc_addr,
-                           const nid_t& master_nid, const std::string name) {
+                           const NodeID& master_nid, const std::string name) {
   assert(vm.get() == nullptr);
 
   vm.reset(new VMachine(*this, *this, my_nid, libs, lib_filter));
@@ -370,7 +376,7 @@ void Worker::recv_data(const picojson::object& data) {
  */
 void Worker::recv_connect_worker(const picojson::object& content) {
   // Save my node-id.
-  my_nid = Convert::json2nid(content.at("my_nid"));
+  my_nid = NodeID::from_json(content.at("my_nid"));
 
   // Load dynamic link libraries.
   if (content.find("libs") != content.end()) {
@@ -385,7 +391,7 @@ void Worker::recv_connect_worker(const picojson::object& content) {
   // Create virtual machine.
   initialize_vm(Convert::json2vtid(content.at("root_tid")),
                 Convert::json2vaddr(content.at("proc_addr")),
-                Convert::json2nid(content.at("master_nid")),
+                NodeID::from_json(content.at("master_nid")),
                 content.at("name").get<std::string>());
   initialize_loop();
 }
@@ -395,10 +401,12 @@ void Worker::recv_connect_worker(const picojson::object& content) {
  * @param content Packet content that contain command string and parameters.
  */
 void Worker::recv_relay_command(const picojson::object& content) {
-  CommandPacket packet = {
+#warning TODO
+  /*
+  Packet packet = {
     Convert::json2vpid(content.at("pid")),
-    Convert::json2nid(content.at("dst_nid")),
-    Convert::json2nid(content.at("src_nid")),
+    NodeID::from_json(content.at("dst_nid")),
+    NodeID::from_json(content.at("src_nid")),
     Convert::json2int<Module::Type>(content.at("module")),
     content.at("content").get<picojson::object>()
   };
@@ -417,20 +425,21 @@ void Worker::recv_relay_command(const picojson::object& content) {
       assert(false);
     }
   }
+  */
 }
 
 /**
  * Send command to capable module in this node through the backend.
  * @param packet Command packet.
  */
-void Worker::send_command(const CommandPacket& packet) {
+void Worker::send_command(const Packet& packet) {
   picojson::object data;
 
   data.insert(std::make_pair("command", picojson::value(std::string("relay_command"))));
   data.insert(std::make_pair("pid", Convert::vpid2json(my_pid)));
-  data.insert(std::make_pair("dst_nid", Convert::nid2json(packet.dst_nid)));
-  data.insert(std::make_pair("src_nid", Convert::nid2json(packet.src_nid)));
-  data.insert(std::make_pair("module", Convert::int2json<Module::Type>(packet.module)));
+  data.insert(std::make_pair("dst_nid", packet.dst_nid.to_json()));
+  data.insert(std::make_pair("src_nid", packet.src_nid.to_json()));
+  data.insert(std::make_pair("module", Convert::int2json<Module::Type>(packet.dst_module)));
   data.insert(std::make_pair("content", picojson::value(packet.content)));
 
   send_data(data);

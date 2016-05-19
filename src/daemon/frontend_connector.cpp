@@ -6,8 +6,8 @@
 #include <vector>
 
 #include "constant.hpp"
+#include "constant_native.hpp"
 #include "convert.hpp"
-#include "daemon_define.hpp"
 #include "frontend_connector.hpp"
 #include "network_connector.hpp"
 #include "router.hpp"
@@ -30,19 +30,21 @@ FrontendConnector& FrontendConnector::get_instance() {
  * This method is private.
  */
 FrontendConnector::FrontendConnector() :
-    gui_pipe(nullptr) {
+    pipe(nullptr),
+    connect_status(ConnectStatus::CLOSE) {
 }
 
 /**
  * Initialize for FrontendConnector.
  * Create UNIX domain socket for controller.
- * Initialize timer to deal with the connect_frontend packet.
  * @param loop libuv's loop for WorkerConnector.
  * @param pipe_path Path of pipe that for connecting with worker.
+ * @param common_key_ The common key for authenticate.
  */
-void FrontendConnector::initialize(uv_loop_t* loop, const std::string& pipe_path) {
+void FrontendConnector::initialize(uv_loop_t* loop, const std::string& pipe_path,
+                                   const std::string& common_key_) {
+  common_key = common_key_;
   Connector::initialize(loop, pipe_path);
-  initialize_connect_timer();
 }
 
 
@@ -53,7 +55,7 @@ void FrontendConnector::initialize(uv_loop_t* loop, const std::string& pipe_path
 void FrontendConnector::create_gui(const vpid_t& pid) {
   assert(pid != PID::BROADCAST);
 
-  if (gui_pipe == nullptr) {
+  if (pipe == nullptr || frontend_type != FrontendType::GUI) {
     /// @todo error
     assert(false);
   }
@@ -62,7 +64,7 @@ void FrontendConnector::create_gui(const vpid_t& pid) {
   data.insert(std::make_pair("command", picojson::value(std::string("create"))));
   data.insert(std::make_pair("pid", Convert::vpid2json(pid)));
 
-  send_data(*gui_pipe, data);
+  send_data(*pipe, data);
 }
 
 /**
@@ -76,109 +78,60 @@ void FrontendConnector::create_gui(const vpid_t& pid) {
  * }
  * @param packet Command packet for relaying.
  */
-void FrontendConnector::relay_frontend_command(const CommandPacket& packet) {
-  assert(packet.module == Module::CONTROLLER || packet.module == Module::GUI);
+void FrontendConnector::relay_frontend_command(const Packet& packet) {
+  assert(packet.dst_module == Module::CONTROLLER || packet.dst_module == Module::GUI);
 
-  if (gui_pipe == nullptr) return;
+  if (pipe == nullptr) return;
 
   picojson::object data;
   data.insert(std::make_pair("command", picojson::value(std::string("relay_command"))));
   data.insert(std::make_pair("pid", Convert::vpid2json(packet.pid)));
-  data.insert(std::make_pair("dst_nid", Convert::nid2json(packet.dst_nid)));
-  data.insert(std::make_pair("src_nid", Convert::nid2json(packet.src_nid)));
-  data.insert(std::make_pair("module", Convert::int2json(packet.module)));
+  data.insert(std::make_pair("dst_nid", packet.dst_nid.to_json()));
+  data.insert(std::make_pair("src_nid", packet.src_nid.to_json()));
+  data.insert(std::make_pair("module", Convert::int2json(packet.dst_module)));
   data.insert(std::make_pair("content", picojson::value(packet.content)));
 
-  send_data(*gui_pipe, data);
+  send_data(*pipe, data);
 }
 
 /**
- * When timer event has happen and after connecting network,
- * send reply for clients send a connect_frontend packet.
- * After send reply to all clients, turn off the timer event.
- * @param handle Libuv's event handler.
+ * When connect to server has success, change status and send reply packet to frontend.
+ * @param network_connector Instance call from.
+ * @param my_nid Node-id for this node.
  */
-void FrontendConnector::on_connect_timer(uv_timer_t* handle) {
-  FrontendConnector& THIS = FrontendConnector::get_instance();
-  Router& router = Router::get_instance();
-  NetworkConnector &network = NetworkConnector::get_instance();
+void FrontendConnector::network_connector_connect_on_success(
+    NetworkConnector& network_connector, const NodeID& my_nid) {
+  assert(connect_status == ConnectStatus::AUTH);
 
-  switch (network.get_status()) {
-    case ServerStatus::SETUP:
-    case ServerStatus::APPROACH1:
-    case ServerStatus::APPROACH2:
-      return;
-
-    case ServerStatus::CONNECT: {
-      for (auto& it_property : THIS.properties) {
-        uv_pipe_t* client = it_property.first;
-        FrontendProperty& property = it_property.second;
-
-        // Skip if pipe has accept.
-        if (property.status == PipeStatus::CONNECT ||
-            property.account.empty()) {
-          continue;
-        }
-
-        if (router.check_account(property.account, property.password)) {
-          if (property.type == FrontendType::GUI) {
-            if (THIS.gui_pipe == nullptr) {
-              THIS.gui_pipe = client;
-
-            } else {
-              THIS.send_connect_frontend(*client, -1, NID::NONE);
-              THIS.close(*client);
-              continue;
-            }
-          }
-
-          THIS.send_connect_frontend(*client, 0, router.get_my_nid());
-          property.status = PipeStatus::CONNECT;
-          property.account.clear();
-          property.password.clear();
-
-        } else {
-          THIS.send_connect_frontend(*client, -1, NID::NONE);
-          THIS.close(*client);
-        }
-      }
-    } break;
-
-    case ServerStatus::CONNECT_FAILED:
-    case ServerStatus::BIND_FAILED: {
-      for (auto& it_property : THIS.properties) {
-        uv_pipe_t* client = it_property.first;
-        FrontendProperty& property = it_property.second;
-
-        assert(property.status == PipeStatus::SETUP || !property.account.empty());
-
-        THIS.send_connect_frontend(*client, -1, NID::NONE);
-      }
-    } break;
-
-    case ServerStatus::CLOSE:
-    case ServerStatus::ERROR:
-      /// @todo send error
-      assert(false);
-
-    default:
-      assert(false);
-  }
-
-  uv_timer_stop(&(THIS.connect_timer));
-  THIS.connect_timer_enable = false;
+  connect_status = ConnectStatus::CONNECT;
+  reply_authenticate(*pipe, 0, my_nid);
 }
 
 /**
- * Create pipe for controller when accept connecting.
- * Set status to SETUP.
+ * When connect to server has failed, change status and send reply packet to frontend.
+ * @param network_connector Instance call from.
+ * @param code Error code.
+ */
+void FrontendConnector::network_connector_connect_on_failure(
+    NetworkConnector& network_connector, int code) {
+  reply_authenticate(*pipe, code, NodeID::NONE);
+  connect_status = ConnectStatus::OPEN;
+}
+
+/**
+ * When accept pipe without another one, seve it and change status to BEGIN.
+ * When another pipe has exist yet, close new pipe.
  * @param client Pipe connect with controller by libuv.
  */
 void FrontendConnector::on_connect(uv_pipe_t& client) {
-  FrontendProperty property;
+  if (pipe == nullptr) {
+    pipe = &client;
+    connect_status = ConnectStatus::BEGIN;
 
-  property.status = PipeStatus::SETUP;
-  properties.insert(std::make_pair(&client, property));
+  } else {
+    /// @todo send refuse message;
+    close(client);
+  }
 }
 
 /**
@@ -192,8 +145,11 @@ void FrontendConnector::on_recv_data(uv_pipe_t& client, picojson::object& data) 
   if (command == "relay_command") {
     recv_relay_command(client, data);
 
-  } else if (command == "connect_frontend") {
-    recv_connect_frontend(client, data);
+  } else if (command == "open") {
+    recv_open(client, data);
+
+  } else if (command == "authenticate") {
+    recv_authenticate(client, data);
 
   } else if (command == "open_file") {
     recv_open_file(client, data);
@@ -210,54 +166,79 @@ void FrontendConnector::on_recv_data(uv_pipe_t& client, picojson::object& data) 
  * @param client Target pipe to close.
  */
 void FrontendConnector::on_close(uv_pipe_t& client) {
-  properties.erase(&client);
-  if (gui_pipe == &client) {
-    gui_pipe = nullptr;
+  if (pipe == &client) {
+    pipe = nullptr;
+    connect_status = ConnectStatus::CLOSE;
   }
 }
 
 /**
- * Initialize timer event handler but don't start timer.
- * Timer start at connect_frontend command has received to avoid too much processes.
- */
-void FrontendConnector::initialize_connect_timer() {
-  connect_timer_enable = false;
-  uv_timer_init(loop, &connect_timer);
-}
-
-/**
- * When receive connect_frontend command from frontend, change client status that
- * the account and password are stored to property, and start timer.
+ * When receive authenticate command from frontend, change status to AUTH and try connect to server.
  * @param client Frontend that passed this request.
- * @param param Parameter contain account, password, frontend type.
+ * @param param Parameter contain account, password.
  */
-void FrontendConnector::recv_connect_frontend(uv_pipe_t& client, picojson::object& param) {
-  const std::string& type = param.at("type").get<std::string>();
-  const std::string& account  = param.at("account").get<std::string>();
+void FrontendConnector::recv_authenticate(uv_pipe_t& client, picojson::object& param) {
+  NetworkConnector& network = NetworkConnector::get_instance();
+  const std::string& account = param.at("account").get<std::string>();
   const std::string& password = param.at("password").get<std::string>();
-  FrontendProperty& property = properties.at(&client);
 
-  assert(property.status == PipeStatus::SETUP);
-  assert(!account.empty() && !password.empty());
-
-  if (type == "gui") {
-    property.type = FrontendType::GUI;
-
-  } else if (type == "cui") {
-    property.type = FrontendType::CUI;
+  if (connect_status == ConnectStatus::OPEN) {
+    connect_status = ConnectStatus::AUTH;
+    network.connect(this, account, password);
 
   } else {
     /// @todo error
-    assert(false);
+    close(*pipe);
+    return;
+  }
+}
+
+/**
+ * When receive open command from frontend, change status to OPEN if the common key is
+ * the same to passed by then pipe.
+ * @param client Frontend that passed this request.
+ * @param param Parameter contain common key, frontend type.
+ */
+void FrontendConnector::recv_open(uv_pipe_t& client, picojson::object& param) {
+  const std::string& type = param.at("type").get<std::string>();
+
+  if (connect_status != ConnectStatus::BEGIN) {
+    /// @todo error
+    close(*pipe);
+    return;
   }
 
-  property.account  = account;
-  property.password = password;
+  if (type == "gui") {
+    frontend_type = FrontendType::GUI;
 
-  if (!connect_timer_enable) {
-    uv_timer_start(&connect_timer, on_connect_timer, 0, 1000);
-    connect_timer_enable = true;
+  } else if (type == "cui") {
+    frontend_type = FrontendType::CUI;
+
+  } else {
+    reply_open(client, -1);
+    close(*pipe);
+    return;
   }
+
+  // Check common key.
+  if (common_key.empty()) {
+    connect_status = ConnectStatus::OPEN;
+    reply_open(client, 0);
+    return;
+
+  } else {
+    if (param.find("key") != param.end()) {
+      const std::string& client_common_key = param.at("key").get<std::string>();
+      if (client_common_key == common_key) {
+        connect_status = ConnectStatus::OPEN;
+        reply_open(client, 0);
+        return;
+      }
+    }
+  }
+
+  reply_open(client, -1);
+  close(*pipe);
 }
 
 /**
@@ -277,30 +258,47 @@ void FrontendConnector::recv_open_file(uv_pipe_t& client, picojson::object& para
  * @param content Data contain target module, pid, content of command.
  */
 void FrontendConnector::recv_relay_command(uv_pipe_t& client, picojson::object& content) {
-  CommandPacket packet = {
+#warning TODO
+  /*
+    Packet packet = {
     Convert::json2vpid(content.at("pid")),
-    Convert::json2nid(content.at("dst_nid")),
-    NID::NONE,
+    NodeID::from_json(content.at("dst_nid")),
+    NodeID::NONE,
     Convert::json2int<Module::Type>(content.at("module")),
     content.at("content").get<picojson::object>()
-  };
+    };
 
-  Router& router = Router::get_instance();
-  router.relay_command(packet, false);
+    Router& router = Router::get_instance();
+    router.relay_command(packet, false);
+  */
 }
 
 /**
- * Send connect_frontend command.
+ * Send authenticate reply command.
  * @param client Target frontend.
  * @param result Result code.
- * @param my_nid 
+ * @param my_nid Node-id for this node.
  */
-void FrontendConnector::send_connect_frontend(uv_pipe_t& client, int result, const nid_t& my_nid) {
+void FrontendConnector::reply_authenticate(uv_pipe_t& client, int result, const NodeID& my_nid) {
   picojson::object data;
 
-  data.insert(std::make_pair("command", picojson::value(std::string("connect_frontend"))));
+  data.insert(std::make_pair("command", picojson::value(std::string("authenticate"))));
   data.insert(std::make_pair("result",  picojson::value(static_cast<double>(result))));
-  data.insert(std::make_pair("my_nid",  Convert::nid2json(my_nid)));
+  data.insert(std::make_pair("my_nid",  my_nid.to_json()));
+
+  send_data(client, data);
+}
+
+/**
+ * Send open reply command.
+ * @param client Target frontend.
+ * @param result Result code.
+ */
+void FrontendConnector::reply_open(uv_pipe_t& client, int result) {
+  picojson::object data;
+
+  data.insert(std::make_pair("command", picojson::value(std::string("open"))));
+  data.insert(std::make_pair("result",  picojson::value(static_cast<double>(result))));
 
   send_data(client, data);
 }

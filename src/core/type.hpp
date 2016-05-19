@@ -18,6 +18,7 @@ namespace std {
 #include <vector>
 
 #include "processwarp/processwarp.h"
+#include "node_id.hpp"
 
 namespace processwarp {
 class Process;
@@ -26,10 +27,6 @@ class Thread;
 namespace BuiltinPostProc {
 typedef int Type;
 }  // namespace BuiltinPostProc
-
-namespace Module {
-typedef int Type;
-}  // namespace Module
 
 /** Virtual address. */
 typedef pw_ptr_t vaddr_t;
@@ -42,9 +39,6 @@ typedef std::string vpid_t;
 
 /** Thread-id in virtual-machone. */
 typedef vaddr_t vtid_t;
-
-/** Node-id is assigned for each node process run in any devices. */
-typedef std::string nid_t;
 
 /** Basic signed integer type in virtual-machine. */
 typedef pw_int_t  vm_int_t;
@@ -81,7 +75,7 @@ typedef BuiltinPostProc::Type (*builtin_func_t)(Process& proc, Thread& thread, B
  */
 struct NodeInfo {
   /** Node-id. */
-  nid_t nid;
+  NodeID nid;
   /** Node name. */
   std::string name;
   /** Last heartbeat time for node. */
@@ -93,7 +87,7 @@ struct NodeInfo {
  */
 struct ThreadInfo {
   vtid_t tid;
-  nid_t nid;
+  NodeID nid;
   std::time_t heartbeat;
 };
 
@@ -108,19 +102,10 @@ struct ProcessInfo {
   /** Map of thread-id and node-id, last heartbeat time that thread is running. */
   std::map<vtid_t, ThreadInfo> threads;
   /** Node-id that havign gui frontend bundled process or NONE. */
-  nid_t gui_nid;
+  NodeID gui_nid;
   /** True if vm bundled process is exist in this node. */
   bool having_vm;
   /** Last heartbeat time for process. */
   std::time_t heartbeat;
-};
-
-/** Packet for transport command. */
-struct CommandPacket {
-  const vpid_t& pid;
-  const nid_t& dst_nid;
-  const nid_t& src_nid;
-  const Module::Type module;  ///< Target (destination) module.
-  const picojson::object& content;  ///< Content format is depend on each module and command.
 };
 }  // namespace processwarp

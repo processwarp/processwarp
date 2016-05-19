@@ -48,15 +48,6 @@ inline std::string vaddr2str(const vaddr_t& addr) {
 }
 
 /**
- * Convert node-id to string.
- * @param nid Source node-id.
- * @return Converted value as string.
- */
-inline const std::string& nid2str(const nid_t& nid) {
-  return nid;
-}
-
-/**
  * Convert string to integer.
  * @param str A source string.
  * @return A converted integer.
@@ -90,15 +81,6 @@ inline vtid_t str2vtid(const std::string& str) {
  */
 inline vaddr_t str2vaddr(const std::string& str) {
   return str2int<vaddr_t>(str);
-}
-
-/**
- * Convert node-id to string.
- * @param str Source string value.
- * @return Node-id.
- */
-inline const nid_t& str2nid(const std::string& str) {
-  return str;
 }
 
 /**
@@ -166,15 +148,6 @@ inline std::vector<vaddr_t> json2vaddr_vector(const picojson::value& json) {
  */
 inline instruction_t json2code(const picojson::value& json) {
   return str2int<instruction_t>(json.get<std::string>());
-}
-
-/**
- * Convert a node-id from JSON
- * @param json Source JSON.
- * @return A node-id.
- */
-inline const nid_t& json2nid(const picojson::value& json) {
-  return str2nid(json.get<std::string>());
 }
 
 /**
@@ -250,15 +223,6 @@ inline picojson::value vaddr_vector2json(const std::vector<vaddr_t> av) {
  */
 inline picojson::value code2json(instruction_t code) {
   return picojson::value(int2str<instruction_t>(code));
-}
-
-/**
- * Convert node-id to JSON.
- * @param nid Source node-id.
- * @return node-id as JSON.
- */
-inline picojson::value nid2json(const nid_t& nid) {
-  return picojson::value(nid2str(nid));
 }
 
 /**

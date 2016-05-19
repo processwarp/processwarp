@@ -99,6 +99,7 @@ set(PWCORE_FILES
   logger.cpp
   logger_syslog.cpp
   message.cpp
+  node_id.cpp
   process.cpp
   scheduler.cpp
   stackinfo.cpp

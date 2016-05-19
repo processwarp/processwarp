@@ -7,6 +7,7 @@ const CONFIG    = require('./config.json');
 // Load modules.
 var app     = require('app');
 var BrowserWindow   = require('browser-window');
+var crypto  = require("crypto");
 var dialog  = require('dialog');
 var fs      = require('fs');
 var ipc     = require('electron').ipcMain;
@@ -18,12 +19,14 @@ var spawn   = require('child_process').spawn;
 require('crash-reporter').start();
 
 const CONNECT_BACKEND_TIMEOUT = 10;
+const COMMON_KEY        = crypto.randomBytes(64).toString('hex');
 
 const CONNECT_STATUS = {
-  SETUP:    0,  ///< Goint to open socket.
-  APPROACH: 1,  ///< Send account info, but not response yet.
-  CONNECT:  2,  ///< Approach was success, able to use.
-  CLOSE:    3,  ///< Disconnect from backend.
+  CLOSE:    0,  ///< Disconnect from backend.
+  BEGIN:    1,  ///< Launching backend program / send common key to open pipe.
+  OPEN:     2,  ///< After open pipe was success.
+  AUTH:     3,  ///< Send authenticate packet and not replied yet.
+  CONNECT:  4,  ///< After authentication was succeed.
 };
 
 var controller      = null;
@@ -41,8 +44,7 @@ var myNid           = NID.NONE;
  * @return {void}
  */
 app.on('window-all-closed', function() {
-  if (process.platform != 'darwin')
-    app.quit();
+  app.quit();
 });
 
 /**
@@ -51,6 +53,7 @@ app.on('window-all-closed', function() {
 app.on('ready', function() {
   initializeIpc();
   initializeController();
+  initializeBackend();
 });
 
 /**
@@ -59,6 +62,13 @@ app.on('ready', function() {
 app.on('activate', function() {
   initializeController();
 });
+
+function initializeBackend() {
+  console.assert(connectStatus == CONNECT_STATUS.CLOSE, connectStatus);
+
+  startBackend();
+  connectBackend(0);
+}
 
 /**
  * Create controller window and bind event listhener to close.
@@ -111,13 +121,8 @@ function onActionQuit() {
  * @return {void}
  */
 function onActionConnect(sender, param) {
-  console.assert(connectStatus == CONNECT_STATUS.CLOSE, connectStatus);
-
-  accountInfo.account  = param.account;
-  accountInfo.password = param.password;
-
-  startBackend();
-  connectBackend(0);
+  console.assert(connectStatus == CONNECT_STATUS.OPEN, connectStatus);
+  sendAuthenticate(param.account, param.password);
 }
 
 /**
@@ -160,10 +165,9 @@ function onActionOpenFile() {
  * @return {void}
  */
 function connectBackend(tryCount) {
-  console.assert(connectStatus == CONNECT_STATUS.CLOSE, connectStatus);
+  console.assert(connectStatus == CONNECT_STATUS.BEGIN, connectStatus);
 
   if (fs.existsSync(backendPipePath)) {
-    connectStatus = CONNECT_STATUS.APPROACH;
     backendSocket = new net.Socket();
 
     backendSocket.on('connect', onBackendConnect);
@@ -184,17 +188,16 @@ function connectBackend(tryCount) {
 }
 
 /**
- * When connect to the backend by socket is success, send connect command with account information.
+ * When connect to the backend by socket is success, send open command with frontend information.
  * @return {void}
  */
 function onBackendConnect() {
-  console.assert(connectStatus == CONNECT_STATUS.APPROACH, connectStatus);
+  console.assert(connectStatus == CONNECT_STATUS.BEGIN, connectStatus);
   
   sendData({
-    command:  'connect_frontend',
-    account:  accountInfo.account,
-    password: accountInfo.password,
+    command:  'open',
     type:     'gui',
+    key:      COMMON_KEY
   });
 }
 
@@ -204,7 +207,9 @@ function onBackendConnect() {
  */
 function onBackendClose() {
   backendSocket = null;
-  connectStatus = CONNECT_STATUS.CLOSE;
+  if (connectStatus != CONNECT_STATUS.CLOSE) {
+    connectStatus = CONNECT_STATUS.BEGIN;
+  }
 }
 
 /**
@@ -229,12 +234,13 @@ function onBackendRecvData(data) {
     backendBuffer = backendBuffer.slice(4 + psize + 1);
 
     switch (content.command) {
-      case 'connect_frontend': recvConnectFrontend(content); break;
-      case 'create': recvCreate(content); break;
       case 'relay_command': recvRelayCommand(content); break;
+      case 'open':          recvOpen(content); break;
+      case 'authenticate':  recvAuthenticate(content); break;
+      case 'create':        recvCreate(content); break;
       default: {
 	/// @todo eror
-	console.assert(false, 'todo');
+	console.assert(false, 'todo:' + content.command);
       } break;
     }
   }
@@ -247,27 +253,40 @@ function onBackendRecvData(data) {
 function onBackendError() {
   backendSocket.destroy();
   backendSocket = null;
-  connectStatus = CONNECT_STATUS.CLOSE;
+  connectStatus = CONNECT_STATUS.BEGIN;
 
   console.log('connection error.');
 }
 
 /**
- * When receive connect-frontend reply, send result to window.
- * If result code is 0, send action_connect_success, otherwise action_connect_failure.
+ * When receive 'authenticate' command, save my node-id and send result event to controller window.
  * @param packet.result {number} Result code.
+ * @param packet.my_nid {string} Node-id for this node.
  */
-function recvConnectFrontend(packet) {
+function recvAuthenticate(packet) {
+  console.assert(connectStatus == CONNECT_STATUS.AUTH, connectStatus);
+
   if (packet.result == 0) {
     myNid = packet.my_nid;
+    connectStatus = CONNECT_STATUS.CONNECT;
     controller.webContents.send('action_connect_success', {
       my_nid: myNid
     });
     sendCommandRequireProcessesInfo();
 
   } else {
+    connectStatus = CONNECT_STATUS.OPEN;
     controller.webContents.send('action_connect_failure', packet.result);
   }
+}
+
+/**
+ * When receive open reply, change status.
+ * @param packet.result {number} Result code.
+ */
+function recvOpen(packet) {
+  console.assert(packet.result == 0, 'Could not open pipe with backend process.');
+  connectStatus = CONNECT_STATUS.OPEN;
 }
 
 /**
@@ -379,8 +398,6 @@ function relayGuiCommand(packet) {
  * @return {void}
  */
 function sendData(data) {
-  if (connectStatus == CONNECT_STATUS.CLOSE) return;
-
   var str = JSON.stringify(data);
   var len = Buffer.byteLength(str, 'utf8');
   var buf = new Buffer(4 + len + 1);
@@ -393,6 +410,17 @@ function sendData(data) {
   }
 }
 
+function sendAuthenticate(account, password) {
+  console.assert(connectStatus == CONNECT_STATUS.OPEN, connectStatus);
+
+  connectStatus = CONNECT_STATUS.AUTH;
+  sendData({
+    command: 'authenticate',
+    account: account,
+    password: password
+  });
+}
+
 /**
  * Send a command to other module in this node through the backend.
  * @param pid {string} Process-id bundled to command.
@@ -402,6 +430,8 @@ function sendData(data) {
  * @param param {object} Parameter for a command.
  */
 function sendCommand(pid, dstNid, module, command, param) {
+  console.assert(connectStatus == CONNECT_STATUS.CONNECT, connectStatus);
+
   param.command = command;
   sendData({
     command: 'relay_command',
@@ -433,6 +463,8 @@ function sendCommandRequireProcessesInfo() {
  * @return {void}
  */
 function startBackend() {
+  console.assert(connectStatus == CONNECT_STATUS.CLOSE, connectStatus);
+
   // Spawn backend process.
   var backendProcess = spawn(CONFIG.BACKEND ||
                              path.join(__dirname, '..', '..', 'bin', 'processwarp'),
@@ -451,17 +483,17 @@ function startBackend() {
 
   backendProcess.on('exit', function(code) {
     // @todo error
+    connectStatus == CONNECT_STATUS.CLOSE;
   });
 
   // Generate configure for the backend process.
   backendPipePath = path.join(os.tmpdir(), 'pw-frontend-' + process.pid + '.pipe');
   var config = {
     server:     CONFIG.SERVER,
-    account:    accountInfo.account,
-    password:   accountInfo.password,
     message:    path.join(__dirname, '..', 'const', 'daemon_mid_c.json'),
     node_name:  CONFIG.NODE_NAME || os.hostname(),
     worker_pipe:    path.join(os.tmpdir(), 'pw-worker-' + process.pid + '.pipe'),
+    frontend_key:   COMMON_KEY,
     frontend_pipe:  backendPipePath,
     libs:       CONFIG.LIBS || [],
     lib_filter: CONFIG.LIB_FILTER ||
@@ -470,6 +502,7 @@ function startBackend() {
 
   // Pass configure.
   backendProcess.stdin.write(JSON.stringify(config));
+  connectStatus = CONNECT_STATUS.BEGIN;
 }
 
 /**

@@ -27,7 +27,7 @@ SchedulerDelegate::~SchedulerDelegate() {
  */
 Scheduler::Scheduler() :
     rnd(std::random_device()()) {
-  my_info.nid  = NID::NONE;
+  my_info.nid  = NodeID::NONE;
   my_info.name = "";
   my_info.heartbeat = 0;
 }
@@ -47,15 +47,15 @@ void Scheduler::initialize(SchedulerDelegate& delegate_) {
  * @param pid Process-id packet is bundled.
  * @param module Target module.
  */
-nid_t Scheduler::get_dst_nid(const vpid_t& pid, Module::Type module) {
-  assert(my_info.nid != NID::NONE);
+NodeID Scheduler::get_dst_nid(const vpid_t& pid, Module::Type module) {
+  assert(my_info.nid != NodeID::NONE);
 
   switch (module) {
     case Module::GUI: {
       auto it_proc = processes.find(pid);
 
       if (it_proc == processes.end() ||
-          it_proc->second.gui_nid == NID::NONE) {
+          it_proc->second.gui_nid == NodeID::NONE) {
         /// @todo error
         assert(false);
       }
@@ -66,7 +66,7 @@ nid_t Scheduler::get_dst_nid(const vpid_t& pid, Module::Type module) {
     default: {
       /// @todo error
       assert(false);
-      return NID::NONE;
+      return NodeID::NONE;
     } break;
   }
 }
@@ -77,7 +77,7 @@ nid_t Scheduler::get_dst_nid(const vpid_t& pid, Module::Type module) {
  */
 #if !defined(__ANDROID__)
 vpid_t Scheduler::get_new_pid() {
-  std::string seed = Convert::nid2str(my_info.nid) +
+  std::string seed = my_info.nid.to_str() +
     std::to_string(clock()) + std::to_string(rnd());
   vpid_t pid;
 
@@ -95,11 +95,11 @@ vpid_t Scheduler::get_new_pid() {
  * pass to capable method with parameters by command string.
  * @param packet Command packet containing command string and parameters.
  */
-void Scheduler::recv_command(const CommandPacket& packet) {
-  assert(my_info.nid != NID::NONE);
-  assert(packet.dst_nid != NID::NONE && packet.dst_nid != NID::THIS);
-  assert(packet.src_nid != NID::NONE && packet.src_nid != NID::THIS);
-  assert(packet.module == Module::SCHEDULER);
+void Scheduler::recv_command(const Packet& packet) {
+  assert(my_info.nid != NodeID::NONE);
+  assert(packet.dst_nid != NodeID::NONE && packet.dst_nid != NodeID::THIS);
+  assert(packet.src_nid != NodeID::NONE && packet.src_nid != NodeID::THIS);
+  assert(packet.dst_module == Module::SCHEDULER);
 
   const std::string& command = packet.content.at("command").get<std::string>();
   if (command == "activate") {
@@ -132,8 +132,9 @@ void Scheduler::recv_command(const CommandPacket& packet) {
   } else {
     Logger::warn(CoreMid::L1003);
     Logger::dbg(CoreMid::L1005,
-                packet.pid.c_str(), packet.dst_nid.c_str(), packet.src_nid.c_str(),
-                packet.module, picojson::value(packet.content).serialize().c_str());
+                packet.pid.c_str(), packet.dst_nid.to_str().c_str(),
+                packet.src_nid.to_str().c_str(), packet.dst_module,
+                picojson::value(packet.content).serialize().c_str());
     assert(false);
   }
 }
@@ -144,8 +145,8 @@ void Scheduler::recv_command(const CommandPacket& packet) {
  * @param nid Node-id of this node.
  * @param name Node name of this node.
  */
-void Scheduler::set_node_information(const nid_t& nid, const std::string& name) {
-  assert(nid != NID::NONE);
+void Scheduler::set_node_information(const NodeID& nid, const std::string& name) {
+  assert(nid != NodeID::NONE);
 
   my_info.nid  = nid;
   my_info.name = name;
@@ -157,7 +158,7 @@ void Scheduler::set_node_information(const nid_t& nid, const std::string& name) 
  */
 void Scheduler::execute() {
   // Skip if didn't setup yet.
-  if (my_info.nid == NID::NONE) return;
+  if (my_info.nid == NodeID::NONE) return;
 
   // Send a heartbeat each interval time.
   std::time_t now = std::time(nullptr);
@@ -231,7 +232,7 @@ void Scheduler::cleanup_unresponsive_process() {
  * call warp method to do it.
  * @param packet Command packet.
  */
-void Scheduler::recv_command_activate(const CommandPacket& packet) {
+void Scheduler::recv_command_activate(const Packet& packet) {
   assert(packet.pid == PID::BROADCAST);
 
   if (packet.src_nid == my_info.nid) return;
@@ -255,7 +256,7 @@ void Scheduler::recv_command_activate(const CommandPacket& packet) {
  * When receive create_gui command, call create_gui on frontend through delegate.
  * @param packet Command packet.
  */
-void Scheduler::recv_command_create_gui(const CommandPacket& packet) {
+void Scheduler::recv_command_create_gui(const Packet& packet) {
   assert(packet.pid != PID::BROADCAST);
 
   std::time_t now = time(nullptr);
@@ -287,7 +288,7 @@ void Scheduler::recv_command_create_gui(const CommandPacket& packet) {
  * When receive distribute command, distribute processes runnning in this node to another node.
  * @param packet Command packet.
  */
-void Scheduler::recv_command_distribute(const CommandPacket& packet) {
+void Scheduler::recv_command_distribute(const Packet& packet) {
   assert(packet.pid == PID::BROADCAST);
 
   if (packet.src_nid != my_info.nid) {
@@ -295,7 +296,7 @@ void Scheduler::recv_command_distribute(const CommandPacket& packet) {
     assert(false);
   }
 
-  nid_t target_nid = NID::NONE;
+  NodeID target_nid = NodeID::NONE;
   for (auto& it_node : nodes) {
     if (it_node.second.nid != my_info.nid) {
       target_nid = it_node.second.nid;
@@ -323,7 +324,7 @@ void Scheduler::recv_command_distribute(const CommandPacket& packet) {
  * When receive heartbeat_gui command, update destination node-id for GUI
  * @param packet Command packet.
  */
-void Scheduler::recv_command_heartbeat_gui(const CommandPacket& packet) {
+void Scheduler::recv_command_heartbeat_gui(const Packet& packet) {
   assert(packet.pid != PID::BROADCAST);
 
   std::time_t now = time(nullptr);
@@ -347,7 +348,7 @@ void Scheduler::recv_command_heartbeat_gui(const CommandPacket& packet) {
  * When receive heartbeat_scheduler command, save sender's information and update timestamp.
  * @param packet Command packet.
  */
-void Scheduler::recv_command_heartbeat_scheduler(const CommandPacket& packet) {
+void Scheduler::recv_command_heartbeat_scheduler(const Packet& packet) {
   std::string name = packet.content.at("name").get<std::string>();
   std::time_t now  = std::time(nullptr);
   auto it_info = nodes.find(packet.src_nid);
@@ -376,14 +377,14 @@ void Scheduler::recv_command_heartbeat_scheduler(const CommandPacket& packet) {
  * @todo Remove process if no one threads are rest.
  * @param packet Command packet.
  */
-void Scheduler::recv_command_heartbeat_vm(const CommandPacket& packet) {
+void Scheduler::recv_command_heartbeat_vm(const Packet& packet) {
   bool is_changed = false;
   std::time_t now = std::time(nullptr);
 
   if (processes.find(packet.pid) == processes.end()) {
     ProcessInfo info;
     info.pid = packet.pid;
-    info.gui_nid = NID::NONE;
+    info.gui_nid = NodeID::NONE;
     info.having_vm = false;
     processes.insert(std::make_pair(packet.pid, info));
   }
@@ -426,7 +427,7 @@ void Scheduler::recv_command_heartbeat_vm(const CommandPacket& packet) {
   while (it_thread != info.threads.end()) {
     if (it_thread->second.nid == packet.src_nid &&
         tids.find(it_thread->first) == tids.end()) {
-      it_thread->second.nid = NID::NONE;
+      it_thread->second.nid = NodeID::NONE;
       is_changed = true;
 
     } else {
@@ -440,7 +441,7 @@ void Scheduler::recv_command_heartbeat_vm(const CommandPacket& packet) {
 /**
  * When receive require_processes_info, send processes_info command.
  */
-void Scheduler::recv_command_require_processes_info(const CommandPacket& packet) {
+void Scheduler::recv_command_require_processes_info(const Packet& packet) {
   send_command_processes_info();
 }
 
@@ -448,7 +449,7 @@ void Scheduler::recv_command_require_processes_info(const CommandPacket& packet)
  * When receive warp_gui packet, create gui in this node.
  * @param packet Command packet.
  */
-void Scheduler::recv_command_warp_gui(const CommandPacket& packet) {
+void Scheduler::recv_command_warp_gui(const Packet& packet) {
   auto it_info = processes.find(packet.pid);
   std::time_t now = time(nullptr);
 
@@ -474,7 +475,7 @@ void Scheduler::recv_command_warp_gui(const CommandPacket& packet) {
  * Send warp_thread command to the new vm.
  * @param packet Command packet.
  */
-void Scheduler::recv_command_warp_thread(const CommandPacket& packet) {
+void Scheduler::recv_command_warp_thread(const Packet& packet) {
   std::time_t now = std::time(nullptr);
   auto it_info = processes.find(packet.pid);
   if (it_info == processes.end() ||
@@ -482,7 +483,7 @@ void Scheduler::recv_command_warp_thread(const CommandPacket& packet) {
     delegate->scheduler_create_vm(*this, packet.pid,
                                   Convert::json2vtid(packet.content.at("root_tid")),
                                   Convert::json2vaddr(packet.content.at("proc_addr")),
-                                  Convert::json2nid(packet.content.at("master_nid")),
+                                  NodeID::from_json(packet.content.at("master_nid")),
                                   packet.content.at("name").get<std::string>());
   }
 
@@ -490,7 +491,7 @@ void Scheduler::recv_command_warp_thread(const CommandPacket& packet) {
     ProcessInfo info;
     info.pid = packet.pid;
     info.name = packet.content.at("name").get<std::string>();
-    info.gui_nid = NID::NONE;
+    info.gui_nid = NodeID::NONE;
     info.having_vm = true;
     info.heartbeat = now;
     processes.insert(std::make_pair(packet.pid, info));
@@ -511,12 +512,13 @@ void Scheduler::recv_command_warp_thread(const CommandPacket& packet) {
  * @param command Command string.
  * @param param Parameter for command JSON fromatted.
  */
-void Scheduler::send_command(const vpid_t& pid, const nid_t& dst_nid, Module::Type module,
+void Scheduler::send_command(const vpid_t& pid, const NodeID& dst_nid, Module::Type module,
                              const std::string& command, picojson::object& param) {
   assert(param.find("command") == param.end());
 
   param.insert(std::make_pair("command", picojson::value(command)));
-  delegate->scheduler_send_command(*this, {pid, dst_nid, my_info.nid, module, param});
+#warning TODO
+  // delegate->scheduler_send_command(*this, {pid, dst_nid, my_info.nid, module, param});
 }
 
 /**
@@ -526,7 +528,7 @@ void Scheduler::send_command_heartbeat_scheduler() {
   picojson::object param;
   param.insert(std::make_pair("name", picojson::value(my_info.name)));
 
-  send_command(PID::BROADCAST, NID::BROADCAST, Module::SCHEDULER,
+  send_command(PID::BROADCAST, NodeID::BROADCAST, Module::SCHEDULER,
                "heartbeat_scheduler", param);
 }
 
@@ -542,7 +544,7 @@ void Scheduler::send_command_processes_info() {
     for (auto& it_thread : info.threads) {
       ThreadInfo& thread_info = it_thread.second;
       threads.insert(std::make_pair(Convert::vtid2str(thread_info.tid),
-                                    Convert::nid2json(thread_info.nid)));
+                                    thread_info.nid.to_json()));
     }
 
     picojson::object proc;
@@ -565,10 +567,10 @@ void Scheduler::send_command_processes_info() {
  * @param pid Target process-id to warp.
  * @param target_nid Destination node-id to warp.
  */
-void Scheduler::send_command_require_warp_gui(const vpid_t& pid, const nid_t& target_nid) {
+void Scheduler::send_command_require_warp_gui(const vpid_t& pid, const NodeID& target_nid) {
   picojson::object param;
-  param.insert(std::make_pair("target_nid", Convert::nid2json(target_nid)));
-  send_command(pid, NID::THIS, Module::GUI, "require_warp_gui", param);
+  param.insert(std::make_pair("target_nid", target_nid.to_json()));
+  send_command(pid, NodeID::THIS, Module::GUI, "require_warp_gui", param);
 }
 
 /**
@@ -578,11 +580,11 @@ void Scheduler::send_command_require_warp_gui(const vpid_t& pid, const nid_t& ta
  * @param target_nid Destination node-id to warp.
  */
 void Scheduler::send_command_require_warp_thread(const vpid_t& pid, vtid_t tid,
-                                                 const nid_t& target_nid) {
+                                                 const NodeID& target_nid) {
   picojson::object param;
   param.insert(std::make_pair("tid", Convert::vtid2json(tid)));
-  param.insert(std::make_pair("target_nid", Convert::nid2json(target_nid)));
-  send_command(pid, NID::THIS, Module::VM, "require_warp_thread", param);
+  param.insert(std::make_pair("target_nid", target_nid.to_json()));
+  send_command(pid, NodeID::THIS, Module::VM, "require_warp_thread", param);
 }
 
 /**
@@ -593,6 +595,6 @@ void Scheduler::send_command_require_warp_thread(const vpid_t& pid, vtid_t tid,
 void Scheduler::send_command_warp_thread(const vpid_t& pid, vtid_t tid) {
   picojson::object param;
   param.insert(std::make_pair("tid", Convert::vtid2json(tid)));
-  send_command(pid, NID::THIS, Module::VM, "warp_thread", param);
+  send_command(pid, NodeID::THIS, Module::VM, "warp_thread", param);
 }
 }  // namespace processwarp

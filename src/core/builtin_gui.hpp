@@ -12,7 +12,7 @@ class BuiltinGuiDelegate {
  public:
   virtual ~BuiltinGuiDelegate();
 
-  virtual void builtin_gui_send_command(Process& proc, const nid_t& dst_nid, Module::Type module,
+  virtual void builtin_gui_send_command(Process& proc, const NodeID& dst_nid, Module::Type module,
                                         const std::string& command, picojson::object& param) = 0;
 };
 

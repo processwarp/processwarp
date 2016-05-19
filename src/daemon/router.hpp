@@ -7,7 +7,8 @@
 #include <string>
 #include <vector>
 
-#include "daemon_define.hpp"
+#include "constant_native.hpp"
+#include "packet.hpp"
 #include "scheduler.hpp"
 #include "type.hpp"
 
@@ -17,12 +18,10 @@ class Router : public SchedulerDelegate {
   static Router& get_instance();
 
   void initialize(uv_loop_t* loop_, const picojson::object& config_);
-  bool check_account(const std::string& account, const std::string& password);
   void load_llvm(const std::string& filename, const std::vector<std::string>& args);
-  const nid_t& get_my_nid();
-  void recv_connect_node();
-  void recv_bind_node(const nid_t& nid);
-  void relay_command(const CommandPacket& packet, bool is_from_server);
+  const NodeID& get_my_nid();
+  void recv_bind_node(const NodeID& nid);
+  void relay_command(const Packet& packet, bool is_from_server);
 
  private:
   /** Main loop of libuv. */
@@ -32,7 +31,7 @@ class Router : public SchedulerDelegate {
   /** Configuration. */
   picojson::object config;
   /** This node's node-id. */
-  nid_t my_nid;
+  NodeID my_nid;
   /** Scheduler for this node. */
   Scheduler scheduler;
 
@@ -41,10 +40,10 @@ class Router : public SchedulerDelegate {
   Router& operator=(const Router&);
 
   void scheduler_create_vm(Scheduler& scheduler, const vpid_t& pid, vtid_t root_tid,
-                           vaddr_t proc_addr, const nid_t& master_nid,
+                           vaddr_t proc_addr, const NodeID& master_nid,
                            const std::string& name) override;
   void scheduler_create_gui(Scheduler& scheduler, const vpid_t& pid) override;
-  void scheduler_send_command(Scheduler& scheduler, const CommandPacket& packet) override;
+  void scheduler_send_command(Scheduler& scheduler, const Packet& packet) override;
 
   static void on_timer_for_execute(uv_timer_t* handle);
 

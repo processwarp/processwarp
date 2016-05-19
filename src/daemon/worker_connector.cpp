@@ -62,7 +62,7 @@ void WorkerConnector::initialize(uv_loop_t* loop, const std::string& pipe_path_,
  * @param name Process name for new vm.
  */
 void WorkerConnector::create_vm(const vpid_t& pid, vtid_t root_tid, vaddr_t proc_addr,
-                                const nid_t& master_nid, const std::string& name) {
+                                const NodeID& master_nid, const std::string& name) {
   std::string worker_path = Util::file_dirname(Util::get_my_fullpath()) + "/worker";
   Router& router = Router::get_instance();
 
@@ -73,7 +73,7 @@ void WorkerConnector::create_vm(const vpid_t& pid, vtid_t root_tid, vaddr_t proc
 
   properties.insert(std::make_pair(pid, WorkerProperty()));
   WorkerProperty& property = properties.at(pid);
-  property.status = PipeStatus::SETUP;
+  property.status = ConnectStatus::BEGIN;
   property.pid    = pid;
   property.pipe   = nullptr;
   property.process.data = &property;
@@ -112,10 +112,10 @@ void WorkerConnector::create_vm(const vpid_t& pid, vtid_t root_tid, vaddr_t proc
   // Send initialize data.
   picojson::object connect_data;
   connect_data.insert(std::make_pair("command", picojson::value(std::string("connect_worker"))));
-  connect_data.insert(std::make_pair("my_nid", Convert::nid2json(router.get_my_nid())));
+  connect_data.insert(std::make_pair("my_nid", router.get_my_nid().to_json()));
   connect_data.insert(std::make_pair("root_tid", Convert::vtid2json(root_tid)));
   connect_data.insert(std::make_pair("proc_addr", Convert::vaddr2json(proc_addr)));
-  connect_data.insert(std::make_pair("master_nid", Convert::nid2json(master_nid)));
+  connect_data.insert(std::make_pair("master_nid", master_nid.to_json()));
   connect_data.insert(std::make_pair("name", picojson::value(std::string(name))));
   connect_data.insert(std::make_pair("libs", picojson::value(config_libs)));
   connect_data.insert(std::make_pair("lib_filter", picojson::value(config_lib_filter)));
@@ -126,17 +126,17 @@ void WorkerConnector::create_vm(const vpid_t& pid, vtid_t root_tid, vaddr_t proc
  * Relay command to VM or memory by through a worker.
  * @param packet Command packet.
  */
-void WorkerConnector::relay_command(const CommandPacket& packet) {
-  assert(packet.module == Module::MEMORY || packet.module == Module::VM);
+void WorkerConnector::relay_command(const Packet& packet) {
+  assert(packet.dst_module == Module::MEMORY || packet.dst_module == Module::VM);
 
   if (properties.find(packet.pid) == properties.end()) return;
 
   picojson::object data;
   data.insert(std::make_pair("command", picojson::value(std::string("relay_command"))));
   data.insert(std::make_pair("pid", Convert::vpid2json(packet.pid)));
-  data.insert(std::make_pair("dst_nid", Convert::nid2json(packet.dst_nid)));
-  data.insert(std::make_pair("src_nid", Convert::nid2json(packet.src_nid)));
-  data.insert(std::make_pair("module", Convert::int2json<Module::Type>(packet.module)));
+  data.insert(std::make_pair("dst_nid", packet.dst_nid.to_json()));
+  data.insert(std::make_pair("src_nid", packet.src_nid.to_json()));
+  data.insert(std::make_pair("module", Convert::int2json<Module::Type>(packet.dst_module)));
   data.insert(std::make_pair("content", picojson::value(packet.content)));
 
   send_data(packet.pid, data);
@@ -210,7 +210,7 @@ void WorkerConnector::recv_connect_worker(uv_pipe_t& pipe, picojson::object& par
     /// @todo error
     assert(false);
   }
-  property.status = PipeStatus::CONNECT;
+  property.status = ConnectStatus::CONNECT;
   property.pipe = &pipe;
   pid_map.insert(std::make_pair(&pipe, pid));
 
@@ -226,16 +226,19 @@ void WorkerConnector::recv_connect_worker(uv_pipe_t& pipe, picojson::object& par
  * @param content Packet content that contain command string and parameters.
  */
 void WorkerConnector::recv_relay_command(const vpid_t& pid, picojson::object& content) {
-  CommandPacket packet = {
+#warning TODO
+  /*
+  Packet packet = {
     pid,
-    Convert::json2nid(content.at("dst_nid")),
-    NID::NONE,
+    NodeID::from_json(content.at("dst_nid")),
+    NodeID::NONE,
     Convert::json2int<Module::Type>(content.at("module")),
     content.at("content").get<picojson::object>()
   };
 
   Router& router = Router::get_instance();
   router.relay_command(packet, false);
+  */
 }
 
 /**
@@ -246,15 +249,11 @@ void WorkerConnector::recv_relay_command(const vpid_t& pid, picojson::object& co
 void WorkerConnector::send_data(const vpid_t& pid, const picojson::object& data) {
   WorkerProperty& property = properties.at(pid);
 
-  if (property.status == PipeStatus::CONNECT) {
+  if (property.status == ConnectStatus::CONNECT) {
     Connector::send_data(*property.pipe, data);
 
-  } else if (property.status == PipeStatus::SETUP) {
-    property.send_wait.push_back(data);
-
   } else {
-    /// @todo error
-    assert(false);
+    property.send_wait.push_back(data);
   }
 }
 #endif  // ifndef WORKER_DUMMY
