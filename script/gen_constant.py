@@ -68,6 +68,7 @@ if args.cpp_dst:
               '#include "type.hpp"\n\n'
               'namespace processwarp {\n\n')
     for fname in args.input:
+        print 'processing {}'.format(fname)
         json_data = json.load(open(fname, 'r'))
         # Set default type of C/C++ if not set.
         if 'c_type' not in json_data:
