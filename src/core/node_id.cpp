@@ -1,4 +1,6 @@
 
+#include <functional>
+#include <random>
 #ifdef WITH_RE2
 #  include <re2/re2.h>
 #else
@@ -110,10 +112,21 @@ NodeID NodeID::from_json(const picojson::value& json) {
   return from_str(json.get<std::string>());
 }
 
+/**
+ * Make a rundom node-id.
+ * @return A node-id.
+ */
+NodeID NodeID::make_random() {
+  std::random_device seed_gen;
+  std::mt19937_64 rnd(seed_gen());
+
+  return NodeID(rnd(), rnd());
+}
+
 NodeID& NodeID::operator=(const NodeID& src) {
   type = src.type;
   id[0] = src.id[0];
-  id[0] = src.id[1];
+  id[1] = src.id[1];
 
   return *this;
 }
@@ -160,7 +173,33 @@ bool NodeID::operator<(const NodeID& b) const {
  * @return Converted value as a string.
  */
 std::string NodeID::to_str() const {
-  return Util::num2hex_str(id[0]) + Util::num2hex_str(id[1]);
+  switch (type) {
+    case Type::NONE: {
+      return NID::NONE;
+    } break;
+
+    case Type::NORMAL: {
+      return Util::num2hex_str(id[0]) + Util::num2hex_str(id[1]);
+    } break;
+
+    case Type::THIS: {
+      return NID::THIS;
+    } break;
+
+    case Type::SERVER: {
+      return NID::SERVER;
+    } break;
+
+    case Type::BROADCAST: {
+      return NID::BROADCAST;
+    } break;
+
+    default: {
+      /// @todo error
+      assert(false);
+      return NID::NONE;
+    } break;
+  }
 }
 
 /**

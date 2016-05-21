@@ -17,6 +17,7 @@ class NodeID {
 
   static NodeID from_str(const std::string str);
   static NodeID from_json(const picojson::value& json);
+  static NodeID make_random();
 
   NodeID();
   NodeID(const NodeID& src);

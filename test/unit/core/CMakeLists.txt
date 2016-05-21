@@ -27,6 +27,16 @@ add_test(
   COMMAND $<TARGET_FILE:test_convert_0.test>
   )
 
+# node_id
+add_executable(test_node_id_0.test
+  test_node_id.cpp
+  )
+target_link_libraries(test_node_id_0.test ${extra_libs})
+add_test(
+  NAME test_node_id
+  COMMAND $<TARGET_FILE:test_node_id_0.test>
+  )
+
 # util
 add_executable(test_util_0.test
   test_util.cpp
