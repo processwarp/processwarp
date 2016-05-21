@@ -2,42 +2,46 @@
 
 // Load constant value.
 require('./constant');
-const CONFIG    = require('./config.json');
+const CONFIG = require('./config.json');
 
 // Load modules.
-var app     = require('app');
-var BrowserWindow   = require('browser-window');
-var crypto  = require("crypto");
-var dialog  = require('dialog');
-var fs      = require('fs');
-var ipc     = require('electron').ipcMain;
-var net     = require('net');
-var os      = require('os');
-var path    = require('path');
-var spawn   = require('child_process').spawn;
+var app = require('app');
+var BrowserWindow = require('browser-window');
+var crypto = require("crypto");
+var dialog = require('dialog');
+var fs = require('fs');
+var ipc = require('electron').ipcMain;
+var net = require('net');
+var os = require('os');
+var path = require('path');
+var spawn = require('child_process').spawn;
 
 require('crash-reporter').start();
 
 const CONNECT_BACKEND_TIMEOUT = 10;
-const COMMON_KEY        = crypto.randomBytes(64).toString('hex');
+const COMMON_KEY = crypto.randomBytes(64).toString('hex');
 
 const CONNECT_STATUS = {
-  CLOSE:    0,  ///< Disconnect from backend.
-  BEGIN:    1,  ///< Launching backend program / send common key to open pipe.
-  OPEN:     2,  ///< After open pipe was success.
-  AUTH:     3,  ///< Send authenticate packet and not replied yet.
-  CONNECT:  4,  ///< After authentication was succeed.
+  /** Disconnect from backend. */
+  CLOSE: 0,
+  /** Launching backend program / send common key to open pipe. */
+  BEGIN: 1,
+  /** After open pipe was success. */
+  OPEN: 2,
+  /** Send authenticate packet and not replied yet. */
+  AUTH: 3,
+  /** After authentication was succeed. */
+  CONNECT: 4
 };
 
-var controller      = null;
-var backendProcess  = null;
+var controller = null;
+var backendProcess = null;
 var backendPipePath = null;
-var backendSocket   = null;
-var backendBuffer   = new Buffer(0);
-var accountInfo     = {};
-var connectStatus   = CONNECT_STATUS.CLOSE;
-var contexts        = {};
-var myNid           = NID.NONE;
+var backendSocket = null;
+var backendBuffer = new Buffer(0);
+var connectStatus = CONNECT_STATUS.CLOSE;
+var contexts = {};
+var myNid = NID.NONE;
 
 /**
  * Quit main process when all window was closed.
@@ -64,7 +68,7 @@ app.on('activate', function() {
 });
 
 function initializeBackend() {
-  console.assert(connectStatus == CONNECT_STATUS.CLOSE, connectStatus);
+  console.assert(connectStatus === CONNECT_STATUS.CLOSE, connectStatus);
 
   startBackend();
   connectBackend(0);
@@ -75,7 +79,9 @@ function initializeBackend() {
  * @return {void}
  */
 function initializeController() {
-  if (controller != null) return;
+  if (controller !== null) {
+    return;
+  }
 
   controller = new BrowserWindow({
     minHeight: 400,
@@ -95,12 +101,12 @@ function initializeController() {
  * @return {void}
  */
 function initializeIpc() {
-  ipc.on('action_quit',      onActionQuit);
-  ipc.on('action_connect',   onActionConnect);
-  ipc.on('action_activate',  onActionActivate);
+  ipc.on('action_quit', onActionQuit);
+  ipc.on('action_connect', onActionConnect);
+  ipc.on('action_activate', onActionActivate);
   ipc.on('action_open_file', onActionOpenFile);
 
-  ipc.on('gui_load',          onGuiLoad);
+  ipc.on('gui_load', onGuiLoad);
   ipc.on('gui_relay_command', onGuiRelayCommand);
 }
 
@@ -116,12 +122,12 @@ function onActionQuit() {
  * When connect action is done in the interface,
  * store account infromation to connect.
  * Start the backend process and connect to it.
- * @param param.account {string} Accoutn ID.
- * @param param.password {string} Password.
+ * @param {object} sender Sender window.
+ * @param {object} param Parameter containing account, password.
  * @return {void}
  */
 function onActionConnect(sender, param) {
-  console.assert(connectStatus == CONNECT_STATUS.OPEN, connectStatus);
+  console.assert(connectStatus === CONNECT_STATUS.OPEN, connectStatus);
   sendAuthenticate(param.account, param.password);
 }
 
@@ -142,17 +148,17 @@ function onActionOpenFile() {
     {
       title: 'Open and execute.',
       filters: [{
-	name: 'LLVM-IR',
-	extensions: ['ll', 'bc']
+        name: 'LLVM-IR',
+        extensions: ['ll', 'bc']
       }],
       properties: ['openFile']
     },
     function(filename) {
       if (filename && filename.length) {
-	sendData({
-	  command: 'open_file',
-	  filename: filename[0],
-	});
+        sendData({
+          command: 'open_file',
+          filename: filename[0]
+        });
       }
     }
   );
@@ -161,28 +167,27 @@ function onActionOpenFile() {
 /**
  * Try to connect until CONNECT_BACKEND_TIMEOUT[sec] has not passed.
  * If connect to the backend by a the pipe has success, set event listener.
- * @param tryCount {number} Count of trying to connect to backend process.
+ * @param {number} tryCount Count of trying to connect to backend process.
  * @return {void}
  */
 function connectBackend(tryCount) {
-  console.assert(connectStatus == CONNECT_STATUS.BEGIN, connectStatus);
+  console.assert(connectStatus === CONNECT_STATUS.BEGIN, connectStatus);
 
   if (fs.existsSync(backendPipePath)) {
     backendSocket = new net.Socket();
 
     backendSocket.on('connect', onBackendConnect);
-    backendSocket.on('close',   onBackendClose);
-    backendSocket.on('data',    onBackendRecvData);
-    backendSocket.on('error',   onBackendError);
+    backendSocket.on('close', onBackendClose);
+    backendSocket.on('data', onBackendRecvData);
+    backendSocket.on('error', onBackendError);
 
     backendSocket.connect(backendPipePath);
-
   } else if (tryCount < CONNECT_BACKEND_TIMEOUT) {
-    setTimeout(function() { connectBackend(tryCount + 1) },
-               1000);
-
+    setTimeout(function() {
+      connectBackend(tryCount + 1);
+    }, 1000);
   } else {
-    /// @todo error
+    // @todo error
     console.assert(false, 'connect backend failed.');
   }
 }
@@ -192,12 +197,12 @@ function connectBackend(tryCount) {
  * @return {void}
  */
 function onBackendConnect() {
-  console.assert(connectStatus == CONNECT_STATUS.BEGIN, connectStatus);
-  
+  console.assert(connectStatus === CONNECT_STATUS.BEGIN, connectStatus);
+
   sendData({
-    command:  'open',
-    type:     'gui',
-    key:      COMMON_KEY
+    command: 'open',
+    type: 'gui',
+    key: COMMON_KEY
   });
 }
 
@@ -207,7 +212,7 @@ function onBackendConnect() {
  */
 function onBackendClose() {
   backendSocket = null;
-  if (connectStatus != CONNECT_STATUS.CLOSE) {
+  if (connectStatus !== CONNECT_STATUS.CLOSE) {
     connectStatus = CONNECT_STATUS.BEGIN;
   }
 }
@@ -216,17 +221,19 @@ function onBackendClose() {
  * When receive data from backend, clip packet and call capable method.
  * Concaenate stream data received yet with just now as buffer.
  * Packet format is the same to sendData method.
- * @param data {Buffer} Received data.
+ * @param {Buffer} data Received data.
  * @return {void}
  */
 function onBackendRecvData(data) {
   backendBuffer = Buffer.concat([backendBuffer, data]);
 
   while (backendBuffer.length >= 4) {
-    var psize = backendBuffer.readUInt32BE(0);  
-    if (backendBuffer.length < 4 + psize + 1) return;
-    if (backendBuffer.readUInt8(4 + psize) != 0) {
-      /// @todo error
+    var psize = backendBuffer.readUInt32BE(0);
+    if (backendBuffer.length < 4 + psize + 1) {
+      return;
+    }
+    if (backendBuffer.readUInt8(4 + psize) !== 0) {
+      // @todo error
       console.assert(false, 'todo');
     }
 
@@ -234,14 +241,26 @@ function onBackendRecvData(data) {
     backendBuffer = backendBuffer.slice(4 + psize + 1);
 
     switch (content.command) {
-      case 'relay_command': recvRelayCommand(content); break;
-      case 'open':          recvOpen(content); break;
-      case 'authenticate':  recvAuthenticate(content); break;
-      case 'create':        recvCreate(content); break;
-      default: {
-	/// @todo eror
-	console.assert(false, 'todo:' + content.command);
-      } break;
+      case 'relay_command':
+        recvRelayCommand(content);
+        break;
+
+      case 'open':
+        recvOpen(content);
+        break;
+
+      case 'authenticate':
+        recvAuthenticate(content);
+        break;
+
+      case 'create':
+        recvCreate(content);
+        break;
+
+      default:
+	// @todo eror
+        console.assert(false, 'todo:' + content.command);
+        break;
     }
   }
 }
@@ -264,16 +283,15 @@ function onBackendError() {
  * @param packet.my_nid {string} Node-id for this node.
  */
 function recvAuthenticate(packet) {
-  console.assert(connectStatus == CONNECT_STATUS.AUTH, connectStatus);
+  console.assert(connectStatus === CONNECT_STATUS.AUTH, connectStatus);
 
-  if (packet.result == 0) {
+  if (packet.result === 0) {
     myNid = packet.my_nid;
     connectStatus = CONNECT_STATUS.CONNECT;
     controller.webContents.send('action_connect_success', {
       my_nid: myNid
     });
     sendCommandRequireProcessesInfo();
-
   } else {
     connectStatus = CONNECT_STATUS.OPEN;
     controller.webContents.send('action_connect_failure', packet.result);
@@ -282,34 +300,37 @@ function recvAuthenticate(packet) {
 
 /**
  * When receive open reply, change status.
- * @param packet.result {number} Result code.
+ * @param {object} packet Receive data containgin result.
  */
 function recvOpen(packet) {
-  console.assert(packet.result == 0, 'Could not open pipe with backend process.');
+  console.assert(packet.result === 0, 'Could not open pipe with backend process.');
   connectStatus = CONNECT_STATUS.OPEN;
 }
 
 /**
  * When receive 'create' GUI command, create a new GUI window and load default HTML.
  * The GUI created is regist for contexts set with process-id.
- * @param pid {string} Process-id bundled for window.
- * @param param {object} Not used.
+ * @param {object} param Not used.
  */
 function recvCreate(param) {
-  var pid = param.pid
+  var pid = param.pid;
 
   console.assert(pid !== PID.BROADCAST);
 
   // Exists gui window for pid yet.
-  if (pid in contexts) return;
+  if (pid in contexts) {
+    return;
+  }
 
   var window = new BrowserWindow();
-  window.on('closed', function(event) { onGuiClose(event, pid); });
+  window.on('closed', function(event) {
+    onGuiClose(event, pid);
+  });
   window.loadURL('file://' + __dirname + '/gui.html');
   window.webContents.pid = pid;
 
   var context = {};
-  context.is_normal = false;
+  context.isNormal = false;
   context.packets = [];
   context.window = window;
 
@@ -318,49 +339,60 @@ function recvCreate(param) {
 
 /**
  * When receive command for fontend, pass it capable GUI module or CONTROLLER module.
- * @param packet {object} Command packet.
+ * @param {object} packet Command packet.
  * @return {void}
  */
 function recvRelayCommand(packet) {
   switch (parseInt(packet.module, 10)) {
-    case MODULE.GUI:        relayGuiCommand(packet); break;
-    case MODULE.CONTROLLER: recvCommand(packet);     break;
-    default: {
-      /// @todo drop
+    case MODULE.GUI:
+      relayGuiCommand(packet);
+      break;
+
+    case MODULE.CONTROLLER:
+      recvCommand(packet);
+      break;
+
+    default:
+      // @todo drop
       console.assert(false, packet);
-    }
+      break;
   }
 }
 
 /**
  * When receive command for controller, call capable method to do it.
- * @param packet {object} Command packet.
+ * @param {object} packet Command packet.
  * @return {void}
  */
 function recvCommand(packet) {
   switch (packet.content.command) {
-    case 'processes_info': recvCommandProcessesInfo(packet.content); break;
-    default: {
-      /// @todo error
+    case 'processes_info':
+      recvCommandProcessesInfo(packet.content);
+      break;
+
+    default:
+      // @todo error
       console.assert(false, 'unsupport : ' + JSON.stringify(packet.content));
-    } break;
+      break;
   }
 }
 
 /**
  * When receive show_process_list command, relay it to renderer process.
- * @param pid {string} Not used.
- * @param param {object} Parameter containing process list.
+ * @param {string} pid Not used.
+ * @param {object} param Parameter containing process list.
  */
 function recvCommandProcessesInfo(param) {
-  if (controller == null) return;
+  if (controller === null) {
+    return;
+  }
   controller.webContents.send('show_process_list', param.processes);
 }
 
 /**
  * When receive command packet for GUI module, relay it by electron connect.
  * Push it to waiting quieue if connection is disabled.
- * @param packet Command packet to relay.
+ * @param {object} packet Command packet to relay.
  * @return {void}
  */
 function relayGuiCommand(packet) {
@@ -368,7 +400,7 @@ function relayGuiCommand(packet) {
   function sendOrPush(pid, packet) {
     var context = contexts[pid];
 
-    if (context.is_normal) {
+    if (context.isNormal) {
       context.window.webContents.send('gui_relay_command', packet);
     } else {
       context.packets.push(packet);
@@ -380,7 +412,6 @@ function relayGuiCommand(packet) {
     for (var pid in contexts) {
       sendOrPush(pid, packet);
     }
-
   } else {
     if (packet.pid in contexts) {
       sendOrPush(packet.pid, packet);
@@ -394,7 +425,7 @@ function relayGuiCommand(packet) {
  * Send data packet to backend.
  * Convert packet format JSON formatted string.
  * Send length, string, and '\0' as terminater.
- * @param data {object} Data content.
+ * @param {object} data Data content.
  * @return {void}
  */
 function sendData(data) {
@@ -411,7 +442,7 @@ function sendData(data) {
 }
 
 function sendAuthenticate(account, password) {
-  console.assert(connectStatus == CONNECT_STATUS.OPEN, connectStatus);
+  console.assert(connectStatus === CONNECT_STATUS.OPEN, connectStatus);
 
   connectStatus = CONNECT_STATUS.AUTH;
   sendData({
@@ -423,21 +454,21 @@ function sendAuthenticate(account, password) {
 
 /**
  * Send a command to other module in this node through the backend.
- * @param pid {string} Process-id bundled to command.
- * @param dstNide {string} Destination node-id.
- * @param module {int} Target module.
- * @param command {string} Command string.
- * @param param {object} Parameter for a command.
+ * @param {string} pid Process-id bundled to command.
+ * @param {string} dstNide Destination node-id.
+ * @param {number} module Target module.
+ * @param {string} command Command string.
+ * @param {object} param Parameter for a command.
  */
 function sendCommand(pid, dstNid, module, command, param) {
-  console.assert(connectStatus == CONNECT_STATUS.CONNECT, connectStatus);
+  console.assert(connectStatus === CONNECT_STATUS.CONNECT, connectStatus);
 
   param.command = command;
   sendData({
     command: 'relay_command',
-    pid:     pid,
+    pid: pid,
     dst_nid: dstNid,
-    module:  module.toString(10),
+    module: module.toString(10),
     content: param
   });
 }
@@ -463,12 +494,12 @@ function sendCommandRequireProcessesInfo() {
  * @return {void}
  */
 function startBackend() {
-  console.assert(connectStatus == CONNECT_STATUS.CLOSE, connectStatus);
+  console.assert(connectStatus === CONNECT_STATUS.CLOSE, connectStatus);
 
   // Spawn backend process.
-  var backendProcess = spawn(CONFIG.BACKEND ||
-                             path.join(__dirname, '..', '..', 'bin', 'processwarp'),
-                             ['--subprocess']);
+  backendProcess = spawn(CONFIG.BACKEND ||
+                         path.join(__dirname, '..', '..', 'bin', 'processwarp'),
+                         ['--subprocess']);
 
   // Setup stdout, stderr and event listener.
   backendProcess.stdout.setEncoding('utf8');
@@ -481,21 +512,21 @@ function startBackend() {
     process.stderr.write(data);
   });
 
-  backendProcess.on('exit', function(code) {
+  backendProcess.on('exit', function() {
     // @todo error
-    connectStatus == CONNECT_STATUS.CLOSE;
+    connectStatus = CONNECT_STATUS.CLOSE;
   });
 
   // Generate configure for the backend process.
   backendPipePath = path.join(os.tmpdir(), 'pw-frontend-' + process.pid + '.pipe');
   var config = {
-    server:     CONFIG.SERVER,
-    message:    path.join(__dirname, '..', 'const', 'daemon_mid_c.json'),
-    node_name:  CONFIG.NODE_NAME || os.hostname(),
-    worker_pipe:    path.join(os.tmpdir(), 'pw-worker-' + process.pid + '.pipe'),
-    frontend_key:   COMMON_KEY,
-    frontend_pipe:  backendPipePath,
-    libs:       CONFIG.LIBS || [],
+    server: CONFIG.SERVER,
+    message: path.join(__dirname, '..', 'const', 'daemon_mid_c.json'),
+    node_name: CONFIG.NODE_NAME || os.hostname(),
+    worker_pipe: path.join(os.tmpdir(), 'pw-worker-' + process.pid + '.pipe'),
+    frontend_key: COMMON_KEY,
+    frontend_pipe: backendPipePath,
+    libs: CONFIG.LIBS || [],
     lib_filter: CONFIG.LIB_FILTER ||
     [path.join(__dirname, '..', '..', 'etc', os.platform(), 'libfilter.json')]
   };
@@ -512,7 +543,7 @@ function startBackend() {
  * @return {void}
  */
 function onGuiLoad(event) {
-  var pid     = event.sender.pid;
+  var pid = event.sender.pid;
   var context = contexts[pid];
 
   // Send property.
@@ -520,12 +551,12 @@ function onGuiLoad(event) {
     pid: pid,
     nid: myNid
   });
-  
+
   // Send waiting packets.
   context.packets.forEach(function(packet) {
     context.window.webContents.send('gui_relay_command', packet);
   });
-  context.is_normal = true;
+  context.isNormal = true;
   delete context['packets'];
 }
 
@@ -537,17 +568,17 @@ function onGuiLoad(event) {
 function onGuiRelayCommand(event, packet) {
   sendData({
     command: 'relay_command',
-    pid:     packet.pid,
+    pid: packet.pid,
     dst_nid: packet.dst_nid,
-    module:  packet.module.toString(10),
+    module: packet.module.toString(10),
     content: packet.content
   });
 }
 
 /**
  * When window was close by GUI, remove context.
- * @param event {object} Not used.
- * @param pid {string} Process-id bundled for window.
+ * @param {object} event Not used.
+ * @param {string} pid Process-id bundled for window.
  */
 function onGuiClose(event, pid) {
   delete contexts[pid];
