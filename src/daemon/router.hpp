@@ -20,8 +20,8 @@ class Router : public SchedulerDelegate {
   void initialize(uv_loop_t* loop_, const picojson::object& config_);
   void load_llvm(const std::string& filename, const std::vector<std::string>& args);
   const NodeID& get_my_nid();
-  void recv_bind_node(const NodeID& nid);
   void relay_command(const Packet& packet, bool is_from_server);
+  void set_nid(const NodeID& nid);
 
  private:
   /** Main loop of libuv. */

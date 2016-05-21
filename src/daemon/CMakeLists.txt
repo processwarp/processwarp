@@ -1,5 +1,86 @@
 find_package(PkgConfig)
 
+# WebRTC
+include_directories(${WEBRTC_INCLUDE_DIRS})
+link_directories(${WEBRTC_LIBRARY_DIRS})
+list(APPEND extra_libs "jingle_peerconnection")
+list(APPEND extra_libs "field_trial_default")
+list(APPEND extra_libs "jsoncpp")
+list(APPEND extra_libs "rtc_media")
+list(APPEND extra_libs "rtc_base_approved")
+list(APPEND extra_libs "webrtc_common")
+list(APPEND extra_libs "webrtc")
+list(APPEND extra_libs "system_wrappers")
+if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+  list(APPEND extra_libs "cpu_features_linux")
+endif()
+list(APPEND extra_libs "voice_engine")
+list(APPEND extra_libs "common_audio")
+list(APPEND extra_libs "openmax_dl")
+list(APPEND extra_libs "common_audio_sse2")
+list(APPEND extra_libs "audio_coding_module")
+list(APPEND extra_libs "cng")
+list(APPEND extra_libs "audio_encoder_interface")
+list(APPEND extra_libs "g711")
+list(APPEND extra_libs "pcm16b")
+list(APPEND extra_libs "ilbc")
+list(APPEND extra_libs "webrtc_opus")
+list(APPEND extra_libs "opus")
+list(APPEND extra_libs "g722")
+list(APPEND extra_libs "isac")
+list(APPEND extra_libs "audio_decoder_interface")
+list(APPEND extra_libs "isac_common")
+list(APPEND extra_libs "red")
+list(APPEND extra_libs "rtc_event_log")
+list(APPEND extra_libs "rtc_event_log_proto")
+list(APPEND extra_libs "protobuf_lite")
+list(APPEND extra_libs "neteq")
+list(APPEND extra_libs "builtin_audio_decoder_factory")
+list(APPEND extra_libs "audio_decoder_factory_interface")
+list(APPEND extra_libs "rent_a_codec")
+list(APPEND extra_libs "audio_conference_mixer")
+list(APPEND extra_libs "audio_processing")
+list(APPEND extra_libs "audioproc_debug_proto")
+list(APPEND extra_libs "audio_processing_sse2")
+list(APPEND extra_libs "webrtc_utility")
+list(APPEND extra_libs "media_file")
+list(APPEND extra_libs "audio_device")
+list(APPEND extra_libs "bitrate_controller")
+list(APPEND extra_libs "paced_sender")
+list(APPEND extra_libs "rtp_rtcp")
+list(APPEND extra_libs "remote_bitrate_estimator")
+list(APPEND extra_libs "congestion_controller")
+list(APPEND extra_libs "common_video")
+list(APPEND extra_libs "yuv")
+list(APPEND extra_libs "jpeg_turbo")
+list(APPEND extra_libs "video_capture_module")
+list(APPEND extra_libs "video_processing")
+list(APPEND extra_libs "video_processing_sse2")
+list(APPEND extra_libs "webrtc_video_coding")
+list(APPEND extra_libs "webrtc_h264")
+list(APPEND extra_libs "webrtc_i420")
+list(APPEND extra_libs "video_coding_utility")
+list(APPEND extra_libs "webrtc_vp8")
+list(APPEND extra_libs "vpx")
+list(APPEND extra_libs "vpx_intrinsics_mmx")
+list(APPEND extra_libs "vpx_intrinsics_sse2")
+list(APPEND extra_libs "vpx_intrinsics_ssse3")
+list(APPEND extra_libs "vpx_intrinsics_sse4_1")
+list(APPEND extra_libs "vpx_intrinsics_avx")
+list(APPEND extra_libs "vpx_intrinsics_avx2")
+list(APPEND extra_libs "webrtc_vp9")
+list(APPEND extra_libs "metrics_default")
+list(APPEND extra_libs "rtc_xmllite")
+list(APPEND extra_libs "rtc_base")
+list(APPEND extra_libs "boringssl")
+list(APPEND extra_libs "boringssl_asm")
+list(APPEND extra_libs "rtc_xmpp")
+list(APPEND extra_libs "rtc_p2p")
+list(APPEND extra_libs "usrsctplib")
+list(APPEND extra_libs "video_capture_module_internal_impl")
+list(APPEND extra_libs "rtc_pc")
+list(APPEND extra_libs "srtp")
+
 # Boost
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(Boost_USE_STATIC_LIBS ON)
@@ -58,6 +139,16 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   # MaxOSX
+  find_library(CORE_FOUNDATION CoreFoundation)
+  list(APPEND extra_libs ${CORE_FOUNDATION})
+  find_library(FOUNDATION Foundation)
+  list(APPEND extra_libs ${FOUNDATION})
+  find_library(CORE_AUDIO CoreAudio)
+  list(APPEND extra_libs ${CORE_AUDIO})
+  find_library(AUDIO_TOOLBOX AudioToolbox)
+  list(APPEND extra_libs ${AUDIO_TOOLBOX})
+  find_library(CORE_GRAPHICS CoreGraphics)
+  list(APPEND extra_libs ${CORE_GRAPHICS})
 
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
   # FreeBSD
@@ -81,6 +172,8 @@ add_executable(processwarp
   frontend_connector.cpp
   network_connector.cpp
   router.cpp
+  webrtc_bundle.cpp
+  webrtc_connector.cpp
   worker_connector.cpp
   )
 add_dependencies(processwarp
@@ -89,8 +182,8 @@ add_dependencies(processwarp
   )
 target_link_libraries(processwarp
   pwcore
-  sioclient_tls
   ${extra_libs}
+  sioclient_tls
   )
 
 add_executable(worker

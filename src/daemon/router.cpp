@@ -92,21 +92,6 @@ const NodeID& Router::get_my_nid() {
 }
 
 /**
- * When bind is success, store assigned my node-id and hostname as node name.
- * @param nid Assigned node-id for this node.
- */
-void Router::recv_bind_node(const NodeID& nid) {
-  my_nid = nid;
-
-  // get local hostname
-  char hostname[Definition::NODE_NAME_MAX + 1];
-  std::memset(hostname, 0, sizeof(hostname));
-  gethostname(hostname, Definition::NODE_NAME_MAX);
-
-  scheduler.set_node_information(nid, std::string(hostname));
-}
-
-/**
  * When receive a command from any modules or another nodes to this module,
  * set destination node-id and pass content to capable module in this node or another node through the server.
  * @param packet Command packet.
@@ -170,6 +155,21 @@ void Router::relay_command(const Packet& packet, bool is_from_server) {
     network.send_relay_command(real_packet);
   }
   */
+}
+
+/**
+ * When nid has set, store assigned my node-id and hostname as node name.
+ * @param nid Assigned node-id for this node.
+ */
+void Router::set_nid(const NodeID& nid) {
+  my_nid = nid;
+
+  // get local hostname
+  char hostname[Definition::NODE_NAME_MAX + 1];
+  std::memset(hostname, 0, sizeof(hostname));
+  gethostname(hostname, Definition::NODE_NAME_MAX);
+
+  scheduler.set_node_information(nid, std::string(hostname));
 }
 
 /**

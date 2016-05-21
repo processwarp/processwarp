@@ -20,6 +20,7 @@
 #include "network_connector.hpp"
 #include "router.hpp"
 #include "util.hpp"
+#include "webrtc_bundle.hpp"
 #include "worker_connector.hpp"
 
 namespace processwarp {
@@ -187,16 +188,22 @@ int Daemon::daemonize() {
   return 0;
 }
 
+/**
+ * Initialize modules used by CUI mode.
+ * @return True if initialize has success.
+ */
 bool Daemon::initialize_cui() {
   assert(run_mode == RunMode::DAEMON || run_mode == RunMode::CONSOLE);
 
   loop = uv_default_loop();
   Router& router = Router::get_instance();
   NetworkConnector& network = NetworkConnector::get_instance();
+  WebrtcBundle& webrtc = WebrtcBundle::get_instance();
   WorkerConnector& worker = WorkerConnector::get_instance();
 
   network.initialize(loop, config.at("server").get<std::string>());
   router.initialize(loop, config);
+  webrtc.initialize(loop);
   worker.initialize(loop,
                     config.at("worker_pipe").get<std::string>(),
                     config.at("libs").get<picojson::array>(),
@@ -237,6 +244,10 @@ bool Daemon::initialize_message() {
   return Message::load(config.at("message").get<std::string>());
 }
 
+/**
+ * Initialize modules used by subprocess mode.
+ * @return True if initialize has success.
+ */
 bool Daemon::initialize_subprocess() {
   assert(run_mode == RunMode::SUBPROCESS);
 
@@ -244,6 +255,7 @@ bool Daemon::initialize_subprocess() {
   FrontendConnector& frontend = FrontendConnector::get_instance();
   Router& router = Router::get_instance();
   NetworkConnector& network = NetworkConnector::get_instance();
+  WebrtcBundle& webrtc = WebrtcBundle::get_instance();
   WorkerConnector& worker = WorkerConnector::get_instance();
 
   network.initialize(loop, config.at("server").get<std::string>());
@@ -251,6 +263,7 @@ bool Daemon::initialize_subprocess() {
   frontend.initialize(loop,
                       config.at("frontend_pipe").get<std::string>(),
                       config.at("frontend_key").get<std::string>());
+  webrtc.initialize(loop);
   worker.initialize(loop,
                     config.at("worker_pipe").get<std::string>(),
                     config.at("libs").get<picojson::array>(),

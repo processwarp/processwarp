@@ -16,6 +16,7 @@
 #include "constant_native.hpp"
 #include "packet.hpp"
 #include "type.hpp"
+#include "webrtc_connector.hpp"
 
 namespace processwarp {
 class NetworkConnector;
@@ -32,7 +33,7 @@ class NetworkConnectorConnectDelegate {
 /**
  * Message sender by using Socket.IO.
  */
-class NetworkConnector {
+class NetworkConnector : public WebrtcConnectorDelegate {
  public:
   static NetworkConnector& get_instance();
 
@@ -75,11 +76,15 @@ class NetworkConnector {
   std::string account;
   std::string password;
   bool is_auth_yet;
+  WebrtcConnector* webrtc_init_connector;
 
   NetworkConnector();
   NetworkConnector(const NetworkConnector&);
   NetworkConnector& operator=(const NetworkConnector&);
   virtual ~NetworkConnector();
+
+  void webrtc_connector_on_change_stateus(WebrtcConnector& connector, bool is_connect) override;
+  void webrtc_connector_on_update_ice(WebrtcConnector& connector, const std::string ice) override;
 
   static void on_recv(uv_async_t* handle);
 
@@ -90,9 +95,21 @@ class NetworkConnector {
   void connect_socketio();
   void initialize_async();
   void initialize_socketio();
+  void make_init_webrtc_connector();
   void recv_auth(sio::message::ptr data);
+  void recv_init_webrtc(sio::message::ptr data);
+  void recv_init_webrtc_deny(const picojson::object& content);
+  void recv_init_webrtc_ice(const picojson::object& content);
+  void recv_init_webrtc_offer(const picojson::object& content);
+  void recv_init_webrtc_reply(const picojson::object& content);
   void recv_relay(sio::message::ptr data);
   void send_auth();
-  void send_init_sdp();
+  void send_init_webrtc_deny(const NodeID& prime_nid, const int reason);
+  void send_init_webrtc_ice(const NodeID& local_nid, const NodeID& remote_nid,
+                            const std::string& ice);
+  void send_init_webrtc_offer(const NodeID& prime_nid, const std::string& sdp);
+  void send_init_webrtc_reply(const NodeID& prime_nid, const NodeID& second_nid,
+                              const std::string& sdp);
+  void send_init_webrtc_fin(const NodeID& prime_nid);
 };
 }  // namespace processwarp
