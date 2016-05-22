@@ -139,6 +139,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   # MaxOSX
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWEBRTC_MAC=1 -DWEBRTC_POSIX=1")
   find_library(CORE_FOUNDATION CoreFoundation)
   list(APPEND extra_libs ${CORE_FOUNDATION})
   find_library(FOUNDATION Foundation)
@@ -152,13 +153,16 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
   # FreeBSD
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWEBRTC_POSIX=1")
 
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   # Linux
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWEBRTC_LINUX=1")
   list(APPEND extra_libs "pthread")
 
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   # Windows
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWEBRTC_WIN=1")
 endif()
 
 # Compile & link

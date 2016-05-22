@@ -2,13 +2,6 @@
 
 #include <uv.h>
 
-// #define WEBRTC_ANDROID 1
-// #define WEBRTC_IOS 1
-// #define WEBRTC_LINUX 1
-#define WEBRTC_MAC 1
-#define WEBRTC_POSIX 1
-// #define WEBRTC_WIN 1
-
 #include <webrtc/api/peerconnectioninterface.h>
 #include <webrtc/api/test/fakeconstraints.h>
 #include <webrtc/base/flags.h>

@@ -1,4 +1,5 @@
 
+#include <cassert>
 #include <functional>
 #include <random>
 #ifdef WITH_RE2
