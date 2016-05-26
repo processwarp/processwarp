@@ -27,14 +27,20 @@ class NodeID {
   bool operator!=(const NodeID& b) const;
   bool operator<(const NodeID& b) const;
 
+  bool is_between(const NodeID& a, const NodeID& b) const;
   std::string to_str() const;
   picojson::value to_json() const;
 
  private:
+  static const NodeID MAX;
+  static const NodeID MIN;
+
   int type;
   uint64_t id[2];
 
   explicit NodeID(int type_);
   NodeID(uint64_t id0, uint64_t id1);
+
+  static int compare(const NodeID& a, const NodeID& b);
 };
 }  // namespace processwarp

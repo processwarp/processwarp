@@ -8,23 +8,11 @@
     "values":[
         {
             "name":"EXPLICIT",
-            "value":"0x00000000"
-        },
-        {
-            "name":"APPROX_PLUS",
             "value":"0x00000001"
         },
         {
-            "name":"APPROX_MINUS",
-            "value":"0x00000002"
-        },
-        {
-            "name":"APPROX",
-            "value":"0x00000003"
-        },
-        {
             "name":"ONE_WAY",
-            "value":"0x00000004"
+            "value":"0x00000002"
         }
     ]
 }

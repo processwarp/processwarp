@@ -107,7 +107,8 @@ WebrtcConnector::WebrtcConnector(
     csdo(*this),
     dco(*this),
     pco(*this),
-    ssdo(*this) {
+    ssdo(*this),
+    is_remote_sdp_set(false) {
   peer_connection =
     peer_connection_factory->CreatePeerConnection(pc_config, nullptr, nullptr, &pco);
   if (peer_connection.get() == nullptr) {
@@ -140,7 +141,12 @@ WebrtcConnector::~WebrtcConnector() {
 const std::string& WebrtcConnector::get_local_sdp() {
   assert(local_sdp.empty());
 
-  peer_connection->CreateOffer(&csdo, nullptr);
+  if (is_remote_sdp_set) {
+    peer_connection->CreateAnswer(&csdo, nullptr);
+  } else {
+    peer_connection->CreateOffer(&csdo, nullptr);
+  }
+
   {
     std::lock_guard<std::mutex> guard(mutex);
     while (local_sdp.empty()) {
@@ -158,16 +164,17 @@ const std::string& WebrtcConnector::get_local_sdp() {
 void WebrtcConnector::set_remote_sdp(const std::string& sdp) {
   webrtc::SdpParseError error;
   webrtc::SessionDescriptionInterface* session_description(
-      webrtc::CreateSessionDescription("offer", sdp, &error));
+      webrtc::CreateSessionDescription((local_sdp.empty() ? "offer" : "answer"), sdp, &error));
 
   if (session_description == nullptr) {
     /// @todo error
-    // error.line
-    // error.description
+    std::cout << error.line << std::endl;
+    std::cout << error.description << std::endl;
     assert(false);
   }
 
   peer_connection->SetRemoteDescription(&ssdo, session_description);
+  is_remote_sdp_set = true;
 }
 
 /**
@@ -182,23 +189,21 @@ void WebrtcConnector::update_ice(const std::string& ice) {
   }
 
   webrtc::SdpParseError err_sdp;
-  for (auto& ice_it : v.get<picojson::array>()) {
-    picojson::object& ice_json = ice_it.get<picojson::object>();
-    webrtc::IceCandidateInterface* ice =
-      CreateIceCandidate(ice_json.at("sdp_mid").get<std::string>(),
-                         std::stoi(ice_json.at("sdp_mline_index").get<std::string>()),
-                         ice_json.at("sdp").get<std::string>(),
-                         &err_sdp);
-    if (!err_sdp.line.empty() && !err_sdp.description.empty()) {
-      /// @todo error
-      std::cout << "Error on CreateIceCandidate" << std::endl
-                << err_sdp.line << std::endl
-                << err_sdp.description << std::endl;
-      return;
-    }
-
-    peer_connection->AddIceCandidate(ice);
+  picojson::object& ice_json = v.get<picojson::object>();
+  webrtc::IceCandidateInterface* ice_ptr =
+    CreateIceCandidate(ice_json.at("sdp_mid").get<std::string>(),
+                       std::stoi(ice_json.at("sdp_mline_index").get<std::string>()),
+                       ice_json.at("sdp").get<std::string>(),
+                       &err_sdp);
+  if (!err_sdp.line.empty() && !err_sdp.description.empty()) {
+    /// @todo error
+    std::cout << "Error on CreateIceCandidate" << std::endl
+              << err_sdp.line << std::endl
+              << err_sdp.description << std::endl;
+    assert(false);
   }
+
+  peer_connection->AddIceCandidate(ice_ptr);
 }
 
 /**
@@ -238,6 +243,7 @@ void WebrtcConnector::on_ice_candidate(const webrtc::IceCandidateInterface* cand
 
 void WebrtcConnector::on_ssd_failure(const std::string& error) {
   /// @todo error
+  std::cout << error << std::endl;
   assert(false);
 }
 

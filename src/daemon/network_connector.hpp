@@ -14,7 +14,6 @@
 #include <vector>
 
 #include "constant_native.hpp"
-#include "packet.hpp"
 #include "type.hpp"
 #include "webrtc_connector.hpp"
 
@@ -43,6 +42,11 @@ class NetworkConnector : public WebrtcConnectorDelegate {
   const NodeID& get_my_nid();
   ConnectStatus::Type get_status();
   void initialize(uv_loop_t* loop_, const std::string& url_);
+  void send_init_webrtc_deny(const NodeID& prime_nid, const int reason);
+  void send_init_webrtc_ice(const NodeID& local_nid, const NodeID& remote_nid,
+                            const std::string& ice);
+  void send_init_webrtc_reply(const NodeID& prime_nid, const NodeID& second_nid,
+                              const std::string& sdp);
   void send_load_llvm(const std::string& name,
                       const std::string& file,
                       const std::vector<std::string>& args,
@@ -77,6 +81,7 @@ class NetworkConnector : public WebrtcConnectorDelegate {
   std::string password;
   bool is_auth_yet;
   WebrtcConnector* webrtc_init_connector;
+  std::vector<std::string> webrtc_init_ice;
 
   NetworkConnector();
   NetworkConnector(const NetworkConnector&);
@@ -104,12 +109,7 @@ class NetworkConnector : public WebrtcConnectorDelegate {
   void recv_init_webrtc_reply(const picojson::object& content);
   void recv_relay(sio::message::ptr data);
   void send_auth();
-  void send_init_webrtc_deny(const NodeID& prime_nid, const int reason);
-  void send_init_webrtc_ice(const NodeID& local_nid, const NodeID& remote_nid,
-                            const std::string& ice);
   void send_init_webrtc_offer(const NodeID& prime_nid, const std::string& sdp);
-  void send_init_webrtc_reply(const NodeID& prime_nid, const NodeID& second_nid,
-                              const std::string& sdp);
   void send_init_webrtc_fin(const NodeID& prime_nid);
 };
 }  // namespace processwarp

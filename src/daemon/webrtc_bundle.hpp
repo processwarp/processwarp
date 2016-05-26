@@ -18,7 +18,7 @@
 #include "webrtc_connector.hpp"
 
 namespace processwarp {
-class WebrtcBundle : public WebrtcConnectorDelegate {
+class WebrtcBundle : public WebrtcConnectorDelegate, public PacketControllerDelegate {
  public:
   static WebrtcBundle& get_instance();
 
@@ -26,8 +26,12 @@ class WebrtcBundle : public WebrtcConnectorDelegate {
   WebrtcConnector* create_connector();
   void finalize();
   void initialize(uv_loop_t* loop);
-  void purge_connector(WebrtcConnector* connector);
   void relay(const Packet& packet);
+  void set_nid(const NodeID& nid);
+  void purge_connector(WebrtcConnector* connector);
+  void relay_init_webrtc_ice(const NodeID& local_nid, const NodeID& remote_nid,
+                             const std::string& ice);
+  void relay_init_webrtc_offer(const NodeID& prime_nid, const std::string& sdp);
 
  private:
   /** Main loop of libuv. */
@@ -44,17 +48,35 @@ class WebrtcBundle : public WebrtcConnectorDelegate {
   webrtc::PeerConnectionInterface::RTCConfiguration pc_config;
   webrtc::DataChannelInit dc_config;
 
+  PacketController packet_controller;
   std::map<WebrtcConnector*, std::unique_ptr<WebrtcConnector>> connectors;
+  /** Map of connector and node-id that relaied the packet from new node. */
+  std::map<WebrtcConnector*, NodeID>  init_map;
+
+  NodeID my_nid;
+  NodeID next_minus_nid;
+  NodeID next_plus_nid;
+  NodeID range_min_nid;
+  NodeID range_max_nid;
 
   WebrtcBundle();
   WebrtcBundle(const WebrtcBundle&);
   WebrtcBundle& operator=(const WebrtcBundle&);
   virtual ~WebrtcBundle();
 
+  void packet_controller_on_recv(const Packet& packet) override;
+  void packet_controller_send(const Packet& packet) override;
+
   void webrtc_connector_on_change_stateus(WebrtcConnector& connector, bool is_connect) override;
   void webrtc_connector_on_update_ice(WebrtcConnector& connector,
                                       const std::string ice) override;
 
   static void subthread_entry(void* arg);
+
+  void recv_init_webrtc_ice(const Packet& packet);
+  void recv_init_webrtc_offer(const Packet& packet);
+  void relay_to_another(const Packet& packet);
+  void relay_to_local(const Packet& packet);
+  void send_packet_error(const Packet& error_for, PacketError::Type code);
 };
 }  // namespace processwarp

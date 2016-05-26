@@ -244,6 +244,49 @@ void NetworkConnector::send_auth() {
 }
 
 /**
+ * Send init_webrtc_deny command to the server.
+ * @param prime_nid Prime node-id of WebRTC initialize sequence.
+ * @param reason Reason code to deny.
+ */
+void NetworkConnector::send_init_webrtc_deny(const NodeID& prime_nid, const int reason) {
+  sio::message::ptr data(sio::object_message::create());
+  std::map<std::string, sio::message::ptr>& map = data->get_map();
+
+  map.insert(std::make_pair("type", sio::string_message::create("deny")));
+
+  picojson::object content;
+  content.insert(std::make_pair("prime_nid", prime_nid.to_json()));
+  content.insert(std::make_pair("reason", Convert::int2json(reason)));
+  map.insert(std::make_pair("content",
+                            sio::string_message::create(picojson::value(content).serialize())));
+
+  socket->emit("init_webrtc", data);
+}
+
+/**
+ * Send init_webrtc_reply command to the server.
+ * @param prime_nid Prime node-id of WebRTC initialize sequence.
+ * @param second_nid Second node-id.
+ * @param sdp SDP string.
+ */
+void NetworkConnector::send_init_webrtc_reply(const NodeID& prime_nid, const NodeID& second_nid,
+                                              const std::string& sdp) {
+  sio::message::ptr data(sio::object_message::create());
+  std::map<std::string, sio::message::ptr>& map = data->get_map();
+
+  map.insert(std::make_pair("type", sio::string_message::create("reply")));
+
+  picojson::object content;
+  content.insert(std::make_pair("prime_nid", prime_nid.to_json()));
+  content.insert(std::make_pair("second_nid", second_nid.to_json()));
+  content.insert(std::make_pair("sdp", picojson::value(sdp)));
+  map.insert(std::make_pair("content",
+                            sio::string_message::create(picojson::value(content).serialize())));
+
+  socket->emit("init_webrtc", data);
+}
+
+/**
  * Send init_webrtc command with ICE data.
  * @param local_nid Node-id of local node.
  * @param remote_nid Node-id of remote node.
@@ -389,17 +432,25 @@ void NetworkConnector::webrtc_connector_on_change_stateus(WebrtcConnector& conne
     connect_delegate->network_connector_connect_on_success(*this, NodeID::NONE);
     send_init_webrtc_fin(my_nid);
     router.set_nid(my_nid);
+    webrtc.set_nid(my_nid);
   }
 }
 
 /**
  * When ICE has update, pass it to opposite node.
+ * @param connector Connector that event has happen.
+ * @param ice ICE string.
  */
 void NetworkConnector::webrtc_connector_on_update_ice(WebrtcConnector& connector,
                                                       const std::string ice) {
   assert(&connector == webrtc_init_connector);
-  /// @todo need wait for replying SDP
-  send_init_webrtc_ice(my_nid, connector.nid, ice);
+
+  if (connector.nid == NodeID::NONE) {
+    webrtc_init_ice.push_back(ice);
+
+  } else {
+    send_init_webrtc_ice(my_nid, connector.nid, ice);
+  }
 }
 
 /**
@@ -645,6 +696,8 @@ void NetworkConnector::recv_init_webrtc_deny(const picojson::object& content) {
       connect_delegate->network_connector_connect_on_success(*this, NodeID::NONE);
       send_init_webrtc_fin(my_nid);
       router.set_nid(my_nid);
+      webrtc.set_nid(my_nid);
+      webrtc_init_ice.clear();
     } break;
 
     default: {
@@ -663,26 +716,28 @@ void NetworkConnector::recv_init_webrtc_ice(const picojson::object& content) {
   NodeID remote_nid = NodeID::from_json(content.at("remote_nid"));
   const std::string& ice = content.at("ice").get<std::string>();
 
-  if (webrtc_init_connector == nullptr ||
-      webrtc_init_connector->nid != local_nid ||
-      my_nid != remote_nid) {
-    return;
-  }
+  if (webrtc_init_connector == nullptr) {
+    WebrtcBundle& webrtc = WebrtcBundle::get_instance();
+    webrtc.relay_init_webrtc_ice(local_nid, remote_nid, ice);
 
-  webrtc_init_connector->update_ice(ice);
+  } else if (webrtc_init_connector->nid == local_nid &&
+             my_nid == remote_nid) {
+    webrtc_init_connector->update_ice(ice);
+  }
 }
 
 /**
- * @todo
+ * When receive init_webrtc offer command, relay it to target node.
+ * @param content Receive data containing prime_nid, sdp.
  */
 void NetworkConnector::recv_init_webrtc_offer(const picojson::object& content) {
-  assert(webrtc_init_connector != nullptr);
+  assert(webrtc_init_connector == nullptr);
 
   NodeID prime_nid = NodeID::from_json(content.at("prime_nid"));
   const std::string& sdp = content.at("sdp").get<std::string>();
+  WebrtcBundle& webrtc = WebrtcBundle::get_instance();
 
-  /// @todo relay
-  assert(false);
+  webrtc.relay_init_webrtc_offer(prime_nid, sdp);
 }
 
 /**
@@ -700,6 +755,10 @@ void NetworkConnector::recv_init_webrtc_reply(const picojson::object& content) {
 
   webrtc_init_connector->nid = second_nid;
   webrtc_init_connector->set_remote_sdp(sdp);
+
+  for (auto ice : webrtc_init_ice) {
+    send_init_webrtc_ice(my_nid, webrtc_init_connector->nid, ice);
+  }
 }
 
 /**

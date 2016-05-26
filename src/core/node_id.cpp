@@ -28,6 +28,9 @@ const NodeID NodeID::NONE(Type::NONE);
 const NodeID NodeID::SERVER(Type::SERVER);
 const NodeID NodeID::THIS(Type::THIS);
 
+const NodeID NodeID::MAX(0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF);
+const NodeID NodeID::MIN(0x0000000000000000, 0x0000000000000000);
+
 /**
  * Default constructor, it set NONE value.
  */
@@ -169,6 +172,47 @@ bool NodeID::operator<(const NodeID& b) const {
 }
 
 /**
+ * @return True if a <= this <= b.
+ */
+bool NodeID::is_between(const NodeID& a, const NodeID& b) const {
+  assert(type   == Type::NORMAL);
+  assert(a.type == Type::NORMAL);
+  assert(b.type == Type::NORMAL);
+
+  switch (compare(a, b)) {
+    case -1: {
+      if (compare(a, *this) != 1 && compare(*this, b) != 1) {
+        return true;
+      } else {
+        return false;
+      }
+    } break;
+
+    case 0: {
+      if (id[0] == a.id[0] && id[1] == a.id[1]) {
+        return true;
+      } else {
+        return false;
+      }
+    } break;
+
+    case 1: {
+      if ((compare(a, *this) != 1 && compare(*this, MAX)) ||
+          (compare(MIN, *this) != 1 && compare(*this, b))) {
+        return true;
+      } else {
+        return false;
+      }
+    } break;
+
+    default: {
+      assert(false);
+      return false;
+    } break;
+  }
+}
+
+/**
  * Convert a node-id to a string.
  * @param nid A source node-id.
  * @return Converted value as a string.
@@ -212,4 +256,26 @@ picojson::value NodeID::to_json() const {
   return picojson::value(to_str());
 }
 
+/**
+ * Compare a pair of NORMAL value like the java's Compare interface.
+ * @return -1 if a < b. 0 if a == b. 1 if a > b.
+ */
+int NodeID::compare(const NodeID& a, const NodeID& b) {
+  assert(a.type == Type::NORMAL);
+  assert(b.type == Type::NORMAL);
+
+  if (a.id[0] < b.id[0]) {
+    return -1;
+  } else if (a.id[0] > b.id[0]) {
+    return 1;
+  }
+
+  if (a.id[1] < b.id[1]) {
+    return -1;
+  } else if (a.id[1] == b.id[1]) {
+    return 0;
+  } else {
+    return 1;
+  }
+}
 }  // namespace processwarp

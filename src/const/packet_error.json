@@ -1,0 +1,15 @@
+{
+    "camel_name":"PacketError",
+    "snake_name":"PACKET_ERROR",
+    "description":"",
+    "type":"enum",
+    "c_typedef":"Type",
+    "values":[
+        {
+            "name":"OFFLINE"
+        },
+        {
+            "name":"NOT_EXIST"
+        }
+    ]
+}

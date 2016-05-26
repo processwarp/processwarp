@@ -16,6 +16,7 @@
 #include "scheduler.hpp"
 #include "type.hpp"
 #include "util.hpp"
+#include "webrtc_bundle.hpp"
 #include "worker_connector.hpp"
 
 namespace processwarp {
@@ -92,69 +93,54 @@ const NodeID& Router::get_my_nid() {
 }
 
 /**
- * When receive a command from any modules or another nodes to this module,
- * set destination node-id and pass content to capable module in this node or another node through the server.
+ * When receive a command from local modules.
+ * set destination node-id and pass content to WebRTC module.
  * @param packet Command packet.
- * @param is_from_server Set true if packet is relaied by server (send by another node).
  */
-void Router::relay_command(const Packet& packet, bool is_from_server) {
+void Router::relay_from_local(const Packet& packet) {
   NodeID dst_nid;
-  NodeID src_nid;
-  if (is_from_server) {
-    dst_nid = packet.dst_nid;
-    src_nid = packet.src_nid;
-
+  if (packet.dst_nid == NodeID::THIS) {
+    dst_nid = my_nid;
+  } else if (packet.dst_nid == NodeID::NONE) {
+    dst_nid = scheduler.get_dst_nid(packet.pid, packet.dst_module);
   } else {
-    if (packet.dst_nid == NodeID::THIS) {
-      dst_nid = my_nid;
-    } else if (packet.dst_nid == NodeID::NONE) {
-      dst_nid = scheduler.get_dst_nid(packet.pid, packet.dst_module);
-    } else {
-      dst_nid = packet.dst_nid;
-    }
-    src_nid = my_nid;
+    dst_nid = packet.dst_nid;
   }
 
-#warning TODO
-  /*
   Packet real_packet = {
+    packet.packet_id,
+    packet.command,
+    packet.mode,
+    packet.dst_module,
+    packet.src_module,
     packet.pid,
     dst_nid,
-    src_nid,
-    packet.dst_module,
+    my_nid,
     packet.content
   };
 
-  if (dst_nid == my_nid || dst_nid == NodeID::BROADCAST) {
-    switch (real_packet.dst_module) {
-      case Module::MEMORY:
-      case Module::VM: {
-        WorkerConnector& worker = WorkerConnector::get_instance();
-        worker.relay_command(real_packet);
-      } break;
+  WebrtcBundle& webrtc = WebrtcBundle::get_instance();
+  webrtc.relay(real_packet);
+}
 
-      case Module::SCHEDULER: {
-        scheduler.recv_command(real_packet);
-      } break;
-
-      case Module::CONTROLLER:
-      case Module::GUI: {
-        FrontendConnector& frontend = FrontendConnector::get_instance();
-        frontend.relay_frontend_command(real_packet);
-      } break;
-
-      default: {
-        /// @todo error
-        assert(false);
-      }
-    }
+/**
+ * When receive a command from another nodes to this module, relay to capable local module.
+ * @param packet Command packet.
+ */
+void Router::relay_from_global(const Packet& packet) {
+  if (packet.dst_module & (Module::MEMORY | Module::VM)) {
+    WorkerConnector& worker = WorkerConnector::get_instance();
+    worker.relay_command(packet);
   }
 
-  if (dst_nid != my_nid && !is_from_server) {
-    NetworkConnector& network = NetworkConnector::get_instance();
-    network.send_relay_command(real_packet);
+  if (packet.dst_module & Module::SCHEDULER) {
+    scheduler.recv_command(packet);
   }
-  */
+
+  if (packet.dst_module & (Module::CONTROLLER | Module::GUI)) {
+    FrontendConnector& frontend = FrontendConnector::get_instance();
+    frontend.relay_frontend_command(packet);
+  }
 }
 
 /**
@@ -206,7 +192,7 @@ void Router::scheduler_create_gui(Scheduler& scheduler, const vpid_t& pid) {
  * @param packet Command packet.
  */
 void Router::scheduler_send_command(Scheduler& scheduler, const Packet& packet) {
-  relay_command(packet, false);
+  relay_from_local(packet);
 }
 
 /**

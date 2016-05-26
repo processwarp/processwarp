@@ -104,6 +104,7 @@ class WebrtcConnector {
 
   std::mutex mutex;
   std::condition_variable_any cond;
+  bool is_remote_sdp_set;
   /// SDP of local peer.
   std::string local_sdp;
 

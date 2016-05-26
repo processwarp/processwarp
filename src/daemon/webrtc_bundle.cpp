@@ -1,6 +1,12 @@
 
+#include <cassert>
 #include <string>
 
+#include "constant.hpp"
+#include "convert.hpp"
+#include "network_connector.hpp"
+#include "packet_init_webrtc_offer.hpp"
+#include "router.hpp"
 #include "webrtc_bundle.hpp"
 
 namespace processwarp {
@@ -20,7 +26,8 @@ WebrtcBundle& WebrtcBundle::get_instance() {
  * This class is singleton.
  * This method is private.
  */
-WebrtcBundle::WebrtcBundle() {
+WebrtcBundle::WebrtcBundle() :
+    packet_controller(Module::NETWORK) {
 }
 
 /**
@@ -71,8 +78,11 @@ void WebrtcBundle::finalize() {
 void WebrtcBundle::initialize(uv_loop_t* loop_) {
   loop = loop_;
 
-  rtc::InitializeSSL();
+  // Initalize PacketController
+  packet_controller.initialize(this);
 
+  // Initialize WebRTC
+  rtc::InitializeSSL();
   uv_thread_create(&subthread, WebrtcBundle::subthread_entry, this);
 }
 
@@ -86,12 +96,126 @@ void WebrtcBundle::purge_connector(WebrtcConnector* connector) {
   connectors.erase(connector);
 }
 
+/**
+ * When nid has changed, store it and set it to packet controller.
+ * @param nid A new node-id for this node.
+ */
+void WebrtcBundle::set_nid(const NodeID& nid) {
+  my_nid = nid;
+  packet_controller.my_nid = nid;
+}
+
+/**
+ * Receive packet from modules and relay it by deciding destination module.
+ * @param packet A packet.
+ */
 void WebrtcBundle::relay(const Packet& packet) {
-  /*
-  webrtc::DataBuffer buffer(rtc::CopyOnWriteBuffer(parameter.c_str(), parameter.size()), true);
-  std::cout << "Send(" << connection.data_channel->state() << ")" << std::endl;
-  connection.data_channel->Send(buffer);
-  */
+#ifndef NDEBUG
+  std::cout << __LINE__ << "@" << __FILE__ << ":relay" << std::endl;
+  std::cout << "  packet_id:" << Convert::int2str(packet.packet_id) << std::endl;
+  std::cout << "  command:" << packet.command << std::endl;
+  std::cout << "  mode:" << Convert::int2str(packet.mode) << std::endl;
+  std::cout << "  dst_module:" << Convert::int2str(packet.dst_module) << std::endl;
+  std::cout << "  src_module:" << Convert::int2str(packet.src_module) << std::endl;
+  std::cout << "  pid:" << Convert::vpid2str(packet.pid) << std::endl;
+  std::cout << "  dst_nid:" << packet.dst_nid.to_str() << std::endl;
+  std::cout << "  src_nid:" << packet.src_nid.to_str() << std::endl;
+  std::cout << "  content:" << picojson::value(packet.content).serialize()
+            << std::endl << std::endl;
+  std::cout << "  my_nid:" << my_nid.to_str() << std::endl;
+  std::cout << "  next_minus_nid:" << next_minus_nid.to_str() << std::endl;
+  std::cout << "  next_plus_nid:" << next_plus_nid.to_str() << std::endl;
+  std::cout << "  range_min_nid:" << range_min_nid.to_str() << std::endl;
+  std::cout << "  range_max_nid:" << range_max_nid.to_str() << std::endl;
+#endif  // NDEBUG
+
+  if (my_nid == packet.dst_nid) {
+    relay_to_local(packet);
+    return;
+  }
+
+  if (next_minus_nid == NodeID::NONE) {
+    if (packet.mode & PacketMode::EXPLICIT) {
+      send_packet_error(packet, PacketError::NOT_EXIST);
+
+    } else {
+      relay_to_local(packet);
+    }
+
+  } else {
+    if (packet.dst_nid.is_between(range_min_nid, range_max_nid)) {
+      if (packet.mode & PacketMode::EXPLICIT) {
+        send_packet_error(packet, PacketError::NOT_EXIST);
+
+      } else {
+        relay_to_local(packet);
+      }
+
+    } else {
+      relay_to_another(packet);
+    }
+  }
+}
+
+/**
+ * Receive init_webrtc ice command, relay it to target node.
+ * @param local_nid Source node-id of WebRTC ICE.
+ * @param remote_nid A pair node-id for source node-id, and it is target node-id to relay.
+ * @param ice ICE string.
+ */
+void WebrtcBundle::relay_init_webrtc_ice(const NodeID& local_nid, const NodeID& remote_nid,
+                                         const std::string& ice) {
+  picojson::object content;
+
+  content.insert(std::make_pair("local_nid", local_nid.to_json()));
+  content.insert(std::make_pair("remote_nid", remote_nid.to_json()));
+  content.insert(std::make_pair("ice", picojson::value(ice)));
+
+  packet_controller.send("init_webrtc_ice", Module::NETWORK, true,
+                         PID::BROADCAST, remote_nid, content);
+}
+
+/**
+ * Receive init_webrtc offer command, relay it to target node by using PacketInitWebrtcOffer.
+ * It will be return result packet.
+ * @param prime_nid A primary node-id of WebRTC connection sequence.
+ * @param sdp SDP string from the primary node.
+ */
+void WebrtcBundle::relay_init_webrtc_offer(const NodeID& prime_nid, const std::string& sdp) {
+  std::unique_ptr<PacketController::Behavior> behavior(new PacketInitWebrtcOffer());
+  picojson::object content;
+
+  content.insert(std::make_pair("prime_nid", prime_nid.to_json()));
+  content.insert(std::make_pair("sdp", picojson::value(sdp)));
+
+  packet_controller.send(std::move(behavior), PID::BROADCAST, prime_nid, content);
+}
+
+/**
+ * When receive general command, relay it to capable method.
+ * @param packet A packet.
+ */
+void WebrtcBundle::packet_controller_on_recv(const Packet& packet) {
+  if (packet.command == "init_webrtc_ice") {
+    recv_init_webrtc_ice(packet);
+
+  } else if (packet.command == "init_webrtc_offer") {
+    recv_init_webrtc_offer(packet);
+
+  } else {
+    /// @todo drop message
+    std::cout << __LINE__ << "@" << __FILE__
+              << ":packet_controller_on_recv:" << packet.command << std::endl;
+    assert(false);
+  }
+}
+
+/**
+ * When send packet event has happen on PacketController, relay it to relay method.
+ * @param packet A packet to relay.
+ */
+void WebrtcBundle::packet_controller_send(const Packet& packet) {
+  relay(packet);
 }
 
 void WebrtcBundle::webrtc_connector_on_change_stateus(WebrtcConnector& connector, bool is_connect) {
@@ -99,10 +223,29 @@ void WebrtcBundle::webrtc_connector_on_change_stateus(WebrtcConnector& connector
   assert(false);
 }
 
+/**
+ * When ice update event has happen on initializing connector,
+ * send init_webrtc_ice command to the pair node.
+ * @param connector Initializing connector.
+ * @param ice ICE string.
+ */
 void WebrtcBundle::webrtc_connector_on_update_ice(WebrtcConnector& connector,
                                                   const std::string ice) {
-  /// @todo
-  assert(false);
+  auto it_connector = init_map.find(&connector);
+  if (it_connector != init_map.end()) {
+    picojson::object content;
+
+    content.insert(std::make_pair("local_nid", my_nid.to_json()));
+    content.insert(std::make_pair("remote_nid", connector.nid.to_json()));
+    content.insert(std::make_pair("ice", picojson::value(ice)));
+
+    packet_controller.send("init_webrtc_ice", Module::NETWORK, true,
+                           PID::BROADCAST, it_connector->second, content);
+
+  } else {
+    /// @todo
+    assert(false);
+  }
 }
 
 /**
@@ -131,4 +274,107 @@ void WebrtcBundle::subthread_entry(void* arg) {
   THIS.thread->set_socketserver(nullptr);
 }
 
+/**
+ * When recieve init_webrtc ice command, update ICE of initializeing connector if target is this node.
+ * Otherwise, relay it to the server. Because, it should be relayed by this node.
+ */
+void WebrtcBundle::recv_init_webrtc_ice(const Packet& packet) {
+  NodeID local_nid = NodeID::from_json(packet.content.at("local_nid"));
+  NodeID remote_nid = NodeID::from_json(packet.content.at("remote_nid"));
+  const std::string& ice = packet.content.at("ice").get<std::string>();
+
+  if (remote_nid != my_nid) {
+    NetworkConnector& network = NetworkConnector::get_instance();
+    network.send_init_webrtc_ice(local_nid, remote_nid, ice);
+
+  } else {
+    for (auto& it : connectors) {
+      WebrtcConnector* connector = it.second.get();
+      if (connector->nid == local_nid) {
+        connector->update_ice(ice);
+      }
+    }
+  }
+}
+
+/**
+ * When receive init_webrtc offer command,
+ * create a pair connector and reply with a SDP string by this node.
+ * If the suggested node-id is used by this node, send error packet as deny.
+ * @param packet A packet containing prime_nid, sdp.
+ */
+void WebrtcBundle::recv_init_webrtc_offer(const Packet& packet) {
+  if (packet.dst_nid == my_nid) {
+    picojson::object content;
+    content.insert(std::make_pair("prime_nid", packet.content.at("prime_nid")));
+    content.insert(std::make_pair("reason", Convert::int2json(0)));
+    packet_controller.send_error(packet, content);
+
+  } else {
+    NodeID prime_nid = NodeID::from_json(packet.content.at("prime_nid"));
+    const std::string& sdp = packet.content.at("sdp").get<std::string>();
+    WebrtcConnector* connector = create_connector();
+
+    init_map.insert(std::make_pair(connector, packet.src_nid));
+    connector->nid  = prime_nid;
+    connector->delegate = this;
+    connector->set_remote_sdp(sdp);
+
+    picojson::object content;
+    content.insert(std::make_pair("prime_nid", packet.content.at("prime_nid")));
+    content.insert(std::make_pair("second_nid", my_nid.to_json()));
+    content.insert(std::make_pair("sdp", picojson::value(connector->get_local_sdp())));
+    packet_controller.send_reply(packet, content);
+  }
+}
+
+void WebrtcBundle::relay_to_another(const Packet& packet) {
+  /// @todo
+  assert(false);
+}
+
+/**
+ * Relay packet to module on this node.
+ * If taget modules is not NETWORK, relay packet through on router.
+ * @param packet A packet to relay.
+ */
+void WebrtcBundle::relay_to_local(const Packet& packet) {
+  if (packet.dst_module & Module::NETWORK) {
+    packet_controller.recv(packet);
+  }
+
+  if (packet.dst_module & (~Module::NETWORK)) {
+    Router& router = Router::get_instance();
+
+    router.relay_from_global(packet);
+  }
+}
+
+/**
+ * Send error packet for a received packet.
+ * @param error_for The target packet to send a error packet.
+ * @param code Error code.
+ */
+void WebrtcBundle::send_packet_error(const Packet& error_for, PacketError::Type code) {
+  if (error_for.mode & PacketMode::ONE_WAY && error_for.src_nid != my_nid) {
+    return;
+  }
+
+  picojson::object content;
+  content.insert(std::make_pair("code", Convert::int2json(code)));
+
+  Packet packet = {
+    error_for.packet_id,
+    std::string("packet_error"),
+    PacketMode::EXPLICIT | PacketMode::ONE_WAY,
+    error_for.src_module,
+    Module::NETWORK,
+    error_for.pid,
+    error_for.src_nid,
+    my_nid,
+    content
+  };
+
+  relay(packet);
+}
 }  // namespace processwarp

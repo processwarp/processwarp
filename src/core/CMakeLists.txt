@@ -100,6 +100,7 @@ set(PWCORE_FILES
   logger_syslog.cpp
   message.cpp
   node_id.cpp
+  packet.cpp
   process.cpp
   scheduler.cpp
   stackinfo.cpp
