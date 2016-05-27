@@ -103,6 +103,7 @@ WebrtcConnector::WebrtcConnector(
     rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> peer_connection_factory,
     webrtc::PeerConnectionInterface::RTCConfiguration pc_config,
     webrtc::DataChannelInit dc_config) :
+    is_connected(false),
     delegate(nullptr),
     csdo(*this),
     dco(*this),
@@ -255,8 +256,8 @@ void WebrtcConnector::on_state_change(webrtc::DataChannelInterface::DataState st
     return;
 
   } else {
-    bool is_connect = status == webrtc::DataChannelInterface::kOpen;
-    delegate->webrtc_connector_on_change_stateus(*this, is_connect);
+    is_connected = status == webrtc::DataChannelInterface::kOpen;
+    delegate->webrtc_connector_on_change_stateus(*this, is_connected);
   }
 }
 

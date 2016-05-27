@@ -23,6 +23,8 @@ class WebrtcConnector {
  public:
   /// Opposide peer's node-id.
   NodeID nid;
+  /// Connecting status.
+  bool is_connected;
   /// Event handler.
   WebrtcConnectorDelegate* delegate;
 

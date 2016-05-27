@@ -14,11 +14,14 @@
 #include <string>
 
 #include "packet.hpp"
+#include "routing.hpp"
 #include "type.hpp"
 #include "webrtc_connector.hpp"
 
 namespace processwarp {
-class WebrtcBundle : public WebrtcConnectorDelegate, public PacketControllerDelegate {
+class WebrtcBundle : public WebrtcConnectorDelegate,
+                     public PacketControllerDelegate,
+                     public RoutingDelegate {
  public:
   static WebrtcBundle& get_instance();
 
@@ -38,6 +41,8 @@ class WebrtcBundle : public WebrtcConnectorDelegate, public PacketControllerDele
   uv_loop_t* loop;
   /** Sub-thread instance of libuv. */
   uv_thread_t subthread;
+  /** Async update connector status. */
+  uv_async_t async_ucs;
 
   /** Event loop of webrtc on sub-thread. */
   rtc::Thread* thread;
@@ -59,6 +64,8 @@ class WebrtcBundle : public WebrtcConnectorDelegate, public PacketControllerDele
   NodeID range_min_nid;
   NodeID range_max_nid;
 
+  Routing routing;
+
   WebrtcBundle();
   WebrtcBundle(const WebrtcBundle&);
   WebrtcBundle& operator=(const WebrtcBundle&);
@@ -67,10 +74,15 @@ class WebrtcBundle : public WebrtcConnectorDelegate, public PacketControllerDele
   void packet_controller_on_recv(const Packet& packet) override;
   void packet_controller_send(const Packet& packet) override;
 
+  void routing_connect(const NodeID& nid) override;
+  void routing_disconnect(const NodeID& nid) override;
+  void routing_update_next_nid(const NodeID& minux_nid, const NodeID& plus_nid) override;
+
   void webrtc_connector_on_change_stateus(WebrtcConnector& connector, bool is_connect) override;
   void webrtc_connector_on_update_ice(WebrtcConnector& connector,
                                       const std::string ice) override;
 
+  static void update_connector_status(uv_async_t* handle);
   static void subthread_entry(void* arg);
 
   void recv_init_webrtc_ice(const Packet& packet);

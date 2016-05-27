@@ -1,5 +1,6 @@
 
 #include <cassert>
+#include <set>
 #include <string>
 
 #include "constant.hpp"
@@ -27,7 +28,8 @@ WebrtcBundle& WebrtcBundle::get_instance() {
  * This method is private.
  */
 WebrtcBundle::WebrtcBundle() :
-    packet_controller(Module::NETWORK) {
+    packet_controller(Module::NETWORK),
+    routing(*this, packet_controller, my_nid) {
 }
 
 /**
@@ -42,6 +44,7 @@ WebrtcBundle::~WebrtcBundle() {
  */
 void WebrtcBundle::apply_connector(WebrtcConnector* connector) {
   connector->delegate = this;
+  uv_async_send(&async_ucs);
 }
 
 /**
@@ -68,6 +71,9 @@ void WebrtcBundle::finalize() {
   thread->Quit();
   uv_thread_join(&subthread);
 
+  // Close async handler.
+  uv_close(reinterpret_cast<uv_handle_t*>(&async_ucs), nullptr);
+
   rtc::CleanupSSL();
 }
 
@@ -77,6 +83,9 @@ void WebrtcBundle::finalize() {
  */
 void WebrtcBundle::initialize(uv_loop_t* loop_) {
   loop = loop_;
+
+  // Initialize synchronizer.
+  uv_async_init(loop, &async_ucs, update_connector_status);
 
   // Initalize PacketController
   packet_controller.initialize(this);
@@ -218,9 +227,32 @@ void WebrtcBundle::packet_controller_send(const Packet& packet) {
   relay(packet);
 }
 
-void WebrtcBundle::webrtc_connector_on_change_stateus(WebrtcConnector& connector, bool is_connect) {
+void WebrtcBundle::routing_connect(const NodeID& nid) {
   /// @todo
   assert(false);
+}
+
+void WebrtcBundle::routing_disconnect(const NodeID& nid) {
+  /// @todo
+  assert(false);
+}
+
+void WebrtcBundle::routing_update_next_nid(const NodeID& minus_nid, const NodeID& plus_nid) {
+  next_minus_nid    = minus_nid;
+  next_plus_nid     = plus_nid;
+
+  if (next_minus_nid == NodeID::NONE) {
+    range_min_nid = NodeID::MIN;
+    range_max_nid = NodeID::MAX;
+
+  } else {
+    /// @todo
+    assert(false);
+  }
+}
+
+void WebrtcBundle::webrtc_connector_on_change_stateus(WebrtcConnector& connector, bool is_connect) {
+  uv_async_send(&async_ucs);
 }
 
 /**
@@ -246,6 +278,23 @@ void WebrtcBundle::webrtc_connector_on_update_ice(WebrtcConnector& connector,
     /// @todo
     assert(false);
   }
+}
+
+/**
+ * When update connector status, collect online node-ids and pass to routing module.
+ * @param handle libuv's handler.
+ */
+void WebrtcBundle::update_connector_status(uv_async_t* handle) {
+  WebrtcBundle& THIS = get_instance();
+  std::set<NodeID> nids;
+
+  for (auto& it_connector : THIS.connectors) {
+    WebrtcConnector& connector = *(it_connector.first);
+    if (connector.is_connected) {
+      nids.insert(connector.nid);
+    }
+  }
+  THIS.routing.on_change_online_connectors(nids);
 }
 
 /**

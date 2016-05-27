@@ -15,6 +15,9 @@ class NodeID {
   static const NodeID SERVER;
   static const NodeID THIS;
 
+  static const NodeID MAX;
+  static const NodeID MIN;
+
   static NodeID from_str(const std::string str);
   static NodeID from_json(const picojson::value& json);
   static NodeID make_random();
@@ -32,9 +35,6 @@ class NodeID {
   picojson::value to_json() const;
 
  private:
-  static const NodeID MAX;
-  static const NodeID MIN;
-
   int type;
   uint64_t id[2];
 

@@ -177,6 +177,7 @@ add_executable(processwarp
   network_connector.cpp
   packet_init_webrtc_offer.cpp
   router.cpp
+  routing.cpp
   webrtc_bundle.cpp
   webrtc_connector.cpp
   worker_connector.cpp
