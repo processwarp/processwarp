@@ -8,6 +8,7 @@
 #  include <regex>
 #endif
 #include <string>
+#include <tuple>
 
 #include "constant.hpp"
 #include "node_id.hpp"
@@ -172,7 +173,43 @@ bool NodeID::operator<(const NodeID& b) const {
 }
 
 /**
- * @return True if a <= this <= b.
+ * Calculate central node-id of A and B.
+ * Node-id is placed on torus.
+ * If node-id of A is larger than B, return value is smaller than A or larger than B.
+ * A and B must be NORMAL node-id.
+ * @param a Node-id A.
+ * @param b Node-id B.
+ * @return Central node-id.
+ */
+NodeID NodeID::center_mod(const NodeID& a, const NodeID& b) {
+  assert(a.type == Type::NORMAL);
+  assert(b.type == Type::NORMAL);
+
+  uint64_t a0, a1, b0, b1;
+  std::tie(a0, a1) = shift_right(a.id[0], a.id[1]);
+  std::tie(b0, b1) = shift_right(b.id[0], b.id[1]);
+
+  uint64_t c0, c1;
+  std::tie(c0, c1) = add_mod(a0, a1, b0, b1);
+
+  if (a.id[1] & 0x01 && b.id[1] & 0x1) {
+    std::tie(c0, c1) = add_mod(c0, c1, 0x00, 0x01);
+  }
+
+  if (b < a) {
+    std::tie(c0, c1) = add_mod(c0, c1, 0x8000000000000000, 0x0000000000000000);
+  }
+
+  return NodeID(c0, c1);
+}
+
+/**
+ * Check a node-id is placed between node-id of A and B.
+ * Node-id is placed on torus.
+ * If node-id of A is larger than B, return true if this < B or A <= this.
+ * @param a Node-id A.
+ * @param b Node-id B.
+ * @return True if A <= this < B.
  */
 bool NodeID::is_between(const NodeID& a, const NodeID& b) const {
   assert(type   == Type::NORMAL);
@@ -181,7 +218,7 @@ bool NodeID::is_between(const NodeID& a, const NodeID& b) const {
 
   switch (compare(a, b)) {
     case -1: {
-      if (compare(a, *this) != 1 && compare(*this, b) != 1) {
+      if (compare(a, *this) != 1 && compare(*this, b) == -1) {
         return true;
       } else {
         return false;
@@ -189,16 +226,12 @@ bool NodeID::is_between(const NodeID& a, const NodeID& b) const {
     } break;
 
     case 0: {
-      if (id[0] == a.id[0] && id[1] == a.id[1]) {
-        return true;
-      } else {
-        return false;
-      }
+      return false;
     } break;
 
     case 1: {
-      if ((compare(a, *this) != 1 && compare(*this, MAX)) ||
-          (compare(MIN, *this) != 1 && compare(*this, b))) {
+      if ((compare(a, *this) != 1 && compare(*this, MAX) != 1) ||
+          (compare(MIN, *this) != 1 && compare(*this, b) == -1)) {
         return true;
       } else {
         return false;
@@ -278,4 +311,44 @@ int NodeID::compare(const NodeID& a, const NodeID& b) {
     return 1;
   }
 }
+
+/**
+ * Calculate unsigned add node-id A and B on module MAX space.
+ * @param a0 Node-id A's upper value.
+ * @param a1 Node-id A's lower value.
+ * @param a0 Node-id B's upper value.
+ * @param a1 Node-id B's lower value.
+ * @return Calucated value's upper and lower pair.
+ */
+std::tuple<uint64_t, uint64_t> NodeID::add_mod(uint64_t a0, uint64_t a1, uint64_t b0, uint64_t b1) {
+  uint64_t d0, d1;
+  uint64_t c0, c1;
+
+  // Lower.
+  c1 = (0x7FFFFFFFFFFFFFFF & a1) + (0x7FFFFFFFFFFFFFFF & b1);
+  d1 = (a1 >> 63) + (b1 >> 63) + (c1 >> 63);
+  c1 = ((d1 << 63) & 0x8000000000000000) | (c1 & 0x7FFFFFFFFFFFFFFF);
+  // Upper.
+  c0 = (0x3FFFFFFFFFFFFFFF & a0) + (0x3FFFFFFFFFFFFFFF & b0) + (d1 >> 1);
+  d0 = (a0 >> 62) + (b0 >> 62) + (c0 >> 62);
+  c0 = ((d0 << 62) & 0xC000000000000000) | (c0 & 0x3FFFFFFFFFFFFFFF);
+
+  return std::forward_as_tuple(c0, c1);
+}
+
+/**
+ * Calucate 1 bit right shift for node-id.
+ * @param a0 Node-id's upper value.
+ * @param a1 Node-id's lower value.
+ * @return Calucated value's upper and lower pair.
+ */
+std::tuple<uint64_t, uint64_t> NodeID::shift_right(uint64_t a0, uint64_t a1) {
+  uint64_t c0, c1;
+
+  c1 = ((a0 << 63) & 0x8000000000000000) | ((a1 >> 1) & 0x7FFFFFFFFFFFFFFF);
+  c0 = a0 >> 1;
+
+  return std::forward_as_tuple(c0, c1);
+}
+
 }  // namespace processwarp

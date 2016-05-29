@@ -3,6 +3,7 @@
 #include <picojson.h>
 
 #include <string>
+#include <tuple>
 
 namespace processwarp {
 /**
@@ -30,6 +31,8 @@ class NodeID {
   bool operator!=(const NodeID& b) const;
   bool operator<(const NodeID& b) const;
 
+  static NodeID center_mod(const NodeID& a, const NodeID& b);
+
   bool is_between(const NodeID& a, const NodeID& b) const;
   std::string to_str() const;
   picojson::value to_json() const;
@@ -42,5 +45,7 @@ class NodeID {
   NodeID(uint64_t id0, uint64_t id1);
 
   static int compare(const NodeID& a, const NodeID& b);
+  static std::tuple<uint64_t, uint64_t> add_mod(uint64_t a0, uint64_t a1, uint64_t b0, uint64_t b1);
+  static std::tuple<uint64_t, uint64_t> shift_right(uint64_t a0, uint64_t a1);
 };
 }  // namespace processwarp

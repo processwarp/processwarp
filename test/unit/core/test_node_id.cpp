@@ -109,4 +109,37 @@ TEST_F(NodeIDTest, diff) {
   EXPECT_FALSE(n2 < n1);
 }
 
+TEST_F(NodeIDTest, center) {
+  NodeID v1   = NodeID::from_str("00000000000000000000000000000001");
+  NodeID v2   = NodeID::from_str("00000000000000000000000000000002");
+  NodeID v3   = NodeID::from_str("00000000000000000000000000000003");
+  NodeID v4   = NodeID::from_str("00000000000000000000000000000004");
+  NodeID v5   = NodeID::from_str("00000000000000000000000000000005");
+  NodeID half = NodeID::from_str("7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
+
+  EXPECT_EQ(NodeID::center_mod(NodeID::MIN, v1), NodeID::MIN);
+  EXPECT_EQ(NodeID::center_mod(NodeID::MIN, v2), v1);
+  EXPECT_EQ(NodeID::center_mod(NodeID::MIN, v3), v1);
+  EXPECT_EQ(NodeID::center_mod(NodeID::MIN, v4), v2);
+  EXPECT_EQ(NodeID::center_mod(NodeID::MIN, v5), v2);
+  EXPECT_EQ(NodeID::center_mod(NodeID::MIN, NodeID::MAX), half);
+  EXPECT_EQ(NodeID::center_mod(NodeID::MAX, NodeID::MIN), NodeID::MAX);
+  EXPECT_EQ(NodeID::center_mod(NodeID::MAX, v1), NodeID::MIN);
+  EXPECT_EQ(NodeID::center_mod(NodeID::MAX, v2), NodeID::MIN);
+  EXPECT_EQ(NodeID::center_mod(NodeID::MAX, v3), v1);
+  EXPECT_EQ(NodeID::center_mod(NodeID::MAX, v4), v1);
+  EXPECT_EQ(NodeID::center_mod(NodeID::MAX, v5), v2);
+}
+
+TEST_F(NodeIDTest, is_between) {
+  NodeID n1  = NodeID::from_str("0123456789abcdef0123456789abcdef");
+  NodeID n2  = NodeID::from_str("0123456789abcdef0123456789abcdf0");
+  NodeID n3  = NodeID::from_str("fedcba9876543210fedcba9876543210");
+
+  EXPECT_TRUE(NodeID::MIN.is_between(NodeID::MIN, n1));
+  EXPECT_TRUE(n1.is_between(n1, n2));
+  EXPECT_FALSE(n2.is_between(n1, n2));
+  EXPECT_TRUE(NodeID::MAX.is_between(n3, n1));
+  EXPECT_TRUE(NodeID::MIN.is_between(n3, n1));
+}
 }  // namespace processwarp
