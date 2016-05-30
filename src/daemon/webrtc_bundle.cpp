@@ -39,11 +39,24 @@ WebrtcBundle::~WebrtcBundle() {
 }
 
 /**
- * Change connector's handler to me.
+ * Apply connector from NetworkConnector module.
  * @param connector WebRTC connector.
  */
 void WebrtcBundle::apply_connector(WebrtcConnector* connector) {
+  // Change connector's handler to me.
   connector->delegate = this;
+
+  // Make a pair of node-id and connector, if connection has enabled.
+  if (connector->is_connected) {
+    nid_map.insert(std::make_pair(connector->nid, connector));
+  }
+
+  // Decode reteindata on connector.
+  for (auto& data : connector->retention_data) {
+    webrtc_connector_on_recv(*connector, data);
+  }
+  connector->retention_data.clear();
+
   uv_async_send(&async_ucs);
 }
 
@@ -72,6 +85,7 @@ void WebrtcBundle::finalize() {
   uv_thread_join(&subthread);
 
   // Close async handler.
+  uv_close(reinterpret_cast<uv_handle_t*>(&async_recv), nullptr);
   uv_close(reinterpret_cast<uv_handle_t*>(&async_ucs), nullptr);
 
   rtc::CleanupSSL();
@@ -85,6 +99,7 @@ void WebrtcBundle::initialize(uv_loop_t* loop_) {
   loop = loop_;
 
   // Initialize synchronizer.
+  uv_async_init(loop, &async_recv, on_recv);
   uv_async_init(loop, &async_ucs, update_connector_status);
 
   // Initalize PacketController
@@ -142,7 +157,7 @@ void WebrtcBundle::relay(const Packet& packet) {
   } else if (dst_nid == NodeID::NONE) {
     send_packet_error(packet, PacketError::NOT_EXIST);
   } else {
-    relay_to_another(packet);
+    relay_to_another(dst_nid, packet);
   }
 }
 
@@ -233,11 +248,25 @@ void WebrtcBundle::routing_send_routing(bool is_explicit, const NodeID& dst_nid,
 }
 
 /**
+ * Remove the connector from initializeing map,  when a connector status has changed to enable.
  * Raise update_connector_status on another thread, when a connector status has changed.
  * @param connector Connector that status has changed.
  * @param is_connect Connection status (True if connection has enabled.).
  */
 void WebrtcBundle::webrtc_connector_on_change_stateus(WebrtcConnector& connector, bool is_connect) {
+  if (is_connect) {
+    auto it_init = init_map.find(&connector);
+    if (it_init != init_map.end()) {
+      init_map.erase(it_init);
+    }
+
+    nid_map.insert(std::make_pair(connector.nid, &connector));
+
+  } else {
+    nid_map.erase(connector.nid);
+  }
+
+  // Raise update_connector_status on another thread.
   uv_async_send(&async_ucs);
 }
 
@@ -267,6 +296,59 @@ void WebrtcBundle::webrtc_connector_on_update_ice(WebrtcConnector& connector,
 }
 
 /**
+ * When receive event has happen, Raise on_recv on another thraed.
+ * @param connector Data received connector.
+ * @param data Received data.
+ */
+void WebrtcBundle:: webrtc_connector_on_recv(WebrtcConnector& connector, const std::string& data) {
+  std::lock_guard<std::mutex> guard(recv_mutex);
+  recv_data.push_back(data);
+  uv_async_send(&async_recv);
+}
+
+/**
+ * When receive data from connector, decode it to packet and call relay method to relay it.
+ * @param handle libuv's handler(unused).
+ */
+void WebrtcBundle::on_recv(uv_async_t* handle) {
+  WebrtcBundle& THIS = get_instance();
+
+  while (true) {
+    picojson::value v;
+    {
+      std::lock_guard<std::mutex> guard(THIS.recv_mutex);
+      if (THIS.recv_data.empty()) {
+        break;
+
+      } else {
+        std::istringstream is(THIS.recv_data.front());
+        std::string err = picojson::parse(v, is);
+        THIS.recv_data.pop_front();
+        if (!err.empty()) {
+          /// @todo error
+          assert(false);
+        }
+      }
+    }
+
+    picojson::object& js = v.get<picojson::object>();
+    Packet packet = {
+      Convert::json2int<uint32_t>(js.at("packet_id")),
+      js.at("command").get<std::string>(),
+      Convert::json2int<PacketMode::Type>(js.at("mode")),
+      Convert::json2int<Module::Type>(js.at("dst_module")),
+      Convert::json2int<Module::Type>(js.at("src_module")),
+      Convert::json2vpid(js.at("pid")),
+      NodeID::from_json(js.at("dst_nid")),
+      NodeID::from_json(js.at("src_nid")),
+      js.at("content").get<picojson::object>()
+    };
+
+    THIS.relay(packet);
+  }
+}
+
+/**
  * When update connector status, collect online node-ids and pass to routing module.
  * @param handle libuv's handler.
  */
@@ -274,6 +356,7 @@ void WebrtcBundle::update_connector_status(uv_async_t* handle) {
   WebrtcBundle& THIS = get_instance();
   std::set<NodeID> nids;
 
+  // Tell event for Routing module
   for (auto& it_connector : THIS.connectors) {
     WebrtcConnector& connector = *(it_connector.first);
     if (connector.is_connected) {
@@ -335,6 +418,7 @@ void WebrtcBundle::recv_init_webrtc_ice(const Packet& packet) {
 /**
  * When receive init_webrtc offer command,
  * create a pair connector and reply with a SDP string by this node.
+ * But, the same id is used by this node, send a error reply.
  * If the suggested node-id is used by this node, send error packet as deny.
  * @param packet A packet containing prime_nid, sdp.
  */
@@ -363,9 +447,28 @@ void WebrtcBundle::recv_init_webrtc_offer(const Packet& packet) {
   }
 }
 
-void WebrtcBundle::relay_to_another(const Packet& packet) {
-  /// @todo
-  assert(false);
+/**
+ * Relay packet to another node.
+ * @param relay_nid Relay node-id.
+ * @param packet Packet to relay.
+ */
+void WebrtcBundle::relay_to_another(const NodeID& relay_nid, const Packet& packet) {
+  assert(nid_map.find(relay_nid) != nid_map.end());
+
+  picojson::object js_packet;
+  js_packet.insert(std::make_pair("packet_id", Convert::int2json(packet.packet_id)));
+  js_packet.insert(std::make_pair("command", picojson::value(packet.command)));
+  js_packet.insert(std::make_pair("mode", Convert::int2json(packet.mode)));
+  js_packet.insert(std::make_pair("dst_module", Convert::int2json(packet.dst_module)));
+  js_packet.insert(std::make_pair("src_module", Convert::int2json(packet.src_module)));
+  js_packet.insert(std::make_pair("pid", Convert::vpid2json(packet.pid)));
+  js_packet.insert(std::make_pair("dst_nid", packet.dst_nid.to_json()));
+  js_packet.insert(std::make_pair("src_nid", packet.src_nid.to_json()));
+  js_packet.insert(std::make_pair("content", picojson::value(packet.content)));
+
+  std::string js_str = picojson::value(js_packet).serialize();
+
+  nid_map.at(relay_nid)->send(js_str);
 }
 
 /**

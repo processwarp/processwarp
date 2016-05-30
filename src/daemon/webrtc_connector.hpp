@@ -4,6 +4,7 @@
 
 #include <condition_variable>
 #include <mutex>
+#include <deque>
 #include <string>
 
 #include "node_id.hpp"
@@ -17,6 +18,7 @@ class WebrtcConnectorDelegate {
   virtual void webrtc_connector_on_change_stateus(WebrtcConnector& connector, bool is_connect) = 0;
   virtual void webrtc_connector_on_update_ice(WebrtcConnector& connector,
                                               const std::string ice) = 0;
+  virtual void webrtc_connector_on_recv(WebrtcConnector& connector, const std::string& data);
 };
 
 class WebrtcConnector {
@@ -27,6 +29,8 @@ class WebrtcConnector {
   bool is_connected;
   /// Event handler.
   WebrtcConnectorDelegate* delegate;
+  /// Received data retention pool (data is stored when the delegate is not defined).
+  std::deque<std::string> retention_data;
 
   WebrtcConnector(
       rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> peer_connection_factory,
@@ -35,6 +39,7 @@ class WebrtcConnector {
   virtual ~WebrtcConnector();
 
   const std::string& get_local_sdp();
+  void send(const std::string& data);
   void set_remote_sdp(const std::string& sdp);
   void update_ice(const std::string& ice);
 
@@ -113,6 +118,7 @@ class WebrtcConnector {
   void on_csd_success(webrtc::SessionDescriptionInterface* desc);
   void on_csd_failure(const std::string& error);
   void on_ice_candidate(const webrtc::IceCandidateInterface* candidate);
+  void on_pco_connection_change(webrtc::PeerConnectionInterface::IceConnectionState status);
   void on_ssd_failure(const std::string& error);
   void on_state_change(webrtc::DataChannelInterface::DataState status);
   void on_message(const webrtc::DataBuffer& buffer);

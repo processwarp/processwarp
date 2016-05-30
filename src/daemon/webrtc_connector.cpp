@@ -3,6 +3,7 @@
 
 #include <string>
 
+#include "convert.hpp"
 #include "webrtc_connector.hpp"
 
 namespace processwarp {
@@ -10,6 +11,16 @@ namespace processwarp {
  * Simple destructor for vtable.
  */
 WebrtcConnectorDelegate::~WebrtcConnectorDelegate() {
+}
+
+/**
+ * If delegate method is not defined, received data is stored to retainsion pool.
+ * @param connector WebRTC connector.
+ * @param data Received data string.
+ */
+void WebrtcConnectorDelegate::webrtc_connector_on_recv(WebrtcConnector& connector,
+                                                       const std::string& data) {
+  connector.retention_data.push_back(data);
 }
 
 WebrtcConnector::CSDO::CSDO(WebrtcConnector& parent_) :
@@ -56,6 +67,7 @@ void WebrtcConnector::PCO::OnAddStream(webrtc::MediaStreamInterface* stream) {
 
 void WebrtcConnector::PCO::OnDataChannel(webrtc::DataChannelInterface* data_channel) {
   parent.data_channel = data_channel;
+  data_channel->RegisterObserver(&parent.dco);
 }
 
 void WebrtcConnector::PCO::OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {
@@ -64,6 +76,7 @@ void WebrtcConnector::PCO::OnIceCandidate(const webrtc::IceCandidateInterface* c
 
 void WebrtcConnector::PCO::OnIceConnectionChange(
     webrtc::PeerConnectionInterface::IceConnectionState new_state) {
+  parent.on_pco_connection_change(new_state);
 }
 
 void WebrtcConnector::PCO::OnIceGatheringChange(
@@ -159,6 +172,17 @@ const std::string& WebrtcConnector::get_local_sdp() {
 }
 
 /**
+ * Send packet by WebRTC data channel.
+ * @param packet Packet to send.
+ */
+void WebrtcConnector::send(const std::string& packet) {
+  assert(is_connected);
+
+  webrtc::DataBuffer buffer(rtc::CopyOnWriteBuffer(packet.c_str(), packet.size()), true);
+  data_channel->Send(buffer);
+}
+
+/**
  * Set remote peer's SDP.
  * @param sdp String of sdp.
  */
@@ -242,6 +266,21 @@ void WebrtcConnector::on_ice_candidate(const webrtc::IceCandidateInterface* cand
   delegate->webrtc_connector_on_update_ice(*this, picojson::value(ice).serialize());
 }
 
+/**
+ * Raise status change event by peer connection status.
+ * @param status Peer connection status.
+ */
+void WebrtcConnector::on_pco_connection_change(
+    webrtc::PeerConnectionInterface::IceConnectionState status) {
+  if (delegate == nullptr) {
+    return;
+
+  } else {
+    is_connected = status == webrtc::PeerConnectionInterface::kIceConnectionCompleted;
+    delegate->webrtc_connector_on_change_stateus(*this, is_connected);
+  }
+}
+
 void WebrtcConnector::on_ssd_failure(const std::string& error) {
   /// @todo error
   std::cout << error << std::endl;
@@ -249,7 +288,8 @@ void WebrtcConnector::on_ssd_failure(const std::string& error) {
 }
 
 /**
- * Rase status chagne event.
+ * Raise status chagne event by data channel status.
+ * @param status Data channel status.
  */
 void WebrtcConnector::on_state_change(webrtc::DataChannelInterface::DataState status) {
   if (delegate == nullptr) {
@@ -261,8 +301,18 @@ void WebrtcConnector::on_state_change(webrtc::DataChannelInterface::DataState st
   }
 }
 
+/**
+ * When receive message, raise event for delegate or store data if delegate has not set.
+ * @param buffer Received data buffer.
+ */
 void WebrtcConnector::on_message(const webrtc::DataBuffer& buffer) {
-  /// @todo
-  assert(false);
+  std::string data(buffer.data.data<char>(), buffer.size());
+
+  if (delegate == nullptr) {
+    retention_data.push_back(data);
+
+  } else {
+    delegate->webrtc_connector_on_recv(*this, data);
+  }
 }
 }  // namespace processwarp

@@ -9,6 +9,7 @@
 #include <webrtc/base/ssladapter.h>
 #include <webrtc/base/thread.h>
 
+#include <deque>
 #include <map>
 #include <memory>
 #include <string>
@@ -43,6 +44,8 @@ class WebrtcBundle : public WebrtcConnectorDelegate,
   uv_thread_t subthread;
   /** Async update connector status. */
   uv_async_t async_ucs;
+  /** Async receive packet. */
+  uv_async_t async_recv;
 
   /** Event loop of webrtc on sub-thread. */
   rtc::Thread* thread;
@@ -54,12 +57,19 @@ class WebrtcBundle : public WebrtcConnectorDelegate,
   webrtc::DataChannelInit dc_config;
 
   PacketController packet_controller;
+  /** Connector pool. */
   std::map<WebrtcConnector*, std::unique_ptr<WebrtcConnector>> connectors;
-  /** Map of connector and node-id that relaied the packet from new node. */
+  /** Map of node-id and online connector. */
+  std::map<NodeID, WebrtcConnector*> nid_map;
+  /** Map of connector and node-id that relayed the packet from the server. */
   std::map<WebrtcConnector*, NodeID>  init_map;
 
-  NodeID my_nid;
+  /** Received data pool. */
+  std::deque<std::string> recv_data;
+  /** Mutex for received data pool. */
+  std::mutex recv_mutex;
 
+  NodeID my_nid;
   Routing routing;
 
   WebrtcBundle();
@@ -78,13 +88,15 @@ class WebrtcBundle : public WebrtcConnectorDelegate,
   void webrtc_connector_on_change_stateus(WebrtcConnector& connector, bool is_connect) override;
   void webrtc_connector_on_update_ice(WebrtcConnector& connector,
                                       const std::string ice) override;
+  void webrtc_connector_on_recv(WebrtcConnector& connector, const std::string& data) override;
 
+  static void on_recv(uv_async_t* handle);
   static void update_connector_status(uv_async_t* handle);
   static void subthread_entry(void* arg);
 
   void recv_init_webrtc_ice(const Packet& packet);
   void recv_init_webrtc_offer(const Packet& packet);
-  void relay_to_another(const Packet& packet);
+  void relay_to_another(const NodeID& relay_nid, const Packet& packet);
   void relay_to_local(const Packet& packet);
   void send_packet_error(const Packet& error_for, PacketError::Type code);
 };
