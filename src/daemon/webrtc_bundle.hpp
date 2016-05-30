@@ -27,12 +27,12 @@ class WebrtcBundle : public WebrtcConnectorDelegate,
   static WebrtcBundle& get_instance();
 
   void apply_connector(WebrtcConnector* connector);
+  void close_connector(WebrtcConnector* connector);
   WebrtcConnector* create_connector();
   void finalize();
   void initialize(uv_loop_t* loop);
   void relay(const Packet& packet);
   void set_nid(const NodeID& nid);
-  void purge_connector(WebrtcConnector* connector);
   void relay_init_webrtc_ice(const NodeID& local_nid, const NodeID& remote_nid,
                              const std::string& ice);
   void relay_init_webrtc_offer(const NodeID& prime_nid, const std::string& sdp);

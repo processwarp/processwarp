@@ -691,7 +691,7 @@ void NetworkConnector::recv_init_webrtc_deny(const picojson::object& content) {
       Router& router = Router::get_instance();
       WebrtcBundle& webrtc = WebrtcBundle::get_instance();
 
-      webrtc.purge_connector(webrtc_init_connector);
+      webrtc.close_connector(webrtc_init_connector);
       webrtc_init_connector = nullptr;
       connect_delegate->network_connector_connect_on_success(*this, NodeID::NONE);
       send_init_webrtc_fin(my_nid);

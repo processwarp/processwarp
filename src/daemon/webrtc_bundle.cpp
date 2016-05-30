@@ -61,6 +61,30 @@ void WebrtcBundle::apply_connector(WebrtcConnector* connector) {
 }
 
 /**
+ * Close WebRTC connector.
+ * Unset handler and delete the connector instance.
+ * @param connector WebRTC onnector.
+ */
+void WebrtcBundle::close_connector(WebrtcConnector* connector) {
+  connector->delegate = nullptr;
+
+  auto it_init = init_map.find(connector);
+  if (it_init != init_map.end()) {
+    init_map.erase(it_init);
+  }
+
+  if (connector->nid != NodeID::NONE) {
+    auto it_nid = nid_map.find(connector->nid);
+    if (it_nid != nid_map.end()) {
+      nid_map.erase(it_nid);
+    }
+  }
+
+  assert(connectors.find(connector) != connectors.end());
+  connectors.erase(connector);
+}
+
+/**
  * Create new WebRTC connector.
  * Connector handle will change by apply_connector or will release by purge_connector.
  * @return A new WebRTC connector.
@@ -108,16 +132,6 @@ void WebrtcBundle::initialize(uv_loop_t* loop_) {
   // Initialize WebRTC
   rtc::InitializeSSL();
   uv_thread_create(&subthread, WebrtcBundle::subthread_entry, this);
-}
-
-/**
- * Purge WebRTC connector.
- * Unset handler and delete the connector instance.
- * @param connector WebRTC onnector.
- */
-void WebrtcBundle::purge_connector(WebrtcConnector* connector) {
-  connector->delegate = nullptr;
-  connectors.erase(connector);
 }
 
 /**
@@ -231,8 +245,9 @@ void WebrtcBundle::routing_connect(const NodeID& nid) {
 }
 
 void WebrtcBundle::routing_disconnect(const NodeID& nid) {
-  /// @todo
-  assert(false);
+  assert(nid_map.find(nid) != nid_map.end());
+
+  close_connector(nid_map.at(nid));
 }
 
 /**
