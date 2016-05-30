@@ -1,6 +1,8 @@
 #pragma once
 
+#include <tuple>
 #include <set>
+#include <vector>
 
 #include "packet.hpp"
 
@@ -10,25 +12,30 @@ class RoutingDelegate {
   virtual ~RoutingDelegate();
   virtual void routing_connect(const NodeID& nid) = 0;
   virtual void routing_disconnect(const NodeID& nid) = 0;
-  virtual void routing_update_next_nid(const NodeID& minus_nid, const NodeID& plus_nid) = 0;
+  virtual void routing_send_routing(bool is_explicit, const NodeID& dst_nid,
+                                    const picojson::object& content) = 0;
 };
 
 class Routing {
  public:
-  Routing(RoutingDelegate& delegate_,
-          PacketController& packet_controller_, const NodeID& my_nid_);
+  Routing(RoutingDelegate& delegate_, const NodeID& my_nid_);
 
+  NodeID get_relay_nid(const NodeID& nid, bool is_explicit);
   void execute();
   void on_change_online_connectors(const std::set<NodeID>& nids);
-  void on_recv(const NodeID& src_nid);
-  void on_send(const NodeID& dst_nid);
-  void recv(Packet& packet);
+  void recv_routing(const Packet& packet);
 
  private:
   RoutingDelegate& delegate;
-  PacketController& packet_controller;
   const NodeID& my_nid;
+  NodeID next_minus_nid;
+  NodeID next_plus_nid;
+  NodeID range_min_nid;
+  NodeID range_max_nid;
 
   std::set<NodeID> online_nids;
+  std::vector<std::tuple<NodeID, NodeID>> online_divisions;
+
+  void send_routing();
 };
 }  // namespace processwarp

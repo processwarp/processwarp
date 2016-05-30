@@ -29,7 +29,7 @@ WebrtcBundle& WebrtcBundle::get_instance() {
  */
 WebrtcBundle::WebrtcBundle() :
     packet_controller(Module::NETWORK),
-    routing(*this, packet_controller, my_nid) {
+    routing(*this, my_nid) {
 }
 
 /**
@@ -132,37 +132,17 @@ void WebrtcBundle::relay(const Packet& packet) {
   std::cout << "  content:" << picojson::value(packet.content).serialize()
             << std::endl << std::endl;
   std::cout << "  my_nid:" << my_nid.to_str() << std::endl;
-  std::cout << "  next_minus_nid:" << next_minus_nid.to_str() << std::endl;
-  std::cout << "  next_plus_nid:" << next_plus_nid.to_str() << std::endl;
-  std::cout << "  range_min_nid:" << range_min_nid.to_str() << std::endl;
-  std::cout << "  range_max_nid:" << range_max_nid.to_str() << std::endl;
 #endif  // NDEBUG
 
-  if (my_nid == packet.dst_nid) {
+  NodeID dst_nid = routing.get_relay_nid(packet.dst_nid,
+                                         packet.mode & PacketMode::EXPLICIT);
+
+  if (dst_nid == NodeID::THIS) {
     relay_to_local(packet);
-    return;
-  }
-
-  if (next_minus_nid == NodeID::NONE) {
-    if (packet.mode & PacketMode::EXPLICIT) {
-      send_packet_error(packet, PacketError::NOT_EXIST);
-
-    } else {
-      relay_to_local(packet);
-    }
-
+  } else if (dst_nid == NodeID::NONE) {
+    send_packet_error(packet, PacketError::NOT_EXIST);
   } else {
-    if (packet.dst_nid.is_between(range_min_nid, range_max_nid)) {
-      if (packet.mode & PacketMode::EXPLICIT) {
-        send_packet_error(packet, PacketError::NOT_EXIST);
-
-      } else {
-        relay_to_local(packet);
-      }
-
-    } else {
-      relay_to_another(packet);
-    }
+    relay_to_another(packet);
   }
 }
 
@@ -205,7 +185,10 @@ void WebrtcBundle::relay_init_webrtc_offer(const NodeID& prime_nid, const std::s
  * @param packet A packet.
  */
 void WebrtcBundle::packet_controller_on_recv(const Packet& packet) {
-  if (packet.command == "init_webrtc_ice") {
+  if (packet.command == "routing") {
+    routing.recv_routing(packet);
+
+  } else if (packet.command == "init_webrtc_ice") {
     recv_init_webrtc_ice(packet);
 
   } else if (packet.command == "init_webrtc_offer") {
@@ -237,20 +220,23 @@ void WebrtcBundle::routing_disconnect(const NodeID& nid) {
   assert(false);
 }
 
-void WebrtcBundle::routing_update_next_nid(const NodeID& minus_nid, const NodeID& plus_nid) {
-  next_minus_nid    = minus_nid;
-  next_plus_nid     = plus_nid;
-
-  if (next_minus_nid == NodeID::NONE) {
-    range_min_nid = NodeID::MIN;
-    range_max_nid = NodeID::MAX;
-
-  } else {
-    /// @todo
-    assert(false);
-  }
+/**
+ * Send routing packet, when request of sending routing packet has called from Routing module.
+ * @param is_explicit Switch of EXPLICIT flug for packet.
+ * @param dst_nid, Destination node-id.
+ * @param content, Packet content.
+ */
+void WebrtcBundle::routing_send_routing(bool is_explicit, const NodeID& dst_nid,
+                                        const picojson::object& content) {
+  packet_controller.send("routing", Module::NETWORK, is_explicit,
+                         PID::BROADCAST, dst_nid, content);
 }
 
+/**
+ * Raise update_connector_status on another thread, when a connector status has changed.
+ * @param connector Connector that status has changed.
+ * @param is_connect Connection status (True if connection has enabled.).
+ */
 void WebrtcBundle::webrtc_connector_on_change_stateus(WebrtcConnector& connector, bool is_connect) {
   uv_async_send(&async_ucs);
 }

@@ -59,10 +59,6 @@ class WebrtcBundle : public WebrtcConnectorDelegate,
   std::map<WebrtcConnector*, NodeID>  init_map;
 
   NodeID my_nid;
-  NodeID next_minus_nid;
-  NodeID next_plus_nid;
-  NodeID range_min_nid;
-  NodeID range_max_nid;
 
   Routing routing;
 
@@ -76,7 +72,8 @@ class WebrtcBundle : public WebrtcConnectorDelegate,
 
   void routing_connect(const NodeID& nid) override;
   void routing_disconnect(const NodeID& nid) override;
-  void routing_update_next_nid(const NodeID& minux_nid, const NodeID& plus_nid) override;
+  void routing_send_routing(bool is_explicit, const NodeID& dst_nid,
+                            const picojson::object& content) override;
 
   void webrtc_connector_on_change_stateus(WebrtcConnector& connector, bool is_connect) override;
   void webrtc_connector_on_update_ice(WebrtcConnector& connector,

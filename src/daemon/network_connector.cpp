@@ -427,12 +427,12 @@ void NetworkConnector::webrtc_connector_on_change_stateus(WebrtcConnector& conne
     Router& router = Router::get_instance();
     WebrtcBundle& webrtc = WebrtcBundle::get_instance();
 
+    router.set_nid(my_nid);
+    webrtc.set_nid(my_nid);
     webrtc.apply_connector(webrtc_init_connector);
     webrtc_init_connector = nullptr;
     connect_delegate->network_connector_connect_on_success(*this, NodeID::NONE);
     send_init_webrtc_fin(my_nid);
-    router.set_nid(my_nid);
-    webrtc.set_nid(my_nid);
   }
 }
 
