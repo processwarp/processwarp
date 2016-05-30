@@ -292,7 +292,7 @@ void WebrtcBundle::webrtc_connector_on_change_stateus(WebrtcConnector& connector
  * @param ice ICE string.
  */
 void WebrtcBundle::webrtc_connector_on_update_ice(WebrtcConnector& connector,
-                                                  const std::string ice) {
+                                                  const std::string& ice) {
   auto it_connector = init_map.find(&connector);
   if (it_connector != init_map.end()) {
     picojson::object content;

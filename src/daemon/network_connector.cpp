@@ -442,7 +442,7 @@ void NetworkConnector::webrtc_connector_on_change_stateus(WebrtcConnector& conne
  * @param ice ICE string.
  */
 void NetworkConnector::webrtc_connector_on_update_ice(WebrtcConnector& connector,
-                                                      const std::string ice) {
+                                                      const std::string& ice) {
   assert(&connector == webrtc_init_connector);
 
   if (connector.nid == NodeID::NONE) {

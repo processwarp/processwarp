@@ -89,7 +89,7 @@ class NetworkConnector : public WebrtcConnectorDelegate {
   virtual ~NetworkConnector();
 
   void webrtc_connector_on_change_stateus(WebrtcConnector& connector, bool is_connect) override;
-  void webrtc_connector_on_update_ice(WebrtcConnector& connector, const std::string ice) override;
+  void webrtc_connector_on_update_ice(WebrtcConnector& connector, const std::string& ice) override;
 
   static void on_recv(uv_async_t* handle);
 

@@ -17,7 +17,7 @@ class WebrtcConnectorDelegate {
   virtual ~WebrtcConnectorDelegate();
   virtual void webrtc_connector_on_change_stateus(WebrtcConnector& connector, bool is_connect) = 0;
   virtual void webrtc_connector_on_update_ice(WebrtcConnector& connector,
-                                              const std::string ice) = 0;
+                                              const std::string& ice) = 0;
   virtual void webrtc_connector_on_recv(WebrtcConnector& connector, const std::string& data);
 };
 
