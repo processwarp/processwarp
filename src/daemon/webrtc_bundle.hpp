@@ -12,6 +12,7 @@
 #include <deque>
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 
 #include "packet.hpp"
@@ -38,6 +39,19 @@ class WebrtcBundle : public WebrtcConnectorDelegate,
   void relay_init_webrtc_offer(const NodeID& prime_nid, const std::string& sdp);
 
  private:
+  class PacketConnect : public PacketController::Behavior {
+   public:
+    explicit PacketConnect(WebrtcConnector* connector_);
+
+    const PacketController::Define& get_define() override;
+    void on_error(const Packet& packet) override;
+    void on_packet_error(PacketError::Type code) override;
+    void on_reply(const Packet& packet) override;
+
+   private:
+    WebrtcConnector* connector;
+  };
+
   /** Main loop of libuv. */
   uv_loop_t* loop;
   /** Sub-thread instance of libuv. */
@@ -59,10 +73,13 @@ class WebrtcBundle : public WebrtcConnectorDelegate,
   PacketController packet_controller;
   /** Connector pool. */
   std::map<WebrtcConnector*, std::unique_ptr<WebrtcConnector>> connectors;
-  /** Map of node-id and online connector. */
+  /** Map of node-id and connector. */
   std::map<NodeID, WebrtcConnector*> nid_map;
   /** Map of connector and node-id that relayed the packet from the server. */
-  std::map<WebrtcConnector*, NodeID>  init_map;
+  std::map<WebrtcConnector*, NodeID> init_map;
+  std::map<WebrtcConnector*, std::deque<std::string>> ice_send_buffer;
+  std::map<WebrtcConnector*, std::deque<std::string>> ice_recv_buffer;
+  std::mutex ice_mutex;
 
   /** Received data pool. */
   std::deque<std::string> recv_data;
@@ -94,10 +111,14 @@ class WebrtcBundle : public WebrtcConnectorDelegate,
   static void update_connector_status(uv_async_t* handle);
   static void subthread_entry(void* arg);
 
+  void recv_connect(const Packet& packet);
+  void recv_ice(const Packet& packet);
   void recv_init_webrtc_ice(const Packet& packet);
   void recv_init_webrtc_offer(const Packet& packet);
   void relay_to_another(const NodeID& relay_nid, const Packet& packet);
   void relay_to_local(const Packet& packet);
+  void send_connect(WebrtcConnector* connector, const NodeID& dst_nid, const std::string& sdp);
+  void send_ice(const NodeID& dst_nid, const std::string& ice);
   void send_packet_error(const Packet& error_for, PacketError::Type code);
 };
 }  // namespace processwarp

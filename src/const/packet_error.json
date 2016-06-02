@@ -6,6 +6,9 @@
     "c_typedef":"Type",
     "values":[
         {
+            "name":"CALL_BY_ERROR"
+        },
+        {
             "name":"OFFLINE"
         },
         {
