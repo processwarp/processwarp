@@ -204,6 +204,41 @@ NodeID NodeID::center_mod(const NodeID& a, const NodeID& b) {
 }
 
 /**
+ * Calculate a distance between this node-id and node-id of A.
+ * @param a Node-id A.
+ * @return A distance between this node-id and node-id of A.
+ */
+NodeID NodeID::distance_from(const NodeID& a) const {
+  assert(type == Type::NORMAL);
+  assert(a.type == Type::NORMAL);
+
+  uint64_t a0, a1, b0, b1;
+
+  if (*this < a) {
+    a0 = a.id[0];
+    a1 = a.id[1];
+    b0 = ~id[0];
+    b1 = ~id[1];
+
+  } else {
+    a0 = id[0];
+    a1 = id[1];
+    b0 = ~a.id[0];
+    b1 = ~a.id[1];
+  }
+
+  std::tie(a0, a1) = add_mod(a0, a1, b0, b1);
+  std::tie(a0, a1) = add_mod(a0, a1, 0x0, 0x1);
+
+  if (a0 >= 0x8000000000000000) {
+    std::tie(a0, a1) = add_mod(0x8000000000000000, 0x0000000000000000, ~a0, ~a1);
+    std::tie(a0, a1) = add_mod(a0, a1, 0x0, 0x1);
+  }
+
+  return NodeID(a0, a1);
+}
+
+/**
  * Check a node-id is placed between node-id of A and B.
  * Node-id is placed on torus.
  * If node-id of A is larger than B, return true if this < B or A <= this.
@@ -243,6 +278,25 @@ bool NodeID::is_between(const NodeID& a, const NodeID& b) const {
       return false;
     } break;
   }
+}
+
+/**
+ * Calculate log(2) from this node-id.
+ * @param return log2(node-id)
+ */
+int NodeID::log2() const {
+  static const uint64_t TOP = 0x8000000000000000;
+  for (unsigned int i = 0; i <= sizeof(id[0]); i++) {
+    if ((TOP >> i) & id[0]) {
+      return i + 64;
+    }
+  }
+  for (unsigned int i = 0; i <= sizeof(id[1]); i++) {
+    if ((TOP >> i) & id[1]) {
+      return i;
+    }
+  }
+  return 0;
 }
 
 /**

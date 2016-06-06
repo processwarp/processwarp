@@ -200,6 +200,10 @@ void WebrtcBundle::initialize(uv_loop_t* loop_) {
   // Initialize WebRTC
   rtc::InitializeSSL();
   uv_thread_create(&subthread, WebrtcBundle::subthread_entry, this);
+
+  // Initialize timer for routing.
+  uv_timer_init(loop, &routing_timer);
+  uv_timer_start(&routing_timer, on_timer_routing, 0, 10 * 1000);
 }
 
 /**
@@ -465,6 +469,15 @@ void WebrtcBundle::on_recv(uv_async_t* handle) {
 }
 
 /**
+ * When timer event for routing has happen, call routing method.
+ * @param handle libuv's event handler.
+ */
+void WebrtcBundle::on_timer_routing(uv_timer_t* handle) {
+  WebrtcBundle& THIS = get_instance();
+  THIS.routing.execute();
+}
+
+/**
  * When update connector status, collect online node-ids and pass to routing module.
  * @param handle libuv's handler.
  */
@@ -515,7 +528,6 @@ void WebrtcBundle::subthread_entry(void* arg) {
  */
 void WebrtcBundle::recv_connect(const Packet& packet) {
   if (nid_map.find(packet.src_nid) != nid_map.end()) {
-    assert(false);
     packet_controller.send_error(packet, picojson::object());
 
   } else {
@@ -653,11 +665,12 @@ void WebrtcBundle::relay_to_local(const Packet& packet) {
  * @param dst_nid Destination node-id.
  * @param sdp SDP string generated in this node that is send for the opposite side node.
  */
-void send_connect(WebrtcConnector* connector, const NodeID& dst_nid, const std::string& sdp) {
+void WebrtcBundle::send_connect(WebrtcConnector* connector, const NodeID& dst_nid,
+                                const std::string& sdp) {
   std::unique_ptr<PacketController::Behavior> behavior(new PacketConnect(connector));
   picojson::object content;
   content.insert(std::make_pair("sdp", picojson::value(sdp)));
-  packet_controller.send(std::move(behavior), PID::BROADCAST, nid, content);
+  packet_controller.send(std::move(behavior), PID::BROADCAST, dst_nid, content);
 }
 
 /**

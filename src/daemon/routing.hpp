@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #include <tuple>
 #include <set>
 #include <vector>
@@ -33,9 +34,13 @@ class Routing {
   NodeID range_min_nid;
   NodeID range_max_nid;
 
-  std::set<NodeID> online_nids;
-  std::vector<std::tuple<NodeID, NodeID>> online_divisions;
+  /** Map of direct connect node-id and node-ids are connected to itself. */
+  std::map<NodeID, std::set<NodeID>> nid_map;
+  std::map<NodeID, int> nid_score;
+  std::vector<std::tuple<NodeID, NodeID>> division_nid;
 
+  void connect_next_node();
   void send_routing();
+  void update_map();
 };
 }  // namespace processwarp

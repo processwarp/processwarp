@@ -1,6 +1,10 @@
 
+#include <algorithm>
 #include <cassert>
+#include <map>
 #include <set>
+#include <tuple>
+#include <vector>
 
 #include "routing.hpp"
 
@@ -33,6 +37,7 @@ NodeID Routing::get_relay_nid(const NodeID& nid, bool is_explicit) {
     if (is_explicit) {
       return NodeID::NONE;
     } else {
+      /// @todo update score
       return NodeID::THIS;
     }
 
@@ -41,115 +46,132 @@ NodeID Routing::get_relay_nid(const NodeID& nid, bool is_explicit) {
       if (is_explicit) {
         return NodeID::NONE;
       } else {
+        /// @todo update score
         return NodeID::THIS;
       }
 
     } else {
       NodeID prev_nid;
-      for (auto it : online_divisions) {
+      for (auto it : division_nid) {
         const NodeID& div_nid = std::get<0>(it);
         const NodeID& dst_nid = std::get<1>(it);
 
         if (nid < div_nid) {
           assert(prev_nid != NodeID::NONE);
+          /// @todo update score
           return prev_nid;
         }
 
         prev_nid = dst_nid;
       }
+      return std::get<1>(division_nid.back());
     }
-    assert(false);
-    return NodeID::NONE;
   }
 }
 
+/**
+ * Update connection status by score map.
+ */
 void Routing::execute() {
-  /// @todo
-  assert(false);
+  std::vector<std::tuple<NodeID, int>> nid_list;
+  for (auto& it : nid_score) {
+    int factor = my_nid.distance_from(it.first).log2();
+    nid_list.push_back(std::make_tuple(it.first, it.second * factor));
+    it.second = it.second >> 2;
+  }
+
+  std::sort(nid_list.begin(), nid_list.end(),
+            [](std::tuple<NodeID, int>& a, std::tuple<NodeID, int>& b) -> int {
+              return std::get<1>(a) < std::get<1>(b);
+            });
+
+  int i = 0;
+  for (auto& it : nid_list) {
+    NodeID& nid = std::get<0>(it);
+    if (nid_map.find(nid) == nid_map.end()) {
+      if (i < 8) {
+        delegate.routing_connect(nid);
+      }
+
+    } else {
+      if (i > 12 && nid != next_minus_nid && nid != next_plus_nid) {
+        delegate.routing_disconnect(nid);
+      }
+    }
+    i++;
+  }
+  connect_next_node();
 }
 
 /**
  * @param nids A set of connectors those are online.
  */
 void Routing::on_change_online_connectors(const std::set<NodeID>& nids) {
+  bool is_changed;
+  // Add some nid to nid_map if nid exist in nids and do not exist in nid_map.
+  for (auto& nid : nids) {
+    if (nid_map.find(nid) == nid_map.end()) {
+      is_changed = true;
+      nid_map.insert(std::make_pair(nid, std::set<NodeID>()));
+    }
+  }
   // Do nothing if online node-ids has not changed.
-  if (nids == online_nids) {
+  if (!is_changed && nids.size() == nid_map.size()) {
     return;
-  } else {
-    online_nids = nids;
   }
-
-  online_divisions.clear();
-
-  if (online_nids.size() == 0) {
-    next_minus_nid = NodeID::NONE;
-    next_plus_nid  = NodeID::NONE;
-    range_min_nid = NodeID::MIN;
-    range_max_nid = NodeID::MAX;
-
-  } else {
-    NodeID torus = NodeID::center_mod(*online_nids.rbegin(), *online_nids.begin());
-    if (torus < *online_nids.begin()) {
-      online_divisions.push_back(std::make_tuple(NodeID::MIN, *online_nids.rbegin()));
-      online_divisions.push_back(std::make_tuple(torus, *online_nids.begin()));
-    } else {
-      online_divisions.push_back(std::make_tuple(NodeID::MIN, *online_nids.begin()));
-    }
-
-    NodeID prev_nid = NodeID::NONE;
-    for (auto nid : online_nids) {
-      if (prev_nid == NodeID::NONE) {
-        prev_nid = nid;
-        continue;
-      }
-
-      NodeID center_nid = NodeID::center_mod(prev_nid, nid);
-      online_divisions.push_back(std::make_tuple(center_nid, nid));
-      prev_nid = nid;
-    }
-
-    if (!(torus < *online_nids.begin())) {
-      online_divisions.push_back(std::make_tuple(torus, *online_nids.begin()));
-    }
-    // Add the terminator.
-    online_divisions.push_back(std::make_tuple(NodeID::MAX, NodeID::NONE));
-
-    next_minus_nid = *online_nids.rbegin();
-    next_plus_nid  = NodeID::NONE;
-    for (auto nid : online_nids) {
-      if (my_nid < nid) {
-        next_plus_nid = nid;
-        break;
+  // Remove some nid from nid_map if nid exist int nid_map and do not exist in nids.
+  if (nids.size() != nid_map.size()) {
+    auto it = nid_map.begin();
+    while (it != nid_map.end()) {
+      const NodeID& nid = it->first;
+      if (nids.find(nid) == nids.end()) {
+        it = nid_map.erase(it);
       } else {
-        next_minus_nid = nid;
+        it++;
       }
     }
-
-    if (next_plus_nid == NodeID::NONE) {
-      next_minus_nid = *online_nids.rbegin();
-      next_plus_nid  = *online_nids.begin();
-    }
-    range_min_nid = NodeID::center_mod(next_minus_nid, my_nid);
-    range_max_nid = NodeID::center_mod(my_nid, next_plus_nid);
   }
+  assert(nids.size() == nid_map.size());
+
+  update_map();
 
   send_routing();
 }
 
 /**
- * Process that execute when recieve routing packet.
- * @todo dummy algorithm
- * @param packet
+ * When recieve routing packet, update map.
+ * @param packet Received packet containing nids.
  */
 void Routing::recv_routing(const Packet& packet) {
-  picojson::array nids = packet.content.at("nids").get<picojson::array>();
+  assert(nid_map.find(packet.src_nid) != nid_map.end());
 
-  for (auto& it_nid : nids) {
+  picojson::array nids_js = packet.content.at("nids").get<picojson::array>();
+  std::set<NodeID> nids;
+
+  for (auto& it_nid : nids_js) {
     NodeID nid = NodeID::from_json(it_nid);
+    nids.insert(nid);
+  }
 
-    if (nid != my_nid && online_nids.find(nid) == online_nids.end()) {
-      delegate.routing_connect(nid);
-    }
+  if (nid_map.at(packet.src_nid) != nids) {
+    nid_map.at(packet.src_nid) = nids;
+    update_map();
+  }
+}
+
+/**
+ * If next node has exist, require connect to it by the delegate.
+ */
+void Routing::connect_next_node() {
+  if (next_minus_nid == NodeID::NONE) {
+    return;
+  }
+
+  if (nid_map.find(next_minus_nid) == nid_map.end()) {
+    delegate.routing_connect(next_minus_nid);
+  }
+  if (nid_map.find(next_plus_nid) == nid_map.end()) {
+    delegate.routing_connect(next_plus_nid);
   }
 }
 
@@ -160,13 +182,110 @@ void Routing::send_routing() {
   picojson::object content;
   picojson::array nids;
 
-  for (auto& nid : online_nids) {
-    nids.push_back(nid.to_json());
+  for (auto& it : nid_map) {
+    nids.push_back(it.first.to_json());
   }
   content.insert(std::make_pair("nids", picojson::value(nids)));
 
-  for (auto& nid : online_nids) {
-    delegate.routing_send_routing(true, nid, content);
+  for (auto& it : nid_map) {
+    delegate.routing_send_routing(true, it.first, content);
+  }
+}
+
+/**
+ * Update nid_score and make division_nid by nid_map.
+ */
+void Routing::update_map() {
+  // Make a map that is pair of node and it's root(relay node between this node) node-id.
+  std::map<NodeID, NodeID> nid_known;
+  for (auto& it : nid_map) {
+    const NodeID& root_nid = it.first;
+    for (auto& nid : it.second) {
+      if (nid_known.find(nid) != nid_known.end()) {
+        if (root_nid.distance_from(my_nid) <
+            nid_known.at(nid).distance_from(my_nid)) {
+          nid_known.at(nid) = root_nid;
+        }
+      } else {
+        nid_known.insert(std::make_pair(nid, root_nid));
+      }
+    }
+  }
+  for (auto& it : nid_map) {
+    const NodeID& root_nid = it.first;
+    nid_known[root_nid] = root_nid;
+  }
+  nid_known.erase(my_nid);
+  // Update keys of nid_score.
+  for (auto& it : nid_known) {
+    const NodeID& nid = it.first;
+    if (nid_score.find(nid) == nid_score.end()) {
+      nid_score.insert(std::make_pair(nid, 0));
+    }
+  }
+  if (nid_score.size() != nid_known.size()) {
+    auto it = nid_score.begin();
+    while (it != nid_score.end()) {
+      const NodeID& nid = it->first;
+      if (nid_known.find(nid) == nid_known.end()) {
+        it = nid_score.erase(it);
+      } else {
+        it++;
+      }
+    }
+  }
+  assert(nid_score.size() == nid_known.size());
+
+  division_nid.clear();
+
+  if (nid_map.size() == 0) {
+    next_minus_nid = NodeID::NONE;
+    next_plus_nid  = NodeID::NONE;
+    range_min_nid = NodeID::MIN;
+    range_max_nid = NodeID::MAX;
+
+  } else {
+    NodeID torus = NodeID::center_mod(nid_known.rbegin()->first, nid_known.begin()->first);
+    if (torus < nid_known.begin()->first) {
+      division_nid.push_back(std::make_tuple(NodeID::MIN, nid_known.rbegin()->second));
+      division_nid.push_back(std::make_tuple(torus, nid_known.begin()->second));
+    } else {
+      division_nid.push_back(std::make_tuple(NodeID::MIN, nid_known.begin()->second));
+    }
+
+    NodeID prev_nid = NodeID::NONE;
+    for (auto& it : nid_known) {
+      if (prev_nid == NodeID::NONE) {
+        prev_nid = it.first;
+        continue;
+      }
+
+      NodeID center_nid = NodeID::center_mod(prev_nid, it.first);
+      division_nid.push_back(std::make_tuple(center_nid, it.second));
+      prev_nid = it.first;
+    }
+
+    if (!(torus < nid_known.begin()->first)) {
+      division_nid.push_back(std::make_tuple(torus, nid_known.begin()->second));
+    }
+
+    next_minus_nid = nid_known.rbegin()->first;
+    next_plus_nid  = NodeID::NONE;
+    for (auto& it : nid_known) {
+      if (my_nid < it.first) {
+        next_plus_nid = it.first;
+        break;
+      } else {
+        next_minus_nid = it.first;
+      }
+    }
+
+    if (next_plus_nid == NodeID::NONE) {
+      next_minus_nid = nid_known.rbegin()->first;
+      next_plus_nid  = nid_known.begin()->first;
+    }
+    range_min_nid = NodeID::center_mod(next_minus_nid, my_nid);
+    range_max_nid = NodeID::center_mod(my_nid, next_plus_nid);
   }
 }
 }  // namespace processwarp

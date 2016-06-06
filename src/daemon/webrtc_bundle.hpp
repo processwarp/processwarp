@@ -88,6 +88,8 @@ class WebrtcBundle : public WebrtcConnectorDelegate,
 
   NodeID my_nid;
   Routing routing;
+  /** Routing event timer. .*/
+  uv_timer_t routing_timer;
 
   WebrtcBundle();
   WebrtcBundle(const WebrtcBundle&);
@@ -108,6 +110,7 @@ class WebrtcBundle : public WebrtcConnectorDelegate,
   void webrtc_connector_on_recv(WebrtcConnector& connector, const std::string& data) override;
 
   static void on_recv(uv_async_t* handle);
+  static void on_timer_routing(uv_timer_t* handle);
   static void update_connector_status(uv_async_t* handle);
   static void subthread_entry(void* arg);
 

@@ -33,7 +33,9 @@ class NodeID {
 
   static NodeID center_mod(const NodeID& a, const NodeID& b);
 
+  NodeID distance_from(const NodeID& a) const;
   bool is_between(const NodeID& a, const NodeID& b) const;
+  int log2() const;
   std::string to_str() const;
   picojson::value to_json() const;
 
