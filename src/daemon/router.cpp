@@ -130,16 +130,16 @@ void Router::relay_from_local(const Packet& packet) {
 void Router::relay_from_global(const Packet& packet) {
   if (packet.dst_module & (Module::MEMORY | Module::VM)) {
     WorkerConnector& worker = WorkerConnector::get_instance();
-    worker.relay_command(packet);
+    worker.relay_packet(packet);
   }
 
   if (packet.dst_module & Module::SCHEDULER) {
-    scheduler.recv_command(packet);
+    scheduler.recv_packet(packet);
   }
 
   if (packet.dst_module & (Module::CONTROLLER | Module::GUI)) {
     FrontendConnector& frontend = FrontendConnector::get_instance();
-    frontend.relay_frontend_command(packet);
+    frontend.relay_packet(packet);
   }
 }
 
@@ -187,11 +187,11 @@ void Router::scheduler_create_gui(Scheduler& scheduler, const vpid_t& pid) {
 }
 
 /**
- * When scheduler require send a command, relay command by command type.
+ * When scheduler require send a packet, relay it.
  * @param scheduler Caller instance.
- * @param packet Command packet.
+ * @param packet A packet.
  */
-void Router::scheduler_send_command(Scheduler& scheduler, const Packet& packet) {
+void Router::scheduler_send_packet(Scheduler& scheduler, const Packet& packet) {
   relay_from_local(packet);
 }
 

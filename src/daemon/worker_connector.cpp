@@ -126,17 +126,22 @@ void WorkerConnector::create_vm(const vpid_t& pid, vtid_t root_tid, vaddr_t proc
  * Relay command to VM or memory by through a worker.
  * @param packet Command packet.
  */
-void WorkerConnector::relay_command(const Packet& packet) {
-  assert(packet.dst_module == Module::MEMORY || packet.dst_module == Module::VM);
+void WorkerConnector::relay_packet(const Packet& packet) {
+  assert(packet.dst_module & Module::MEMORY || packet.dst_module & Module::VM);
 
-  if (properties.find(packet.pid) == properties.end()) return;
+  // @todo send error reply
+  assert(properties.find(packet.pid) != properties.end());
 
   picojson::object data;
-  data.insert(std::make_pair("command", picojson::value(std::string("relay_command"))));
+  data.insert(std::make_pair("command", picojson::value(std::string("relay_packet"))));
+  data.insert(std::make_pair("packet_id", Convert::int2json(packet.packet_id)));
+  data.insert(std::make_pair("packet_command", picojson::value(packet.command)));
+  data.insert(std::make_pair("mode", Convert::int2json(packet.mode)));
+  data.insert(std::make_pair("dst_module", Convert::int2json(packet.dst_module)));
+  data.insert(std::make_pair("src_module", Convert::int2json(packet.src_module)));
   data.insert(std::make_pair("pid", Convert::vpid2json(packet.pid)));
   data.insert(std::make_pair("dst_nid", packet.dst_nid.to_json()));
   data.insert(std::make_pair("src_nid", packet.src_nid.to_json()));
-  data.insert(std::make_pair("module", Convert::int2json<Module::Type>(packet.dst_module)));
   data.insert(std::make_pair("content", picojson::value(packet.content)));
 
   send_data(packet.pid, data);
@@ -171,8 +176,8 @@ void WorkerConnector::on_connect(uv_pipe_t& client) {
 void WorkerConnector::on_recv_data(uv_pipe_t& client, picojson::object& data) {
   std::string& command = data.at("command").get<std::string>();
 
-  if (command == "relay_command") {
-    recv_relay_command(pid_map.at(&client), data);
+  if (command == "relay_packet") {
+    recv_relay_packet(pid_map.at(&client), data);
 
   } else if (command == "connect_worker") {
     recv_connect_worker(client, data);
@@ -225,20 +230,21 @@ void WorkerConnector::recv_connect_worker(uv_pipe_t& pipe, picojson::object& par
  * @param pid Process-id send from.
  * @param content Packet content that contain command string and parameters.
  */
-void WorkerConnector::recv_relay_command(const vpid_t& pid, picojson::object& content) {
-#warning TODO
-  /*
+void WorkerConnector::recv_relay_packet(const vpid_t& pid, picojson::object& content) {
   Packet packet = {
-    pid,
+    Convert::json2int<uint32_t>(content.at("packet_id")),
+    content.at("packet_command").get<std::string>(),
+    Convert::json2int<PacketMode::Type>(content.at("mode")),
+    Convert::json2int<Module::Type>(content.at("dst_module")),
+    Convert::json2int<Module::Type>(content.at("src_module")),
+    Convert::json2vpid(content.at("pid")),
     NodeID::from_json(content.at("dst_nid")),
     NodeID::NONE,
-    Convert::json2int<Module::Type>(content.at("module")),
     content.at("content").get<picojson::object>()
   };
 
   Router& router = Router::get_instance();
-  router.relay_command(packet, false);
-  */
+  router.relay_from_local(packet);
 }
 
 /**

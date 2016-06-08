@@ -20,7 +20,7 @@ class FrontendConnector : public Connector, public NetworkConnectorConnectDelega
 
   void initialize(uv_loop_t* loop, const std::string& pipe_path, const std::string& common_key_);
   void create_gui(const vpid_t& pid);
-  void relay_frontend_command(const Packet& packet);
+  void relay_packet(const Packet& packet);
 
  private:
   /** The pipe connectiong frontend. */
@@ -47,7 +47,7 @@ class FrontendConnector : public Connector, public NetworkConnectorConnectDelega
   void recv_authenticate(uv_pipe_t& client, picojson::object& param);
   void recv_open(uv_pipe_t& client, picojson::object& param);
   void recv_open_file(uv_pipe_t& client, picojson::object& param);
-  void recv_relay_command(uv_pipe_t& client, picojson::object& content);
+  void recv_relay_packet(uv_pipe_t& client, picojson::object& content);
   void reply_authenticate(uv_pipe_t& client, int result, const NodeID& my_nid);
   void reply_open(uv_pipe_t& client, int result);
 };

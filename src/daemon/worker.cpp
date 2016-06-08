@@ -29,15 +29,6 @@ int Worker::entry(int argc, char* argv[]) {
   return uv_run(loop, UV_RUN_DEFAULT);
 }
 
-/**
- * When vmachine require send command, relay it to backend.
- * @param vm Caller instance.
- * @param packet Command packet.
- */
-void Worker::vmachine_send_command(VMachine& vm, const Packet& packet) {
-  send_command(packet);
-}
-
 void Worker::vmachine_finish(VMachine& vm) {
   /// @todo
   assert(false);
@@ -54,32 +45,21 @@ void Worker::vmachine_error(VMachine& vm, const std::string& message) {
 }
 
 /**
- * When vmemory require send command, relay it to backend.
- * Backend process relay this command to target module in this node or another node through the server if need.
- * @param memory Caller instance.
- * @param dst_nid Destination node-id.
- * @param module Target module.
- * @param command Command string.
- * @param param Parameter for command.
+ * When vmachine require send packet, relay it to backend.
+ * @param vm Caller instance.
+ * @param packet A packet to send.
  */
-void Worker::vmemory_send_command(VMemory& memory, const NodeID& dst_nid, Module::Type module,
-                                  const std::string& command, picojson::object& param) {
-  assert(param.find("command") == param.end());
+void Worker::vmachine_send_packet(VMachine& vm, const Packet& packet) {
+  send_relay_packet(packet);
+}
 
-  param.insert(std::make_pair("command", picojson::value(command)));
-
-#warning TODO
-  /*
-  Packet packet = {
-    my_pid,
-    dst_nid,
-    NodeID::NONE,
-    module,
-    param
-  };
-
-  send_command(packet);
-  */
+/**
+ * When vmemory require send packet, relay it to backend.
+ * @param memory Caller instance.
+ * @param packet A packet to send.
+ */
+void Worker::vmemory_send_packet(VMemory& memory, const Packet& packet) {
+  send_relay_packet(packet);
 }
 
 /**
@@ -91,35 +71,6 @@ void Worker::vmemory_recv_update(VMemory& memory, vaddr_t addr) {
   assert(vm.get() != nullptr);
 
   vm->on_recv_update(addr);
-}
-
-/**
- * When built-in GUI module require send command, relay it to backend.
- * Backend process relay this command to target module in this node or another node through the server if need.
- * @param proc Caller instance.
- * @param dst_nid Destination node-id.
- * @param module Target module.
- * @param command Command string.
- * @param param Parameter for command.
- */
-void Worker::builtin_gui_send_command(Process& proc, const NodeID& dst_nid, Module::Type module,
-                                      const std::string& command,  picojson::object& param) {
-  assert(param.find("command") == param.end());
-
-  param.insert(std::make_pair("command", picojson::value(command)));
-
-#warning TODO
-  /*
-  Packet packet = {
-    my_pid,
-    dst_nid,
-    NodeID::NONE,
-    module,
-    param
-  };
-
-  send_command(packet);
-  */
 }
 
 /**
@@ -323,7 +274,6 @@ void Worker::initialize_vm(vtid_t root_tid, vaddr_t proc_addr,
 
   vm.reset(new VMachine(*this, *this, my_nid, libs, lib_filter));
   vm->initialize(my_pid, root_tid, proc_addr, master_nid, name);
-  vm->initialize_gui(*this);
 }
 
 /**
@@ -357,8 +307,8 @@ void Worker::initialize_loop() {
 void Worker::recv_data(const picojson::object& data) {
   std::string command = data.at("command").get<std::string>();
 
-  if (command == "relay_command") {
-    recv_relay_command(data);
+  if (command == "relay_packet") {
+    recv_relay_packet(data);
 
   } else if (command == "connect_worker") {
     recv_connect_worker(data);
@@ -397,27 +347,29 @@ void Worker::recv_connect_worker(const picojson::object& content) {
 }
 
 /**
- * When receive command, pass a packet to target module (must be MEMORY or VM).
- * @param content Packet content that contain command string and parameters.
+ * When receive relay_packet, pass a packet to target module (must be MEMORY or VM).
+ * @param content A Packet.
  */
-void Worker::recv_relay_command(const picojson::object& content) {
-#warning TODO
-  /*
+void Worker::recv_relay_packet(const picojson::object& content) {
   Packet packet = {
+    Convert::json2int<uint32_t>(content.at("packet_id")),
+    content.at("packet_command").get<std::string>(),
+    Convert::json2int<PacketMode::Type>(content.at("mode")),
+    Convert::json2int<Module::Type>(content.at("dst_module")),
+    Convert::json2int<Module::Type>(content.at("src_module")),
     Convert::json2vpid(content.at("pid")),
     NodeID::from_json(content.at("dst_nid")),
-    NodeID::from_json(content.at("src_nid")),
-    Convert::json2int<Module::Type>(content.at("module")),
+    NodeID::NONE,
     content.at("content").get<picojson::object>()
   };
 
-  switch (packet.module) {
+  switch (packet.dst_module) {
     case Module::MEMORY: {
-      vm->vmemory.recv_command(packet);
+      vm->vmemory.recv_packet(packet);
     } break;
 
     case Module::VM: {
-      vm->recv_command(packet);
+      vm->recv_packet(packet);
     } break;
 
     default: {
@@ -425,21 +377,24 @@ void Worker::recv_relay_command(const picojson::object& content) {
       assert(false);
     }
   }
-  */
 }
 
 /**
- * Send command to capable module in this node through the backend.
- * @param packet Command packet.
+ * Relay packet to backend.
+ * @param packet A packet to relay.
  */
-void Worker::send_command(const Packet& packet) {
+void Worker::send_relay_packet(const Packet& packet) {
   picojson::object data;
 
-  data.insert(std::make_pair("command", picojson::value(std::string("relay_command"))));
-  data.insert(std::make_pair("pid", Convert::vpid2json(my_pid)));
+  data.insert(std::make_pair("command", picojson::value(std::string("relay_packet"))));
+  data.insert(std::make_pair("packet_id", Convert::int2json(packet.packet_id)));
+  data.insert(std::make_pair("packet_command", picojson::value(packet.command)));
+  data.insert(std::make_pair("mode", Convert::int2json(packet.mode)));
+  data.insert(std::make_pair("dst_module", Convert::int2json(packet.dst_module)));
+  data.insert(std::make_pair("src_module", Convert::int2json(packet.src_module)));
+  data.insert(std::make_pair("pid", Convert::vpid2json(packet.pid)));
   data.insert(std::make_pair("dst_nid", packet.dst_nid.to_json()));
   data.insert(std::make_pair("src_nid", packet.src_nid.to_json()));
-  data.insert(std::make_pair("module", Convert::int2json<Module::Type>(packet.dst_module)));
   data.insert(std::make_pair("content", picojson::value(packet.content)));
 
   send_data(data);

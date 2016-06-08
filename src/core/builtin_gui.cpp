@@ -9,9 +9,6 @@
 #include "format.hpp"
 
 namespace processwarp {
-BuiltinGuiDelegate::~BuiltinGuiDelegate() {
-}
-
 /**
  * When program call pw_gui_create, send "create_gui" command to scheduler in this node.
  * Scheduler should control to create a GUI frontend.
@@ -21,10 +18,10 @@ BuiltinGuiDelegate::~BuiltinGuiDelegate() {
  */
 BuiltinPostProc::Type BuiltinGui::create(Process& proc, Thread& thread, BuiltinFuncParam p,
                                          vaddr_t dst, std::vector<uint8_t>& src) {
-  BuiltinGuiDelegate& delegate = *reinterpret_cast<BuiltinGuiDelegate*>(p.ptr);
+  PacketController& packet_controller = *reinterpret_cast<PacketController*>(p.ptr);
 
-  picojson::object param;
-  delegate.builtin_gui_send_command(proc, NodeID::THIS, Module::SCHEDULER, "create_gui", param);
+  packet_controller.send("create_gui", Module::SCHEDULER, true,
+                         proc.pid, NodeID::THIS, picojson::object());
 
   return BuiltinPostProc::NORMAL;
 }
@@ -37,7 +34,7 @@ BuiltinPostProc::Type BuiltinGui::create(Process& proc, Thread& thread, BuiltinF
  */
 BuiltinPostProc::Type BuiltinGui::flush(Process& proc, Thread& thread, BuiltinFuncParam p,
                                         vaddr_t dst, std::vector<uint8_t>& src) {
-  BuiltinGuiDelegate& delegate = *reinterpret_cast<BuiltinGuiDelegate*>(p.ptr);
+  PacketController& packet_controller = *reinterpret_cast<PacketController*>(p.ptr);
 
   picojson::object param;
   std::string script =
@@ -47,7 +44,7 @@ BuiltinPostProc::Type BuiltinGui::flush(Process& proc, Thread& thread, BuiltinFu
       "global.canvas.height);"
       "global.context_fore.putImageData(image, 0, 0);";
   param.insert(std::make_pair("script", picojson::value(script)));
-  delegate.builtin_gui_send_command(proc, NodeID::NONE, Module::GUI, "script", param);
+  packet_controller.send("script", Module::GUI, true, proc.pid, NodeID::NONE, param);
 
   return BuiltinPostProc::NORMAL;
 }
@@ -62,7 +59,7 @@ BuiltinPostProc::Type BuiltinGui::flush(Process& proc, Thread& thread, BuiltinFu
  */
 BuiltinPostProc::Type BuiltinGui::script(Process& proc, Thread& thread, BuiltinFuncParam p,
                                          vaddr_t dst, std::vector<uint8_t>& src) {
-  BuiltinGuiDelegate& delegate = *reinterpret_cast<BuiltinGuiDelegate*>(p.ptr);
+  PacketController& packet_controller = *reinterpret_cast<PacketController*>(p.ptr);
   int seek = 0;
   vaddr_t format_ptr = Process::read_builtin_param_ptr(src, &seek);
   std::vector<uint8_t> ap(src.begin() + seek, src.end());
@@ -70,7 +67,7 @@ BuiltinPostProc::Type BuiltinGui::script(Process& proc, Thread& thread, BuiltinF
 
   picojson::object param;
   param.insert(std::make_pair("script", picojson::value(script)));
-  delegate.builtin_gui_send_command(proc, NodeID::NONE, Module::GUI, "script", param);
+  packet_controller.send("script", Module::GUI, true, proc.pid, NodeID::NONE, param);
 
   return BuiltinPostProc::NORMAL;
 }
@@ -78,14 +75,14 @@ BuiltinPostProc::Type BuiltinGui::script(Process& proc, Thread& thread, BuiltinF
 /**
  * Regist process warp GUI library in virtual machine.
  * @param vm Target virtual machine for regist on.
- * @param delegate Event assignee for cooperate with other module.
+ * @param packet_controller PacketController to send gui packet.
  */
-void BuiltinGui::regist(VMachine& vm, BuiltinGuiDelegate& delegate) {
+void BuiltinGui::regist(VMachine& vm, PacketController& packet_controller) {
   vm.regist_builtin_func("pw_gui_create", BuiltinGui::create,
-                         reinterpret_cast<void*>(&delegate));
+                         reinterpret_cast<void*>(&packet_controller));
   vm.regist_builtin_func("pw_gui_flush", BuiltinGui::flush,
-                         reinterpret_cast<void*>(&delegate));
+                         reinterpret_cast<void*>(&packet_controller));
   vm.regist_builtin_func("pw_gui_script", BuiltinGui::script,
-                         reinterpret_cast<void*>(&delegate));
+                         reinterpret_cast<void*>(&packet_controller));
 }
 }  // namespace processwarp

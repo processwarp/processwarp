@@ -25,22 +25,21 @@ class VMachineDelegate {
  public:
   virtual ~VMachineDelegate();
 
-  virtual void vmachine_send_command(VMachine& vm, const Packet& packet) = 0;
   virtual void vmachine_finish(VMachine& vm) = 0;
   virtual void vmachine_finish_thread(VMachine& vm, const vtid_t& tid) = 0;
   virtual void vmachine_error(VMachine& vm, const std::string& message) = 0;
+  virtual void vmachine_send_packet(VMachine& vm, const Packet& packet) = 0;
 };
 
 /**
  * VMachine for set of processes.
  */
-class VMachine : private ProcessDelegate {
+class VMachine : private ProcessDelegate, public PacketControllerDelegate {
  public:
   /** VMachine's node-id. */
   const NodeID my_nid;
   /** Virtual memory for this virtual machine. */
   VMemory vmemory;
-
 
   VMachine(VMachineDelegate& delegate_,
            VMemoryDelegate& memory_delegate,
@@ -49,11 +48,10 @@ class VMachine : private ProcessDelegate {
            const std::map<std::string, std::string>& lib_filter_);
   void initialize(const vpid_t& pid, const vtid_t& root_tid, vaddr_t proc_addr,
                   const NodeID& master_nid, const std::string& name);
-  void initialize_gui(BuiltinGuiDelegate& delegate);
   void execute();
 
   void on_recv_update(vaddr_t addr);
-  void recv_command(const Packet& packet);
+  void recv_packet(const Packet& packet);
   Process& get_process();
   void regist_builtin_func(const std::string& name, builtin_func_t func, int i64);
   void regist_builtin_func(const std::string& name, builtin_func_t func, void* ptr);
@@ -79,17 +77,19 @@ class VMachine : private ProcessDelegate {
   /** Executable threads pool in this node's process. */
   std::queue<vtid_t> loop_queue;
 
+  PacketController packet_controller;
   std::time_t last_heartbeat;
 
   void initialize_builtin();
+
+  void packet_controller_on_recv(const Packet& packet) override;
+  void packet_controller_send(const Packet& packet) override;
 
   /// @todo Clean up unused thread information.
   void recv_command_heartbeat_vm(const Packet& packet);
   void recv_command_require_warp_thread(const Packet& packet);
   void recv_command_warp_thread(const Packet& packet);
 
-  void send_command(const vpid_t& pid, const NodeID& dst_nid, Module::Type module,
-                    const std::string& command, picojson::object& param);
   void send_command_heartbeat_vm();
   void send_command_warp_thread(Thread& thread);
 };

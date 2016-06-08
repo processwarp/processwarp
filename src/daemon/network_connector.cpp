@@ -766,39 +766,30 @@ void NetworkConnector::recv_init_webrtc_reply(const picojson::object& content) {
  * @param data Received data.
  */
 void NetworkConnector::recv_relay(sio::message::ptr data) {
-  Router& router = Router::get_instance();
-  const NodeID& dst_nid = get_nid_by_map(data, "dst_nid");
-  const NodeID& src_nid = get_nid_by_map(data, "src_nid");
-  const NodeID& my_nid  = router.get_my_nid();
-
   assert(connect_status == ConnectStatus::CONNECT);
 
-  if (dst_nid == my_nid ||
-      (dst_nid == NodeID::BROADCAST && src_nid != my_nid)) {
-    const vpid_t& pid = get_pid_by_map(data, "pid");
-    Module::Type module = Convert::str2int<Module::Type>(get_str_by_map(data, "module", true));
-    const std::string& content = get_str_by_map(data, "content", true);
-
-    picojson::value v;
-    std::istringstream is(content);
-    std::string err = picojson::parse(v, is);
-    if (!err.empty()) {
-      /// @todo error
-      assert(false);
-    }
-
-#warning TODO
-    /*
-    CommandPacket packet = {
-      pid,
-      dst_nid,
-      src_nid,
-      module,
-      v.get<picojson::object>()
-    };
-
-    router.relay_command(packet, true);
-    */
+  const std::string& content = get_str_by_map(data, "content", true);
+  picojson::value v;
+  std::istringstream is(content);
+  std::string err = picojson::parse(v, is);
+  if (!err.empty()) {
+    /// @todo error
+    assert(false);
   }
+
+  Packet packet = {
+    Convert::str2int<uint32_t>(get_str_by_map(data, "packet_id", true)),
+    get_str_by_map(data, "command", true),
+    Convert::str2int<PacketMode::Type>(get_str_by_map(data, "mode", true)),
+    Convert::str2int<Module::Type>(get_str_by_map(data, "dst_module", true)),
+    Convert::str2int<Module::Type>(get_str_by_map(data, "src_module", true)),
+    get_pid_by_map(data, "pid"),
+    get_nid_by_map(data, "dst_nid"),
+    get_nid_by_map(data, "src_nid"),
+    v.get<picojson::object>()
+  };
+
+  WebrtcBundle& webrtc = WebrtcBundle::get_instance();
+  webrtc.relay(packet);
 }
 }  // namespace processwarp

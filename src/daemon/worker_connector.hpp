@@ -22,7 +22,7 @@ class WorkerConnector : public Connector {
                   const picojson::array& libs, const picojson::array& lib_filter);
   void create_vm(const vpid_t& pid, vtid_t root_tid, vaddr_t proc_addr,
                  const NodeID& master_nid, const std::string& name);
-  void relay_command(const Packet& packet);
+  void relay_packet(const Packet& packet);
 
  private:
   struct WorkerProperty {
@@ -54,7 +54,7 @@ class WorkerConnector : public Connector {
   void on_close(uv_pipe_t& client) override;
 
   void recv_connect_worker(uv_pipe_t& pipe, picojson::object& param);
-  void recv_relay_command(const vpid_t& pid, picojson::object& content);
+  void recv_relay_packet(const vpid_t& pid, picojson::object& content);
   void send_data(const vpid_t&pid, const picojson::object& data);
 };
 }  // namespace processwarp

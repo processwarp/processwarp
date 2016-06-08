@@ -188,25 +188,21 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
   }
 
   /**
-   * Override a delegater method that send command to another node, but must not use in loader.
-   * @param memory Not used.
-   * @param dst_nid Not used.
-   * @param module Not used.
-   * @param command Not used.
-   * @param param Not used.
-   */
-  void vmemory_send_command(VMemory& memory, const NodeID& dst_nid, Module::Type module,
-                            const std::string& command, picojson::object& param) override {
-    assert(false);
-  }
-
-  /**
    * Override a delegter method that call when memory data was update.
    * Must not use in loader.
    * @param memory
    * @param addr
    */
   void vmemory_recv_update(VMemory& memory, vaddr_t addr) override {
+    assert(false);
+  }
+
+  /**
+   * Override a delegter method, but it must not use in loader.
+   * @param memory
+   * @param packet
+   */
+  void vmemory_send_packet(VMemory& memory, const Packet& packet) override {
     assert(false);
   }
 

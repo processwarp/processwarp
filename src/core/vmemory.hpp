@@ -29,15 +29,14 @@ class VMemoryDelegate {
  public:
   virtual ~VMemoryDelegate();
 
-  virtual void vmemory_send_command(VMemory& memory, const NodeID& dst_nid, Module::Type module,
-                                    const std::string& command, picojson::object& param) = 0;
   virtual void vmemory_recv_update(VMemory& memory, vaddr_t addr) = 0;
+  virtual void vmemory_send_packet(VMemory& memory, const Packet& packet) = 0;
 };
 
 /**
  * Bundle all of memory spaces using this node.
  */
-class VMemory {
+class VMemory : public PacketControllerDelegate {
  public:
   /** Page type. */
   enum PageType {
@@ -483,7 +482,7 @@ class VMemory {
    */
   VMemory(VMemoryDelegate& delegate, const NodeID& nid);
 
-  void recv_command(const Packet& packet);
+  void recv_packet(const Packet& packet);
 
   /**
    * @param name Space name.
@@ -508,12 +507,16 @@ class VMemory {
  private:
   /** Delegate for controller. */
   VMemoryDelegate& delegate;
+  PacketController packet_controller;
 
   /** Block copy constructor. */
   VMemory(const VMemory&);
 
   /** Block copy operator. */
   VMemory& operator=(const VMemory&);
+
+  void packet_controller_on_recv(const Packet& packet) override;
+  void packet_controller_send(const Packet& packet) override;
 
   void recv_command_copy(const Packet& packet);
   void recv_command_copy_reply(const Packet& packet);
@@ -524,7 +527,5 @@ class VMemory {
   void recv_command_stand(const Packet& packet);
   void recv_command_unwant(const Packet& packet);
   void recv_command_update(const Packet& packet);
-  void send_memory_command(const std::string& name, const NodeID& dst_nid,
-                           const std::string& command, picojson::object& param);
 };
 }  // namespace processwarp

@@ -26,7 +26,8 @@ SchedulerDelegate::~SchedulerDelegate() {
  * Constructor, set default property.
  */
 Scheduler::Scheduler() :
-    rnd(std::random_device()()) {
+    rnd(std::random_device()()),
+    packet_controller(Module::SCHEDULER) {
   my_info.nid  = NodeID::NONE;
   my_info.name = "";
   my_info.heartbeat = 0;
@@ -39,6 +40,7 @@ Scheduler::Scheduler() :
  */
 void Scheduler::initialize(SchedulerDelegate& delegate_) {
   delegate = &delegate_;
+  packet_controller.initialize(this);
 }
 
 /**
@@ -91,17 +93,52 @@ vpid_t Scheduler::get_new_pid() {
 #endif
 
 /**
- * When receive command from another module in this node or another node,
- * pass to capable method with parameters by command string.
- * @param packet Command packet containing command string and parameters.
+ * When receive packet, relay it to PacketController module.
+ * @param packet A received packet.
  */
-void Scheduler::recv_command(const Packet& packet) {
+void Scheduler::recv_packet(const Packet& packet) {
+  packet_controller.recv(packet);
+}
+
+/**
+ * Set node-id and node name of this node.
+ * Nid must not NONE.
+ * @param nid Node-id of this node.
+ * @param name Node name of this node.
+ */
+void Scheduler::set_node_information(const NodeID& nid, const std::string& name) {
+  assert(nid != NodeID::NONE);
+
+  my_info.nid  = nid;
+  my_info.name = name;
+}
+
+/**
+ * Scheduler main routine.
+ * Router or super module must be call this method at least once a HEARTBEAT_INTERVAL.
+ */
+void Scheduler::execute() {
+  // Skip if didn't setup yet.
+  if (my_info.nid == NodeID::NONE) return;
+
+  // Send a heartbeat each interval time.
+  std::time_t now = std::time(nullptr);
+  if ((now - my_info.heartbeat) > HEARTBEAT_INTERVAL) {
+    my_info.heartbeat = now;
+    send_command_heartbeat_scheduler();
+  }
+
+  // Cleanup unresponsive module.
+  cleanup_unresponsive_process();
+  cleanup_unresponsive_node();
+}
+
+void Scheduler::packet_controller_on_recv(const Packet& packet) {
   assert(my_info.nid != NodeID::NONE);
-  assert(packet.dst_nid != NodeID::NONE && packet.dst_nid != NodeID::THIS);
-  assert(packet.src_nid != NodeID::NONE && packet.src_nid != NodeID::THIS);
   assert(packet.dst_module == Module::SCHEDULER);
 
-  const std::string& command = packet.content.at("command").get<std::string>();
+  const std::string& command = packet.command;
+
   if (command == "activate") {
     recv_command_activate(packet);
 
@@ -139,37 +176,8 @@ void Scheduler::recv_command(const Packet& packet) {
   }
 }
 
-/**
- * Set node-id and node name of this node.
- * Nid must not NONE.
- * @param nid Node-id of this node.
- * @param name Node name of this node.
- */
-void Scheduler::set_node_information(const NodeID& nid, const std::string& name) {
-  assert(nid != NodeID::NONE);
-
-  my_info.nid  = nid;
-  my_info.name = name;
-}
-
-/**
- * Scheduler main routine.
- * Router or super module must be call this method at least once a HEARTBEAT_INTERVAL.
- */
-void Scheduler::execute() {
-  // Skip if didn't setup yet.
-  if (my_info.nid == NodeID::NONE) return;
-
-  // Send a heartbeat each interval time.
-  std::time_t now = std::time(nullptr);
-  if ((now - my_info.heartbeat) > HEARTBEAT_INTERVAL) {
-    my_info.heartbeat = now;
-    send_command_heartbeat_scheduler();
-  }
-
-  // Cleanup unresponsive module.
-  cleanup_unresponsive_process();
-  cleanup_unresponsive_node();
+void Scheduler::packet_controller_send(const Packet& packet) {
+  delegate->scheduler_send_packet(*this, packet);
 }
 
 /**
@@ -505,31 +513,14 @@ void Scheduler::recv_command_warp_thread(const Packet& packet) {
 }
 
 /**
- * Pass command to delegate to send command to other module in the same node.
- * @param pid Process-id bundle to command.
- * @param dst_nid Destination node-id.
- * @param module Target module.
- * @param command Command string.
- * @param param Parameter for command JSON fromatted.
- */
-void Scheduler::send_command(const vpid_t& pid, const NodeID& dst_nid, Module::Type module,
-                             const std::string& command, picojson::object& param) {
-  assert(param.find("command") == param.end());
-
-  param.insert(std::make_pair("command", picojson::value(command)));
-#warning TODO
-  // delegate->scheduler_send_command(*this, {pid, dst_nid, my_info.nid, module, param});
-}
-
-/**
  * Send heartbeat_scheduler command to SCHDULER in another node.
  */
 void Scheduler::send_command_heartbeat_scheduler() {
   picojson::object param;
   param.insert(std::make_pair("name", picojson::value(my_info.name)));
 
-  send_command(PID::BROADCAST, NodeID::BROADCAST, Module::SCHEDULER,
-               "heartbeat_scheduler", param);
+  packet_controller.send("heartbeat_scheduler", Module::SCHEDULER,
+                         false, PID::BROADCAST, NodeID::BROADCAST, param);
 }
 
 /**
@@ -558,7 +549,8 @@ void Scheduler::send_command_processes_info() {
   picojson::object param;
   param.insert(std::make_pair("processes", picojson::value(procs)));
 
-  send_command(PID::BROADCAST, my_info.nid, Module::CONTROLLER, "processes_info", param);
+  packet_controller.send("processes_info", Module::CONTROLLER, true,
+                         PID::BROADCAST, my_info.nid, param);
 }
 
 
@@ -570,7 +562,8 @@ void Scheduler::send_command_processes_info() {
 void Scheduler::send_command_require_warp_gui(const vpid_t& pid, const NodeID& target_nid) {
   picojson::object param;
   param.insert(std::make_pair("target_nid", target_nid.to_json()));
-  send_command(pid, NodeID::THIS, Module::GUI, "require_warp_gui", param);
+  packet_controller.send("require_warp_gui", Module::GUI, true,
+                         pid, NodeID::THIS, param);
 }
 
 /**
@@ -584,7 +577,8 @@ void Scheduler::send_command_require_warp_thread(const vpid_t& pid, vtid_t tid,
   picojson::object param;
   param.insert(std::make_pair("tid", Convert::vtid2json(tid)));
   param.insert(std::make_pair("target_nid", target_nid.to_json()));
-  send_command(pid, NodeID::THIS, Module::VM, "require_warp_thread", param);
+  packet_controller.send("require_warp_thread", Module::VM, true,
+                         pid, NodeID::THIS, param);
 }
 
 /**
@@ -595,6 +589,6 @@ void Scheduler::send_command_require_warp_thread(const vpid_t& pid, vtid_t tid,
 void Scheduler::send_command_warp_thread(const vpid_t& pid, vtid_t tid) {
   picojson::object param;
   param.insert(std::make_pair("tid", Convert::vtid2json(tid)));
-  send_command(pid, NodeID::THIS, Module::VM, "warp_thread", param);
+  packet_controller.send("warp_thread", Module::VM, true, pid, NodeID::THIS, param);
 }
 }  // namespace processwarp

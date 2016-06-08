@@ -45,51 +45,66 @@ VMemoryDelegate::~VMemoryDelegate() {
 VMemory::VMemory(VMemoryDelegate& delegate_, const NodeID& nid_) :
     my_nid(nid_),
     rnd(std::random_device()()),
-    delegate(delegate_) {
+    delegate(delegate_),
+    packet_controller(Module::MEMORY) {
+  packet_controller.initialize(this);
 }
 
 /**
- * When reveive command from another module or node, pass it to capable method by command string.
- * @param packet Command packet.
+ * When receive general command, relay it to capable method.
+ * @param packet A packet.
  */
-void VMemory::recv_command(const Packet& packet) {
-  if (packet.src_nid == my_nid) return;
-  const std::string& command = packet.content.at("command").get<std::string>();
-
-  if (command == "copy") {
+void VMemory::packet_controller_on_recv(const Packet& packet) {
+  if (packet.command == "copy") {
     recv_command_copy(packet);
 
-  } else if (command == "copy_reply") {
+  } else if (packet.command == "copy_reply") {
     recv_command_copy_reply(packet);
 
-  } else if (command == "require") {
+  } else if (packet.command == "require") {
     recv_command_require(packet);
 
-  } else if (command == "update") {
+  } else if (packet.command == "update") {
     recv_command_update(packet);
 
-  } else if (command == "reserve") {
+  } else if (packet.command == "reserve") {
     recv_command_reserve(packet);
 
-  } else if (command == "free") {
+  } else if (packet.command == "free") {
     recv_command_free(packet);
 
     /*
-      } else if (command == "release") {
+      } else if (packet.command == "release") {
     */
-  } else if (command == "stand") {
+  } else if (packet.command == "stand") {
     recv_command_stand(packet);
 
-  } else if (command == "give") {
+  } else if (packet.command == "give") {
     recv_command_give(packet);
 
-  } else if (command == "unwant") {
+  } else if (packet.command == "unwant") {
     recv_command_unwant(packet);
 
   } else {
     /// @todo error
     assert(false);
   }
+}
+
+/**
+ * When send packet event has happen on PacketController, relay it to delegate.
+ * @param packet A packet to relay.
+ */
+void VMemory::packet_controller_send(const Packet& packet) {
+  delegate.vmemory_send_packet(*this, packet);
+}
+
+/**
+ * When reveive packet, relay it to PacketController module.
+ * @param packet A received packet.
+ */
+void VMemory::recv_packet(const Packet& packet) {
+  packet_controller.recv(packet);
 }
 
 /**
@@ -348,7 +363,8 @@ void VMemory::recv_command_require(const Packet& packet) {
       param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
       param.insert(std::make_pair("src_nid", src_nid.to_json()));
 
-      send_memory_command(packet.pid, NodeID::BROADCAST, "require", param);
+      packet_controller.send("require", Module::MEMORY, true,
+                             packet.pid, NodeID::BROADCAST, param);
     }
     return;
   }
@@ -362,7 +378,8 @@ void VMemory::recv_command_require(const Packet& packet) {
       param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
       param.insert(std::make_pair("src_nid", src_nid.to_json()));
 
-      send_memory_command(packet.pid, NodeID::BROADCAST, "require", param);
+      packet_controller.send("require", Module::MEMORY, true,
+                             packet.pid, NodeID::BROADCAST, param);
     }
     return;
   }
@@ -379,7 +396,8 @@ void VMemory::recv_command_require(const Packet& packet) {
     param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
     param.insert(std::make_pair("src_nid", src_nid.to_json()));
 
-    send_memory_command(packet.pid, *page.hint.begin(), "require", param);
+    packet_controller.send("require", Module::MEMORY, true,
+                           packet.pid, *page.hint.begin(), param);
   }
 }
 
@@ -544,20 +562,6 @@ void VMemory::set_loading(const std::string& name, bool flg) {
 }
 
 /**
- * Send selected command to MEMORY module in another node.
- * @param name Not used.
- * @param dst_nid Destination node-id, BROADCAST, or NONE if not resolved yet.
- * @param command Command string.
- * @param param Parameter for command.
- */
-void VMemory::send_memory_command(const std::string& name, const NodeID& dst_nid,
-                                  const std::string& command, picojson::object& param) {
-  assert(dst_nid != my_nid);
-
-  delegate.vmemory_send_command(*this, dst_nid, Module::MEMORY, command, param);
-}
-
-/**
  * Send copy command for update page value in another copy node.
  * This command is used to copy value from master to copy node.
  * Inhibit command if responce (for previous copy command) was not received and
@@ -582,7 +586,8 @@ void VMemory::send_command_copy(const NodeID& dst_nid, Space& space, Page& page,
     param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
     param.insert(std::make_pair("value", Convert::bin2json(page.value.get(), page.size)));
     param.insert(std::make_pair("key", Convert::int2json(key)));
-    send_memory_command(space.name, dst_nid, "copy", param);
+    packet_controller.send("copy", Module::MEMORY, true,
+                           space.name, dst_nid, param);
 
     if (history != page.send_copy_history.end()) {
       history->second.time = now;
@@ -609,7 +614,8 @@ void VMemory::send_command_copy_reply(const NodeID& dst_nid, Space& space,
   param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
   param.insert(std::make_pair("key", Convert::int2json(key)));
 
-  send_memory_command(space.name, dst_nid, "copy_reply", param);
+  packet_controller.send("copy_reply", Module::MEMORY, true,
+                         space.name, dst_nid, param);
 }
 
 /**
@@ -623,7 +629,8 @@ void VMemory::send_command_free(const NodeID& dst_nid, Space& space, vaddr_t add
 
   param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
 
-  send_memory_command(space.name, dst_nid, "free", param);
+  packet_controller.send("free", Module::MEMORY, true,
+                         space.name, dst_nid, param);
 }
 
 /**
@@ -647,7 +654,8 @@ void VMemory::send_command_give(Space& space, Page& page, vaddr_t addr, const No
   }
   param.insert(std::make_pair("hint_nid", picojson::value(hint)));
 
-  send_memory_command(space.name, NodeID::BROADCAST, "give", param);
+  packet_controller.send("give", Module::MEMORY, true,
+                         space.name, NodeID::BROADCAST, param);
 }
 
 /**
@@ -664,7 +672,8 @@ void VMemory::send_command_release(Space& space, std::set<vaddr_t> addrs) {
   }
   param.insert(std::make_pair("addrs", picojson::value(js_addrs)));
 
-  send_memory_command(space.name, NodeID::BROADCAST, "release", param);
+  packet_controller.send("release", Module::MEMORY, true,
+                         space.name, NodeID::BROADCAST, param);
 }
 
 /**
@@ -681,7 +690,8 @@ void VMemory::send_command_require(const NodeID& dst_nid, Space& space, vaddr_t 
   param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
   param.insert(std::make_pair("src_nid", my_nid.to_json()));
 
-  send_memory_command(space.name, dst_nid, "require", param);
+  packet_controller.send("require", Module::MEMORY, true,
+                         space.name, dst_nid, param);
 }
 
 /**
@@ -698,7 +708,8 @@ void VMemory::send_command_reserve(Space& space, std::set<vaddr_t> addrs) {
   }
   param.insert(std::make_pair("addrs", picojson::value(js_addrs)));
 
-  send_memory_command(space.name, NodeID::BROADCAST, "reserve", param);
+  packet_controller.send("reserve", Module::MEMORY, true,
+                         space.name, NodeID::BROADCAST, param);
 }
 
 /**
@@ -715,7 +726,8 @@ void VMemory::send_command_stand(Space& space, Page& page, vaddr_t addr) {
 
   param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
 
-  send_memory_command(space.name, *page.hint.begin(), "stand", param);
+  packet_controller.send("stand", Module::MEMORY, true,
+                         space.name, *page.hint.begin(), param);
 }
 
 /**
@@ -727,7 +739,8 @@ void VMemory::send_command_stand(Space& space, Page& page, vaddr_t addr) {
 void VMemory::send_command_unwant(const NodeID& dst_nid, const std::string name, vaddr_t addr) {
   picojson::object param;
   param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
-  send_memory_command(name, dst_nid, "unwant", param);
+  packet_controller.send("unwant", Module::MEMORY, true,
+                         name, dst_nid, param);
 }
 
 /**
@@ -743,7 +756,8 @@ void VMemory::send_command_update(const NodeID& dst_nid, Space& space, vaddr_t a
   picojson::object param;
   param.insert(std::make_pair("value", Convert::bin2json(data, size)));
   param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
-  send_memory_command(space.name, dst_nid, "update", param);
+  packet_controller.send("update", Module::MEMORY, true,
+                         space.name, dst_nid, param);
 }
 
 // Constructor with memory space.

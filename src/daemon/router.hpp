@@ -44,7 +44,7 @@ class Router : public SchedulerDelegate {
                            vaddr_t proc_addr, const NodeID& master_nid,
                            const std::string& name) override;
   void scheduler_create_gui(Scheduler& scheduler, const vpid_t& pid) override;
-  void scheduler_send_command(Scheduler& scheduler, const Packet& packet) override;
+  void scheduler_send_packet(Scheduler& scheduler, const Packet& packet) override;
 
   static void on_timer_for_execute(uv_timer_t* handle);
 

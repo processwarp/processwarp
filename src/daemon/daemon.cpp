@@ -17,7 +17,6 @@
 #include "daemon_mid.hpp"
 #include "frontend_connector.hpp"
 #include "logger.hpp"
-#include "network_connector.hpp"
 #include "router.hpp"
 #include "util.hpp"
 #include "webrtc_bundle.hpp"
@@ -73,7 +72,7 @@ int Daemon::entry(int argc, char* argv[]) {
       }
     } break;
 
-    case RunMode:: SUBPROCESS: {
+    case RunMode::SUBPROCESS: {
       if (!config_subprocess() ||
           !initialize_logger() ||
           !initialize_message() ||
@@ -92,8 +91,25 @@ int Daemon::entry(int argc, char* argv[]) {
     } break;
   }
 
+  if (run_mode == RunMode::DAEMON) {
+    if (daemonize() != 0) {
+      return EXIT_FAILURE;
+    }
+  }
+
   // Start libuv loop.
   return !uv_run(loop, UV_RUN_DEFAULT);
+}
+
+void Daemon::network_connector_connect_on_success(
+    NetworkConnector& network_connector, const NodeID& my_nid) {
+  /// @todo output log
+}
+
+void Daemon::network_connector_connect_on_failure(
+    NetworkConnector& network_connector, int code) {
+  /// @todo output log
+  exit(EXIT_FAILURE);
 }
 
 /**
@@ -209,11 +225,20 @@ bool Daemon::initialize_cui() {
                     config.at("libs").get<picojson::array>(),
                     config.at("lib_filter").get<picojson::array>());
 
-#warning TODO
-  /*
-  network.send_connect_node(config.at("account").get<std::string>(),
-                            config.at("password").get<std::string>());
-  */
+  if (config.find("account") != config.end()) {
+    std::string password;
+    if (config.find("password") != config.end()) {
+      password = config.at("password").get<std::string>();
+    } else {
+      /// @todo get message from message file
+      std::cout << "Please input a password:" << std::endl;
+      set_stdin_echo(false);
+      std::getline(std::cin, password);
+      set_stdin_echo(true);
+    }
+
+    network.connect(this, config.at("account").get<std::string>(), password);
+  }
 
   if (run_mode == RunMode::DAEMON) {
     Logger::info(DaemonMid::L3009, "daemon");
@@ -272,6 +297,38 @@ bool Daemon::initialize_subprocess() {
   Logger::info(DaemonMid::L3009, "subprocess");
 
   return true;
+}
+
+/**
+ * Change stdin flag to hide inputing string.
+ * @param is_enable Set false to hide inputing string.
+ */
+void Daemon::set_stdin_echo(bool is_enable) {
+#ifndef WIN32
+  struct termios tty;
+  tcgetattr(STDIN_FILENO, &tty);
+
+  if (!is_enable) {
+    tty.c_lflag &= ~ECHO;
+  } else {
+    tty.c_lflag |= ECHO;
+  }
+
+  tcsetattr(STDIN_FILENO, TCSANOW, &tty);
+
+#else
+  HANDLE h_stdin = GetStdHandle(STD_INPUT_HANDLE);
+  DWORD mode;
+  GetConsoleMode(h_stdin, &mode);
+
+  if (!is_enable) {
+    mode &= ~ENABLE_ECHO_INPUT;
+  } else {
+    mode |= ENABLE_ECHO_INPUT;
+  }
+
+  SetConsoleMode(h_stdin, mode);
+#endif
 }
 
 /**

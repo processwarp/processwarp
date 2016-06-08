@@ -52,6 +52,7 @@ VMachine::VMachine(VMachineDelegate& delegate_,
     delegate(delegate_),
     libs(libs_),
     lib_filter(lib_filter_),
+    packet_controller(Module::VM),
     last_heartbeat(0) {
 }
 
@@ -66,20 +67,16 @@ VMachine::VMachine(VMachineDelegate& delegate_,
 void VMachine::initialize(const vpid_t& pid, const vtid_t& root_tid, vaddr_t proc_addr,
                           const NodeID& master_nid, const std::string& name) {
   assert(process.get() == nullptr);
+  packet_controller.initialize(this);
+
   process = Process::alloc(*this, pid, root_tid, libs, lib_filter, builtin_funcs,
                            proc_addr, master_nid);
   process->setup();
   process->name = name;
-  initialize_builtin();
-}
 
-/**
- * Enable GUI.
- * Regist GUI API's with pass delegate instance.
- * @param delegate GUI delegate instance.
- */
-void VMachine::initialize_gui(BuiltinGuiDelegate& delegate) {
-  BuiltinGui::regist(*this, delegate);
+  BuiltinGui::regist(*this, packet_controller);
+
+  initialize_builtin();
 }
 
 /**
@@ -232,25 +229,11 @@ void VMachine::on_recv_update(vaddr_t addr) {
 }
 
 /**
- * When receive command from other module in this node, read command and call capable method with parameter.
- * @param packet Command packet.
+ * When receive packet, call capable method with it.
+ * @param packet A packet.
  */
-void VMachine::recv_command(const Packet& packet) {
-  const std::string& command = packet.content.at("command").get<std::string>();
-
-  if (command == "heartbeat_vm") {
-    recv_command_heartbeat_vm(packet);
-
-  } else if (command == "require_warp_thread") {
-    recv_command_require_warp_thread(packet);
-
-  } else if (command == "warp_thread") {
-    recv_command_warp_thread(packet);
-
-  } else {
-    /// @todo error
-    assert(false);
-  }
+void VMachine::recv_packet(const Packet& packet) {
+  packet_controller.recv(packet);
 }
 
 /**
@@ -302,6 +285,34 @@ void VMachine::regist_builtin_func(const std::string& name,
 }
 
 /**
+ * When receive general command, relay it to capable method.
+ * @param packet A packet.
+ */
+void VMachine::packet_controller_on_recv(const Packet& packet) {
+  if (packet.command == "heartbeat_vm") {
+    recv_command_heartbeat_vm(packet);
+
+  } else if (packet.command == "require_warp_thread") {
+    recv_command_require_warp_thread(packet);
+
+  } else if (packet.command == "warp_thread") {
+    recv_command_warp_thread(packet);
+
+  } else {
+    /// @todo error
+    assert(false);
+  }
+}
+
+/**
+ * When send packet event has happen on PacketController, relay it to delegate.
+ * @param packet A packet to relay.
+ */
+void VMachine::packet_controller_send(const Packet& packet) {
+  delegate.vmachine_send_packet(*this, packet);
+}
+
+/**
  * When receive heartbeat_vm command, remove thread-id from waiting list if exisiting.
  * @param packet Command packet.
  */
@@ -350,24 +361,6 @@ void VMachine::recv_command_warp_thread(const Packet& packet) {
 }
 
 /**
- * Send command to another module or node through backend and server if need.
- * @param pid Process-id bundled to packet.
- * @param dst_nid Destination node-id.
- * @param module Target module.
- * @param command Command string.
- * @param param Parameter for command.
- */
-void VMachine::send_command(const vpid_t& pid, const NodeID& dst_nid, Module::Type module,
-                            const std::string& command, picojson::object& param) {
-  assert(param.find("command") == param.end() ||
-         param.at("command").get<std::string>() == command);
-
-  param.insert(std::make_pair("command", picojson::value(command)));
-#warning TODO
-  // delegate.vmachine_send_command(*this, {pid, dst_nid, NodeID::NONE, module, param});
-}
-
-/**
  * Send heartbeat_vm command to tell thread list having this VM module.
  */
 void VMachine::send_command_heartbeat_vm() {
@@ -385,8 +378,10 @@ void VMachine::send_command_heartbeat_vm() {
   picojson::object param;
   param.insert(std::make_pair("name", picojson::value(process->name)));
   param.insert(std::make_pair("threads", picojson::value(threads)));
-  send_command(process->pid, NodeID::BROADCAST, Module::VM, "heartbeat_vm", param);
-  send_command(process->pid, NodeID::BROADCAST, Module::SCHEDULER, "heartbeat_vm", param);
+  packet_controller.send("heartbeat_vm", Module::VM, true,
+                         process->pid, NodeID::BROADCAST, param);
+  packet_controller.send("heartbeat_vm", Module::SCHEDULER, true,
+                         process->pid, NodeID::BROADCAST, param);
 }
 
 /**
@@ -406,7 +401,8 @@ void VMachine::send_command_warp_thread(Thread& thread) {
   param.insert(std::make_pair("dst_nid", thread.warp_dst.to_json()));
   param.insert(std::make_pair("src_nid", my_nid.to_json()));
 
-  send_command(process->pid, thread.warp_dst, Module::SCHEDULER, "warp_thread", param);
+  packet_controller.send("warp_thread", Module::SCHEDULER, true,
+                         process->pid, thread.warp_dst, param);
 }
 
 /**

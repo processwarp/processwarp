@@ -68,27 +68,24 @@ void FrontendConnector::create_gui(const vpid_t& pid) {
 }
 
 /**
- * Relay command to frontend.
- * Packet format: {<br/>
- *   command: 'relay_command',
- *   pid: &lt;Process-id of packet&gt;
- *   dst_nid: &lt;Destination node-id&gt;
- *   src_nid: &lt;Source node-id&gt;
- *   content: &lt;Command content&gt;
- * }
- * @param packet Command packet for relaying.
+ * Relay packet to frontend.
+ * @param packet A packet relay to frontend.
  */
-void FrontendConnector::relay_frontend_command(const Packet& packet) {
-  assert(packet.dst_module == Module::CONTROLLER || packet.dst_module == Module::GUI);
+void FrontendConnector::relay_packet(const Packet& packet) {
+  assert(packet.dst_module & Module::CONTROLLER || packet.dst_module & Module::GUI);
 
   if (pipe == nullptr) return;
 
   picojson::object data;
-  data.insert(std::make_pair("command", picojson::value(std::string("relay_command"))));
+  data.insert(std::make_pair("command", picojson::value(std::string("relay_packet"))));
+  data.insert(std::make_pair("packet_id", Convert::int2json(packet.packet_id)));
+  data.insert(std::make_pair("packet_command", picojson::value(packet.command)));
+  data.insert(std::make_pair("mode", Convert::int2json(packet.mode)));
+  data.insert(std::make_pair("dst_module", Convert::int2json(packet.dst_module)));
+  data.insert(std::make_pair("src_module", Convert::int2json(packet.src_module)));
   data.insert(std::make_pair("pid", Convert::vpid2json(packet.pid)));
   data.insert(std::make_pair("dst_nid", packet.dst_nid.to_json()));
   data.insert(std::make_pair("src_nid", packet.src_nid.to_json()));
-  data.insert(std::make_pair("module", Convert::int2json(packet.dst_module)));
   data.insert(std::make_pair("content", picojson::value(packet.content)));
 
   send_data(*pipe, data);
@@ -142,8 +139,8 @@ void FrontendConnector::on_connect(uv_pipe_t& client) {
 void FrontendConnector::on_recv_data(uv_pipe_t& client, picojson::object& data) {
   const std::string& command = data.at("command").get<std::string>();
 
-  if (command == "relay_command") {
-    recv_relay_command(client, data);
+  if (command == "relay_packet") {
+    recv_relay_packet(client, data);
 
   } else if (command == "open") {
     recv_open(client, data);
@@ -253,24 +250,25 @@ void FrontendConnector::recv_open_file(uv_pipe_t& client, picojson::object& para
 }
 
 /**
- * When receive command from frontend, relay to capable module.
+ * When receive relay_packet from frontend, decode packet and pass it to router.
  * @param client Frontend that passed this request.
  * @param content Data contain target module, pid, content of command.
  */
-void FrontendConnector::recv_relay_command(uv_pipe_t& client, picojson::object& content) {
-#warning TODO
-  /*
+void FrontendConnector::recv_relay_packet(uv_pipe_t& client, picojson::object& content) {
     Packet packet = {
-    Convert::json2vpid(content.at("pid")),
-    NodeID::from_json(content.at("dst_nid")),
-    NodeID::NONE,
-    Convert::json2int<Module::Type>(content.at("module")),
-    content.at("content").get<picojson::object>()
+      Convert::json2int<uint32_t>(content.at("packet_id")),
+      content.at("packet_command").get<std::string>(),
+      Convert::json2int<PacketMode::Type>(content.at("mode")),
+      Convert::json2int<Module::Type>(content.at("dst_module")),
+      Convert::json2int<Module::Type>(content.at("src_module")),
+      Convert::json2vpid(content.at("pid")),
+      NodeID::from_json(content.at("dst_nid")),
+      NodeID::NONE,
+      content.at("content").get<picojson::object>()
     };
 
     Router& router = Router::get_instance();
-    router.relay_command(packet, false);
-  */
+    router.relay_from_local(packet);
 }
 
 /**
