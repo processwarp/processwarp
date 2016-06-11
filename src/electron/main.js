@@ -1,23 +1,25 @@
 'use strict';
 
-// Load constant value.
-require('./constant');
-const CONFIG = require('./config.json');
-
 // Load modules.
-var app = require('app');
-var BrowserWindow = require('browser-window');
-var crypto = require("crypto");
-var dialog = require('dialog');
-var fs = require('fs');
-var ipc = require('electron').ipcMain;
-var net = require('net');
-var os = require('os');
-var path = require('path');
-var spawn = require('child_process').spawn;
+import electron from 'electron';
+import crypto from 'crypto';
+import fs from 'fs';
+import net from 'net';
+import os from 'os';
+import path from 'path';
+import spawn from 'child_process';
 
-require('crash-reporter').start();
+// Load local modules.
+import {NID, PID, MODULE} from './constant';
+import PacketController from './packet_controller';
 
+// Get inner modules.
+const app = electron.app;
+const BrowserWindow = electron.BrowserWindow;
+const dialog = electron.dialog;
+const ipc = electron.ipcMain;
+
+// Constant values.
 const CONNECT_BACKEND_TIMEOUT = 10;
 const COMMON_KEY = crypto.randomBytes(64).toString('hex');
 
@@ -34,6 +36,12 @@ const CONNECT_STATUS = {
   CONNECT: 4
 };
 
+const PW_PATH = path.join(__dirname, '..', '..', '..');
+const ROOT_PATH = path.join(__dirname, '..');
+
+// Load configuration.
+const CONFIG = require(path.join(ROOT_PATH, 'config.json'));
+
 var controller = null;
 var backendProcess = null;
 var backendPipePath = null;
@@ -42,6 +50,7 @@ var backendBuffer = new Buffer(0);
 var connectStatus = CONNECT_STATUS.CLOSE;
 var contexts = {};
 var myNid = NID.NONE;
+const packetController = new PacketController(MODULE.CONTROLLER);
 
 /**
  * Quit main process when all window was closed.
@@ -90,7 +99,7 @@ function initializeController() {
     width: 480
   });
 
-  controller.loadURL('file://' + __dirname + '/controller.html');
+  controller.loadURL('file://' + ROOT_PATH + '/controller.html');
   controller.on('closed', function() {
     controller = null;
   });
@@ -107,7 +116,7 @@ function initializeIpc() {
   ipc.on('action_open_file', onActionOpenFile);
 
   ipc.on('gui_load', onGuiLoad);
-  ipc.on('gui_relay_command', onGuiRelayCommand);
+  ipc.on('gui_relay_packet', onGuiRelayPacket);
 }
 
 /**
@@ -241,8 +250,8 @@ function onBackendRecvData(data) {
     backendBuffer = backendBuffer.slice(4 + psize + 1);
 
     switch (content.command) {
-      case 'relay_command':
-        recvRelayCommand(content);
+      case 'relay_packet':
+        recvRelayPacket(content);
         break;
 
       case 'open':
@@ -288,6 +297,8 @@ function recvAuthenticate(packet) {
   if (packet.result === 0) {
     myNid = packet.my_nid;
     connectStatus = CONNECT_STATUS.CONNECT;
+    packetController.initialize(myNid, recvControllerPacket, sendRelayPacket);
+
     controller.webContents.send('action_connect_success', {
       my_nid: myNid
     });
@@ -326,7 +337,7 @@ function recvCreate(param) {
   window.on('closed', function(event) {
     onGuiClose(event, pid);
   });
-  window.loadURL('file://' + __dirname + '/gui.html');
+  window.loadURL('file://' + ROOT_PATH + '/gui.html');
   window.webContents.pid = pid;
 
   var context = {};
@@ -338,24 +349,29 @@ function recvCreate(param) {
 }
 
 /**
- * When receive command for fontend, pass it capable GUI module or CONTROLLER module.
- * @param {object} packet Command packet.
+ * When receive a packet for fontend, pass it capable GUI module or CONTROLLER module.
+ * @param {object} json A Received packet.
  * @return {void}
  */
-function recvRelayCommand(packet) {
-  switch (parseInt(packet.module, 10)) {
-    case MODULE.GUI:
-      relayGuiCommand(packet);
-      break;
+function recvRelayPacket(json) {
+  let packet = {
+    packetId: json.packet_id,
+    command: json.packet_command,
+    mode: parseInt(json.mode, 16),
+    dstModule: parseInt(json.dst_module, 16),
+    srcModule: parseInt(json.src_module, 16),
+    pid: json.pid,
+    dstNid: json.dst_nid,
+    srcNid: json.src_nid,
+    content: json.content
+  };
 
-    case MODULE.CONTROLLER:
-      recvCommand(packet);
-      break;
+  if (packet.dstModule & MODULE.GUI) {
+    relayGuiPacket(packet);
+  }
 
-    default:
-      // @todo drop
-      console.assert(false, packet);
-      break;
+  if (packet.dstModule & MODULE.CONTROLLER) {
+    packetController.recv(packet);
   }
 }
 
@@ -364,8 +380,8 @@ function recvRelayCommand(packet) {
  * @param {object} packet Command packet.
  * @return {void}
  */
-function recvCommand(packet) {
-  switch (packet.content.command) {
+function recvControllerPacket(packet) {
+  switch (packet.command) {
     case 'processes_info':
       recvCommandProcessesInfo(packet.content);
       break;
@@ -395,13 +411,13 @@ function recvCommandProcessesInfo(param) {
  * @param {object} packet Command packet to relay.
  * @return {void}
  */
-function relayGuiCommand(packet) {
+function relayGuiPacket(packet) {
   // Send packet to gui or store to wait if didn't connect yet.
   function sendOrPush(pid, packet) {
     var context = contexts[pid];
 
     if (context.isNormal) {
-      context.window.webContents.send('gui_relay_command', packet);
+      context.window.webContents.send('gui_relay_packet', packet);
     } else {
       context.packets.push(packet);
     }
@@ -453,24 +469,26 @@ function sendAuthenticate(account, password) {
 }
 
 /**
- * Send a command to other module in this node through the backend.
- * @param {string} pid Process-id bundled to command.
- * @param {string} dstNide Destination node-id.
- * @param {number} module Target module.
- * @param {string} command Command string.
- * @param {object} param Parameter for a command.
+ * Relay a packet to the backend.
+ * @param {object} packet A packet to relay.
  */
-function sendCommand(pid, dstNid, module, command, param) {
+function sendRelayPacket(packet) {
   console.assert(connectStatus === CONNECT_STATUS.CONNECT, connectStatus);
 
-  param.command = command;
-  sendData({
-    command: 'relay_command',
-    pid: pid,
-    dst_nid: dstNid,
-    module: module.toString(10),
-    content: param
-  });
+  let json = {
+    command: 'relay_packet',
+    packet_id: packet.packetId,
+    packet_command: packet.command,
+    mode: packet.mode.toString(16),
+    dst_module: packet.dstModule.toString(16),
+    src_module: packet.srcModule.toString(16),
+    pid: packet.pid,
+    dst_nid: packet.dstNid,
+    src_nid: packet.srcNid,
+    content: packet.content
+  };
+
+  sendData(json);
 }
 
 /**
@@ -478,7 +496,14 @@ function sendCommand(pid, dstNid, module, command, param) {
  * @return {void}
  */
 function sendCommandActivate() {
-  sendCommand(PID.BROADCAST, NID.BROADCAST, MODULE.SCHEDULER, 'activate', {});
+  packetController.send({
+    command: 'activate',
+    isExplicit: true,
+    dstModule: MODULE.SCHEDULER,
+    pid: PID.BROADCAST,
+    dstNid: NID.BROADCAST,
+    content: {}
+  });
 }
 
 /**
@@ -486,7 +511,14 @@ function sendCommandActivate() {
  * @return {void}
  */
 function sendCommandRequireProcessesInfo() {
-  sendCommand(PID.BROADCAST, NID.THIS, MODULE.SCHEDULER, 'require_processes_info', {});
+  packetController.send({
+    command: 'require_processes_info',
+    isExplicit: true,
+    dstModule: MODULE.SCHEDULER,
+    pid: PID.BROADCAST,
+    dstNid: NID.THIS,
+    content: {}
+  });
 }
 
 /**
@@ -497,9 +529,11 @@ function startBackend() {
   console.assert(connectStatus === CONNECT_STATUS.CLOSE, connectStatus);
 
   // Spawn backend process.
-  backendProcess = spawn(CONFIG.BACKEND ||
-                         path.join(__dirname, '..', '..', 'bin', 'processwarp'),
-                         ['--subprocess']);
+  backendProcess = spawn.spawn(CONFIG.BACKEND ||
+                               path.join(PW_PATH, 'bin', 'processwarp'),
+                               ['--subprocess']);
+  // 'valgrind',
+  // ['--trace-children=yes', path.join(PW_PATH, 'bin', 'processwarp'), '--subprocess']);
 
   // Setup stdout, stderr and event listener.
   backendProcess.stdout.setEncoding('utf8');
@@ -514,6 +548,7 @@ function startBackend() {
 
   backendProcess.on('exit', function() {
     // @todo error
+    console.assert(false, 'backend process has exit.');
     connectStatus = CONNECT_STATUS.CLOSE;
   });
 
@@ -521,17 +556,18 @@ function startBackend() {
   backendPipePath = path.join(os.tmpdir(), 'pw-frontend-' + process.pid + '.pipe');
   var config = {
     server: CONFIG.SERVER,
-    message: path.join(__dirname, '..', 'const', 'daemon_mid_c.json'),
+    message: path.join(PW_PATH, 'src', 'const', 'daemon_mid_c.json'),
     node_name: CONFIG.NODE_NAME || os.hostname(),
     worker_pipe: path.join(os.tmpdir(), 'pw-worker-' + process.pid + '.pipe'),
     frontend_key: COMMON_KEY,
     frontend_pipe: backendPipePath,
     libs: CONFIG.LIBS || [],
     lib_filter: CONFIG.LIB_FILTER ||
-    [path.join(__dirname, '..', '..', 'etc', os.platform(), 'libfilter.json')]
+    [path.join(PW_PATH, 'etc', os.platform(), 'libfilter.json')]
   };
 
   // Pass configure.
+  console.log(JSON.stringify(config));
   backendProcess.stdin.write(JSON.stringify(config));
   connectStatus = CONNECT_STATUS.BEGIN;
 }
@@ -561,13 +597,13 @@ function onGuiLoad(event) {
 }
 
 /**
- * When receive command from GUI module, relay it to backend.
+ * When receive packet from GUI module, relay it to backend.
  * @param event {object} Not used.
- * @param packet {object} Command packet to relay.
+ * @param packet {object} A packet to relay.
  */
-function onGuiRelayCommand(event, packet) {
+function onGuiRelayPacket(event, packet) {
   sendData({
-    command: 'relay_command',
+    command: 'relay_packet',
     pid: packet.pid,
     dst_nid: packet.dst_nid,
     module: packet.module.toString(10),

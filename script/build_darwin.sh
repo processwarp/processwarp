@@ -51,6 +51,11 @@ else
     npm install
 fi
 
+babel constant.js -o dist/constant.js
+babel gui.js -o dist/gui.js
+babel main.js -o dist/main.js
+babel packet_controller.js -o dist/packet_controller.js
+
 # Finish.
 cd ${_pwd}
 

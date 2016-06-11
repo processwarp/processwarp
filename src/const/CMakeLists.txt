@@ -38,8 +38,8 @@ add_custom_target(const_core_constant
 add_custom_command(
   OUTPUT ${PROJECT_SOURCE_DIR}/src/electron/constant.js
   COMMAND python
-  ARGS ${PROJECT_SOURCE_DIR}/script/gen_constant.py --nodejs-dst ${PROJECT_SOURCE_DIR}/src/electron/constant.js ${PROJECT_SOURCE_DIR}/src/const/definition.json ${PROJECT_SOURCE_DIR}/src/const/nid.json ${PROJECT_SOURCE_DIR}/src/const/pid.json ${PROJECT_SOURCE_DIR}/src/const/module.json
-  DEPENDS ${PROJECT_SOURCE_DIR}/script/gen_constant.py ${PROJECT_SOURCE_DIR}/src/const/definition.json ${PROJECT_SOURCE_DIR}/src/const/nid.json ${PROJECT_SOURCE_DIR}/src/const/pid.json ${PROJECT_SOURCE_DIR}/src/const/module.json
+  ARGS ${PROJECT_SOURCE_DIR}/script/gen_constant.py --nodejs-dst ${PROJECT_SOURCE_DIR}/src/electron/constant.js ${PROJECT_SOURCE_DIR}/src/const/definition.json ${PROJECT_SOURCE_DIR}/src/const/nid.json ${PROJECT_SOURCE_DIR}/src/const/packet_mode.json ${PROJECT_SOURCE_DIR}/src/const/packet_error.json ${PROJECT_SOURCE_DIR}/src/const/pid.json ${PROJECT_SOURCE_DIR}/src/const/module.json
+  DEPENDS ${PROJECT_SOURCE_DIR}/script/gen_constant.py ${PROJECT_SOURCE_DIR}/src/const/definition.json ${PROJECT_SOURCE_DIR}/src/const/nid.json ${PROJECT_SOURCE_DIR}/src/const/packet_mode.json ${PROJECT_SOURCE_DIR}/src/const/packet_error.json ${PROJECT_SOURCE_DIR}/src/const/pid.json ${PROJECT_SOURCE_DIR}/src/const/module.json
   )
 
 add_custom_target(const_electron
