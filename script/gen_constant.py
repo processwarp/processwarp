@@ -75,7 +75,8 @@ if args.cpp_dst:
             if json_data['type'] == 'enum' or json_data['type'] == 'int':
                 json_data['c_type'] = 'int'
             elif json_data['type'] == 'string':
-                json_data['c_type'] = 'std::string'
+                json_data['c_type'] = 'char'
+                json_data['post_name'] = '[]'
 
         # Output namespace
         out.write(token_block_description(json_data))
@@ -92,7 +93,10 @@ if args.cpp_dst:
                 line += json_data['c_typedef'] + ' '
             else:
                 line += json_data['c_type'] + ' '
-            line += v['name'] + ' ';
+            line += v['name']
+            if 'post_name' in json_data:
+                line += json_data['post_name']
+            line +=  ' '
             line += padding(line) + '= '
             line += token_value(json_data['type'], idx, v, '"') + ';'
             line += token_description(line, v) + '\n'
