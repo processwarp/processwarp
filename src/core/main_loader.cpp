@@ -258,18 +258,26 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
 
     picojson::array js_sched_packet;
     {
+      picojson::object content;
+      content.insert(std::make_pair("pid", Convert::vpid2json(in_pid)));
+      content.insert(std::make_pair("root_tid", Convert::vtid2json(proc->root_tid)));
+      content.insert(std::make_pair("proc_addr", Convert::vaddr2json(proc->addr)));
+      content.insert(std::make_pair("master_nid", NodeID::SERVER.to_json()));
+      content.insert(std::make_pair("name", picojson::value(in_name)));
+      content.insert(std::make_pair("tid", Convert::vtid2json(proc->root_tid)));
+      content.insert(std::make_pair("dst_nid", in_dst_nid.to_json()));
+      content.insert(std::make_pair("src_nid", in_src_nid.to_json()));
+      content.insert(std::make_pair("src_account", picojson::value(in_src_account)));
+
       picojson::object packet;
+      packet.insert(std::make_pair("packet_id", Convert::int2json(0)));
       packet.insert(std::make_pair("command", picojson::value(std::string("warp_thread"))));
-      packet.insert(std::make_pair("pid", Convert::vpid2json(in_pid)));
-      packet.insert(std::make_pair("root_tid", Convert::vtid2json(proc->root_tid)));
-      packet.insert(std::make_pair("proc_addr", Convert::vaddr2json(proc->addr)));
-      packet.insert(std::make_pair("master_nid", NodeID::SERVER.to_json()));
-      packet.insert(std::make_pair("name", picojson::value(in_name)));
-      packet.insert(std::make_pair("tid", Convert::vtid2json(proc->root_tid)));
-      packet.insert(std::make_pair("dst_nid", in_dst_nid.to_json()));
-      packet.insert(std::make_pair("src_nid", in_src_nid.to_json()));
-      packet.insert(std::make_pair("src_account", picojson::value(in_src_account)));
-      js_sched_packet.push_back(picojson::value(picojson::value(packet).serialize()));
+      packet.insert(std::make_pair("mode",
+                                   Convert::int2json(PacketMode::EXPLICIT | PacketMode::ONE_WAY)));
+      packet.insert(std::make_pair("content",
+                                   picojson::value(picojson::value(packet).serialize())));
+
+      js_sched_packet.push_back(picojson::value(packet));
     }
     body.insert(std::make_pair("sched_packet", picojson::value(js_sched_packet)));
 
@@ -280,15 +288,23 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
         continue;
       }
 
+      picojson::object content;
+      content.insert(std::make_pair("addr", Convert::vaddr2json(it.first)));
+      content.insert(std::make_pair("value",
+                                    Convert::bin2json(it.second.value.get(), it.second.size)));
+      content.insert(std::make_pair("dst_nid", in_dst_nid.to_json()));
+      content.insert(std::make_pair("src_nid", NodeID::SERVER.to_json()));
+      content.insert(std::make_pair("hint_nid", picojson::value(picojson::array())));
+
       picojson::object packet;
+      packet.insert(std::make_pair("packet_id", Convert::int2json(0)));
       packet.insert(std::make_pair("command", picojson::value(std::string("give"))));
-      packet.insert(std::make_pair("addr", Convert::vaddr2json(it.first)));
-      packet.insert(std::make_pair("value",
-                                   Convert::bin2json(it.second.value.get(), it.second.size)));
-      packet.insert(std::make_pair("dst_nid", in_dst_nid.to_json()));
-      packet.insert(std::make_pair("src_nid", NodeID::SERVER.to_json()));
-      packet.insert(std::make_pair("hint_nid", picojson::value(picojson::array())));
-      js_memory_packet.push_back(picojson::value(picojson::value(packet).serialize()));
+      packet.insert(std::make_pair("mode",
+                                   Convert::int2json(PacketMode::EXPLICIT | PacketMode::ONE_WAY)));
+      packet.insert(std::make_pair("content",
+                                   picojson::value(picojson::value(packet).serialize())));
+
+      js_memory_packet.push_back(picojson::value(packet));
     }
     body.insert(std::make_pair("memory_packet", picojson::value(js_memory_packet)));
 
