@@ -51,10 +51,10 @@ else
     npm install
 fi
 
-babel constant.js -o dist/constant.js
-babel gui.js -o dist/gui.js
-babel main.js -o dist/main.js
-babel packet_controller.js -o dist/packet_controller.js
+babel --no-babelrc --plugins transform-es2015-modules-commonjs --retain-lines -o dist/constant.js constant.js
+babel --no-babelrc --plugins transform-es2015-modules-commonjs --retain-lines -o dist/gui.js gui.js
+babel --no-babelrc --plugins transform-es2015-modules-commonjs --retain-lines -o dist/main.js main.js
+babel --no-babelrc --plugins transform-es2015-modules-commonjs --retain-lines -o dist/packet_controller.js packet_controller.js
 
 # Finish.
 cd ${_pwd}
