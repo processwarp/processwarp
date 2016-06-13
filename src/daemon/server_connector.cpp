@@ -489,10 +489,6 @@ void ServerConnector::on_recv(uv_async_t* handle) {
     } else if (name == "relay") {
       THIS.recv_relay(data);
 
-    } else if (name == "test_console") {
-      /// @todo
-      assert(false);
-
     } else {
       /// @todo error
       assert(false);
@@ -564,7 +560,6 @@ void ServerConnector::connect_socketio() {
   M_BIND_SOCKETIO_EVENT("auth");
   M_BIND_SOCKETIO_EVENT("init_webrtc");
   M_BIND_SOCKETIO_EVENT("relay");
-  M_BIND_SOCKETIO_EVENT("test_console");
 
 #undef M_BIND_SOCKETIO_EVENT
 }
@@ -643,8 +638,6 @@ void ServerConnector::recv_auth(sio::message::ptr data) {
 void ServerConnector::recv_init_webrtc(sio::message::ptr data) {
   const std::string& type = get_str_by_map(data, "type", true);
   const std::string& content_str = get_str_by_map(data, "content", true);
-
-  std::cout << "recv_init_webrtc:" << type << ":" << content_str << std::endl;
 
   picojson::value v;
   std::istringstream is(content_str);
