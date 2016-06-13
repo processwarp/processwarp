@@ -9,8 +9,8 @@
 #include "constant_native.hpp"
 #include "convert.hpp"
 #include "frontend_connector.hpp"
-#include "network_connector.hpp"
 #include "router.hpp"
+#include "server_connector.hpp"
 #include "worker_connector.hpp"
 
 namespace processwarp {
@@ -93,11 +93,11 @@ void FrontendConnector::relay_packet(const Packet& packet) {
 
 /**
  * When connect to server has success, change status and send reply packet to frontend.
- * @param network_connector Instance call from.
+ * @param server_connector Instance call from.
  * @param my_nid Node-id for this node.
  */
-void FrontendConnector::network_connector_connect_on_success(
-    NetworkConnector& network_connector, const NodeID& my_nid) {
+void FrontendConnector::server_connector_connect_on_success(
+    ServerConnector& server_connector, const NodeID& my_nid) {
   assert(connect_status == ConnectStatus::AUTH);
 
   connect_status = ConnectStatus::CONNECT;
@@ -106,11 +106,11 @@ void FrontendConnector::network_connector_connect_on_success(
 
 /**
  * When connect to server has failed, change status and send reply packet to frontend.
- * @param network_connector Instance call from.
+ * @param server_connector Instance call from.
  * @param code Error code.
  */
-void FrontendConnector::network_connector_connect_on_failure(
-    NetworkConnector& network_connector, int code) {
+void FrontendConnector::server_connector_connect_on_failure(
+    ServerConnector& server_connector, int code) {
   reply_authenticate(*pipe, code, NodeID::NONE);
   connect_status = ConnectStatus::OPEN;
 }
@@ -175,13 +175,13 @@ void FrontendConnector::on_close(uv_pipe_t& client) {
  * @param param Parameter contain account, password.
  */
 void FrontendConnector::recv_authenticate(uv_pipe_t& client, picojson::object& param) {
-  NetworkConnector& network = NetworkConnector::get_instance();
+  ServerConnector& server = ServerConnector::get_instance();
   const std::string& account = param.at("account").get<std::string>();
   const std::string& password = param.at("password").get<std::string>();
 
   if (connect_status == ConnectStatus::OPEN) {
     connect_status = ConnectStatus::AUTH;
-    network.connect(this, account, password);
+    server.connect(this, account, password);
 
   } else {
     /// @todo error

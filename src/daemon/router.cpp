@@ -11,9 +11,9 @@
 #include "constant.hpp"
 #include "constant_vm.hpp"
 #include "frontend_connector.hpp"
-#include "network_connector.hpp"
 #include "router.hpp"
 #include "scheduler.hpp"
+#include "server_connector.hpp"
 #include "type.hpp"
 #include "util.hpp"
 #include "webrtc_bundle.hpp"
@@ -58,9 +58,9 @@ void Router::initialize(uv_loop_t* loop_, const picojson::object& config_) {
  * @param args Arguments to pass application's entry point.
  */
 void Router::load_llvm(const std::string& filename, const std::vector<std::string>& args) {
-  NetworkConnector& network = NetworkConnector::get_instance();
+  ServerConnector& server = ServerConnector::get_instance();
 
-  if (network.get_status() != ConnectStatus::CONNECT) {
+  if (server.get_status() != ConnectStatus::CONNECT) {
     /// @todo error
     assert(false);
   }
@@ -78,8 +78,8 @@ void Router::load_llvm(const std::string& filename, const std::vector<std::strin
   }
   ifs.close();
 
-  network.send_load_llvm(Util::file_basename(filename, true), file.str(), args,
-                         scheduler.get_new_pid(), my_nid);
+  server.send_load_llvm(Util::file_basename(filename, true), file.str(), args,
+                        scheduler.get_new_pid(), my_nid);
 }
 
 /**

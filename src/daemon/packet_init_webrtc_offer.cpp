@@ -3,8 +3,8 @@
 #include <string>
 
 #include "convert.hpp"
-#include "network_connector.hpp"
 #include "packet_init_webrtc_offer.hpp"
+#include "server_connector.hpp"
 
 namespace processwarp {
 const PacketController::Define& PacketInitWebrtcOffer::get_define() {
@@ -23,11 +23,11 @@ const PacketController::Define& PacketInitWebrtcOffer::get_define() {
  * @param packet
  */
 void PacketInitWebrtcOffer::on_error(const Packet& packet) {
-  NetworkConnector& network = NetworkConnector::get_instance();
+  ServerConnector& server = ServerConnector::get_instance();
   NodeID prime_nid = NodeID::from_json(packet.content.at("packet_nid"));
   int reason = Convert::json2int<int>(packet.content.at("reason"));
 
-  network.send_init_webrtc_deny(prime_nid, reason);
+  server.send_init_webrtc_deny(prime_nid, reason);
 }
 
 void PacketInitWebrtcOffer::on_packet_error(PacketError::Type code) {
@@ -40,11 +40,11 @@ void PacketInitWebrtcOffer::on_packet_error(PacketError::Type code) {
  * @param packet
  */
 void PacketInitWebrtcOffer::on_reply(const Packet& packet) {
-  NetworkConnector& network = NetworkConnector::get_instance();
+  ServerConnector& server = ServerConnector::get_instance();
   NodeID prime_nid = NodeID::from_json(packet.content.at("prime_nid"));
   NodeID second_nid = NodeID::from_json(packet.content.at("second_nid"));
   const std::string& sdp = packet.content.at("sdp").get<std::string>();
 
-  network.send_init_webrtc_reply(prime_nid, second_nid, sdp);
+  server.send_init_webrtc_reply(prime_nid, second_nid, sdp);
 }
 }  // namespace processwarp

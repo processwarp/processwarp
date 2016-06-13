@@ -6,8 +6,8 @@
 
 #include "constant.hpp"
 #include "convert.hpp"
-#include "network_connector.hpp"
 #include "packet_init_webrtc_offer.hpp"
+#include "server_connector.hpp"
 #include "router.hpp"
 #include "webrtc_bundle.hpp"
 
@@ -107,7 +107,7 @@ WebrtcBundle::~WebrtcBundle() {
 }
 
 /**
- * Apply connector from NetworkConnector module.
+ * Apply connector from ServerConnector module.
  * @param connector WebRTC connector.
  */
 void WebrtcBundle::apply_connector(WebrtcConnector* connector) {
@@ -572,8 +572,8 @@ void WebrtcBundle::recv_init_webrtc_ice(const Packet& packet) {
   const std::string& ice = packet.content.at("ice").get<std::string>();
 
   if (remote_nid != my_nid) {
-    NetworkConnector& network = NetworkConnector::get_instance();
-    network.send_init_webrtc_ice(local_nid, remote_nid, ice);
+    ServerConnector& server = ServerConnector::get_instance();
+    server.send_init_webrtc_ice(local_nid, remote_nid, ice);
 
   } else {
     for (auto& it : connectors) {

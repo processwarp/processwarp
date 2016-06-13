@@ -9,12 +9,12 @@
 #include "connector.hpp"
 #include "constant.hpp"
 #include "constant_native.hpp"
-#include "network_connector.hpp"
 #include "packet.hpp"
+#include "server_connector.hpp"
 #include "type.hpp"
 
 namespace processwarp {
-class FrontendConnector : public Connector, public NetworkConnectorConnectDelegate {
+class FrontendConnector : public Connector, public ServerConnectorConnectDelegate {
  public:
   static FrontendConnector& get_instance();
 
@@ -36,9 +36,9 @@ class FrontendConnector : public Connector, public NetworkConnectorConnectDelega
   FrontendConnector(const FrontendConnector&);
   FrontendConnector& operator=(const FrontendConnector&);
 
-  void network_connector_connect_on_success(NetworkConnector& network_connector,
+  void server_connector_connect_on_success(ServerConnector& server_connector,
                                             const NodeID& my_nid) override;
-  void network_connector_connect_on_failure(NetworkConnector& network_connector, int code) override;
+  void server_connector_connect_on_failure(ServerConnector& server_connector, int code) override;
 
   void on_connect(uv_pipe_t& client) override;
   void on_recv_data(uv_pipe_t& client, picojson::object& data) override;

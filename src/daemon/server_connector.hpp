@@ -18,25 +18,25 @@
 #include "webrtc_connector.hpp"
 
 namespace processwarp {
-class NetworkConnector;
+class ServerConnector;
 
-class NetworkConnectorConnectDelegate {
+class ServerConnectorConnectDelegate {
  public:
-  virtual ~NetworkConnectorConnectDelegate();
-  virtual void network_connector_connect_on_success(
-      NetworkConnector& network_connector, const NodeID& my_nid) = 0;
-  virtual void network_connector_connect_on_failure(
-      NetworkConnector& network_connector, int code) = 0;
+  virtual ~ServerConnectorConnectDelegate();
+  virtual void server_connector_connect_on_success(
+      ServerConnector& server_connector, const NodeID& my_nid) = 0;
+  virtual void server_connector_connect_on_failure(
+      ServerConnector& server_connector, int code) = 0;
 };
 
 /**
  * Message sender by using Socket.IO.
  */
-class NetworkConnector : public WebrtcConnectorDelegate {
+class ServerConnector : public WebrtcConnectorDelegate {
  public:
-  static NetworkConnector& get_instance();
+  static ServerConnector& get_instance();
 
-  void connect(NetworkConnectorConnectDelegate* delegate,
+  void connect(ServerConnectorConnectDelegate* delegate,
                const std::string& account_, const std::string& password_);
   void disconnect();
   const NodeID& get_my_nid();
@@ -76,17 +76,17 @@ class NetworkConnector : public WebrtcConnectorDelegate {
 
   NodeID my_nid;
 
-  NetworkConnectorConnectDelegate* connect_delegate;
+  ServerConnectorConnectDelegate* connect_delegate;
   std::string account;
   std::string password;
   bool is_auth_yet;
   WebrtcConnector* webrtc_init_connector;
   std::vector<std::string> webrtc_init_ice;
 
-  NetworkConnector();
-  NetworkConnector(const NetworkConnector&);
-  NetworkConnector& operator=(const NetworkConnector&);
-  virtual ~NetworkConnector();
+  ServerConnector();
+  ServerConnector(const ServerConnector&);
+  ServerConnector& operator=(const ServerConnector&);
+  virtual ~ServerConnector();
 
   void webrtc_connector_on_change_stateus(WebrtcConnector& connector, bool is_connect) override;
   void webrtc_connector_on_update_ice(WebrtcConnector& connector, const std::string& ice) override;

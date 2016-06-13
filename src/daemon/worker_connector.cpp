@@ -10,7 +10,6 @@
 #include "daemon_mid.hpp"
 #include "frontend_connector.hpp"
 #include "logger.hpp"
-#include "network_connector.hpp"
 #include "router.hpp"
 #include "worker_connector.hpp"
 

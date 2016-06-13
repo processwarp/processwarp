@@ -7,10 +7,10 @@
 
 #include "constant_native.hpp"
 #include "logger_syslog.hpp"
-#include "network_connector.hpp"
+#include "server_connector.hpp"
 
 namespace processwarp {
-class Daemon : public NetworkConnectorConnectDelegate {
+class Daemon : public ServerConnectorConnectDelegate {
  public:
   Daemon();
 
@@ -26,10 +26,10 @@ class Daemon : public NetworkConnectorConnectDelegate {
   /** Main loop of libuv. */
   uv_loop_t* loop;
 
-  void network_connector_connect_on_success(
-      NetworkConnector& network_connector, const NodeID& my_nid) override;
-  void network_connector_connect_on_failure(
-      NetworkConnector& network_connector, int code) override;
+  void server_connector_connect_on_success(
+      ServerConnector& server_connector, const NodeID& my_nid) override;
+  void server_connector_connect_on_failure(
+      ServerConnector& server_connector, int code) override;
 
   int daemonize();
   bool config_subprocess();

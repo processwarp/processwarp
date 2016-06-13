@@ -101,13 +101,13 @@ int Daemon::entry(int argc, char* argv[]) {
   return !uv_run(loop, UV_RUN_DEFAULT);
 }
 
-void Daemon::network_connector_connect_on_success(
-    NetworkConnector& network_connector, const NodeID& my_nid) {
+void Daemon::server_connector_connect_on_success(
+    ServerConnector& server_connector, const NodeID& my_nid) {
   /// @todo output log
 }
 
-void Daemon::network_connector_connect_on_failure(
-    NetworkConnector& network_connector, int code) {
+void Daemon::server_connector_connect_on_failure(
+    ServerConnector& server_connector, int code) {
   /// @todo output log
   exit(EXIT_FAILURE);
 }
@@ -213,11 +213,11 @@ bool Daemon::initialize_cui() {
 
   loop = uv_default_loop();
   Router& router = Router::get_instance();
-  NetworkConnector& network = NetworkConnector::get_instance();
+  ServerConnector& server = ServerConnector::get_instance();
   WebrtcBundle& webrtc = WebrtcBundle::get_instance();
   WorkerConnector& worker = WorkerConnector::get_instance();
 
-  network.initialize(loop, config.at("server").get<std::string>());
+  server.initialize(loop, config.at("server").get<std::string>());
   router.initialize(loop, config);
   webrtc.initialize(loop);
   worker.initialize(loop,
@@ -237,7 +237,7 @@ bool Daemon::initialize_cui() {
       set_stdin_echo(true);
     }
 
-    network.connect(this, config.at("account").get<std::string>(), password);
+    server.connect(this, config.at("account").get<std::string>(), password);
   }
 
   if (run_mode == RunMode::DAEMON) {
@@ -279,11 +279,11 @@ bool Daemon::initialize_subprocess() {
   loop = uv_default_loop();
   FrontendConnector& frontend = FrontendConnector::get_instance();
   Router& router = Router::get_instance();
-  NetworkConnector& network = NetworkConnector::get_instance();
+  ServerConnector& server = ServerConnector::get_instance();
   WebrtcBundle& webrtc = WebrtcBundle::get_instance();
   WorkerConnector& worker = WorkerConnector::get_instance();
 
-  network.initialize(loop, config.at("server").get<std::string>());
+  server.initialize(loop, config.at("server").get<std::string>());
   router.initialize(loop, config);
   frontend.initialize(loop,
                       config.at("frontend_pipe").get<std::string>(),
