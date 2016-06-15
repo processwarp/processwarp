@@ -275,7 +275,7 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
       packet.insert(std::make_pair("mode",
                                    Convert::int2json(PacketMode::EXPLICIT | PacketMode::ONE_WAY)));
       packet.insert(std::make_pair("content",
-                                   picojson::value(picojson::value(packet).serialize())));
+                                   picojson::value(picojson::value(content).serialize())));
 
       js_sched_packet.push_back(picojson::value(packet));
     }
@@ -302,7 +302,7 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
       packet.insert(std::make_pair("mode",
                                    Convert::int2json(PacketMode::EXPLICIT | PacketMode::ONE_WAY)));
       packet.insert(std::make_pair("content",
-                                   picojson::value(picojson::value(packet).serialize())));
+                                   picojson::value(picojson::value(content).serialize())));
 
       js_memory_packet.push_back(picojson::value(packet));
     }
