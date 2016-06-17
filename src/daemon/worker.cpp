@@ -26,7 +26,11 @@ int Worker::entry(int argc, char* argv[]) {
 
   connect_pipe();
 
+#ifndef WITH_WORKER_DEBUG
   return uv_run(loop, UV_RUN_DEFAULT);
+#else
+  return EXIT_SUCCESS;
+#endif
 }
 
 void Worker::vmachine_finish(VMachine& vm) {
@@ -434,8 +438,10 @@ void Worker::send_data(const picojson::object& data) {
  * @param argv Strings of command line options.
  * @return Exit status.
  */
+#ifndef WITH_WORKER_DEBUG
 int main(int argc, char* argv[]) {
   processwarp::Worker THIS;
 
   return THIS.entry(argc, argv);
 }
+#endif

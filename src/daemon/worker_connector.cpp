@@ -85,6 +85,7 @@ void WorkerConnector::create_vm(const vpid_t& pid, vtid_t root_tid, vaddr_t proc
     nullptr
   };
 
+#ifndef WITH_WORKER_DEBUG
   uv_stdio_container_t worker_stdio[3];
   worker_stdio[0].flags = UV_IGNORE;
   worker_stdio[1].flags = UV_INHERIT_FD;
@@ -107,6 +108,10 @@ void WorkerConnector::create_vm(const vpid_t& pid, vtid_t root_tid, vaddr_t proc
     Logger::err(DaemonMid::L3007, "uv_spawn", uv_err_name(r));
     assert(false);
   }
+#else
+  debug_workers.insert(std::make_pair(pid, Worker()));
+  debug_workers.at(pid).entry(3, args);
+#endif
 
   // Send initialize data.
   picojson::object connect_data;

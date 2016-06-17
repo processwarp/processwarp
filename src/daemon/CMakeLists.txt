@@ -1,3 +1,6 @@
+
+option(WITH_WORKER_DEBUG "For debug, worker process has not generate bug run on the same process of main." OFF)
+
 find_package(PkgConfig)
 
 # WebRTC
@@ -165,12 +168,21 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWEBRTC_WIN=1")
 endif()
 
+if(WITH_WORKER_DEBUG)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWITH_WORKER_DEBUG=1")
+endif()
+
 # Compile & link
 file(GLOB HEADER_FILES "*.hpp")
 file(GLOB DAEMON_FILES "*.cpp")
 
+if(WITH_WORKER_DEBUG)
+  list(APPEND WORKER_FILES "worker.cpp")
+endif(WITH_WORKER_DEBUG)
+
 add_executable(processwarp
   ${HEADER_FILES}
+  ${WORKER_FILES}
   connector.cpp
   daemon.cpp
   frontend_connector.cpp
@@ -192,22 +204,26 @@ target_link_libraries(processwarp
   sioclient_tls
   )
 
-add_executable(worker
-  ${HEADER_FILES}
-  worker.cpp
-  )
-add_dependencies(worker
-  const_processwarp
-  const_core_constant
-  )
-target_link_libraries(worker
-  pwcore
-  ${extra_libs}
-  )
+if(NOT WITH_WORKER_DEBUG)
+  add_executable(worker
+    ${HEADER_FILES}
+    worker.cpp
+    )
+  add_dependencies(worker
+    const_processwarp
+    const_core_constant
+    )
+  target_link_libraries(worker
+    pwcore
+    ${extra_libs}
+    )
+endif(NOT WITH_WORKER_DEBUG)
 
 # Install
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   install(TARGETS processwarp DESTINATION ${PROJECT_SOURCE_DIR}/bin)
-  install(TARGETS worker DESTINATION ${PROJECT_SOURCE_DIR}/bin)
+  if(NOT WITH_WORKER_DEBUG)
+    install(TARGETS worker DESTINATION ${PROJECT_SOURCE_DIR}/bin)
+  endif(NOT WITH_WORKER_DEBUG)
 endif()
 

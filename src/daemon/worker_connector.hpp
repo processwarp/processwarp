@@ -12,6 +12,9 @@
 #include "constant_native.hpp"
 #include "packet.hpp"
 #include "type.hpp"
+#ifdef WITH_WORKER_DEBUG
+#  include "worker.hpp"
+#endif
 
 namespace processwarp {
 class WorkerConnector : public Connector {
@@ -42,6 +45,9 @@ class WorkerConnector : public Connector {
   picojson::array config_lib_filter;
   /** Path of pipe that for connecting with worker. */
   std::string pipe_path;
+#ifdef WITH_WORKER_DEBUG
+  std::map<const vpid_t, Worker> debug_workers;
+#endif
 
   WorkerConnector();
   WorkerConnector(const WorkerConnector&);
