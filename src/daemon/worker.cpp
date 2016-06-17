@@ -363,7 +363,7 @@ void Worker::recv_relay_packet(const picojson::object& content) {
     Convert::json2int<Module::Type>(content.at("src_module")),
     Convert::json2vpid(content.at("pid")),
     NodeID::from_json(content.at("dst_nid")),
-    NodeID::NONE,
+    NodeID::from_json(content.at("src_nid")),
     content.at("content").get<picojson::object>()
   };
 
