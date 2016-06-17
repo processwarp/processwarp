@@ -2,7 +2,6 @@
 
 // Load modules.
 import electron from 'electron';
-import remote from 'remote';
 
 // Load local modules.
 import {NID, MODULE} from './constant';
@@ -10,6 +9,7 @@ import PacketController from './packet_controller';
 
 // Get inner modules.
 const ipc = electron.ipcRenderer;
+const remote = electron.remote;
 
 const HEARTBEAT_TERM = 3;
 
