@@ -48,7 +48,7 @@ VMachine::VMachine(VMachineDelegate& delegate_,
                    const std::vector<DynamicLibrary::lib_handler_t>& libs_,
                    const std::map<std::string, std::string>& lib_filter_) :
     my_nid(my_nid_),
-    vmemory(memory_delegate, my_nid_),
+    vmemory(memory_delegate, my_nid),
     delegate(delegate_),
     libs(libs_),
     lib_filter(lib_filter_),
@@ -68,6 +68,7 @@ void VMachine::initialize(const vpid_t& pid, const vtid_t& root_tid, vaddr_t pro
                           const NodeID& master_nid, const std::string& name) {
   assert(process.get() == nullptr);
   packet_controller.initialize(this);
+  vmemory.initialize(pid);
 
   process = Process::alloc(*this, pid, root_tid, libs, lib_filter, builtin_funcs,
                            proc_addr, master_nid);
@@ -247,7 +248,7 @@ Process& VMachine::get_process() {
 }
 
 std::unique_ptr<VMemory::Accessor> VMachine::process_assign_accessor(const vpid_t& pid) {
-  return vmemory.get_accessor(Convert::vpid2str(pid));
+  return vmemory.get_accessor();
 }
 
 /**

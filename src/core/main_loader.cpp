@@ -177,7 +177,7 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
    */
   std::unique_ptr<VMemory::Accessor> process_assign_accessor(const vpid_t& pid) override {
     assert(!in_pid.empty());
-    return vmemory.get_accessor(Convert::vpid2str(pid));
+    return vmemory.get_accessor();
   }
 
   /**
@@ -214,7 +214,7 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
    */
   void load(const std::vector<std::string>& args) {
     // Setup virtual-memory.
-    vmemory.set_loading(Convert::vpid2str(in_pid), true);
+    vmemory.set_loading(true);
     // Setup virtual machine.
     // Library is empty because don't use in loader.
     std::vector<void*> libs;
@@ -282,7 +282,7 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
     body.insert(std::make_pair("sched_packet", picojson::value(js_sched_packet)));
 
     picojson::array js_memory_packet;
-    for (auto& it : vmemory.get_space(Convert::vpid2str(in_pid)).pages) {
+    for (auto& it : vmemory.pages) {
       // Don't export builtin variables.
       if (proc->builtin_addrs.find(it.first) != proc->builtin_addrs.end()) {
         continue;

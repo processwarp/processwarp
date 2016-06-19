@@ -182,6 +182,13 @@ static const Type ARRAY     = 0x03;  ///< Array type like the C array type.
 static const Type VECTOR    = 0x04;  ///< Vector type that is used by vector operations.
 }  // namespace TypeKind
 
+namespace VMemoryPageType {
+typedef uint8_t Type;
+static const Type MASTER    = 0;
+static const Type COPY      = 1;
+static const Type PROGRAM   = 2;
+}  // namespace VMemoryPageType
+
 namespace VMemoryReserve {
 static const unsigned int MIN   = 8;
 static const unsigned int BASE  = 16;
