@@ -10,11 +10,13 @@ Main project page : [www.processwarp.org](http://www.processwarp.org/).
 ### Warp your application to other devices.
 Make it possible to warp an application to another device with staying alive.
 For example, user can warp an application from Mac, Android, and Windows devices to other devices at his/her fingertips.
+
 This means that the user does not have to worry about the device type and/or OS.
 
 ### Integrate your computer resources on demand (Under active development).
-Make it possible to use any number of computer resources to disperse the task and lead to performance improvement. 
- For example, this temporary distribution of running task to IoT hubs and PCs enables Smart phones and IoT devices to calculate faster and their better performance. User can use the application offline as long as the required data is in the device. 
+Make it possible to use any number of computer resources to disperse the task and lead to performance improvement.
+
+For example, this temporary distribution of running task to IoT hubs and PCs enables Smart phones and IoT devices to calculate faster and their better performance. User can use the application offline as long as the required data is in the device.
 
 ## Installation and start
 
@@ -22,7 +24,10 @@ Make it possible to use any number of computer resources to disperse the task an
 
     $ cd <PROCESS WARP working dir>
     $ git clone https://github.com/processwarp/processwarp.git
+    $ cd processwarp
     $ script/build.sh
+
+It will take 10 min or less.
 
 ### Installing on Android.
 
