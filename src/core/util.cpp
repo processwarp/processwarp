@@ -2,6 +2,7 @@
 #include <libgen.h>
 #if !defined(__ANDROID__)
 #include <openssl/sha.h>
+#include <openssl/md5.h>
 #endif
 #if defined(__APPLE__) && defined(__MACH__)
 #include <mach-o/dyld.h>
@@ -77,29 +78,32 @@ static const char* OPCODE_STR[] = {
 const llvm::Instruction* Util::llvm_instruction;
 #endif
 
-/**
- * Calculate SHA256 from a data.
- * @param src Target data.
- * @return SHA256 hex string.
- */
 #if !defined(__ANDROID__)
-std::string Util::calc_sha256(const std::string& src) {
-  unsigned char bin_hash[SHA256_DIGEST_LENGTH];
-  SHA256_CTX sha256;
-  std::ostringstream os;
-
-  SHA256_Init(&sha256);
-  SHA256_Update(&sha256, src.c_str(), src.size());
-  SHA256_Final(bin_hash, &sha256);
-
-  int i = 0;
-  for (i = 0; i < SHA256_DIGEST_LENGTH; i++) {
-    os << std::hex << std::setfill('0') << std::setw(2)
-       << static_cast<uint32_t>(bin_hash[i]);
+#define M_CALC_HASH(FUNC, TYPE)                         \
+  std::string Util::FUNC(const std::string& src) {      \
+    unsigned char bin_hash[TYPE##_DIGEST_LENGTH];       \
+    TYPE##_CTX ctx;                                     \
+    std::ostringstream os;                              \
+    TYPE##_Init(&ctx);                                  \
+    TYPE##_Update(&ctx, src.c_str(), src.size());       \
+    TYPE##_Final(bin_hash, &ctx);                       \
+    for (int i = 0; i < TYPE##_DIGEST_LENGTH; i++) {    \
+      os << std::hex << std::setfill('0')               \
+         << std::setw(2)                                \
+         << static_cast<uint32_t>(bin_hash[i]);         \
+    }                                                   \
+    return os.str();                                    \
   }
 
-  return os.str();
-}
+/**
+ * Calculate hash from a data.
+ * @param src Target data.
+ * @return Calculated hash's hex string.
+ */
+M_CALC_HASH(calc_sha256, SHA256);
+M_CALC_HASH(calc_md5, MD5);
+
+#undef M_CALC_HASH
 #endif
 
 /**

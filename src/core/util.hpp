@@ -34,6 +34,7 @@
 
 namespace processwarp {
 namespace Util {
+std::string calc_md5(const std::string& src);
 std::string calc_sha256(const std::string& src);
 std::string file_basename(const std::string& path, bool cutoff_ext = false);
 std::string file_dirname(const std::string& path);
