@@ -348,7 +348,7 @@ vaddr_t VMemory::Accessor::reserve_program_area() {
 
 /**
  * Set meta data.
- * if addr is VADDR_NULL then assign automatic by assign_addr.
+ * if addr is VADDR_NULL then assign automatic by alloc_addr.
  * if addr is not null then return address is equal to addr.
  * @param data Meta data.
  * @param addr Assigned address.
@@ -356,6 +356,10 @@ vaddr_t VMemory::Accessor::reserve_program_area() {
 vaddr_t VMemory::Accessor::set_meta_area(const std::string& data, vaddr_t addr) {
   if (addr == VADDR_NULL) {
     addr = vmemory.alloc_addr(*this, AddressRegion::META);
+    Page& page = vmemory.pages.at(addr);
+    page.value.reset(new uint8_t[data.size()]);
+    page.size = data.size();
+    memcpy(page.value.get(), data.data(), page.size);
 
   } else {
     assert(vmemory.is_loading);
@@ -690,9 +694,11 @@ vaddr_t VMemory::alloc_addr(Accessor& accessor, AddressRegion::Type type) {
   if (is_loading) {
     vaddr_t new_addr = get_upper_addr(type | (~AddressRegion::MASK & rnd()));
     while ((type == AddressRegion::META && new_addr <= 0xFF) ||
-           pages.find(new_addr) == pages.end()) {
+           pages.find(new_addr) != pages.end()) {
       new_addr = get_upper_addr(type | (~AddressRegion::MASK & rnd()));
     }
+    pages.insert(std::make_pair(new_addr, Page(VMemoryPageType::LEADER, true,
+                                               my_nid, std::set<NodeID>())));
     return new_addr;
   }
 
@@ -704,7 +710,7 @@ vaddr_t VMemory::alloc_addr(Accessor& accessor, AddressRegion::Type type) {
     accessor.is_alloc = true;
     accessor.alloc_addr = get_upper_addr(type | (~AddressRegion::MASK & rnd()));
     while ((type == AddressRegion::META && accessor.alloc_addr <= 0xFF) ||
-           pages.find(accessor.alloc_addr) == pages.end()) {
+           pages.find(accessor.alloc_addr) != pages.end()) {
       accessor.alloc_addr = get_upper_addr(type | (~AddressRegion::MASK & rnd()));
     }
     send_command_alloc(accessor, accessor.alloc_addr);
