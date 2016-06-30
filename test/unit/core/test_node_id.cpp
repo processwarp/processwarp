@@ -109,6 +109,17 @@ TEST_F(NodeIDTest, diff) {
   EXPECT_FALSE(n2 < n1);
 }
 
+TEST_F(NodeIDTest, op_plus) {
+  NodeID n1  = NodeID::from_str("0123456789abcdef0123456789abcdef");
+  NodeID n2  = n1;
+  n2 = n2 + NodeID::QUARTER;
+  n2 = n2 + NodeID::QUARTER;
+  n2 = n2 + NodeID::QUARTER;
+  n2 = n2 + NodeID::QUARTER;
+
+  EXPECT_EQ(n2, n1);
+}
+
 TEST_F(NodeIDTest, center) {
   NodeID v1   = NodeID::from_str("00000000000000000000000000000001");
   NodeID v2   = NodeID::from_str("00000000000000000000000000000002");

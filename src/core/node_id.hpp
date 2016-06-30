@@ -19,6 +19,8 @@ class NodeID {
   static const NodeID MAX;
   static const NodeID MIN;
 
+  static const NodeID QUARTER;
+
   static NodeID from_str(const std::string str);
   static NodeID from_json(const picojson::value& json);
   static NodeID make_random();
@@ -30,6 +32,7 @@ class NodeID {
   bool operator==(const NodeID& b) const;
   bool operator!=(const NodeID& b) const;
   bool operator<(const NodeID& b) const;
+  const NodeID operator+(const NodeID& b) const;
 
   static NodeID center_mod(const NodeID& a, const NodeID& b);
 

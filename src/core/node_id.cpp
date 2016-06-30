@@ -32,6 +32,8 @@ const NodeID NodeID::THIS(Type::THIS);
 const NodeID NodeID::MAX(0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF);
 const NodeID NodeID::MIN(0x0000000000000000, 0x0000000000000000);
 
+const NodeID NodeID::QUARTER(0x4000000000000000, 0x0000000000000000);
+
 /**
  * Default constructor, it set NONE value.
  */
@@ -170,6 +172,16 @@ bool NodeID::operator<(const NodeID& b) const {
   } else {
     return type < b.type;
   }
+}
+
+const NodeID NodeID::operator+(const NodeID& b) const {
+  assert(type == Type::NORMAL);
+  assert(b.type == Type::NORMAL);
+
+  uint64_t c0, c1;
+  std::tie(c0, c1) = add_mod(id[0], id[1], b.id[0], b.id[1]);
+
+  return NodeID(c0, c1);
 }
 
 /**
