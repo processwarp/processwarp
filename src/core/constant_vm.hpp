@@ -184,14 +184,9 @@ static const Type VECTOR    = 0x04;  ///< Vector type that is used by vector ope
 
 namespace VMemoryPageType {
 typedef uint8_t Type;
-static const Type MASTER    = 0;
-static const Type COPY      = 1;
-static const Type PROGRAM   = 2;
+static const Type NONE      = 0x0;
+static const Type LEADER    = 0x1;
+static const Type ACCEPTOR  = 0x2;
+static const Type PROGRAM   = 0x4;
 }  // namespace VMemoryPageType
-
-namespace VMemoryReserve {
-static const unsigned int MIN   = 8;
-static const unsigned int BASE  = 16;
-static const unsigned int MAX   = 64;
-}  // namespace VMemoryReserve
 }  // namespace processwarp

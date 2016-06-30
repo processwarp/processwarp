@@ -396,7 +396,7 @@ void VMachine::send_command_warp_thread(Thread& thread) {
   param.insert(std::make_pair("root_tid", Convert::vtid2json(process->root_tid)));
   param.insert(std::make_pair("proc_addr", Convert::vaddr2json(process->addr)));
   param.insert(std::make_pair("master_nid",
-                              (process->proc_memory->get_master(process->addr).to_json())));
+                              (process->proc_memory->get_leader(process->addr).to_json())));
   param.insert(std::make_pair("name", picojson::value(process->name)));
   param.insert(std::make_pair("tid", Convert::vtid2json(thread.tid)));
   param.insert(std::make_pair("dst_nid", thread.warp_dst.to_json()));
