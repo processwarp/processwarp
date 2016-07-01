@@ -2,6 +2,7 @@
 
 #include <picojson.h>
 
+#include <set>
 #include <string>
 #include <tuple>
 
@@ -21,9 +22,11 @@ class NodeID {
 
   static const NodeID QUARTER;
 
+  static std::set<NodeID> from_json_array(const picojson::value& json);
   static NodeID from_str(const std::string str);
   static NodeID from_json(const picojson::value& json);
   static NodeID make_random();
+  static picojson::value to_json_array(const std::set<NodeID>& nids);
 
   NodeID();
   NodeID(const NodeID& src);

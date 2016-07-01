@@ -72,6 +72,19 @@ NodeID::NodeID(uint64_t id0, uint64_t id1) :
 }
 
 /**
+ * Make a set of node-id from a JSON.
+ * @param json A source JSON value.
+ * @return A set of node-id.
+ */
+std::set<NodeID> NodeID::from_json_array(const picojson::value& json) {
+  std::set<NodeID> r;
+  for (auto& json_it : json.get<picojson::array>()) {
+    r.insert(from_json(json_it));
+  }
+  return r;
+}
+
+/**
  * Make a node-id from a string.
  * @param str A source string value.
  * @return A node-id.
@@ -128,6 +141,19 @@ NodeID NodeID::make_random() {
   std::mt19937_64 rnd(seed_gen());
 
   return NodeID(rnd(), rnd());
+}
+
+/**
+ * Make a JSON from a set of node-id.
+ * @param nids A set of node-id.
+ * @return JSON.
+ */
+picojson::value NodeID::to_json_array(const std::set<NodeID>& nids) {
+  picojson::array r;
+  for (auto& nid : nids) {
+    r.push_back(nid.to_json());
+  }
+  return picojson::value(r);
 }
 
 NodeID& NodeID::operator=(const NodeID& src) {
