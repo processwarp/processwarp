@@ -226,6 +226,14 @@ inline picojson::value code2json(instruction_t code) {
 }
 
 /**
+ * Convert binary data contained string type to JSON.
+ * Binary data is converted to hex string and packed by JSON.
+ * @param bin Source binary data.
+ * @return Binary data as JSON.
+ */
+picojson::value bin2json(const std::string& bin);
+
+/**
  * Convert binary data to JSON.
  * Binary data is converted to hex string and packed by JSON.
  * @param bin Source binary data.

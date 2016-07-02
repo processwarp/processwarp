@@ -17,6 +17,11 @@ std::string Convert::json2bin(const picojson::value& json) {
   return std::string(reinterpret_cast<char*>(bin.data()), bin.size());
 }
 
+// Convert binary data contained string type to JSON.
+picojson::value Convert::bin2json(const std::string& bin) {
+  return bin2json(reinterpret_cast<const uint8_t*>(bin.data()), bin.size());
+}
+
 // Convert binary data to JSON.
 picojson::value Convert::bin2json(const uint8_t* bin, unsigned int size) {
   std::ostringstream os;
