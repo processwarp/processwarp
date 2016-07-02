@@ -103,6 +103,7 @@ class WebrtcBundle : public WebrtcConnectorDelegate,
   void routing_disconnect(const NodeID& nid) override;
   void routing_send_routing(bool is_explicit, const NodeID& dst_nid,
                             const picojson::object& content) override;
+  void routing_send_routing_local(const picojson::object& content) override;
 
   void webrtc_connector_on_change_stateus(WebrtcConnector& connector, bool is_connect) override;
   void webrtc_connector_on_update_ice(WebrtcConnector& connector,

@@ -363,6 +363,15 @@ void WebrtcBundle::routing_send_routing(bool is_explicit, const NodeID& dst_nid,
 }
 
 /**
+ * Send routing packet to local modules, when request of sending routing packet has called from Routing module.
+ * @param content Packet content.
+ */
+void WebrtcBundle::routing_send_routing_local(const picojson::object& content) {
+  packet_controller.send("routing", Module::MEMORY, true,
+                         PID::BROADCAST, NodeID::THIS, content);
+}
+
+/**
  * Remove the connector from initializeing map,  when a connector status has changed to enable.
  * Raise update_connector_status on another thread, when a connector status has changed.
  * @param connector Connector that status has changed.

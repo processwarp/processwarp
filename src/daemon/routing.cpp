@@ -238,6 +238,10 @@ void Routing::update_map() {
 
   division_nid.clear();
 
+  // Save stored range and check after change update to send routing_local command.
+  NodeID old_range_min_nid = range_min_nid;
+  NodeID old_range_max_nid = range_max_nid;
+
   if (nid_map.size() == 0) {
     next_minus_nid = NodeID::NONE;
     next_plus_nid  = NodeID::NONE;
@@ -286,6 +290,15 @@ void Routing::update_map() {
     }
     range_min_nid = NodeID::center_mod(next_minus_nid, my_nid);
     range_max_nid = NodeID::center_mod(my_nid, next_plus_nid);
+  }
+
+  // Change update to send routing_local command.
+  if (old_range_min_nid != range_min_nid ||
+      old_range_max_nid != range_max_nid) {
+    picojson::object content;
+    content.insert(std::make_pair("range_min_nid", range_min_nid.to_json()));
+    content.insert(std::make_pair("range_max_nid", range_max_nid.to_json()));
+    delegate.routing_send_routing_local(content);
   }
 }
 }  // namespace processwarp

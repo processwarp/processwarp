@@ -15,6 +15,7 @@ class RoutingDelegate {
   virtual void routing_disconnect(const NodeID& nid) = 0;
   virtual void routing_send_routing(bool is_explicit, const NodeID& dst_nid,
                                     const picojson::object& content) = 0;
+  virtual void routing_send_routing_local(const picojson::object& content) = 0;
 };
 
 class Routing {
@@ -29,8 +30,10 @@ class Routing {
  private:
   RoutingDelegate& delegate;
   const NodeID& my_nid;
+  /** Next node-id. */
   NodeID next_minus_nid;
   NodeID next_plus_nid;
+  /** Node-id range of supported by this node. */
   NodeID range_min_nid;
   NodeID range_max_nid;
 
