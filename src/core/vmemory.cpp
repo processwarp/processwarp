@@ -1282,7 +1282,7 @@ void VMemory::send_command_alloc(Accessor& accessor, vaddr_t addr) {
   accessor.acceptor_nid.clear();
   accessor.is_alloc_cancel = false;
   NodeID acceptor_nid = get_hash_id(addr);
-  for (int i = 0 ; i < 4; i ++) {
+  for (int i = 0; i < 4; i ++) {
     packet_controller.send(std::unique_ptr<PacketController::Behavior>
                            (new PacketAlloc(*this, accessor)), my_pid, acceptor_nid, param);
     acceptor_nid = acceptor_nid + NodeID::QUARTER;

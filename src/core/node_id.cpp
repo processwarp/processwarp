@@ -7,6 +7,7 @@
 #else
 #  include <regex>
 #endif
+#include <set>
 #include <string>
 #include <tuple>
 
