@@ -642,6 +642,42 @@ void VMemory::PacketAlloc::on_reply(const Packet& packet) {
   update_status();
 }
 
+VMemory::PacketDelegate::PacketDelegate(VMemory& vmemory_) :
+    vmemory(vmemory_) {
+}
+
+const PacketController::Define& VMemory::PacketDelegate::get_define() {
+  static const PacketController::Define DEFINE = {
+    "delegate",
+    0,
+    0,
+    Module::MEMORY
+  };
+
+  return DEFINE;
+}
+
+/**
+ * When receive reply for delegate command, unset delegate flag for a target page.
+ * @param packet A reply packet containing a address of target.
+ */
+void VMemory::PacketDelegate::on_reply(const Packet& packet) {
+  vaddr_t addr = Convert::json2vaddr(packet.content.at("addr"));
+
+  auto it = vmemory.pages.find(addr);
+  if (it == vmemory.pages.end()) {
+    return;
+  }
+
+  Page& page = it->second;
+  page.type &= ~VMemoryPageType::ACCEPTOR;
+}
+
+void VMemory::PacketDelegate::on_packet_error(PacketError::Type code) {
+  /// @todo error
+  assert(false);
+}
+
 void VMemory::PacketAlloc::update_status() {
   if (accessor.acceptor_nid.size() != 4) {
     return;
@@ -724,9 +760,47 @@ vaddr_t VMemory::alloc_addr(Accessor& accessor, AddressRegion::Type type) {
   }
 }
 
+/**
+ * Check address ,if is it in acceptor range.
+ * @param addr A target address.
+ * @return True if the address is in acceptor range.
+ */
+bool VMemory::check_acceptor_range(vaddr_t addr) {
+  NodeID hash = get_hash_id(addr);
+  if (range_min_nid == NodeID::NONE) {
+    return true;
+  }
+
+  for (int i = 0; i < 4; i++) {
+    if (hash.is_between(range_min_nid, range_max_nid)) {
+      return true;
+    }
+    hash = hash + NodeID::QUARTER;
+  }
+  return false;
+}
+
+/**
+ * Calculate node-id that is hash of process-id and address.
+ * @param addr A address.
+ * @return A node-id that is supporting address.
+ */
 NodeID VMemory::get_hash_id(vaddr_t addr) {
   std::string key = my_pid + Convert::vaddr2str(addr);
   return NodeID::from_str(Util::calc_md5(key));
+}
+
+void VMemory::rebalance() {
+  for (auto& page_it : pages) {
+    vaddr_t addr = page_it.first;
+    Page& page = page_it.second;
+
+    if (page.type & VMemoryPageType::ACCEPTOR &&
+        !check_acceptor_range(addr)) {
+      send_command_delegate(addr, page.value.get(), page.size, page.leader_nid,
+                            page.acceptor_nids, page.hint);
+    }
+  }
 }
 
 /**
@@ -739,6 +813,12 @@ void VMemory::packet_controller_on_recv(const Packet& packet) {
 
   } else if (packet.command == "alloc_cancel") {
     recv_command_alloc_cancel(packet);
+
+  } else if (packet.command == "delegate") {
+    recv_command_delegate(packet);
+
+  } else if (packet.command == "routing") {
+    recv_command_routing(packet);
 
   } else {
     /// @todo error
@@ -790,6 +870,70 @@ void VMemory::recv_command_alloc_cancel(const Packet& packet) {
     assert(page->second.type & VMemoryPageType::ACCEPTOR);
     pages.erase(page);
   }
+}
+
+/**
+ * When receive delegate command, Set acceptor flag to a target page.
+ * After receive it, send reply command and/or balance command if needed.
+ * @param packet Command packet containing a set of page informations.
+ */
+void VMemory::recv_command_delegate(const Packet& packet) {
+  vaddr_t addr = Convert::json2vaddr(packet.content.at("addr"));
+  const std::string& value = Convert::json2bin(packet.content.at("value"));
+  NodeID leader_nid = NodeID::from_json(packet.content.at("leader_nid"));
+  std::set<NodeID> acceptor_nids = NodeID::from_json_array(packet.content.at("acceptor_nids"));
+  std::set<NodeID> hint_nids  = NodeID::from_json_array(packet.content.at("hint_nids"));
+
+  assert(check_acceptor_range(addr));
+  assert(acceptor_nids.size() == 0 ||
+         acceptor_nids.find(packet.src_nid) != acceptor_nids.end());
+  acceptor_nids.erase(packet.src_nid);
+  assert(acceptor_nids.size() <= 3);
+
+  if (pages.find(addr) == pages.end()) {
+    pages.insert(std::make_pair(addr,
+                                Page(VMemoryPageType::ACCEPTOR, true, value,
+                                     leader_nid, hint_nids)));
+    Page& page = pages.at(addr);
+    page.acceptor_nids = acceptor_nids;
+
+  } else {
+    Page& page = pages.at(addr);
+    page.type |= VMemoryPageType::ACCEPTOR;
+    if (page.size != value.size()) {
+      page.value.reset(new uint8_t[value.size()]);
+      page.size = value.size();
+    }
+    memcpy(page.value.get(), value.data(), value.size());
+    page.leader_nid = leader_nid;
+    page.acceptor_nids = acceptor_nids;
+    for (auto& hint_nid : hint_nids) {
+      page.hint.insert(hint_nid);
+    }
+  }
+
+  if (packet.src_nid != NodeID::SERVER) {
+    packet_controller.send_reply(packet, picojson::object());
+  }
+
+  if (range_min_nid != NodeID::NONE) {
+    acceptor_nids.insert(my_nid);
+    send_command_balance(addr, acceptor_nids);
+  }
+
+  delegate.vmemory_recv_update(*this, addr);
+}
+
+/**
+ * When receive routing command (meaning acceptor range had change),
+ * save range node-id and execute rebalance algorithm.
+ * @param packet Command packet containing a range of supporting node-id.
+ */
+void VMemory::recv_command_routing(const Packet& packet) {
+  range_min_nid = NodeID::from_json(packet.content.at("range_min_nid"));
+  range_max_nid = NodeID::from_json(packet.content.at("range_max_nid"));
+
+  rebalance();
 }
 
 /**
@@ -1154,6 +1298,78 @@ void VMemory::send_command_alloc_cancel(Accessor& accessor, vaddr_t addr) {
     packet_controller.send("alloc_cancel", Module::MEMORY, true,
                            my_pid, acceptor_nid, param);
   }
+}
+
+/**
+ * Send balance command with acceptor node-id that this node recognized.
+ * @param addr A target address.
+ * @param acceptor_nids A set of acceptor node-id that this node recognized.
+ */
+void VMemory::send_command_balance(vaddr_t addr, const std::set<NodeID>& acceptor_nids) {
+  picojson::object param;
+  param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
+  param.insert(std::make_pair("acceptor_nids", NodeID::to_json_array(acceptor_nids)));
+
+  NodeID hash = get_hash_id(addr);
+  for (auto& nid : acceptor_nids) {
+    if (nid != my_nid) {
+      packet_controller.send("balance", Module::MEMORY, true,
+                             my_pid, nid, param);
+    }
+  }
+  for (int i = 0; i < 4; i++) {
+    if (!hash.is_between(range_min_nid, range_max_nid)) {
+      packet_controller.send("balance", Module::MEMORY, false,
+                             my_pid, hash, param);
+    }
+    hash = hash + NodeID::QUARTER;
+  }
+}
+
+/**
+ * Send delegate command with a set of page information.
+ * Destination node-id of this packet is a most close node-id from ideal acceptor node-id.
+ * @param addr A target address.
+ * @param value Array of page data.
+ * @param size A data size of page.
+ * @param leader_nid The leader node-id of page.
+ * @param acceptor_nids A set of acceptor node-id that this node recognized.
+ * @param hint_nids A set of hint node-id.
+ */
+void VMemory::send_command_delegate(vaddr_t addr,
+                                    const uint8_t* value, uint64_t size,
+                                    const NodeID& leader_nid,
+                                    const std::set<NodeID>& acceptor_nids,
+                                    const std::set<NodeID>& hint_nids) {
+  NodeID hash = get_hash_id(addr);
+  NodeID min_distance = NodeID::MAX;
+  NodeID near_hash = hash;
+  for (int i = 0; i < 4; i++) {
+    NodeID d = my_nid.distance_from(hash);
+    if (min_distance < d) {
+      min_distance = d;
+      near_hash = hash;
+    }
+    hash = hash + NodeID::QUARTER;
+  }
+
+  picojson::object param;
+  param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
+  param.insert(std::make_pair("value", Convert::bin2json(value, size)));
+  param.insert(std::make_pair("leader_nid", leader_nid.to_json()));
+  param.insert(std::make_pair("acceptor_nids", NodeID::to_json_array(acceptor_nids)));
+  param.insert(std::make_pair("hint_nids", NodeID::to_json_array(hint_nids)));
+
+  std::unique_ptr<PacketController::Behavior> behavior(new PacketDelegate(*this));
+  packet_controller.send(std::move(behavior), my_pid, near_hash, param);
+}
+
+/**
+ * Send require_routing command to NETWORK module on this node.
+ */
+void VMemory::send_command_require_routing() {
+  packet_controller.send("require_routing", Module::NETWORK, true,
+                         my_pid, NodeID::THIS, picojson::object());
 }
 
 /**

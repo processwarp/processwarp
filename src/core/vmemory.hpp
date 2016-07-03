@@ -55,8 +55,10 @@ class VMemory : public PacketControllerDelegate {
     std::unique_ptr<uint8_t[]> value;
     /** Page size. */
     uint64_t size;
-    /** Leader for this page according. */
+    /** Leader node-id for this page. */
     NodeID leader_nid;
+    /** Acceptor node-id for this page. */
+    std::set<NodeID> acceptor_nids;
     /** */
     std::set<NodeID> hint;
     /** Reference count to use to master. */
@@ -193,10 +195,25 @@ class VMemory : public PacketControllerDelegate {
     void update_status();
   };
 
+  class PacketDelegate : public PacketController::Behavior {
+   public:
+    explicit PacketDelegate(VMemory& vmemory_);
+
+    const PacketController::Define& get_define() override;
+    void on_reply(const Packet& packet) override;
+    void on_packet_error(PacketError::Type code) override;
+
+   private:
+    VMemory& vmemory;
+  };
+
   /** This memory space's pid. */
   vpid_t my_pid;
   /** This node's node-id. */
   NodeID my_nid;
+  /** Node-id range of supported by this node. */
+  NodeID range_min_nid;
+  NodeID range_max_nid;
 
   /** Delegate for controller. */
   VMemoryDelegate& delegate;
@@ -214,13 +231,19 @@ class VMemory : public PacketControllerDelegate {
 
   static AddressRegion::Type get_addr_type(uint64_t size);
 
-  vaddr_t alloc_addr(Accessor& accessor, AddressRegion::Type type);
-  NodeID get_hash_id(vaddr_t addr);
   void packet_controller_on_recv(const Packet& packet) override;
   void packet_controller_send(const Packet& packet) override;
 
+  vaddr_t alloc_addr(Accessor& accessor, AddressRegion::Type type);
+  bool check_acceptor_range(vaddr_t addr);
+  NodeID get_hash_id(vaddr_t addr);
+  void rebalance();
+
   void recv_command_alloc(const Packet& packet);
   void recv_command_alloc_cancel(const Packet& packet);
+  void recv_command_balance(const Packet& packet);
+  void recv_command_delegate(const Packet& packet);
+  void recv_command_routing(const Packet& packet);
 
   void recv_command_copy(const Packet& packet);
   void recv_command_copy_reply(const Packet& packet);
@@ -233,6 +256,12 @@ class VMemory : public PacketControllerDelegate {
 
   void send_command_alloc(Accessor& accessor, vaddr_t addr);
   void send_command_alloc_cancel(Accessor& accessor, vaddr_t addr);
+  void send_command_balance(vaddr_t addr, const std::set<NodeID>& acceptor_nids);
+  void send_command_delegate(vaddr_t addr, const uint8_t* value, uint64_t size,
+                             const NodeID& leader_nid,
+                             const std::set<NodeID>& acceptor_nids,
+                             const std::set<NodeID>& hint_nids);
+  void send_command_require_routing();
 
   void send_command_copy(const NodeID& dst_nid, Page& page, vaddr_t addr);
   void send_command_copy_reply(const NodeID& dst_nid, vaddr_t addr, uint64_t key);

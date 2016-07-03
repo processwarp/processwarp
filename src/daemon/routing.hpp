@@ -26,6 +26,7 @@ class Routing {
   void execute();
   void on_change_online_connectors(const std::set<NodeID>& nids);
   void recv_routing(const Packet& packet);
+  void require_routing_local();
 
  private:
   RoutingDelegate& delegate;

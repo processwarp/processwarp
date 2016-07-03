@@ -292,15 +292,14 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
       content.insert(std::make_pair("addr", Convert::vaddr2json(it.first)));
       content.insert(std::make_pair("value",
                                     Convert::bin2json(it.second.value.get(), it.second.size)));
-      content.insert(std::make_pair("dst_nid", in_dst_nid.to_json()));
-      content.insert(std::make_pair("src_nid", NodeID::SERVER.to_json()));
-      content.insert(std::make_pair("hint_nid", picojson::value(picojson::array())));
+      content.insert(std::make_pair("leader_nid", NodeID::NONE.to_json()));
+      content.insert(std::make_pair("acceptor_nids", picojson::value(picojson::array())));
+      content.insert(std::make_pair("hint_nids", picojson::value(picojson::array())));
 
       picojson::object packet;
       packet.insert(std::make_pair("packet_id", Convert::int2json(0)));
-      packet.insert(std::make_pair("command", picojson::value(std::string("give"))));
-      packet.insert(std::make_pair("mode",
-                                   Convert::int2json(PacketMode::EXPLICIT | PacketMode::ONE_WAY)));
+      packet.insert(std::make_pair("command", picojson::value(std::string("delegate"))));
+      packet.insert(std::make_pair("mode", Convert::int2json(PacketMode::ONE_WAY)));
       packet.insert(std::make_pair("content",
                                    picojson::value(picojson::value(content).serialize())));
 

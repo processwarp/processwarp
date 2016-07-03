@@ -119,6 +119,7 @@ class WebrtcBundle : public WebrtcConnectorDelegate,
   void recv_ice(const Packet& packet);
   void recv_init_webrtc_ice(const Packet& packet);
   void recv_init_webrtc_offer(const Packet& packet);
+  void recv_require_routing(const Packet& packet);
   void relay_to_another(const NodeID& relay_nid, const Packet& packet);
   void relay_to_local(const Packet& packet);
   void send_connect(WebrtcConnector* connector, const NodeID& dst_nid, const std::string& sdp);

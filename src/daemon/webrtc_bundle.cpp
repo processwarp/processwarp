@@ -301,6 +301,9 @@ void WebrtcBundle::packet_controller_on_recv(const Packet& packet) {
   } else if (packet.command == "init_webrtc_offer") {
     recv_init_webrtc_offer(packet);
 
+  } else if (packet.command == "require_routing") {
+    recv_require_routing(packet);
+
   } else {
     /// @todo drop message
     std::cout << __LINE__ << "@" << __FILE__
@@ -624,6 +627,14 @@ void WebrtcBundle::recv_init_webrtc_offer(const Packet& packet) {
     content.insert(std::make_pair("sdp", picojson::value(connector->get_local_sdp())));
     packet_controller.send_reply(packet, content);
   }
+}
+
+/**
+ * When receive require_routing command, send routing_local command.
+ * @param packet A packet, it contain no information.
+ */
+void WebrtcBundle::recv_require_routing(const Packet& packet) {
+  routing.require_routing_local();
 }
 
 /**

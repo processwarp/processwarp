@@ -160,6 +160,16 @@ void Routing::recv_routing(const Packet& packet) {
 }
 
 /**
+ * If require of routing from local module, send routing_local command to local modules.
+ */
+void Routing::require_routing_local() {
+  picojson::object content;
+  content.insert(std::make_pair("range_min_nid", range_min_nid.to_json()));
+  content.insert(std::make_pair("range_max_nid", range_max_nid.to_json()));
+  delegate.routing_send_routing_local(content);
+}
+
+/**
  * If next node has exist, require connect to it by the delegate.
  */
 void Routing::connect_next_node() {
@@ -295,10 +305,7 @@ void Routing::update_map() {
   // Change update to send routing_local command.
   if (old_range_min_nid != range_min_nid ||
       old_range_max_nid != range_max_nid) {
-    picojson::object content;
-    content.insert(std::make_pair("range_min_nid", range_min_nid.to_json()));
-    content.insert(std::make_pair("range_max_nid", range_max_nid.to_json()));
-    delegate.routing_send_routing_local(content);
+    require_routing_local();
   }
 }
 }  // namespace processwarp
