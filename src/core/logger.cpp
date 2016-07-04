@@ -89,12 +89,17 @@ void output_raw(Level lv, const char* file, const std::size_t line,
   buffer.resize(message.size() * 1.2);
   int r = 0;
   va_list args;
+  va_list args_copy;
   va_start(args, dummy);
-  while ((r = vsnprintf(buffer.data(), buffer.size(), message.c_str(), args)) >= 0 &&
+  va_copy(args_copy, args);
+  while ((r = vsnprintf(buffer.data(), buffer.size(), message.c_str(), args_copy)) >= 0 &&
          static_cast<unsigned int>(r) >= buffer.size()) {
     buffer.resize(r + 1);
+    va_end(args_copy);
+    va_copy(args_copy, args);
   }
   va_end(args);
+  va_end(args_copy);
 
   delegate->output(lv, Util::get_filename(file), line, mid, std::string(buffer.data()));
 }

@@ -74,6 +74,10 @@ if (WITH_RE2)
 endif (WITH_RE2)
 
 # Compile.
+option(DEBUG_VERBOSE "Output debug log with verbose mode" OFF)
+if (DEBUG_VERBOSE)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D DEBUG_VM=1 -D DEBUG_MEM=1")
+endif()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D PICOJSON_USE_LOCALE=0")
 include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/src/const)

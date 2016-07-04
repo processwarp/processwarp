@@ -222,6 +222,8 @@ void VMachine::on_recv_update(vaddr_t addr) {
   while (it_waiting != process->waiting_addr.end()) {
     if (it_waiting->second == addr) {
       it_waiting = process->waiting_addr.erase(it_waiting);
+      Logger::dbg_mem(CoreMid::L1002, "memory update (addr=%s)",
+                      Convert::vaddr2str(addr).c_str());
 
     } else {
       it_waiting++;
