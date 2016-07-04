@@ -531,12 +531,12 @@ VMemory::Page& VMemory::Accessor::get_page(vaddr_t addr, bool readable) {
   auto page = vmemory.pages.find(addr);
 
   if (page == vmemory.pages.end()) {
-    vmemory.send_command_require(NodeID::BROADCAST, addr);
+    vmemory.send_command_require(addr, VMemoryReadMode::CONTINUE);
     throw InterruptMemoryRequire(addr);
 
   } else if (readable && page->second.flg_update == false) {
     assert(~page->second.type & VMemoryPageType::LEADER && page->second.hint.size() == 1);
-    vmemory.send_command_require(*(page->second.hint.begin()), addr);
+    vmemory.send_command_require(addr, VMemoryReadMode::CONTINUE);
     throw InterruptMemoryRequire(addr);
   }
   assert(page->second.type & VMemoryPageType::LEADER || page->second.master_count == 0);
@@ -891,6 +891,32 @@ NodeID VMemory::get_hash_id(vaddr_t addr) {
   return NodeID::from_str(Util::calc_md5(key));
 }
 
+/**
+ * Calculate most near acceptor node-id for address.
+ * @param addr A target address.
+ * @return A node-id that is most near acceptor node-id from this node-id
+ */
+NodeID VMemory::get_near_acceptor(vaddr_t addr) {
+  NodeID acceptor_nid = get_hash_id(addr);
+  NodeID near_nid = acceptor_nid;
+  NodeID min_distance = my_nid.distance_from(near_nid);
+
+  for (int i = 0; i < 3; i++) {
+    acceptor_nid = acceptor_nid + NodeID::QUARTER;
+    NodeID d = my_nid.distance_from(acceptor_nid);
+    if (min_distance < d) {
+      min_distance = d;
+      near_nid = acceptor_nid;
+    }
+  }
+
+  return near_nid;
+}
+
+/**
+ * After support node-id range has changed, check all page addresses and
+ * delegate page if a page is out of support node-id range.
+ */
 void VMemory::rebalance() {
   for (auto& page_it : pages) {
     vaddr_t addr = page_it.first;
@@ -923,6 +949,9 @@ void VMemory::packet_controller_on_recv(const Packet& packet) {
 
   } else if (packet.command == "delegate") {
     recv_command_delegate(packet);
+
+  } else if (packet.command == "require") {
+    recv_command_require(packet);
 
   } else if (packet.command == "routing") {
     recv_command_routing(packet);
@@ -1095,6 +1124,14 @@ void VMemory::recv_command_delegate(const Packet& packet) {
     }
   }
 
+  // If leader page is not fixed and this node is root acceptor, set this node-id for leader.
+  Page& page = pages.at(addr);
+  if (page.leader_nid == NodeID::NONE &&
+      check_root_acceptor(addr)) {
+    page.type |= VMemoryPageType::LEADER;
+    page.leader_nid = my_nid;
+  }
+
   if (packet.src_nid != NodeID::SERVER) {
     packet_controller.send_reply(packet, picojson::object());
   }
@@ -1105,6 +1142,54 @@ void VMemory::recv_command_delegate(const Packet& packet) {
   }
 
   delegate.vmemory_recv_update(*this, addr);
+}
+
+/**
+ * When receive require command, broad cast or relay to another node if value is not exist in this node.
+ * Reply copy command if value is stored in this node.
+ * @param packet Command packet containing target address and node-id that node required a value.
+ */
+void VMemory::recv_command_require(const Packet& packet) {
+  vaddr_t addr = Convert::json2vaddr(packet.content.at("addr"));
+  VMemoryReadMode::Type mode = Convert::json2int<VMemoryReadMode::Type>(packet.content.at("mode"));
+
+  assert(addr == get_upper_addr(addr));
+
+  if (packet.src_nid == my_nid) {
+    return;
+  }
+
+  if (!check_acceptor_range(addr)) {
+    return;
+  }
+
+  auto it_page = pages.find(addr);
+  if (it_page == pages.end()) {
+    packet_controller.send_error(packet, picojson::object());
+    /// @todo get data for address from another acceptor.
+    assert(false);
+    return;
+  }
+
+  Page& page = it_page->second;
+  switch (mode) {
+    case VMemoryReadMode::STOP: {
+      page.hint.erase(packet.src_nid);
+    } break;
+
+    case VMemoryReadMode::ONCE: {
+      send_command_copy(packet.src_nid, page, addr);
+    } break;
+
+    case VMemoryReadMode::CONTINUE: {
+      send_command_copy(packet.src_nid, page, addr);
+      page.hint.insert(packet.src_nid);
+    } break;
+
+    default: {
+      assert(false);
+    }
+  }
 }
 
 /**
@@ -1150,7 +1235,7 @@ void VMemory::recv_command_copy(const Packet& packet) {
       send_command_copy_reply(packet.src_nid, addr, key);
 
     } else {
-      send_command_unwant(packet.src_nid, addr);
+      send_command_require(addr, VMemoryReadMode::STOP);
     }
 
   } else {
@@ -1163,7 +1248,7 @@ void VMemory::recv_command_copy(const Packet& packet) {
 
     } else if (page.referral_count >= MEMORY_REFERRAL_LIMIT &&
                requiring.find(addr) == requiring.end()) {
-      send_command_unwant(packet.src_nid, addr);
+      send_command_require(addr, VMemoryReadMode::STOP);
       pages.erase(addr);
 
     } else if (value.size() != 0) {
@@ -1246,49 +1331,6 @@ void VMemory::recv_command_free(const Packet& packet) {
   } else {
     assert(page.hint.size() == 1);
     send_command_free(*page.hint.begin(), addr);
-  }
-}
-
-/**
- * When receive require command, broad cast or relay to another node if value is not exist in this node.
- * Reply copy command if value is stored in this node.
- * @param packet Command packet containing target address and node-id that node required a value.
- */
-void VMemory::recv_command_require(const Packet& packet) {
-  vaddr_t addr = Convert::json2vaddr(packet.content.at("addr"));
-  NodeID src_nid = NodeID::from_json(packet.content.at("src_nid"));
-
-  assert(addr == get_upper_addr(addr));
-  if (src_nid == my_nid) return;
-
-  auto it_page = pages.find(addr);
-  if (it_page == pages.end()) {
-    if (src_nid != NodeID::BROADCAST && src_nid != my_nid) {
-      picojson::object param;
-
-      param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
-      param.insert(std::make_pair("src_nid", src_nid.to_json()));
-
-      packet_controller.send("require", Module::MEMORY, true,
-                             packet.pid, NodeID::BROADCAST, param);
-    }
-    return;
-  }
-
-  Page& page = it_page->second;
-  if (page.type & VMemoryPageType::LEADER) {
-    page.hint.insert(src_nid);
-
-    send_command_copy(src_nid, page, addr);
-
-  } else if (~page.type & VMemoryPageType::PROGRAM) {
-    picojson::object param;
-
-    param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
-    param.insert(std::make_pair("src_nid", src_nid.to_json()));
-
-    packet_controller.send("require", Module::MEMORY, true,
-                           packet.pid, *page.hint.begin(), param);
   }
 }
 
@@ -1462,18 +1504,6 @@ void VMemory::send_command_delegate(vaddr_t addr,
                                     const NodeID& leader_nid,
                                     const std::set<NodeID>& acceptor_nids,
                                     const std::set<NodeID>& hint_nids) {
-  NodeID hash = get_hash_id(addr);
-  NodeID min_distance = NodeID::MAX;
-  NodeID near_hash = hash;
-  for (int i = 0; i < 4; i++) {
-    NodeID d = my_nid.distance_from(hash);
-    if (min_distance < d) {
-      min_distance = d;
-      near_hash = hash;
-    }
-    hash = hash + NodeID::QUARTER;
-  }
-
   picojson::object param;
   param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
   param.insert(std::make_pair("value", Convert::bin2json(value, size)));
@@ -1482,7 +1512,25 @@ void VMemory::send_command_delegate(vaddr_t addr,
   param.insert(std::make_pair("hint_nids", NodeID::to_json_array(hint_nids)));
 
   std::unique_ptr<PacketController::Behavior> behavior(new PacketDelegate(*this));
-  packet_controller.send(std::move(behavior), my_pid, near_hash, param);
+  packet_controller.send(std::move(behavior),
+                         my_pid, get_near_acceptor(addr), param);
+}
+
+/**
+ * Send require command for requireing value in target address.
+ * @param dst_nid Destination node-id.
+ * @param addr Target address to get value.
+ */
+void VMemory::send_command_require(vaddr_t addr, VMemoryReadMode::Type mode) {
+  assert(get_upper_addr(addr) == addr);
+  requiring.insert(addr);
+  picojson::object param;
+
+  param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
+  param.insert(std::make_pair("mode", Convert::int2json(mode)));
+
+  packet_controller.send("require", Module::MEMORY, false,
+                         my_pid, get_near_acceptor(addr), param);
 }
 
 /**
@@ -1573,33 +1621,6 @@ void VMemory::send_command_release(std::set<vaddr_t> addrs) {
   param.insert(std::make_pair("addrs", picojson::value(js_addrs)));
 
   packet_controller.send("release", Module::MEMORY, true, my_pid, NodeID::BROADCAST, param);
-}
-
-/**
- * Send require command for requireing value in target address.
- * @param dst_nid Destination node-id.
- * @param addr Target address to get value.
- */
-void VMemory::send_command_require(const NodeID& dst_nid, vaddr_t addr) {
-  assert(get_upper_addr(addr) == addr);
-  requiring.insert(addr);
-  picojson::object param;
-
-  param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
-  param.insert(std::make_pair("src_nid", my_nid.to_json()));
-
-  packet_controller.send("require", Module::MEMORY, true, my_pid, dst_nid, param);
-}
-
-/**
- * Send unwant command for emiting to a value on target address is not need for this node.
- * @param dst_nid Destination node-id.
- * @param addr Target address.
- */
-void VMemory::send_command_unwant(const NodeID& dst_nid, vaddr_t addr) {
-  picojson::object param;
-  param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
-  packet_controller.send("unwant", Module::MEMORY, true, my_pid, dst_nid, param);
 }
 
 /**

@@ -189,4 +189,11 @@ static const Type LEADER    = 0x1;
 static const Type ACCEPTOR  = 0x2;
 static const Type PROGRAM   = 0x4;
 }  // namespace VMemoryPageType
+
+namespace VMemoryReadMode {
+typedef uint8_t Type;
+static const Type STOP      = 0;
+static const Type ONCE      = 1;
+static const Type CONTINUE  = 2;
+}  // namespace VMemoryReadMode
 }  // namespace processwarp
