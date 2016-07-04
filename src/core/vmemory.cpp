@@ -190,7 +190,7 @@ VMemory::Accessor::MasterKey VMemory::Accessor::keep_master(vaddr_t addr) {
       });
 
   } else {
-    vmemory.send_command_stand(page, addr);
+    vmemory.send_command_candidacy(addr, page);
     throw InterruptMemoryRequire(addr);
   }
 }
@@ -322,7 +322,7 @@ vaddr_t VMemory::Accessor::realloc(vaddr_t addr, uint64_t size) {
 
   } else {
     assert(page.hint.size() == 1);
-    vmemory.send_command_stand(page, addr);
+    vmemory.send_command_candidacy(addr, page);
     throw InterruptMemoryRequire(addr);
   }
 }
@@ -642,6 +642,88 @@ void VMemory::PacketAlloc::on_reply(const Packet& packet) {
   update_status();
 }
 
+VMemory::PacketCandidacy::PacketCandidacy(VMemory& vmemory_, vaddr_t addr_) :
+    vmemory(vmemory_),
+    addr(addr_) {
+}
+
+const PacketController::Define& VMemory::PacketCandidacy::get_define() {
+  static const PacketController::Define DEFINE = {
+    "candidacy",
+    0,
+    0,
+    Module::MEMORY
+  };
+
+  return DEFINE;
+}
+
+void VMemory::PacketCandidacy::on_error(const Packet& packet) {
+  // Do nothing, may be retry after.
+}
+
+/**
+ * When receive reply for candidacy command, set LEADER flag to target page.
+ * @param packet A reply packet containing nothing.
+ */
+void VMemory::PacketCandidacy::on_reply(const Packet& packet) {
+  auto page_it = vmemory.pages.find(addr);
+  if (page_it == vmemory.pages.end()) {
+    // Do nothing, may be retry after or will claim back right of leader by root acceptor.
+    return;
+  }
+
+  Page& page = page_it->second;
+  page.type |= VMemoryPageType::LEADER;
+}
+
+void VMemory::PacketCandidacy::on_packet_error(PacketError::Type code) {
+  /// @todo error
+  assert(false);
+}
+
+VMemory::PacketClaimBack::PacketClaimBack(VMemory& vmemory_, vaddr_t addr_) :
+    vmemory(vmemory_),
+    addr(addr_) {
+}
+
+const PacketController::Define& VMemory::PacketClaimBack::get_define() {
+  static const PacketController::Define DEFINE = {
+    "claim_back",
+    PacketMode::EXPLICIT,
+    0,
+    Module::MEMORY
+  };
+
+  return DEFINE;
+}
+
+void VMemory::PacketClaimBack::on_error(const Packet& packet) {
+  // Do nothing.
+}
+
+/**
+ * When receive reply for claim_back command, set LEADER flag to target page.
+ * @param packet A reply packet containing nothing.
+ */
+void VMemory::PacketClaimBack::on_reply(const Packet& packet) {
+  auto page_it = vmemory.pages.find(addr);
+  if (page_it == vmemory.pages.end()) {
+    // Do nothing, maybe page is deleted or acceptor node is changed.
+    return;
+  }
+
+  Page& page = page_it->second;
+  assert(packet.src_nid == page.leader_nid);
+  page.type |= VMemoryPageType::LEADER;
+  page.leader_nid = vmemory.my_nid;
+  // @todo Publish that the leader node is changed.
+#warning
+}
+
+void VMemory::PacketClaimBack::on_packet_error(PacketError::Type code) {
+}
+
 VMemory::PacketDelegate::PacketDelegate(VMemory& vmemory_) :
     vmemory(vmemory_) {
 }
@@ -781,6 +863,25 @@ bool VMemory::check_acceptor_range(vaddr_t addr) {
 }
 
 /**
+ * Check address, if is it in root acceptor range.
+ * @param addr A target address.
+ * @return True if the address is in root acceptor range.
+ */
+bool VMemory::check_root_acceptor(vaddr_t addr) {
+  NodeID hash = get_hash_id(addr);
+  if (range_min_nid == NodeID::NONE) {
+    return true;
+  }
+
+  if (hash.is_between(range_min_nid, range_max_nid)) {
+    return true;
+
+  } else {
+    return false;
+  }
+}
+
+/**
  * Calculate node-id that is hash of process-id and address.
  * @param addr A address.
  * @return A node-id that is supporting address.
@@ -813,6 +914,12 @@ void VMemory::packet_controller_on_recv(const Packet& packet) {
 
   } else if (packet.command == "alloc_cancel") {
     recv_command_alloc_cancel(packet);
+
+  } else if (packet.command == "candidacy") {
+    recv_command_candidacy(packet);
+
+  } else if (packet.command == "claim_back") {
+    recv_command_claim_back(packet);
 
   } else if (packet.command == "delegate") {
     recv_command_delegate(packet);
@@ -870,6 +977,82 @@ void VMemory::recv_command_alloc_cancel(const Packet& packet) {
     assert(page->second.type & VMemoryPageType::ACCEPTOR);
     pages.erase(page);
   }
+}
+
+/**
+ * When receive candidacy command, if another node havend right of leader, send reply.
+ * But another node having right of leader, send error.
+ * This command can receive only root acceptor.
+ * @param packet Command packet containing addr.
+ */
+void VMemory::recv_command_candidacy(const Packet& packet) {
+  vaddr_t addr = Convert::json2vaddr(packet.content.at("addr"));
+  assert(addr == get_upper_addr(addr));
+
+  if (!check_root_acceptor(addr)) {
+    packet_controller.send_error(packet, picojson::object());
+    return;
+  }
+
+  auto it_page = pages.find(addr);
+  if (it_page == pages.end()) {
+    packet_controller.send_error(packet, picojson::object());
+    /// @todo get data for address from another acceptor.
+    assert(false);
+    return;
+  }
+
+  Page& page = it_page->second;
+  /// Maybe changing acceptor status.
+  if (~page.type & VMemoryPageType::ACCEPTOR) {
+    packet_controller.send_error(packet, picojson::object());
+    return;
+  }
+
+  if (page.leader_nid == NodeID::NONE ||
+      (page.type & VMemoryPageType::LEADER && page.master_count == 0)) {
+    assert(page.flg_update == true);
+    packet_controller.send_reply(packet, picojson::object());
+
+    page.type &= ~VMemoryPageType::LEADER;
+    page.leader_nid = packet.src_nid;
+    page.hint.insert(packet.src_nid);
+    // @todo Publish that the leader node is changed.
+#warning
+
+  } else {
+    if (page.leader_nid != my_nid) {
+      send_command_claim_back(page.leader_nid, addr);
+    }
+    packet_controller.send_error(packet, picojson::object());
+  }
+}
+
+/**
+ * When receive claim_back command, send reply if my node is leader and count is 0.
+ * Send error if page's master_count is not 0.
+ * @param packet Command packet contaning addr.
+ */
+void VMemory::recv_command_claim_back(const Packet& packet) {
+  vaddr_t addr = Convert::json2vaddr(packet.content.at("addr"));
+  assert(addr == get_upper_addr(addr));
+
+  auto it_page = pages.find(addr);
+  if (it_page == pages.end()) {
+    packet_controller.send_reply(packet, picojson::object());
+  }
+
+  Page& page = it_page->second;
+  if (~page.type & VMemoryPageType::LEADER) {
+    packet_controller.send_reply(packet, picojson::object());
+  }
+
+  if (page.master_count == 0) {
+    page.type &= ~VMemoryPageType::LEADER;
+    packet_controller.send_reply(packet, picojson::object());
+  }
+
+  packet_controller.send_error(packet, picojson::object());
 }
 
 /**
@@ -1067,73 +1250,6 @@ void VMemory::recv_command_free(const Packet& packet) {
 }
 
 /**
- * When receive give command to pass master flag, change flag and save value if target node is this node.
- * Only update hint if target node isn't this node.
- * @param packet Command packet containing target address, value, destination node-id, and hint node-id.
- */
-void VMemory::recv_command_give(const Packet& packet) {
-  vaddr_t addr = Convert::json2vaddr(packet.content.at("addr"));
-  const std::string& value = Convert::json2bin(packet.content.at("value"));
-  const NodeID& dst_nid = NodeID::from_json(packet.content.at("dst_nid"));
-  picojson::array js_hint = packet.content.at("hint_nid").get<picojson::array>();
-
-  assert(addr == get_upper_addr(addr));
-
-  auto it_page = pages.find(addr);
-  if (dst_nid == my_nid) {
-    std::set<NodeID> hint;
-    for (auto& js_h : js_hint) {
-      const NodeID& hint_node = NodeID::from_json(js_h);
-      if (hint_node != my_nid) {
-        hint.insert(hint_node);
-      }
-    }
-    if (packet.src_nid != NodeID::SERVER) {
-      hint.insert(packet.src_nid);
-    }
-
-    if (it_page == pages.end()) {
-      pages.insert(std::make_pair(addr, Page(VMemoryPageType::LEADER, true, value, my_nid, hint)));
-
-    } else {
-      Page& page = it_page->second;
-      assert(~page.type & VMemoryPageType::LEADER || page.type & VMemoryPageType::PROGRAM);
-      // Skip if page type is program and I have it yet.
-      if (page.type == VMemoryPageType::PROGRAM) return;
-
-      page.type |= VMemoryPageType::LEADER;
-      page.flg_update = true;
-      if (page.size != value.size()) {
-        page.size = value.size();
-        page.value.reset(new uint8_t[page.size]);
-      }
-      std::memcpy(page.value.get(), value.data(), page.size);
-      page.hint = hint;
-      page.referral_count = 0;
-    }
-
-    auto it_ri = requiring.find(addr);
-    if (it_ri != requiring.end()) {
-      requiring.erase(it_ri);
-    }
-
-    delegate.vmemory_recv_update(*this, addr);
-
-  } else {
-    if (it_page == pages.end()) {
-      send_command_unwant(dst_nid, addr);
-
-    } else {
-      Page& page = it_page->second;
-      assert(~page.type & VMemoryPageType::LEADER);
-
-      page.hint.clear();
-      page.hint.insert(dst_nid);
-    }
-  }
-}
-
-/**
  * When receive require command, broad cast or relay to another node if value is not exist in this node.
  * Reply copy command if value is stored in this node.
  * @param packet Command packet containing target address and node-id that node required a value.
@@ -1174,35 +1290,6 @@ void VMemory::recv_command_require(const Packet& packet) {
     packet_controller.send("require", Module::MEMORY, true,
                            packet.pid, *page.hint.begin(), param);
   }
-}
-
-/**
- * When receive stand command, send give command to pass master flag if it can.
- * To pass master flag, this node have master flag for taget address and not locked for master by runing thread.
- * @param packet Command packet containing target address.
- */
-void VMemory::recv_command_stand(const Packet& packet) {
-  vaddr_t addr = Convert::json2vaddr(packet.content.at("addr"));
-
-  assert(addr == get_upper_addr(addr));
-  assert(packet.src_nid != my_nid);
-
-  auto it_page = pages.find(addr);
-  if (it_page == pages.end()) {
-    return;
-  }
-
-  Page& page = it_page->second;
-  if (page.type & VMemoryPageType::LEADER && page.master_count == 0) {
-    assert(page.flg_update == true);
-    send_command_give(page, addr, packet.src_nid);
-
-    page.type = VMemoryPageType::NONE;
-    page.hint.clear();
-    page.hint.insert(packet.src_nid);
-  }
-
-  requiring.erase(addr);
 }
 
 /**
@@ -1255,7 +1342,8 @@ void VMemory::recv_command_update(const Packet& packet) {
     page.referral_count++;
     if (page.referral_count >= MEMORY_REFERRAL_LIMIT && page.master_count == 0) {
       assert(page.flg_update == true);
-      send_command_give(page, get_upper_addr(addr), packet.src_nid);
+      // send_command_give(page, get_upper_addr(addr), packet.src_nid);
+#warning
 
       page.type = VMemoryPageType::NONE;
       page.hint.clear();
@@ -1324,6 +1412,39 @@ void VMemory::send_command_balance(vaddr_t addr, const std::set<NodeID>& accepto
     }
     hash = hash + NodeID::QUARTER;
   }
+}
+
+/**
+ * Send candidacy command to root acceptor node.
+ * @param addr Target address for candidacy.
+ * @param page Target page.
+ */
+void VMemory::send_command_candidacy(vaddr_t addr, Page& page) {
+  assert(addr == get_upper_addr(addr));
+  assert(~page.type & VMemoryPageType::LEADER);
+
+  picojson::object param;
+  param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
+
+  std::unique_ptr<PacketController::Behavior> behavior(new PacketCandidacy(*this, addr));
+  packet_controller.send(std::move(behavior),
+                         my_pid, get_hash_id(addr), param);
+}
+
+/**
+ * Send claim_back command to leader node.
+ * @param leader_nid Node-id of leader.
+ * @param addr Target address for claim back.
+ */
+void VMemory::send_command_claim_back(const NodeID& leader_nid, vaddr_t addr) {
+  assert(addr == get_upper_addr(addr));
+
+  picojson::object param;
+  param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
+
+  std::unique_ptr<PacketController::Behavior> behavior(new PacketClaimBack(*this, addr));
+  packet_controller.send(std::move(behavior),
+                         my_pid, leader_nid, param);
 }
 
 /**
@@ -1439,29 +1560,6 @@ void VMemory::send_command_free(const NodeID& dst_nid, vaddr_t addr) {
 }
 
 /**
- * Send give command for giving master flag of page.
- * @param page Target page having value.
- * @param addr Target address to give master flag.
- * @param dst_nid Node-id target of give master flag.
- */
-void VMemory::send_command_give(Page& page, vaddr_t addr, const NodeID& dst_nid) {
-  assert(page.type & VMemoryPageType::LEADER && page.master_count == 0);
-  assert(addr == get_upper_addr(addr));
-  picojson::object param;
-  picojson::array hint;
-
-  param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
-  param.insert(std::make_pair("value", Convert::bin2json(page.value.get(), page.size)));
-  param.insert(std::make_pair("dst_nid", dst_nid.to_json()));
-  for (auto& h : page.hint) {
-    hint.push_back(h.to_json());
-  }
-  param.insert(std::make_pair("hint_nid", picojson::value(hint)));
-
-  packet_controller.send("give", Module::MEMORY, true, my_pid, NodeID::BROADCAST, param);
-}
-
-/**
  * Send release command for releaseing allocation of page.
  * @param addrs Some addresses to release.
  */
@@ -1491,22 +1589,6 @@ void VMemory::send_command_require(const NodeID& dst_nid, vaddr_t addr) {
   param.insert(std::make_pair("src_nid", my_nid.to_json()));
 
   packet_controller.send("require", Module::MEMORY, true, my_pid, dst_nid, param);
-}
-
-/**
- * Send stand command for emmiting to stand for master of target page.
- * @param page Target page.
- * @param addr Target address for stainding.
- */
-void VMemory::send_command_stand(Page& page, vaddr_t addr) {
-  assert(~page.type & VMemoryPageType::LEADER);
-  assert(page.hint.size() == 1);
-  assert(addr == get_upper_addr(addr));
-  picojson::object param;
-
-  param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
-
-  packet_controller.send("stand", Module::MEMORY, true, my_pid, *page.hint.begin(), param);
 }
 
 /**

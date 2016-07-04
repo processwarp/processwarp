@@ -195,6 +195,34 @@ class VMemory : public PacketControllerDelegate {
     void update_status();
   };
 
+  class PacketCandidacy : public PacketController::Behavior {
+   public:
+    explicit PacketCandidacy(VMemory& vmemory_, vaddr_t addr_);
+
+    const PacketController::Define& get_define() override;
+    void on_error(const Packet& packet) override;
+    void on_reply(const Packet& packet) override;
+    void on_packet_error(PacketError::Type code) override;
+
+   private:
+    VMemory& vmemory;
+    vaddr_t addr;
+  };
+
+  class PacketClaimBack : public PacketController::Behavior {
+   public:
+    explicit PacketClaimBack(VMemory& vmemory_, vaddr_t addr_);
+
+    const PacketController::Define& get_define() override;
+    void on_error(const Packet& packet) override;
+    void on_reply(const Packet& packet) override;
+    void on_packet_error(PacketError::Type code) override;
+
+   private:
+    VMemory& vmemory;
+    vaddr_t addr;
+  };
+
   class PacketDelegate : public PacketController::Behavior {
    public:
     explicit PacketDelegate(VMemory& vmemory_);
@@ -236,27 +264,30 @@ class VMemory : public PacketControllerDelegate {
 
   vaddr_t alloc_addr(Accessor& accessor, AddressRegion::Type type);
   bool check_acceptor_range(vaddr_t addr);
+  bool check_root_acceptor(vaddr_t addr);
   NodeID get_hash_id(vaddr_t addr);
   void rebalance();
 
   void recv_command_alloc(const Packet& packet);
   void recv_command_alloc_cancel(const Packet& packet);
   void recv_command_balance(const Packet& packet);
+  void recv_command_candidacy(const Packet& packet);
+  void recv_command_claim_back(const Packet& packet);
   void recv_command_delegate(const Packet& packet);
   void recv_command_routing(const Packet& packet);
 
   void recv_command_copy(const Packet& packet);
   void recv_command_copy_reply(const Packet& packet);
   void recv_command_free(const Packet& packet);
-  void recv_command_give(const Packet& packet);
   void recv_command_require(const Packet& packet);
-  void recv_command_stand(const Packet& packet);
   void recv_command_unwant(const Packet& packet);
   void recv_command_update(const Packet& packet);
 
   void send_command_alloc(Accessor& accessor, vaddr_t addr);
   void send_command_alloc_cancel(Accessor& accessor, vaddr_t addr);
   void send_command_balance(vaddr_t addr, const std::set<NodeID>& acceptor_nids);
+  void send_command_candidacy(vaddr_t addr, Page& page);
+  void send_command_claim_back(const NodeID& leader_nid, vaddr_t addr);
   void send_command_delegate(vaddr_t addr, const uint8_t* value, uint64_t size,
                              const NodeID& leader_nid,
                              const std::set<NodeID>& acceptor_nids,
@@ -266,10 +297,8 @@ class VMemory : public PacketControllerDelegate {
   void send_command_copy(const NodeID& dst_nid, Page& page, vaddr_t addr);
   void send_command_copy_reply(const NodeID& dst_nid, vaddr_t addr, uint64_t key);
   void send_command_free(const NodeID& dst_nid, vaddr_t addr);
-  void send_command_give(Page& page, vaddr_t addr, const NodeID& dst);
   void send_command_release(std::set<vaddr_t> addrs);
   void send_command_require(const NodeID& dst_nid, vaddr_t addr);
-  void send_command_stand(Page& page, vaddr_t addr);
   void send_command_unwant(const NodeID& dst_nid, vaddr_t addr);
   void send_command_update(const NodeID& dst_nid, vaddr_t addr,
                            const uint8_t* data, uint64_t size);
