@@ -100,7 +100,10 @@ Process::Process(ProcessDelegate& delegate_,
     root_tid(root_tid_),
     libs(libs_),
     lib_filter(lib_filter_),
-    builtin_funcs(builtin_funcs_) {
+    builtin_funcs(builtin_funcs_),
+    call_stack_addr(VADDR_NULL),
+    call_stackinfo_addr(VADDR_NULL),
+    call_vararg_addr(VADDR_NULL) {
 }
 
 // Allocate process on memory from delegate.
@@ -284,22 +287,23 @@ re_entry: {
                  Instruction::get_opcode(insts.at(stackinfo.pc + next_pc)) == Opcode::EXTRA)
             next_pc++;
 
-          Finally finally_call;
+          if (new_func->normal_prop.stack_size != 0) {
+            if (call_stack_addr == VADDR_NULL) {
+              call_stack_addr = memory.alloc(new_func->normal_prop.stack_size);
+            }
+          }
           // スタックのサイズの有無により作りを変える
-          vaddr_t new_stackaddr = StackInfo::alloc
-            (memory,
-             new_func->addr,
-             // tailcallの場合、戻り値の格納先を現行のものから引き継ぐ
-             is_tailcall ? stackinfo.ret_addr : stackinfo.output,
-             (normal_pc != OperandMask::FILL ? normal_pc : stackinfo.pc + next_pc),
-             (unwind_pc != OperandMask::FILL ? unwind_pc : stackinfo.pc + next_pc),
-             (new_func->normal_prop.stack_size != 0 ?
-              memory.alloc(new_func->normal_prop.stack_size) :
-              VADDR_NULL));
-          finally_call.add([&] {
-              memory.free(new_stackaddr);
-            });
-          std::unique_ptr<StackInfo> new_stackinfo(StackInfo::read(memory, new_stackaddr));
+          if (call_stackinfo_addr == VADDR_NULL) {
+            call_stackinfo_addr = StackInfo::alloc
+              (memory,
+               new_func->addr,
+               // tailcallの場合、戻り値の格納先を現行のものから引き継ぐ
+               is_tailcall ? stackinfo.ret_addr : stackinfo.output,
+               (normal_pc != OperandMask::FILL ? normal_pc : stackinfo.pc + next_pc),
+               (unwind_pc != OperandMask::FILL ? unwind_pc : stackinfo.pc + next_pc),
+               call_stack_addr);
+          }
+          std::unique_ptr<StackInfo> new_stackinfo(StackInfo::read(memory, call_stackinfo_addr));
           resolve_stackinfo_cache(thread, new_stackinfo.get());
 
           // 引数を集める
@@ -341,10 +345,10 @@ re_entry: {
 
             // 可変長引数分がある場合、別領域を作成
             if (work.size() != 0) {
-              new_stackinfo->var_arg = memory.alloc(work.size());
-              finally_call.add([&]{
-                  memory.free(new_stackinfo->var_arg);
-                });
+              if (call_vararg_addr != VADDR_NULL) {
+                call_vararg_addr = memory.alloc(work.size());
+              }
+              new_stackinfo->var_arg = call_vararg_addr;
               new_stackinfo->alloca_addrs.push_back(new_stackinfo->var_arg);
               memory.write_copy(new_stackinfo->var_arg, work.data(), work.size());
             } else {
@@ -362,13 +366,18 @@ re_entry: {
               // 末尾再帰でない場合、callinfosを追加
             }
             new_stackinfo->write(memory);
-            thread.push_stack(new_stackaddr, std::move(new_stackinfo));
-            finally_call.clear();
+            thread.push_stack(call_stackinfo_addr, std::move(new_stackinfo));
+
             if (is_tailcall) {
               stackinfo.pc += args * 2 + 2;
             } else {
               stackinfo.pc += args * 2 + 3;
             }
+
+            call_stack_addr = VADDR_NULL;
+            call_stackinfo_addr = VADDR_NULL;
+            call_vararg_addr = VADDR_NULL;
+
             goto re_entry;
 
           } else if (new_func->type == FunctionType::BUILTIN) {

@@ -78,6 +78,9 @@ class Process {
 
   /** Memory addres waiting to update by other node. (not dump) */
   std::map<vtid_t, vaddr_t> waiting_addr;
+  vaddr_t call_stack_addr;
+  vaddr_t call_stackinfo_addr;
+  vaddr_t call_vararg_addr;
 
   /**
    * Allocate process on memory from delegate.
