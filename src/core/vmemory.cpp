@@ -114,20 +114,8 @@ void VMemory::Accessor::free(vaddr_t addr) {
 
   Page& page = get_page(addr, false);
   assert(~page.type & VMemoryPageType::PROGRAM);
-  if (page.type & VMemoryPageType::LEADER) {
-    assert(page.master_count == 0 && raw_writable.find(addr) == raw_writable.end());
-    page.size = 0;
-    page.value.reset();
-    for (auto& dst_nid : page.hint) {
-      vmemory.send_command_copy(dst_nid, page, addr);
-    }
-    vmemory.release_addr(addr);
-    vmemory.pages.erase(addr);
-
-  } else {
-    assert(page.hint.size() == 1);
-    vmemory.send_command_free(*page.hint.begin(), addr);
-  }
+  assert(page.master_count == 0 && raw_writable.find(addr) == raw_writable.end());
+  vmemory.send_command_free(addr);
 }
 
 /**
@@ -535,7 +523,7 @@ VMemory::Page& VMemory::Accessor::get_page(vaddr_t addr, bool readable) {
     throw InterruptMemoryRequire(addr);
 
   } else if (readable && page->second.flg_update == false) {
-    assert(~page->second.type & VMemoryPageType::LEADER && page->second.hint.size() == 1);
+    assert(~page->second.type & VMemoryPageType::LEADER);
     vmemory.send_command_require(addr, VMemoryReadMode::CONTINUE);
     throw InterruptMemoryRequire(addr);
   }
@@ -591,14 +579,6 @@ void VMemory::initialize(const vpid_t& pid) {
  */
 void VMemory::recv_packet(const Packet& packet) {
   packet_controller.recv(packet);
-}
-
-/**
- * Release a binded address for be used memory to be unused.
- * @param addr Address to release.
- */
-void VMemory::release_addr(vaddr_t addr) {
-  assert(false);
 }
 
 /**
@@ -775,6 +755,7 @@ void VMemory::PacketAlloc::update_status() {
                                                vmemory.my_nid, std::set<NodeID>())));
     } else {
       page->second.type |= VMemoryPageType::LEADER;
+      page->second.flg_update = true;
     }
 
   } else {
@@ -949,6 +930,12 @@ void VMemory::packet_controller_on_recv(const Packet& packet) {
 
   } else if (packet.command == "delegate") {
     recv_command_delegate(packet);
+
+  } else if (packet.command == "free") {
+    recv_command_free(packet);
+
+  } else if (packet.command == "free_acceptor") {
+    recv_command_free_acceptor(packet);
 
   } else if (packet.command == "require") {
     recv_command_require(packet);
@@ -1145,6 +1132,80 @@ void VMemory::recv_command_delegate(const Packet& packet) {
 }
 
 /**
+ * When receive free command, remove page and send free_acceptor command to each acceptors.
+ * @param packet Command packet containing taret address.
+ */
+void VMemory::recv_command_free(const Packet& packet) {
+  vaddr_t addr = Convert::json2vaddr(packet.content.at("addr"));
+  assert(addr == get_upper_addr(addr));
+
+  if (!check_acceptor_range(addr)) {
+    send_command_free(addr);
+  }
+
+  auto it_page = pages.find(addr);
+  if (it_page == pages.end()) {
+    NodeID acceptor_nid = get_near_acceptor(addr) + NodeID::QUARTER;
+    std::set<NodeID> acceptor_nids;
+    for (int i = 0; i < 3; i++) {
+      acceptor_nids.insert(acceptor_nid);
+      acceptor_nid = acceptor_nid + NodeID::QUARTER;
+    }
+    send_command_free_acceptor(addr, acceptor_nids);
+
+  } else {
+    Page& page = it_page->second;
+    if (~page.type & VMemoryPageType::ACCEPTOR) {
+      NodeID acceptor_nid = get_near_acceptor(addr);
+      std::set<NodeID> acceptor_nids;
+      for (int i = 0; i < 4; i++) {
+        acceptor_nids.insert(acceptor_nid);
+        acceptor_nid = acceptor_nid + NodeID::QUARTER;
+      }
+      send_command_free_acceptor(addr, acceptor_nids);
+
+    } else {
+      assert(~page.type & VMemoryPageType::PROGRAM);
+      std::set<NodeID> acceptor_nids = page.acceptor_nids;
+      NodeID acceptor_nid = get_near_acceptor(addr);
+      for (int i = 0; i < 4; i++) {
+        acceptor_nids.insert(acceptor_nid);
+        acceptor_nid = acceptor_nid + NodeID::QUARTER;
+      }
+      send_command_free_acceptor(addr, acceptor_nids);
+      pages.erase(it_page);
+    }
+  }
+}
+
+/**
+ * When receive free_acceptor command, remove page and re-send free_acceptor command each acceptors.
+ * @param packet Command packet containing target address, acceptors to check, target acceptor node-id.
+ */
+void VMemory::recv_command_free_acceptor(const Packet& packet) {
+  vaddr_t addr = Convert::json2vaddr(packet.content.at("addr"));
+  std::set<NodeID> acceptor_nids = NodeID::from_json_array(packet.content.at("acceptor_nids"));
+  NodeID target_nid = NodeID::from_json(packet.content.at("target_nid"));
+
+  auto it_page = pages.find(addr);
+  if (it_page == pages.end()) {
+    acceptor_nids.erase(target_nid);
+    send_command_free_acceptor(addr, acceptor_nids);
+
+  } else {
+    Page& page = it_page->second;
+    for (auto& acceptor_nid : page.acceptor_nids) {
+      acceptor_nids.insert(acceptor_nid);
+    }
+    acceptor_nids.erase(target_nid);
+    send_command_free_acceptor(addr, acceptor_nids);
+    /// @todo publish free
+#warning
+    pages.erase(addr);
+  }
+}
+
+/**
  * When receive require command, broad cast or relay to another node if value is not exist in this node.
  * Reply copy command if value is stored in this node.
  * @param packet Command packet containing target address and node-id that node required a value.
@@ -1296,62 +1357,6 @@ void VMemory::recv_command_copy_reply(const Packet& packet) {
   } else {
     page.send_copy_history.erase(it_history);
     send_command_copy(packet.src_nid, page, addr);
-  }
-}
-
-/**
- * When receive free command, update page to 0-size if this node is master of target address,
- * or delegate command to master node if this node isn't master of target address.
- * @param packet Command packet containing target address.
- */
-void VMemory::recv_command_free(const Packet& packet) {
-  vaddr_t addr = Convert::json2vaddr(packet.content.at("addr"));
-  assert(addr == get_upper_addr(addr));
-
-  auto it_page = pages.find(addr);
-  if (it_page == pages.end()) {
-    /// @todo Relay bload cast when packet was not bload cast.
-  }
-
-  Page& page = it_page->second;
-  assert(~page.type & VMemoryPageType::PROGRAM);
-  if (page.type & VMemoryPageType::LEADER) {
-    if (page.master_count != 0) {
-      /// @todo error
-      assert(false);
-    }
-    page.size = 0;
-    page.value.reset();
-    for (auto& dst_nid : page.hint) {
-      send_command_copy(dst_nid, page, addr);
-    }
-    release_addr(addr);
-    pages.erase(addr);
-
-  } else {
-    assert(page.hint.size() == 1);
-    send_command_free(*page.hint.begin(), addr);
-  }
-}
-
-/**
- * When receive unwant command, remove source node from a set of hint(copy target) and history.
- * @param packet Command packet containing target address.
- */
-void VMemory::recv_command_unwant(const Packet& packet) {
-  vaddr_t addr = Convert::json2vaddr(packet.content.at("addr"));
-
-  auto it_page = pages.find(get_upper_addr(addr));
-  if (it_page == pages.end()) return;
-
-  Page& page = it_page->second;
-  auto it_hint = page.hint.find(packet.src_nid);
-  if (it_hint != page.hint.end()) {
-    page.hint.erase(it_hint);
-  }
-  auto it_copy = page.send_copy_history.find(packet.src_nid);
-  if (it_copy != page.send_copy_history.end()) {
-    page.send_copy_history.erase(it_copy);
   }
 }
 
@@ -1517,6 +1522,39 @@ void VMemory::send_command_delegate(vaddr_t addr,
 }
 
 /**
+ * Send free command.
+ * @param addr Target address to free.
+ */
+void VMemory::send_command_free(vaddr_t addr) {
+  picojson::object param;
+  param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
+
+  NodeID acceptor_nid = get_hash_id(addr);
+  for (int i = 0; i < 4; i++) {
+    packet_controller.send("free", Module::MEMORY, false,
+                           my_pid, acceptor_nid, param);
+    acceptor_nid = acceptor_nid + NodeID::QUARTER;
+  }
+}
+
+/**
+ * Send free_acceptor command.
+ * @param addr Target address to free.
+ * @param acceptor_nids
+ */
+void VMemory::send_command_free_acceptor(vaddr_t addr, const std::set<NodeID>& acceptor_nids) {
+  picojson::object param;
+  param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
+  param.insert(std::make_pair("acceptor_nids", NodeID::to_json_array(acceptor_nids)));
+
+  for (auto& target_nid : acceptor_nids) {
+    param["target_nid"] = target_nid.to_json();
+    packet_controller.send("free_acceptor", Module::MEMORY, false,
+                           my_pid, target_nid, param);
+  }
+}
+
+/**
  * Send require command for requireing value in target address.
  * @param dst_nid Destination node-id.
  * @param addr Target address to get value.
@@ -1592,35 +1630,6 @@ void VMemory::send_command_copy_reply(const NodeID& dst_nid, vaddr_t addr, uint6
   param.insert(std::make_pair("key", Convert::int2json(key)));
 
   packet_controller.send("copy_reply", Module::MEMORY, true, my_pid, dst_nid, param);
-}
-
-/**
- * Send free command.
- * @param dst_nid Destination node-id.
- * @param addr Target address to free.
- */
-void VMemory::send_command_free(const NodeID& dst_nid, vaddr_t addr) {
-  picojson::object param;
-
-  param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
-
-  packet_controller.send("free", Module::MEMORY, true, my_pid, dst_nid, param);
-}
-
-/**
- * Send release command for releaseing allocation of page.
- * @param addrs Some addresses to release.
- */
-void VMemory::send_command_release(std::set<vaddr_t> addrs) {
-  picojson::object param;
-  picojson::array js_addrs;
-
-  for (auto addr : addrs) {
-    js_addrs.push_back(Convert::vaddr2json(addr));
-  }
-  param.insert(std::make_pair("addrs", picojson::value(js_addrs)));
-
-  packet_controller.send("release", Module::MEMORY, true, my_pid, NodeID::BROADCAST, param);
 }
 
 /**

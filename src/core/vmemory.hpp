@@ -175,7 +175,6 @@ class VMemory : public PacketControllerDelegate {
   std::unique_ptr<VMemory::Accessor> get_accessor();
   void initialize(const vpid_t& pid);
   void recv_packet(const Packet& packet);
-  void release_addr(vaddr_t addr);
   void set_loading(bool flg);
 
  private:
@@ -275,13 +274,13 @@ class VMemory : public PacketControllerDelegate {
   void recv_command_candidacy(const Packet& packet);
   void recv_command_claim_back(const Packet& packet);
   void recv_command_delegate(const Packet& packet);
+  void recv_command_free(const Packet& packet);
+  void recv_command_free_acceptor(const Packet& packet);
   void recv_command_require(const Packet& packet);
   void recv_command_routing(const Packet& packet);
 
   void recv_command_copy(const Packet& packet);
   void recv_command_copy_reply(const Packet& packet);
-  void recv_command_free(const Packet& packet);
-  void recv_command_unwant(const Packet& packet);
   void recv_command_update(const Packet& packet);
 
   void send_command_alloc(Accessor& accessor, vaddr_t addr);
@@ -293,13 +292,13 @@ class VMemory : public PacketControllerDelegate {
                              const NodeID& leader_nid,
                              const std::set<NodeID>& acceptor_nids,
                              const std::set<NodeID>& hint_nids);
+  void send_command_free(vaddr_t addr);
+  void send_command_free_acceptor(vaddr_t addr, const std::set<NodeID>& acceptor_nids);
   void send_command_require(vaddr_t addr, VMemoryReadMode::Type mode);
   void send_command_require_routing();
 
   void send_command_copy(const NodeID& dst_nid, Page& page, vaddr_t addr);
   void send_command_copy_reply(const NodeID& dst_nid, vaddr_t addr, uint64_t key);
-  void send_command_free(const NodeID& dst_nid, vaddr_t addr);
-  void send_command_release(std::set<vaddr_t> addrs);
   void send_command_update(const NodeID& dst_nid, vaddr_t addr,
                            const uint8_t* data, uint64_t size);
 };
