@@ -81,7 +81,7 @@ void Routing::execute() {
   }
 
   std::sort(nid_list.begin(), nid_list.end(),
-            [](std::tuple<NodeID, int>& a, std::tuple<NodeID, int>& b) -> int {
+            [](const std::tuple<NodeID, int>& a, const std::tuple<NodeID, int>& b) -> bool {
               return std::get<1>(a) < std::get<1>(b);
             });
 
