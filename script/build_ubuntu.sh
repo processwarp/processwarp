@@ -16,9 +16,7 @@ git submodule update
 
 # Install requirements package.
 sudo apt-get install -y pkg-config automake build-essential libtool libssl-dev libffi-dev libncurses5-dev curl wget
-if [ -z "${TRAVIS}" ]; then
-    sudo apt-get install -y libboost-dev libboost-system-dev libboost-date-time-dev libboost-random-dev
-fi
+sudo apt-get install -y libboost1.55-dev libboost-system1.55-dev libboost-date-time1.55-dev libboost-random1.55-dev
  
 if ! type python >/dev/null 2>&1; then
     sudo apt-get install -y python
@@ -79,9 +77,6 @@ fi
 
 sudo ldconfig
 
-# Edit cmake of Socket.IO C++ Client.
-sed -i -e 's/set(BOOST_VER "1.55.0"/set(BOOST_VER "1.54.0"/' ${_root}/lib/socket.io-client-cpp/CMakeLists.txt
-
 # Compile native programes.
 cd ${_root}
 ${_root}/local/bin/cmake -DCMAKE_EXE_LINKER_FLAGS="-L${_root}/local/lib" -DUV_INCLUDE_DIRS=${_root}/local/include/ -DUV_LIBRARIES=uv -DWITH_RE2=ON -DWITH_TEST=OFF -DCMAKE_BUILD_TYPE=Debug .
@@ -100,6 +95,19 @@ if [ -e node_modules ]; then
 else
     ${_root}/local/bin/npm install
 fi
+
+# Install babel and convert js files.
+cd ${_root}/src/electron
+if ! type babel >/dev/null 2>&1; then
+    sudo ${_root}/local/bin/npm -g install babel-cli
+    sudo ${_root}/local/bin/npm install babel-preset-es2015
+fi
+
+mkdir -p dist
+${_root}/local/bin/babel --no-babelrc --presets es2015 --retain-lines -o dist/constant.js constant.js
+${_root}/local/bin/babel --no-babelrc --presets es2015 --retain-lines -o dist/gui.js gui.js
+${_root}/local/bin/babel --no-babelrc --presets es2015 --retain-lines -o dist/main.js main.js
+${_root}/local/bin/babel --no-babelrc --presets es2015 --retain-lines -o dist/packet_controller.js packet_controller.js
 
 # Finish.
 cd ${_pwd}

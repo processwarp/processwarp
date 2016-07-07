@@ -51,10 +51,18 @@ else
     npm install
 fi
 
-babel --no-babelrc --plugins transform-es2015-modules-commonjs --retain-lines -o dist/constant.js constant.js
-babel --no-babelrc --plugins transform-es2015-modules-commonjs --retain-lines -o dist/gui.js gui.js
-babel --no-babelrc --plugins transform-es2015-modules-commonjs --retain-lines -o dist/main.js main.js
-babel --no-babelrc --plugins transform-es2015-modules-commonjs --retain-lines -o dist/packet_controller.js packet_controller.js
+# Install babel and convert js files.
+cd ${_root}/src/electron
+if ! type babel >/dev/null 2>&1; then
+    npm -g install babel-cli
+    npm install babel-preset-es2015
+fi
+
+mkdir -p dist
+babel --no-babelrc --presets es2015 --retain-lines -o dist/constant.js constant.js
+babel --no-babelrc --presets es2015 --retain-lines -o dist/gui.js gui.js
+babel --no-babelrc --presets es2015 --retain-lines -o dist/main.js main.js
+babel --no-babelrc --presets es2015 --retain-lines -o dist/packet_controller.js packet_controller.js
 
 # Finish.
 cd ${_pwd}
