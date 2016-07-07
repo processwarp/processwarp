@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8">
     <title>PROCESS WARP</title>
-    <script type="text/javascript" src="./gui_helper.js"></script>
+    <script type="text/javascript" src="gui_c.js"></script>
   </head>
   <style>
     html {
@@ -30,8 +30,13 @@
       visibility: hidden;
     }
   </style>
-  <body id="body" onLoad="processwarp.initialize();">
+  <body id="body">
     <canvas id="canvas_fore"></canvas>
     <canvas id="canvas_back"></canvas>
   </body>
+  <script type="text/javascript">
+    var global = {};
+    var processwarp = new GUI(document, window, global);
+    processwarp.initialize();
+  </script>
 </html>

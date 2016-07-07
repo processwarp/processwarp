@@ -279,8 +279,10 @@ function onBackendRecvData(data) {
  * @return {void}
  */
 function onBackendError() {
-  backendSocket.destroy();
-  backendSocket = null;
+  if (backendSocket) {
+    backendSocket.destroy();
+    backendSocket = null;
+  }
   connectStatus = CONNECT_STATUS.BEGIN;
 
   console.log('connection error.');
@@ -452,7 +454,7 @@ function sendData(data) {
   buf.write(str, 4);
   buf.writeInt8(0, 4 + len);
 
-  if (!backendSocket.write(buf)) {
+  if (backendSocket && !backendSocket.write(buf)) {
     onBackendError();
   }
 }
@@ -602,13 +604,20 @@ function onGuiLoad(event) {
  * @param packet {object} A packet to relay.
  */
 function onGuiRelayPacket(event, packet) {
-  sendData({
+  let json = {
     command: 'relay_packet',
+    packet_id: packet.packetId,
+    packet_command: packet.command,
+    mode: packet.mode.toString(16),
+    dst_module: packet.dstModule.toString(16),
+    src_module: packet.srcModule.toString(16),
     pid: packet.pid,
-    dst_nid: packet.dst_nid,
-    module: packet.module.toString(10),
+    dst_nid: packet.dstNid,
+    src_nid: packet.srcNid,
     content: packet.content
-  });
+  };
+
+  sendData(json);
 }
 
 /**

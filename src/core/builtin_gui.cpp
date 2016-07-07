@@ -42,7 +42,7 @@ BuiltinPostProc::Type BuiltinGui::flush(Process& proc, Thread& thread, BuiltinFu
       "0, 0,"
       "global.canvas.width,"
       "global.canvas.height);"
-      "global.context_fore.putImageData(image, 0, 0);";
+      "global.contextFore.putImageData(image, 0, 0);";
   param.insert(std::make_pair("script", picojson::value(script)));
   packet_controller.send("script", Module::GUI, true, proc.pid, NodeID::NONE, param);
 
