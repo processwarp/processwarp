@@ -27,33 +27,44 @@ mkdir -p tmp
 mkdir -p local
 export PATH=${_root}/local/bin:${PATH}
 export LD_LIBRARY_PATH=${_root}/local/lib:${LD_LIBRARY_PATH}
+export PKG_CONFIG_PATH=${_root}/local/lib/pkgconfig:${PKG_CONFIG_PATH}
 
 # Compile cmake
-cd ${_root}/tmp
-if ! [ -e cmake-3.5.0.tar.gz ]; then
-    wget https://cmake.org/files/v3.5/cmake-3.5.0.tar.gz
+if ${_root}/local/bin/cmake --version | grep -o 3.5.0 >/dev/null
+then
+    echo cmake 3.5.0 installed
+else
+    cd ${_root}/tmp
+    if ! [ -e cmake-3.5.0.tar.gz ]; then
+        wget https://cmake.org/files/v3.5/cmake-3.5.0.tar.gz
+    fi
+    if ! [ -e cmake-3.5.0 ]; then
+        tar zxf cmake-3.5.0.tar.gz
+    fi
+    cd cmake-3.5.0
+    ./configure --prefix=${_root}/local
+    make
+    make install
 fi
-if ! [ -e cmake-3.5.0 ]; then
-    tar zxf cmake-3.5.0.tar.gz
-fi
-cd cmake-3.5.0
-./configure --prefix=${_root}/local
-make
-make install
 
 # Compile libuv
-cd ${_root}/tmp
-if ! [ -e libuv-v1.8.0.tar.gz ]; then
-    wget http://dist.libuv.org/dist/v1.8.0/libuv-v1.8.0.tar.gz
+if pkg-config --modversion libuv | grep -o 1.8.0 >/dev/null
+then
+    echo libuv 1.8.0 installed
+else
+    cd ${_root}/tmp
+    if ! [ -e libuv-v1.8.0.tar.gz ]; then
+        wget http://dist.libuv.org/dist/v1.8.0/libuv-v1.8.0.tar.gz
+    fi
+    if ! [ -e libuv-v1.8.0 ]; then
+        tar zxf libuv-v1.8.0.tar.gz
+    fi
+    cd libuv-v1.8.0
+    sh autogen.sh
+    ./configure --prefix=${_root}/local
+    make
+    make install
 fi
-if ! [ -e libuv-v1.8.0 ]; then
-    tar zxf libuv-v1.8.0.tar.gz
-fi
-cd libuv-v1.8.0
-sh autogen.sh
-./configure --prefix=${_root}/local
-make
-make install
 
 # Node.js
 cd ${_root}/tmp
