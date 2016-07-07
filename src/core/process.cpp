@@ -100,10 +100,7 @@ Process::Process(ProcessDelegate& delegate_,
     root_tid(root_tid_),
     libs(libs_),
     lib_filter(lib_filter_),
-    builtin_funcs(builtin_funcs_),
-    call_stack_addr(VADDR_NULL),
-    call_stackinfo_addr(VADDR_NULL),
-    call_vararg_addr(VADDR_NULL) {
+    builtin_funcs(builtin_funcs_) {
 }
 
 // Allocate process on memory from delegate.
@@ -288,22 +285,23 @@ re_entry: {
             next_pc++;
 
           if (new_func->normal_prop.stack_size != 0) {
-            if (call_stack_addr == VADDR_NULL) {
-              call_stack_addr = memory.alloc(new_func->normal_prop.stack_size);
+            if (thread.call_stack_addr == VADDR_NULL) {
+              thread.call_stack_addr = memory.alloc(new_func->normal_prop.stack_size);
             }
           }
           // スタックのサイズの有無により作りを変える
-          if (call_stackinfo_addr == VADDR_NULL) {
-            call_stackinfo_addr = StackInfo::alloc
+          if (thread.call_stackinfo_addr == VADDR_NULL) {
+            thread.call_stackinfo_addr = StackInfo::alloc
               (memory,
                new_func->addr,
                // tailcallの場合、戻り値の格納先を現行のものから引き継ぐ
                is_tailcall ? stackinfo.ret_addr : stackinfo.output,
                (normal_pc != OperandMask::FILL ? normal_pc : stackinfo.pc + next_pc),
                (unwind_pc != OperandMask::FILL ? unwind_pc : stackinfo.pc + next_pc),
-               call_stack_addr);
+               thread.call_stack_addr);
           }
-          std::unique_ptr<StackInfo> new_stackinfo(StackInfo::read(memory, call_stackinfo_addr));
+          std::unique_ptr<StackInfo>
+            new_stackinfo(StackInfo::read(memory, thread.call_stackinfo_addr));
           resolve_stackinfo_cache(thread, new_stackinfo.get());
 
           // 引数を集める
@@ -345,10 +343,10 @@ re_entry: {
 
             // 可変長引数分がある場合、別領域を作成
             if (work.size() != 0) {
-              if (call_vararg_addr != VADDR_NULL) {
-                call_vararg_addr = memory.alloc(work.size());
+              if (thread.call_vararg_addr != VADDR_NULL) {
+                thread.call_vararg_addr = memory.alloc(work.size());
               }
-              new_stackinfo->var_arg = call_vararg_addr;
+              new_stackinfo->var_arg = thread.call_vararg_addr;
               new_stackinfo->alloca_addrs.push_back(new_stackinfo->var_arg);
               memory.write_copy(new_stackinfo->var_arg, work.data(), work.size());
             } else {
@@ -366,7 +364,7 @@ re_entry: {
               // 末尾再帰でない場合、callinfosを追加
             }
             new_stackinfo->write(memory);
-            thread.push_stack(call_stackinfo_addr, std::move(new_stackinfo));
+            thread.push_stack(thread.call_stackinfo_addr, std::move(new_stackinfo));
 
             if (is_tailcall) {
               stackinfo.pc += args * 2 + 2;
@@ -374,9 +372,9 @@ re_entry: {
               stackinfo.pc += args * 2 + 3;
             }
 
-            call_stack_addr = VADDR_NULL;
-            call_stackinfo_addr = VADDR_NULL;
-            call_vararg_addr = VADDR_NULL;
+            thread.call_stack_addr = VADDR_NULL;
+            thread.call_stackinfo_addr = VADDR_NULL;
+            thread.call_vararg_addr = VADDR_NULL;
 
             goto re_entry;
 
@@ -401,6 +399,10 @@ re_entry: {
             call_external(thread, *new_func, stackinfo.output, work);
             stackinfo.pc += args * 2 + 2;
           }
+
+          thread.call_stack_addr = VADDR_NULL;
+          thread.call_stackinfo_addr = VADDR_NULL;
+          thread.call_vararg_addr = VADDR_NULL;
         } break;
 
         case Opcode::RETURN: {

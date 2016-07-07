@@ -66,6 +66,12 @@ class Thread {
   vm_uint_t warp_call_count;
   ///
   NodeID warp_dst;
+  /// This value is used to store address of stack on execute CALL instruction.
+  vaddr_t call_stack_addr;
+  /// This value is used to store address of stack-information on execute CALL instruction.
+  vaddr_t call_stackinfo_addr;
+  /// This value is used to store address of var-arguments on execute CALL instruction.
+  vaddr_t call_vararg_addr;
 
   WrappedOperator* const OPERATORS[0x36];
 

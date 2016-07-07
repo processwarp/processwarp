@@ -18,6 +18,9 @@ Thread::Thread(vtid_t tid_, std::unique_ptr<VMemory::Accessor> memory_) :
     complex_operator(*memory),
     warp_stack_size(0),
     warp_call_count(0),
+    call_stack_addr(VADDR_NULL),
+    call_stackinfo_addr(VADDR_NULL),
+    call_vararg_addr(VADDR_NULL),
     OPERATORS {
   nullptr,  // 0
       nullptr,  // 1 void
