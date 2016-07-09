@@ -1,5 +1,7 @@
 
 #include <dlfcn.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include <cstdlib>
 #include <fstream>
@@ -442,6 +444,7 @@ void Worker::send_data(const picojson::object& data) {
 int main(int argc, char* argv[]) {
   processwarp::Worker THIS;
 
+  Logger::dbg(DaemonMid::L3010, getpid());
   return THIS.entry(argc, argv);
 }
 #endif
