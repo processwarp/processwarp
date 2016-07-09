@@ -651,7 +651,7 @@ void VMemory::PacketAlloc::update_status() {
     alloc_info->addr = get_upper_addr(alloc_info->type |
                                       (~AddressRegion::MASK & vmemory.rnd()));
     while ((alloc_info->type == AddressRegion::META && alloc_info->addr <= 0xFF) ||
-           vmemory.pages.find(alloc_info->addr) == vmemory.pages.end()) {
+           vmemory.pages.find(alloc_info->addr) != vmemory.pages.end()) {
       alloc_info->addr = get_upper_addr(alloc_info->type |
                                         (~AddressRegion::MASK & vmemory.rnd()));
     }
