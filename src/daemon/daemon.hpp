@@ -6,7 +6,11 @@
 #include <string>
 
 #include "constant_native.hpp"
-#include "logger_syslog.hpp"
+#ifndef WITH_LOG_STDOUT
+#  include "logger_syslog.hpp"
+#else
+#  include "logger_stdout.hpp"
+#endif
 #include "server_connector.hpp"
 
 namespace processwarp {
@@ -17,8 +21,13 @@ class Daemon : public ServerConnectorConnectDelegate {
   int entry(int argc, char* argv[]);
 
  private:
+#ifndef WITH_LOG_STDOUT
   /** Syslog logger. */
   Logger::Syslog logger;
+#else
+  /** Stdout logger. */
+  Logger::Stdout logger;
+#endif
   /** Daemon run mode. */
   RunMode::Type run_mode;
   /** Configuration. */

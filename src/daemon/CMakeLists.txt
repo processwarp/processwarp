@@ -319,6 +319,11 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wno-unused-parameter")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
 
+option(WITH_LOG_STDOUT "Output log to stdout." OFF)
+if (WITH_LOG_STDOUT)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWITH_LOG_STDOUT")
+endif (WITH_LOG_STDOUT)
+
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   # MaxOSX
 

@@ -97,6 +97,7 @@ set(PWCORE_FILES
   format.cpp
   interrupt_memory_require.cpp
   logger.cpp
+  logger_stdout.cpp
   logger_syslog.cpp
   message.cpp
   node_id.cpp

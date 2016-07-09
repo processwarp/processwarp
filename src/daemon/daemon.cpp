@@ -254,7 +254,9 @@ bool Daemon::initialize_cui() {
  * @return True if initialize was succeed.
  */
 bool Daemon::initialize_logger() {
+#ifndef WITH_LOG_STDOUT
   logger.initialize("native");
+#endif
   Logger::set_logger_delegate(&logger);
   return true;
 }
