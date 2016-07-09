@@ -49,7 +49,7 @@ BuiltinPostProc::Type BuiltinPosix::bi_pthread_create(Process& proc, Thread& thr
   vaddr_t p_arg    = Process::read_builtin_param_ptr(src, &seek);
   assert(static_cast<signed>(src.size()) == seek);
 
-  thread.memory->write<vtid_t>(p_thread, proc.create_thread(p_start, p_arg));
+  thread.memory->write<vtid_t>(p_thread, proc.create_thread(thread, p_start, p_arg));
   thread.memory->write<vm_int_t>(dst, 0);
 
   return BuiltinPostProc::NORMAL;

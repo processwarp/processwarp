@@ -162,11 +162,12 @@ class Process {
 
   /**
    * Create a new thread and activate.
+   * @param thread Current thread.
    * @param func_addr Entry point for new thread.
    * @param arg_addr Argument for entry point.
    * @return Assigned thread-id for new thread.
    */
-  vtid_t create_thread(vaddr_t func_addr, vaddr_t arg_addr);
+  vtid_t create_thread(Thread& thread, vaddr_t func_addr, vaddr_t arg_addr);
 
   /**
    *
@@ -306,6 +307,20 @@ class Process {
   void setup();
 
  private:
+  struct CreateThreadInfo {
+    vaddr_t func_addr;
+    vaddr_t arg_addr;
+    vtid_t tid;
+    std::unique_ptr<Thread> thread;
+    vaddr_t root_stack;
+    vaddr_t root_stackaddr;
+    vaddr_t func_stackaddr;
+
+    CreateThreadInfo(vaddr_t func_addr_, vaddr_t arg_addr_);
+  };
+
+  std::unique_ptr<CreateThreadInfo> create_thread_info;
+
   /**
    * Constructor.
    * @param delegate Delegater.

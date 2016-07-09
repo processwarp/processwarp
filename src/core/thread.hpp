@@ -75,12 +75,18 @@ class Thread {
 
   WrappedOperator* const OPERATORS[0x36];
 
+  virtual ~Thread();
+
   /**
    * Allocate thread on memory.
-   * @param memory
+   * @param current_memory
+   * @param new_memory
+   * @arapm tid
    */
   static std::pair<vtid_t, std::unique_ptr<Thread>>
-      alloc(std::unique_ptr<VMemory::Accessor> memory, vtid_t tid = VADDR_NULL);
+    alloc(VMemory::Accessor& current_memory,
+          std::unique_ptr<VMemory::Accessor> new_memory,
+          vtid_t tid = VADDR_NULL);
 
   /**
    * Read out thread information from memory.

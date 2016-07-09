@@ -79,9 +79,17 @@ Thread::Thread(vtid_t tid_, std::unique_ptr<VMemory::Accessor> memory_) :
       } {
 }
 
+Thread::~Thread() {
+  assert(call_stack_addr == VADDR_NULL);
+  assert(call_stackinfo_addr == VADDR_NULL);
+  assert(call_vararg_addr == VADDR_NULL);
+}
+
 // Allocate thread on memory.
 std::pair<vtid_t, std::unique_ptr<Thread>>
-            Thread::alloc(std::unique_ptr<VMemory::Accessor> memory, vtid_t tid) {
+            Thread::alloc(VMemory::Accessor& current_memory,
+                          std::unique_ptr<VMemory::Accessor> new_memory,
+                          vtid_t tid) {
   picojson::object js_thread;
 
   js_thread.insert(std::make_pair("tid", Convert::vtid2json(tid)));
@@ -96,9 +104,9 @@ std::pair<vtid_t, std::unique_ptr<Thread>>
                                   picojson::value(picojson::object())));
 
   std::string str_thread = picojson::value(js_thread).serialize();
-  tid = memory->set_meta_area(str_thread, tid);
+  tid = current_memory.set_meta_area(str_thread, tid);
 
-  return std::make_pair(tid, Thread::read(tid, std::move(memory)));
+  return std::make_pair(tid, Thread::read(tid, std::move(new_memory)));
 }
 
 // Read out thread information from memory.

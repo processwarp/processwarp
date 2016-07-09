@@ -1078,7 +1078,7 @@ void Process::warp_out_thread(vtid_t tid) {
 }
 
 // Create a new thread.
-vtid_t Process::create_thread(vaddr_t func_addr, vaddr_t arg_addr) {
+vtid_t Process::create_thread(Thread& thread, vaddr_t func_addr, vaddr_t arg_addr) {
   std::unique_ptr<FuncStore> func(FuncStore::read(*this, *proc_memory, func_addr));
 
   // check function type
@@ -1086,34 +1086,51 @@ vtid_t Process::create_thread(vaddr_t func_addr, vaddr_t arg_addr) {
     throw_error_message(Error::SPEC_VIOLATION, func->name.str());
   }
 
-  Thread& thread =
-      *threads.insert(Thread::alloc(delegate.process_assign_accessor(pid))).first->second.get();
-
-  vaddr_t root_stack = thread.memory->alloc(sizeof(vaddr_t));
-  vaddr_t root_stackaddr =
-      StackInfo::alloc(*thread.memory, VADDR_NULL, VADDR_NULL, 0, 0, root_stack);
-  std::unique_ptr<StackInfo> root_stackinfo(StackInfo::read(*thread.memory, root_stackaddr));
-  root_stackinfo->output = root_stack;
-  root_stackinfo->write(*thread.memory);
-  thread.push_stack(root_stackaddr, std::move(root_stackinfo));
-
-  vaddr_t func_stackaddr;
-  if (func->normal_prop.stack_size != 0) {
-    vaddr_t func_stack = proc_memory->alloc(func->normal_prop.stack_size);
-    thread.memory->write<vaddr_t>(func_stack, arg_addr);
-    func_stackaddr =
-        StackInfo::alloc(*thread.memory, func->addr, root_stack, 0, 0, func_stack);
-
-  } else {
-    func_stackaddr =
-        StackInfo::alloc(*thread.memory, func->addr, root_stack, 0, 0, VADDR_NULL);
+  if (!create_thread_info) {
+    create_thread_info.reset(new CreateThreadInfo(func_addr, arg_addr));
   }
-  thread.push_stack(func_stackaddr);
-  thread.write();
+  assert(create_thread_info->func_addr == func_addr);
+  assert(create_thread_info->arg_addr == arg_addr);
 
-  active_threads.insert(thread.tid);
+  if (!create_thread_info->thread) {
+    std::tie(create_thread_info->tid, create_thread_info->thread) =
+      Thread::alloc(*thread.memory, delegate.process_assign_accessor(pid));
+  }
+
+  if (create_thread_info->root_stack == VADDR_NULL) {
+    create_thread_info->root_stack = thread.memory->alloc(sizeof(vaddr_t));
+  }
+
+  if (create_thread_info->root_stackaddr == VADDR_NULL) {
+    create_thread_info->root_stackaddr =
+      StackInfo::alloc(*thread.memory, VADDR_NULL, VADDR_NULL, 0, 0, create_thread_info->root_stack);
+  }
+  std::unique_ptr<StackInfo> root_stackinfo(StackInfo::read(*thread.memory, create_thread_info->root_stackaddr));
+  root_stackinfo->output = create_thread_info->root_stack;
+  root_stackinfo->write(*thread.memory);
+  create_thread_info->thread->push_stack(create_thread_info->root_stackaddr, std::move(root_stackinfo));
+
+  if (create_thread_info->func_stackaddr == VADDR_NULL) {
+    if (func->normal_prop.stack_size != 0) {
+      vaddr_t func_stack = proc_memory->alloc(func->normal_prop.stack_size);
+      thread.memory->write<vaddr_t>(func_stack, arg_addr);
+      create_thread_info->func_stackaddr =
+        StackInfo::alloc(*thread.memory, func->addr, create_thread_info->root_stack, 0, 0, func_stack);
+
+    } else {
+      create_thread_info->func_stackaddr =
+        StackInfo::alloc(*thread.memory, func->addr, create_thread_info->root_stack, 0, 0, VADDR_NULL);
+    }
+    create_thread_info->thread->push_stack(create_thread_info->func_stackaddr);
+  }
+  create_thread_info->thread->write();
+
+  active_threads.insert(create_thread_info->tid);
+  threads.insert(std::make_pair(create_thread_info->tid,
+                                std::move(create_thread_info->thread)));
   delegate.process_change_thread_set(*this);
 
+  create_thread_info.reset();
   return thread.tid;
 }
 
@@ -1282,8 +1299,8 @@ void Process::run(const std::vector<std::string>& args,
                   const std::map<std::string, std::string>& envs) {
   // make root thread
   Thread& root_thread =
-      *threads.insert(Thread::alloc(delegate.process_assign_accessor(pid), root_tid)).
-      first->second.get();
+    *threads.insert(Thread::alloc(*proc_memory, delegate.process_assign_accessor(pid), root_tid)).
+    first->second.get();
   active_threads.insert(root_thread.tid);
 
   VMemory::Accessor& memory = *root_thread.memory;
@@ -1423,5 +1440,14 @@ void Process::setup() {
   native_ptr.insert(std::make_pair(VADDR_NULL, nullptr));
 
   Logger::dbg_vm(CoreMid::L1001, "finish setup");
+}
+
+Process::CreateThreadInfo::CreateThreadInfo(vaddr_t func_addr_, vaddr_t arg_addr_) :
+    func_addr(func_addr_),
+    arg_addr(arg_addr_),
+    tid(VADDR_NULL),
+    root_stack(VADDR_NULL),
+    root_stackaddr(VADDR_NULL),
+    func_stackaddr(VADDR_NULL) {
 }
 }  // namespace processwarp
