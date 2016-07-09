@@ -77,9 +77,13 @@ VMemory::Page::Page(VMemoryPageType::Type type_, bool flg_update_,
  * @param vmemory_ Virtual memory.
  */
 VMemory::Accessor::Accessor(VMemory& vmemory_) :
-    alloc_addr(VADDR_NULL),
-    is_alloc(false),
     vmemory(vmemory_) {
+}
+
+VMemory::Accessor::~Accessor() {
+  if (alloc_info) {
+    alloc_info->is_cancel = true;
+  }
 }
 
 /**
@@ -589,9 +593,9 @@ void VMemory::set_loading(bool flg) {
   is_loading = flg;
 }
 
-VMemory::PacketAlloc::PacketAlloc(VMemory& vmemory_, Accessor& accessor_) :
+VMemory::PacketAlloc::PacketAlloc(VMemory& vmemory_, std::shared_ptr<AllocInfo> alloc_info_) :
     vmemory(vmemory_),
-    accessor(accessor_) {
+    alloc_info(alloc_info_) {
 }
 
 const PacketController::Define& VMemory::PacketAlloc::get_define() {
@@ -606,20 +610,55 @@ const PacketController::Define& VMemory::PacketAlloc::get_define() {
 }
 
 void VMemory::PacketAlloc::on_error(const Packet& packet) {
-  accessor.acceptor_nid.push_back(packet.src_nid);
-  accessor.is_alloc_cancel = true;
+  alloc_info->acceptor_nid.push_back(packet.src_nid);
+  alloc_info->is_cancel = true;
   update_status();
 }
 
 void VMemory::PacketAlloc::on_packet_error(PacketError::Type code) {
-  accessor.acceptor_nid.push_back(NodeID::NONE);
-  accessor.is_alloc_cancel = true;
+  alloc_info->acceptor_nid.push_back(NodeID::NONE);
+  alloc_info->is_cancel = true;
   update_status();
 }
 
 void VMemory::PacketAlloc::on_reply(const Packet& packet) {
-  accessor.acceptor_nid.push_back(packet.src_nid);
+  alloc_info->acceptor_nid.push_back(packet.src_nid);
   update_status();
+}
+
+void VMemory::PacketAlloc::update_status() {
+  if (alloc_info->acceptor_nid.size() != 4) {
+    return;
+  }
+
+  if (!alloc_info->is_cancel) {
+    auto page = vmemory.pages.find(alloc_info->addr);
+    if (page == vmemory.pages.end()) {
+      vmemory.pages.insert(std::make_pair(alloc_info->addr,
+                                          Page(VMemoryPageType::LEADER, true,
+                                               vmemory.my_nid, std::set<NodeID>())));
+    } else {
+      page->second.type |= VMemoryPageType::LEADER;
+      page->second.flg_update = true;
+    }
+
+    alloc_info->acceptor_nid.clear();
+    alloc_info->is_finish = true;
+
+  } else {
+    vmemory.send_command_alloc_cancel(alloc_info);
+
+    alloc_info->addr = get_upper_addr(alloc_info->type |
+                                      (~AddressRegion::MASK & vmemory.rnd()));
+    while ((alloc_info->type == AddressRegion::META && alloc_info->addr <= 0xFF) ||
+           vmemory.pages.find(alloc_info->addr) == vmemory.pages.end()) {
+      alloc_info->addr = get_upper_addr(alloc_info->type |
+                                        (~AddressRegion::MASK & vmemory.rnd()));
+    }
+
+    alloc_info->is_cancel = false;
+    vmemory.send_command_alloc(alloc_info);
+  }
 }
 
 VMemory::PacketCandidacy::PacketCandidacy(VMemory& vmemory_, vaddr_t addr_) :
@@ -740,38 +779,6 @@ void VMemory::PacketDelegate::on_packet_error(PacketError::Type code) {
   assert(false);
 }
 
-void VMemory::PacketAlloc::update_status() {
-  if (accessor.acceptor_nid.size() != 4) {
-    return;
-  }
-
-  if (!accessor.is_alloc_cancel) {
-    accessor.is_alloc = false;
-
-    auto page = vmemory.pages.find(accessor.alloc_addr);
-    if (page == vmemory.pages.end()) {
-      vmemory.pages.insert(std::make_pair(accessor.alloc_addr,
-                                          Page(VMemoryPageType::LEADER, true,
-                                               vmemory.my_nid, std::set<NodeID>())));
-    } else {
-      page->second.type |= VMemoryPageType::LEADER;
-      page->second.flg_update = true;
-    }
-
-  } else {
-    vmemory.send_command_alloc_cancel(accessor, accessor.alloc_addr);
-
-    accessor.alloc_addr = get_upper_addr(accessor.alloc_type |
-                                         (~AddressRegion::MASK & vmemory.rnd()));
-    while ((accessor.alloc_type == AddressRegion::META && accessor.alloc_addr <= 0xFF) ||
-           vmemory.pages.find(accessor.alloc_addr) == vmemory.pages.end()) {
-      accessor.alloc_addr = get_upper_addr(accessor.alloc_type |
-                                           (~AddressRegion::MASK & vmemory.rnd()));
-    }
-    vmemory.send_command_alloc(accessor, accessor.alloc_addr);
-  }
-}
-
 AddressRegion::Type VMemory::get_addr_type(uint64_t size) {
   if (size <= 0x0000000000FF) return AddressRegion::VALUE_08;
   if (size <= 0x00000000FFFF) return AddressRegion::VALUE_16;
@@ -801,25 +808,30 @@ vaddr_t VMemory::alloc_addr(Accessor& accessor, AddressRegion::Type type) {
     return new_addr;
   }
 
-  if (accessor.is_alloc == true) {
-    throw InterruptMemoryRequire(VADDR_NULL);
+  if (accessor.alloc_info) {
+    if (accessor.alloc_info->is_finish) {
+      vaddr_t new_addr = accessor.alloc_info->addr;
+      accessor.alloc_info.reset();
+      return new_addr;
 
-  } else if (accessor.alloc_addr == VADDR_NULL) {
-    accessor.alloc_type = type;
-    accessor.is_alloc = true;
-    accessor.alloc_addr = get_upper_addr(type | (~AddressRegion::MASK & rnd()));
-    while ((type == AddressRegion::META && accessor.alloc_addr <= 0xFF) ||
-           pages.find(accessor.alloc_addr) != pages.end()) {
-      accessor.alloc_addr = get_upper_addr(type | (~AddressRegion::MASK & rnd()));
+    } else {
+      throw InterruptMemoryRequire(VADDR_NULL);
     }
-    send_command_alloc(accessor, accessor.alloc_addr);
-
-    throw InterruptMemoryRequire(VADDR_NULL);
 
   } else {
-    vaddr_t new_addr = accessor.alloc_addr;
-    accessor.alloc_addr = VADDR_NULL;
-    return new_addr;
+    accessor.alloc_info.reset(new AllocInfo());
+
+    accessor.alloc_info->addr = get_upper_addr(type | (~AddressRegion::MASK & rnd()));
+    while ((type == AddressRegion::META && accessor.alloc_info->addr <= 0xFF) ||
+           pages.find(accessor.alloc_info->addr) != pages.end()) {
+      accessor.alloc_info->addr = get_upper_addr(type | (~AddressRegion::MASK & rnd()));
+    }
+    accessor.alloc_info->type = type;
+    accessor.alloc_info->is_cancel = false;
+    accessor.alloc_info->is_finish = false;
+    send_command_alloc(accessor.alloc_info);
+
+    throw InterruptMemoryRequire(VADDR_NULL);
   }
 }
 
@@ -1409,27 +1421,26 @@ void VMemory::recv_command_update(const Packet& packet) {
   }
 }
 
-void VMemory::send_command_alloc(Accessor& accessor, vaddr_t addr) {
+void VMemory::send_command_alloc(std::shared_ptr<AllocInfo> alloc_info) {
   picojson::object param;
-  param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
+  param.insert(std::make_pair("addr", Convert::vaddr2json(alloc_info->addr)));
   param.insert(std::make_pair("nid", my_nid.to_json()));
 
-  accessor.acceptor_nid.clear();
-  accessor.is_alloc_cancel = false;
-  NodeID acceptor_nid = get_hash_id(addr);
+  alloc_info->acceptor_nid.clear();
+  NodeID acceptor_nid = get_hash_id(alloc_info->addr);
   for (int i = 0; i < 4; i ++) {
     packet_controller.send(std::unique_ptr<PacketController::Behavior>
-                           (new PacketAlloc(*this, accessor)), my_pid, acceptor_nid, param);
+                           (new PacketAlloc(*this, alloc_info)), my_pid, acceptor_nid, param);
     acceptor_nid = acceptor_nid + NodeID::QUARTER;
   }
 }
 
-void VMemory::send_command_alloc_cancel(Accessor& accessor, vaddr_t addr) {
+void VMemory::send_command_alloc_cancel(std::shared_ptr<AllocInfo> alloc_info) {
   picojson::object param;
-  param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
+  param.insert(std::make_pair("addr", Convert::vaddr2json(alloc_info->addr)));
   param.insert(std::make_pair("nid", my_nid.to_json()));
 
-  for (NodeID& acceptor_nid : accessor.acceptor_nid) {
+  for (NodeID& acceptor_nid : alloc_info->acceptor_nid) {
     packet_controller.send("alloc_cancel", Module::MEMORY, true,
                            my_pid, acceptor_nid, param);
   }

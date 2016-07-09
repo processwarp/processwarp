@@ -75,6 +75,19 @@ class VMemory : public PacketControllerDelegate {
          const NodeID& leader_nid_, const std::set<NodeID>& hint_);
   };
 
+  struct AllocInfo {
+    /** Allocating address. */
+    vaddr_t addr;
+    /** Allocating address type. */
+    AddressRegion::Type type;
+    /** Node-id, it reply acceptr or error packet. */
+    std::vector<NodeID> acceptor_nid;
+    /** True if received error packet from at least 1 acceptor. */
+    bool is_cancel;
+    /** True if accepting process is finished. */
+    bool is_finish;
+  };
+
   /**
    * Memory accessor.
    * Use per thread.
@@ -82,18 +95,11 @@ class VMemory : public PacketControllerDelegate {
   class Accessor {
    public:
     typedef std::unique_ptr<int, std::function<void(int*)>> MasterKey;
-    /** Allocating address. */
-    vaddr_t alloc_addr;
-    /** Allocating address type. */
-    AddressRegion::Type alloc_type;
-    /** True if waiting to alloc new address. */
-    bool is_alloc;
-    /** Node-id, it reply acceptr or error packet. */
-    std::vector<NodeID> acceptor_nid;
-    /** True if received error packet from at least 1 acceptor. */
-    bool is_alloc_cancel;
+
+    std::shared_ptr<AllocInfo> alloc_info;
 
     explicit Accessor(VMemory& vmemory);
+    virtual ~Accessor();
 
     vaddr_t alloc(uint64_t size);
     void free(vaddr_t addr);
@@ -180,7 +186,7 @@ class VMemory : public PacketControllerDelegate {
  private:
   class PacketAlloc : public PacketController::Behavior {
    public:
-    PacketAlloc(VMemory& vmemory_, Accessor& accessor_);
+    PacketAlloc(VMemory& vmemory_, std::shared_ptr<AllocInfo> alloc_info_);
 
     const PacketController::Define& get_define() override;
     void on_error(const Packet& packet) override;
@@ -189,7 +195,7 @@ class VMemory : public PacketControllerDelegate {
 
    private:
     VMemory& vmemory;
-    Accessor& accessor;
+    std::shared_ptr<AllocInfo> alloc_info;
 
     void update_status();
   };
@@ -283,8 +289,8 @@ class VMemory : public PacketControllerDelegate {
   void recv_command_copy_reply(const Packet& packet);
   void recv_command_update(const Packet& packet);
 
-  void send_command_alloc(Accessor& accessor, vaddr_t addr);
-  void send_command_alloc_cancel(Accessor& accessor, vaddr_t addr);
+  void send_command_alloc(std::shared_ptr<AllocInfo> alloc_info);
+  void send_command_alloc_cancel(std::shared_ptr<AllocInfo> alloc_info);
   void send_command_balance(vaddr_t addr, const std::set<NodeID>& acceptor_nids);
   void send_command_candidacy(vaddr_t addr, Page& page);
   void send_command_claim_back(const NodeID& leader_nid, vaddr_t addr);
