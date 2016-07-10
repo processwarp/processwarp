@@ -133,22 +133,43 @@ void WorkerConnector::create_vm(const vpid_t& pid, vtid_t root_tid, vaddr_t proc
 void WorkerConnector::relay_packet(const Packet& packet) {
   assert(packet.dst_module & Module::MEMORY || packet.dst_module & Module::VM);
 
-  // @todo send error reply
-  assert(properties.find(packet.pid) != properties.end());
+  if (packet.pid == PID::BROADCAST) {
+    for (auto& property : properties) {
+      vpid_t pid = property.first;
 
-  picojson::object data;
-  data.insert(std::make_pair("command", picojson::value(std::string("relay_packet"))));
-  data.insert(std::make_pair("packet_id", Convert::int2json(packet.packet_id)));
-  data.insert(std::make_pair("packet_command", picojson::value(packet.command)));
-  data.insert(std::make_pair("mode", Convert::int2json(packet.mode)));
-  data.insert(std::make_pair("dst_module", Convert::int2json(packet.dst_module)));
-  data.insert(std::make_pair("src_module", Convert::int2json(packet.src_module)));
-  data.insert(std::make_pair("pid", Convert::vpid2json(packet.pid)));
-  data.insert(std::make_pair("dst_nid", packet.dst_nid.to_json()));
-  data.insert(std::make_pair("src_nid", packet.src_nid.to_json()));
-  data.insert(std::make_pair("content", picojson::value(packet.content)));
+      Packet p = {
+        packet.packet_id,
+        packet.command,
+        packet.mode,
+        packet.dst_module,
+        packet.src_module,
+        pid,
+        packet.dst_nid,
+        packet.src_nid,
+        packet.content
+      };
 
-  send_data(packet.pid, data);
+      relay_packet(p);
+    }
+
+  } else {
+    // @todo send error reply
+    assert(properties.find(packet.pid) != properties.end());
+
+    picojson::object data;
+    data.insert(std::make_pair("command", picojson::value(std::string("relay_packet"))));
+    data.insert(std::make_pair("packet_id", Convert::int2json(packet.packet_id)));
+    data.insert(std::make_pair("packet_command", picojson::value(packet.command)));
+    data.insert(std::make_pair("mode", Convert::int2json(packet.mode)));
+    data.insert(std::make_pair("dst_module", Convert::int2json(packet.dst_module)));
+    data.insert(std::make_pair("src_module", Convert::int2json(packet.src_module)));
+    data.insert(std::make_pair("pid", Convert::vpid2json(packet.pid)));
+    data.insert(std::make_pair("dst_nid", packet.dst_nid.to_json()));
+    data.insert(std::make_pair("src_nid", packet.src_nid.to_json()));
+    data.insert(std::make_pair("content", picojson::value(packet.content)));
+
+    send_data(packet.pid, data);
+  }
 }
 
 /**
