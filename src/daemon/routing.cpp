@@ -29,7 +29,7 @@ Routing::Routing(RoutingDelegate& delegate_, const NodeID& my_nid_) :
  * @retrn THIS for local node, NORMAL node-id for another node, NONE if target node has not exist.
  */
 NodeID Routing::get_relay_nid(const NodeID& nid, bool is_explicit) {
-  if (my_nid == nid) {
+  if (nid == my_nid || nid == NodeID::THIS) {
     return NodeID::THIS;
   }
 
