@@ -52,8 +52,8 @@ inline void do_nothing() {}
 #define info(MID, ...)                                                  \
   output(processwarp::Logger::Level::INFO,  __FILE__, __LINE__, MID, 0, ##__VA_ARGS__)
 #ifdef NDEBUG
-#  define dbg(MID, ...) processwarp::do_nothing()
-#  define dbg_raw(MID, MSG, ...) processwarp::do_nothing()
+#  define dbg(MID, ...) do_nothing()
+#  define dbg_raw(MID, MSG, ...) do_nothing()
 #else
 #  define dbg(MID, ...)                                                 \
   output(processwarp::Logger::Level::DEBUG,   __FILE__, __LINE__, MID, 0, ##__VA_ARGS__)
@@ -62,14 +62,14 @@ inline void do_nothing() {}
 #endif
 
 #if defined(NDEBUG) || !defined(DEBUG_VM)
-#  define dbg_vm(MID, MSG, ...) processwarp::do_nothing()
+#  define dbg_vm(MID, MSG, ...) do_nothing()
 #else
 #  define dbg_vm(MID, MSG, ...)                                         \
   output_raw(processwarp::Logger::Level::DEBUG, __FILE__, __LINE__, MID, MSG, 0, ##__VA_ARGS__)
 #endif
 
 #if defined(NDEBUG) || !defined(DEBUG_MEM)
-#  define dbg_mem(MID, MSG, ...) processwarp::do_nothing()
+#  define dbg_mem(MID, MSG, ...) do_nothing()
 #else
 #  define dbg_mem(MID, MSG, ...)                                        \
   output_raw(processwarp::Logger::Level::DEBUG, __FILE__, __LINE__, MID, MSG, 0, ##__VA_ARGS__)
