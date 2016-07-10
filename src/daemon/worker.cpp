@@ -441,8 +441,10 @@ void Worker::send_data(const picojson::object& data) {
  * @return Exit status.
  */
 #ifndef WITH_WORKER_DEBUG
+using namespace processwarp;
+
 int main(int argc, char* argv[]) {
-  processwarp::Worker THIS;
+  Worker THIS;
 
   Logger::dbg(DaemonMid::L3010, getpid());
   return THIS.entry(argc, argv);
