@@ -1103,23 +1103,28 @@ vtid_t Process::create_thread(Thread& thread, vaddr_t func_addr, vaddr_t arg_add
 
   if (create_thread_info->root_stackaddr == VADDR_NULL) {
     create_thread_info->root_stackaddr =
-      StackInfo::alloc(*thread.memory, VADDR_NULL, VADDR_NULL, 0, 0, create_thread_info->root_stack);
+      StackInfo::alloc(*thread.memory, VADDR_NULL, VADDR_NULL,
+                       0, 0, create_thread_info->root_stack);
   }
-  std::unique_ptr<StackInfo> root_stackinfo(StackInfo::read(*thread.memory, create_thread_info->root_stackaddr));
+  std::unique_ptr<StackInfo> root_stackinfo(
+      StackInfo::read(*thread.memory, create_thread_info->root_stackaddr));
   root_stackinfo->output = create_thread_info->root_stack;
   root_stackinfo->write(*thread.memory);
-  create_thread_info->thread->push_stack(create_thread_info->root_stackaddr, std::move(root_stackinfo));
+  create_thread_info->thread->push_stack(create_thread_info->root_stackaddr,
+                                         std::move(root_stackinfo));
 
   if (create_thread_info->func_stackaddr == VADDR_NULL) {
     if (func->normal_prop.stack_size != 0) {
       vaddr_t func_stack = proc_memory->alloc(func->normal_prop.stack_size);
       thread.memory->write<vaddr_t>(func_stack, arg_addr);
       create_thread_info->func_stackaddr =
-        StackInfo::alloc(*thread.memory, func->addr, create_thread_info->root_stack, 0, 0, func_stack);
+        StackInfo::alloc(*thread.memory, func->addr, create_thread_info->root_stack,
+                         0, 0, func_stack);
 
     } else {
       create_thread_info->func_stackaddr =
-        StackInfo::alloc(*thread.memory, func->addr, create_thread_info->root_stack, 0, 0, VADDR_NULL);
+        StackInfo::alloc(*thread.memory, func->addr, create_thread_info->root_stack,
+                         0, 0, VADDR_NULL);
     }
     create_thread_info->thread->push_stack(create_thread_info->func_stackaddr);
   }

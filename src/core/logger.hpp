@@ -33,6 +33,7 @@ void set_logger_delegate(Delegate* delegate_);
 // For dummy to avoid error that "expected unqualified-id".
 inline void do_nothing() {}
 }  // namespace Logger
+}  // namespace processwarp
 
 #ifdef __ANDROID__
 #  ifndef PRIu64
@@ -44,29 +45,32 @@ inline void do_nothing() {}
 #endif
 
 // Macros to access logger, ex: Logger.e(mid, params);
-#define err(MID, ...) output(Logger::Level::ERROR, __FILE__, __LINE__, MID, 0, ##__VA_ARGS__)
-#define warn(MID, ...) output(Logger::Level::WARN,  __FILE__, __LINE__, MID, 0, ##__VA_ARGS__)
-#define info(MID, ...) output(Logger::Level::INFO,  __FILE__, __LINE__, MID, 0, ##__VA_ARGS__)
+#define err(MID, ...)                                                   \
+  output(processwarp::Logger::Level::ERROR, __FILE__, __LINE__, MID, 0, ##__VA_ARGS__)
+#define warn(MID, ...)                                                  \
+  output(processwarp::Logger::Level::WARN,  __FILE__, __LINE__, MID, 0, ##__VA_ARGS__)
+#define info(MID, ...)                                                  \
+  output(processwarp::Logger::Level::INFO,  __FILE__, __LINE__, MID, 0, ##__VA_ARGS__)
 #ifdef NDEBUG
-#  define dbg(MID, ...) do_nothing()
-#  define dbg_raw(MID, MSG, ...) do_nothing()
+#  define dbg(MID, ...) processwarp::do_nothing()
+#  define dbg_raw(MID, MSG, ...) processwarp::do_nothing()
 #else
-#  define dbg(MID, ...) output(Logger::Level::DEBUG,   __FILE__, __LINE__, MID, 0, ##__VA_ARGS__)
+#  define dbg(MID, ...)                                                 \
+  output(processwarp::Logger::Level::DEBUG,   __FILE__, __LINE__, MID, 0, ##__VA_ARGS__)
 #  define dbg_raw(MID, MSG, ...)                                        \
-  output_raw(Logger::Level::DEBUG, __FILE__, __LINE__, MID, MSG, 0, ##__VA_ARGS__)
+  output_raw(processwarp::Logger::Level::DEBUG, __FILE__, __LINE__, MID, MSG, 0, ##__VA_ARGS__)
 #endif
 
 #if defined(NDEBUG) || !defined(DEBUG_VM)
-#  define dbg_vm(MID, MSG, ...) do_nothing()
+#  define dbg_vm(MID, MSG, ...) processwarp::do_nothing()
 #else
 #  define dbg_vm(MID, MSG, ...)                                         \
-  output_raw(Logger::Level::DEBUG, __FILE__, __LINE__, MID, MSG, 0, ##__VA_ARGS__)
+  output_raw(processwarp::Logger::Level::DEBUG, __FILE__, __LINE__, MID, MSG, 0, ##__VA_ARGS__)
 #endif
 
 #if defined(NDEBUG) || !defined(DEBUG_MEM)
-#  define dbg_mem(MID, MSG, ...) do_nothing()
+#  define dbg_mem(MID, MSG, ...) processwarp::do_nothing()
 #else
 #  define dbg_mem(MID, MSG, ...)                                        \
-  output_raw(Logger::Level::DEBUG, __FILE__, __LINE__, MID, MSG, 0, ##__VA_ARGS__)
+  output_raw(processwarp::Logger::Level::DEBUG, __FILE__, __LINE__, MID, MSG, 0, ##__VA_ARGS__)
 #endif
-}  // namespace processwarp
