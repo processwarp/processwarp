@@ -33,6 +33,10 @@ NodeID Routing::get_relay_nid(const NodeID& nid, bool is_explicit) {
     return NodeID::THIS;
   }
 
+  if (nid == NodeID::NEXT) {
+    return NodeID::NEXT;
+  }
+
   if (next_minus_nid == NodeID::NONE) {
     if (is_explicit) {
       return NodeID::NONE;

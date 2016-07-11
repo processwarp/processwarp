@@ -104,6 +104,9 @@ void PacketController::send(std::unique_ptr<Behavior> behavior, const vpid_t& pi
 
   const Define& define = behavior->get_define();
 
+  assert(define.mode & PacketMode::ONE_WAY ||
+         dst_nid != NodeID::NEXT);
+
   Packet packet = {
     packet_id,
     define.command,

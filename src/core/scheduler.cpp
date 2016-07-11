@@ -520,7 +520,7 @@ void Scheduler::send_command_heartbeat_scheduler() {
   param.insert(std::make_pair("name", picojson::value(my_info.name)));
 
   packet_controller.send("heartbeat_scheduler", Module::SCHEDULER,
-                         false, PID::BROADCAST, NodeID::BROADCAST, param);
+                         false, PID::BROADCAST, NodeID::NEXT, param);
 }
 
 /**

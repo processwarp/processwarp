@@ -15,14 +15,14 @@
             "description":"Send command to this(local) node."
         },
         {
-            "name":"BROADCAST",
-            "value":"*",
-            "description":"Send command to any node with the same account."
-        },
-        {
             "name":"SERVER",
             "value":"server",
             "description":"Server is a special node."
-        }
+        },
+	{
+	    "name":"NEXT",
+	    "value":"next",
+	    "description":"Next node is nodes of connecting direct from this node."
+	}
     ]
 }

@@ -10,8 +10,8 @@ class NodeIDTest : public ::testing::Test {
  public:
 };
 
-TEST_F(NodeIDTest, BROADCAST) {
-  EXPECT_EQ(NID::BROADCAST, NodeID::BROADCAST.to_str());
+TEST_F(NodeIDTest, NEXT) {
+  EXPECT_EQ(NID::NEXT, NodeID::NEXT.to_str());
 }
 
 TEST_F(NodeIDTest, NONE) {
@@ -57,7 +57,7 @@ TEST_F(NodeIDTest, copy) {
 }
 
 TEST_F(NodeIDTest, diff) {
-  NodeID bro = NodeID::BROADCAST;
+  NodeID nxt = NodeID::NEXT;
   NodeID non = NodeID::NONE;
   NodeID svr = NodeID::SERVER;
   NodeID thi = NodeID::THIS;
@@ -65,14 +65,14 @@ TEST_F(NodeIDTest, diff) {
   NodeID n2  = NodeID::from_str("fedcba9876543210fedcba9876543210");
   NodeID n3  = NodeID::from_str("fedcba9876543210fedcba9876543210");
 
-  EXPECT_TRUE(bro == bro);
-  EXPECT_TRUE(bro == NodeID::BROADCAST);
-  EXPECT_FALSE(bro == NodeID::NONE);
-  EXPECT_FALSE(bro == n1);
-  EXPECT_FALSE(bro != bro);
-  EXPECT_FALSE(bro != NodeID::BROADCAST);
-  EXPECT_TRUE(bro != NodeID::NONE);
-  EXPECT_TRUE(bro != n1);
+  EXPECT_TRUE(nxt == nxt);
+  EXPECT_TRUE(nxt == NodeID::NEXT);
+  EXPECT_FALSE(nxt == NodeID::NONE);
+  EXPECT_FALSE(nxt == n1);
+  EXPECT_FALSE(nxt != nxt);
+  EXPECT_FALSE(nxt != NodeID::NEXT);
+  EXPECT_TRUE(nxt != NodeID::NONE);
+  EXPECT_TRUE(nxt != n1);
 
   EXPECT_TRUE(non == non);
   EXPECT_TRUE(non == NodeID::NONE);
@@ -94,11 +94,11 @@ TEST_F(NodeIDTest, diff) {
 
   EXPECT_TRUE(thi == thi);
   EXPECT_TRUE(thi == NodeID::THIS);
-  EXPECT_FALSE(thi == NodeID::BROADCAST);
+  EXPECT_FALSE(thi == NodeID::NEXT);
   EXPECT_FALSE(thi == n1);
   EXPECT_FALSE(thi != thi);
   EXPECT_FALSE(thi != NodeID::THIS);
-  EXPECT_TRUE(thi != NodeID::BROADCAST);
+  EXPECT_TRUE(thi != NodeID::NEXT);
   EXPECT_TRUE(thi != n1);
 
   EXPECT_TRUE(n1 == n1);

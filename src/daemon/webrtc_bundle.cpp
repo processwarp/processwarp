@@ -240,8 +240,33 @@ void WebrtcBundle::relay(const Packet& packet) {
 
   if (dst_nid == NodeID::THIS) {
     relay_to_local(packet);
+
+  } else if (dst_nid == NodeID::NEXT) {
+    for (auto& it : nid_map) {
+      const NodeID& nid = it.first;
+      const WebrtcConnector& connector = *it.second;
+      if (!connector.is_connected) {
+        continue;
+      }
+
+      const Packet p = {
+        packet.packet_id,
+        packet.command,
+        packet.mode,
+        packet.dst_module,
+        packet.src_module,
+        packet.pid,
+        nid,
+        packet.src_nid,
+        packet.content
+      };
+
+      relay_to_another(nid, p);
+    }
+
   } else if (dst_nid == NodeID::NONE) {
     send_packet_error(packet, PacketError::NOT_EXIST);
+
   } else {
     relay_to_another(dst_nid, packet);
   }

@@ -22,13 +22,13 @@ static const int NONE       = 0;
 static const int NORMAL     = 1;
 static const int THIS       = 2;
 static const int SERVER     = 3;
-static const int BROADCAST  = 4;
+static const int NEXT       = 4;
 }  // namespace Type
 
-const NodeID NodeID::BROADCAST(Type::BROADCAST);
 const NodeID NodeID::NONE(Type::NONE);
 const NodeID NodeID::SERVER(Type::SERVER);
 const NodeID NodeID::THIS(Type::THIS);
+const NodeID NodeID::NEXT(Type::NEXT);
 
 const NodeID NodeID::MAX(0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF);
 const NodeID NodeID::MIN(0x0000000000000000, 0x0000000000000000);
@@ -111,11 +111,11 @@ NodeID NodeID::from_str(const std::string str) {
     } else if (str == NID::THIS) {
       return THIS;
 
-    } else if (str == NID::BROADCAST) {
-      return BROADCAST;
-
     } else if (str == NID::SERVER) {
       return SERVER;
+
+    } else if (str == NID::NEXT) {
+      return NEXT;
 
     } else {
       /// TDDO error
@@ -361,8 +361,8 @@ std::string NodeID::to_str() const {
       return NID::SERVER;
     } break;
 
-    case Type::BROADCAST: {
-      return NID::BROADCAST;
+    case Type::NEXT: {
+      return NID::NEXT;
     } break;
 
     default: {

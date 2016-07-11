@@ -292,10 +292,7 @@ void VMachine::regist_builtin_func(const std::string& name,
  * @param packet A packet.
  */
 void VMachine::packet_controller_on_recv(const Packet& packet) {
-  if (packet.command == "heartbeat_vm") {
-    recv_command_heartbeat_vm(packet);
-
-  } else if (packet.command == "require_warp_thread") {
+  if (packet.command == "require_warp_thread") {
     recv_command_require_warp_thread(packet);
 
   } else if (packet.command == "warp_thread") {
@@ -381,10 +378,8 @@ void VMachine::send_command_heartbeat_vm() {
   picojson::object param;
   param.insert(std::make_pair("name", picojson::value(process->name)));
   param.insert(std::make_pair("threads", picojson::value(threads)));
-  packet_controller.send("heartbeat_vm", Module::VM, true,
-                         process->pid, NodeID::BROADCAST, param);
   packet_controller.send("heartbeat_vm", Module::SCHEDULER, true,
-                         process->pid, NodeID::BROADCAST, param);
+                         process->pid, NodeID::THIS, param);
 }
 
 /**

@@ -12,10 +12,10 @@ namespace processwarp {
  */
 class NodeID {
  public:
-  static const NodeID BROADCAST;
   static const NodeID NONE;
   static const NodeID SERVER;
   static const NodeID THIS;
+  static const NodeID NEXT;
 
   static const NodeID MAX;
   static const NodeID MIN;
