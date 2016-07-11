@@ -21,8 +21,8 @@ const MODULE = {
 const NID = {
   NONE: '',
   THIS: '.',
-  BROADCAST: '*',
-  SERVER: 'server'
+  SERVER: 'server',
+  NEXT: 'next'
 };
 
 const PACKET_MODE = {
@@ -434,7 +434,7 @@ class GUI {
       isExplicit: true,
       dstModule: MODULE.SCHEDULER,
       pid: this.property.pid,
-      dstNid: NID.BROADCAST,
+      dstNid: NID.THIS,
       content: {}
     });
     this.packetController.send({
@@ -442,7 +442,7 @@ class GUI {
       isExplicit: true,
       dstModule: MODULE.GUI,
       pid: this.property.pid,
-      dstNid: NID.BROADCAST,
+      dstNid: NID.THIS,
       content: {}
     });
   }
