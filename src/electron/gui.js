@@ -242,7 +242,7 @@ export default class GUI {
       isExplicit: true,
       dstModule: MODULE.SCHEDULER,
       pid: this.property.pid,
-      dstNid: NID.BROADCAST,
+      dstNid: NID.THIS,
       content: {}
     });
     this.packetController.send({
@@ -250,7 +250,7 @@ export default class GUI {
       isExplicit: true,
       dstModule: MODULE.GUI,
       pid: this.property.pid,
-      dstNid: NID.BROADCAST,
+      dstNid: NID.THIS,
       content: {}
     });
   }

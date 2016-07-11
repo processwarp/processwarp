@@ -431,11 +431,8 @@ function relayGuiPacket(packet) {
       sendOrPush(pid, packet);
     }
   } else {
-    if (packet.pid in contexts) {
-      sendOrPush(packet.pid, packet);
-    } else {
-      console.assert(packet.dst_nid === NID.BROADCAST);
-    }
+    console.assert(packet.pid in contexts);
+    sendOrPush(packet.pid, packet);
   }
 }
 
@@ -503,7 +500,7 @@ function sendCommandActivate() {
     isExplicit: true,
     dstModule: MODULE.SCHEDULER,
     pid: PID.BROADCAST,
-    dstNid: NID.BROADCAST,
+    dstNid: NID.THIS,
     content: {}
   });
 }
