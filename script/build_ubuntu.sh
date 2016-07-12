@@ -116,7 +116,6 @@ fi
 
 mkdir -p dist
 ${_root}/local/bin/babel --no-babelrc --presets es2015 --retain-lines -o dist/constant.js constant.js
-${_root}/local/bin/babel --no-babelrc --presets es2015 --retain-lines -o dist/gui.js gui.js
 ${_root}/local/bin/babel --no-babelrc --presets es2015 --retain-lines -o dist/main.js main.js
 ${_root}/local/bin/babel --no-babelrc --presets es2015 --retain-lines -o dist/packet_controller.js packet_controller.js
 

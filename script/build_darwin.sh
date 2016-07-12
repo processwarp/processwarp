@@ -60,7 +60,6 @@ fi
 
 mkdir -p dist
 babel --no-babelrc --presets es2015 --retain-lines -o dist/constant.js constant.js
-babel --no-babelrc --presets es2015 --retain-lines -o dist/gui.js gui.js
 babel --no-babelrc --presets es2015 --retain-lines -o dist/main.js main.js
 babel --no-babelrc --presets es2015 --retain-lines -o dist/packet_controller.js packet_controller.js
 

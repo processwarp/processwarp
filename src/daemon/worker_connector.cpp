@@ -14,7 +14,6 @@
 #include "worker_connector.hpp"
 
 namespace processwarp {
-#ifndef WORKER_DUMMY
 /**
  * Simple destructor for vtable.
  */
@@ -319,5 +318,4 @@ void WorkerConnector::send_data(const vpid_t& pid, const picojson::object& data)
     property.send_wait.push_back(data);
   }
 }
-#endif  // ifndef WORKER_DUMMY
 }  // namespace processwarp

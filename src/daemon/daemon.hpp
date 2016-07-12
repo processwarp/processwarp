@@ -49,7 +49,6 @@ class Daemon : public ServerConnectorConnectDelegate, public WorkerConnectorDele
   bool initialize_logger();
   bool initialize_message();
   bool initialize_subprocess();
-  int main_loop();
   bool read_config(const std::string& file);
   bool read_options(int argc, char* argv[]);
   void set_stdin_echo(bool is_enable);
