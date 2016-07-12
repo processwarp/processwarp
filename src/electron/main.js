@@ -61,6 +61,16 @@ app.on('window-all-closed', function() {
 });
 
 /**
+ * Terminate backend process before quit application.
+ * @return {void}
+ */
+app.on('will-quit', function() {
+  if (backendProcess) {
+    backendProcess.kill();
+  }
+});
+
+/**
  * On start application, set event listener and create controller window.
  */
 app.on('ready', function() {
