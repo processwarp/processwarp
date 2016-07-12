@@ -12,9 +12,10 @@
 #  include "logger_stdout.hpp"
 #endif
 #include "server_connector.hpp"
+#include "worker_connector.hpp"
 
 namespace processwarp {
-class Daemon : public ServerConnectorConnectDelegate {
+class Daemon : public ServerConnectorConnectDelegate, public WorkerConnectorDelegate {
  public:
   Daemon();
 
@@ -39,6 +40,8 @@ class Daemon : public ServerConnectorConnectDelegate {
       ServerConnector& server_connector, const NodeID& my_nid) override;
   void server_connector_connect_on_failure(
       ServerConnector& server_connector, int code) override;
+
+  bool worker_connector_require_create_vm(WorkerConnector& caller, const vpid_t& pid) override;
 
   int daemonize();
   bool config_subprocess();

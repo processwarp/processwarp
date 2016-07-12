@@ -101,6 +101,27 @@ void Scheduler::recv_packet(const Packet& packet) {
 }
 
 /**
+ * When require to create vm from another module in this node,
+ * try it if scheduler having the process information.
+ * Require will success it after sync process information.
+ * The module send requiest should retry it in a constant interval.
+ * @param pid Target process's pid.
+ * @return True if scheduler had a process information and require had raised to target module.
+ */
+bool Scheduler::require_create_vm(const vpid_t& pid) {
+  auto it = processes.find(pid);
+  if (it != processes.end()) {
+    ProcessInfo& info = it->second;
+    delegate->scheduler_create_vm(*this, pid, info.root_tid, info.proc_addr,
+                                  info.leader_nid, info.name);
+    return true;
+
+  } else {
+    return false;
+  }
+}
+
+/**
  * Set node-id and node name of this node.
  * Nid must not NONE.
  * @param nid Node-id of this node.
@@ -498,6 +519,9 @@ void Scheduler::recv_command_warp_thread(const Packet& packet) {
   if (it_info == processes.end()) {
     ProcessInfo info;
     info.pid = packet.pid;
+    info.root_tid = Convert::json2vtid(packet.content.at("root_tid"));
+    info.proc_addr = Convert::json2vaddr(packet.content.at("proc_addr"));
+    info.leader_nid = NodeID::from_json(packet.content.at("master_nid"));
     info.name = packet.content.at("name").get<std::string>();
     info.gui_nid = NodeID::NONE;
     info.having_vm = true;

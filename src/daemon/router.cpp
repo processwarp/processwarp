@@ -144,6 +144,15 @@ void Router::relay_from_global(const Packet& packet) {
 }
 
 /**
+ * Relay create_vm require to scheduler.
+ * @param pid Target process-id.
+ * @return Scheduler's return value.
+ */
+bool Router::require_create_vm(const vpid_t& pid) {
+  return scheduler.require_create_vm(pid);
+}
+
+/**
  * When nid has set, store assigned my node-id and hostname as node name.
  * @param nid Assigned node-id for this node.
  */
@@ -200,7 +209,9 @@ void Router::scheduler_send_packet(Scheduler& scheduler, const Packet& packet) {
  */
 void Router::on_timer_for_execute(uv_timer_t* handle) {
   Router& THIS = *reinterpret_cast<Router*>(handle->data);
+  WorkerConnector& worker = WorkerConnector::get_instance();
 
+  worker.clock_routine();
   THIS.scheduler.execute();
 }
 

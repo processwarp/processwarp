@@ -22,6 +22,7 @@ class Router : public SchedulerDelegate {
   const NodeID& get_my_nid();
   void relay_from_local(const Packet& packet);
   void relay_from_global(const Packet& packet);
+  bool require_create_vm(const vpid_t& pid);
   void set_nid(const NodeID& nid);
 
  private:

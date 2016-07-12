@@ -97,6 +97,12 @@ struct ThreadInfo {
 struct ProcessInfo {
   /** Porcess-id */
   vpid_t pid;
+  /** Root thread-id. */
+  vtid_t root_tid;
+  /** Address of process information. */
+  vaddr_t proc_addr;
+  /** Leader-nid of proc_addr. */
+  NodeID leader_nid;
   /** Process name. */
   std::string name;
   /** Map of thread-id and node-id, last heartbeat time that thread is running. */

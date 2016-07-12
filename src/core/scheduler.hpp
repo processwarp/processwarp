@@ -29,6 +29,7 @@ class Scheduler : public PacketControllerDelegate {
   NodeID get_dst_nid(const vpid_t& pid, Module::Type module);
   vpid_t get_new_pid();
   void recv_packet(const Packet& packet);
+  bool require_create_vm(const vpid_t& pid);
   void set_node_information(const NodeID& nid, const std::string& name);
   void execute();
 

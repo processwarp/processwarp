@@ -16,6 +16,12 @@
 namespace processwarp {
 #ifndef WORKER_DUMMY
 /**
+ * Simple destructor for vtable.
+ */
+WorkerConnectorDelegate::~WorkerConnectorDelegate() {
+}
+
+/**
  * WorkerConnector instance getter as singleton pattern.
  * @return The singleton instance of WorkerConnector class.
  */
@@ -40,13 +46,28 @@ WorkerConnector::WorkerConnector() {
  * @param libs Library pathes to send to worker process.
  * @param lib_filter Library filter to send to worker process.
  */
-void WorkerConnector::initialize(uv_loop_t* loop, const std::string& pipe_path_,
+void WorkerConnector::initialize(WorkerConnectorDelegate& delegate_, uv_loop_t* loop,
+                                 const std::string& pipe_path_,
                                  const picojson::array& libs, const picojson::array& lib_filter) {
+  delegate      = &delegate_;
   pipe_path     = pipe_path_;
   config_libs   = libs;
   config_lib_filter = lib_filter;
 
   Connector::initialize(loop, pipe_path);
+}
+
+/**
+ * Per clock timing, require to create new vm that receive packet and not created yet.
+ */
+void WorkerConnector::clock_routine() {
+  for (auto& it : properties) {
+    const vpid_t& pid = it.first;
+    WorkerProperty& property = it.second;
+    if (property.status == ConnectStatus::CLOSE) {
+      delegate->worker_connector_require_create_vm(*this, pid);
+    }
+  }
 }
 
 /**
@@ -67,10 +88,15 @@ void WorkerConnector::create_vm(const vpid_t& pid, vtid_t root_tid, vaddr_t proc
 
   // Exists vm for pid yet.
   if (properties.find(pid) != properties.end()) {
-    return;
+    WorkerProperty& property = properties.at(pid);
+    if (property.status != ConnectStatus::CLOSE) {
+      return;
+    }
+
+  } else {
+    properties.insert(std::make_pair(pid, WorkerProperty()));
   }
 
-  properties.insert(std::make_pair(pid, WorkerProperty()));
   WorkerProperty& property = properties.at(pid);
   property.status = ConnectStatus::BEGIN;
   property.pid    = pid;
@@ -151,25 +177,31 @@ void WorkerConnector::relay_packet(const Packet& packet) {
 
       relay_packet(p);
     }
-
-  } else {
-    // @todo send error reply
-    assert(properties.find(packet.pid) != properties.end());
-
-    picojson::object data;
-    data.insert(std::make_pair("command", picojson::value(std::string("relay_packet"))));
-    data.insert(std::make_pair("packet_id", Convert::int2json(packet.packet_id)));
-    data.insert(std::make_pair("packet_command", picojson::value(packet.command)));
-    data.insert(std::make_pair("mode", Convert::int2json(packet.mode)));
-    data.insert(std::make_pair("dst_module", Convert::int2json(packet.dst_module)));
-    data.insert(std::make_pair("src_module", Convert::int2json(packet.src_module)));
-    data.insert(std::make_pair("pid", Convert::vpid2json(packet.pid)));
-    data.insert(std::make_pair("dst_nid", packet.dst_nid.to_json()));
-    data.insert(std::make_pair("src_nid", packet.src_nid.to_json()));
-    data.insert(std::make_pair("content", picojson::value(packet.content)));
-
-    send_data(packet.pid, data);
+    return;
   }
+
+  if (properties.find(packet.pid) == properties.end()) {
+    properties.insert(std::make_pair(packet.pid, WorkerProperty()));
+    WorkerProperty& property = properties.at(packet.pid);
+    property.status = ConnectStatus::CLOSE;
+    property.pid    = packet.pid;
+    property.pipe   = nullptr;
+    delegate->worker_connector_require_create_vm(*this, packet.pid);
+  }
+
+  picojson::object data;
+  data.insert(std::make_pair("command", picojson::value(std::string("relay_packet"))));
+  data.insert(std::make_pair("packet_id", Convert::int2json(packet.packet_id)));
+  data.insert(std::make_pair("packet_command", picojson::value(packet.command)));
+  data.insert(std::make_pair("mode", Convert::int2json(packet.mode)));
+  data.insert(std::make_pair("dst_module", Convert::int2json(packet.dst_module)));
+  data.insert(std::make_pair("src_module", Convert::int2json(packet.src_module)));
+  data.insert(std::make_pair("pid", Convert::vpid2json(packet.pid)));
+  data.insert(std::make_pair("dst_nid", packet.dst_nid.to_json()));
+  data.insert(std::make_pair("src_nid", packet.src_nid.to_json()));
+  data.insert(std::make_pair("content", picojson::value(packet.content)));
+
+  send_data(packet.pid, data);
 }
 
 /**

@@ -20,7 +20,6 @@
 #include "router.hpp"
 #include "util.hpp"
 #include "webrtc_bundle.hpp"
-#include "worker_connector.hpp"
 
 namespace processwarp {
 /**
@@ -110,6 +109,19 @@ void Daemon::server_connector_connect_on_failure(
     ServerConnector& server_connector, int code) {
   /// @todo output log
   exit(EXIT_FAILURE);
+}
+
+/**
+ * The WorkerConnector module require creating vm,
+ * relay this instruction to scheduler through router module.
+ * @param caller The workerConnector instance (unused).
+ * @param pid Target process-id.
+ * @return Router(Scheduler)'s return value.
+ */
+bool Daemon::worker_connector_require_create_vm(WorkerConnector& caller, const vpid_t& pid) {
+  Router& router = Router::get_instance();
+
+  return router.require_create_vm(pid);
 }
 
 /**
@@ -220,7 +232,7 @@ bool Daemon::initialize_cui() {
   server.initialize(loop, config.at("server").get<std::string>());
   router.initialize(loop, config);
   webrtc.initialize(loop);
-  worker.initialize(loop,
+  worker.initialize(*this, loop,
                     config.at("worker_pipe").get<std::string>(),
                     config.at("libs").get<picojson::array>(),
                     config.at("lib_filter").get<picojson::array>());
@@ -291,7 +303,7 @@ bool Daemon::initialize_subprocess() {
                       config.at("frontend_pipe").get<std::string>(),
                       config.at("frontend_key").get<std::string>());
   webrtc.initialize(loop);
-  worker.initialize(loop,
+  worker.initialize(*this, loop,
                     config.at("worker_pipe").get<std::string>(),
                     config.at("libs").get<picojson::array>(),
                     config.at("lib_filter").get<picojson::array>());

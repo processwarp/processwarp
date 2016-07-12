@@ -5,6 +5,7 @@
 
 #include <map>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -17,14 +18,24 @@
 #endif
 
 namespace processwarp {
+class WorkerConnector;
+
+class WorkerConnectorDelegate {
+ public:
+  virtual ~WorkerConnectorDelegate();
+  virtual bool worker_connector_require_create_vm(WorkerConnector& caller, const vpid_t& pid) = 0;
+};
+
 class WorkerConnector : public Connector {
  public:
   static WorkerConnector& get_instance();
 
-  void initialize(uv_loop_t* loop, const std::string& pipe_path_,
-                  const picojson::array& libs, const picojson::array& lib_filter);
+  void clock_routine();
   void create_vm(const vpid_t& pid, vtid_t root_tid, vaddr_t proc_addr,
                  const NodeID& master_nid, const std::string& name);
+  void initialize(WorkerConnectorDelegate& delegate_, uv_loop_t* loop,
+                  const std::string& pipe_path_,
+                  const picojson::array& libs, const picojson::array& lib_filter);
   void relay_packet(const Packet& packet);
 
  private:
@@ -36,6 +47,8 @@ class WorkerConnector : public Connector {
     std::vector<picojson::object> send_wait;
   };
 
+  /** Pointer to a instance of delegating some method. */
+  WorkerConnectorDelegate* delegate;
   std::map<uv_pipe_t*, const vpid_t> pid_map;
   /** Map of pid and propertiy. */
   std::map<const vpid_t, WorkerProperty> properties;
