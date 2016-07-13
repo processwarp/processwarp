@@ -126,6 +126,12 @@ void VMachine::execute() {
     tid = loop_queue.front();
     loop_queue.pop();
 
+    // Send heartbeat, per interval.
+    if ((now - last_heartbeat) > HEARTBEAT_INTERVAL) {
+      last_heartbeat = now;
+      send_command_heartbeat_vm();
+    }
+
     // Skip if thread waiting to update memory.
     if (process->waiting_addr.find(tid) != process->waiting_addr.end()) {
       return;
@@ -180,12 +186,6 @@ void VMachine::execute() {
       if (tid == process->root_tid) {
         delegate.vmachine_finish(*this);
       }
-    }
-
-    // Send heartbeat, per interval.
-    if ((now - last_heartbeat) > HEARTBEAT_INTERVAL) {
-      last_heartbeat = now;
-      send_command_heartbeat_vm();
     }
   } catch (Interrupt& e) {
     // Skip thread because waiting to update memroy data.

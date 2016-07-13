@@ -201,6 +201,24 @@ bool NodeID::operator<(const NodeID& b) const {
   }
 }
 
+bool NodeID::operator>(const NodeID& b) const {
+  if (type == b.type) {
+    if (type == Type::NORMAL) {
+      if (id[0] == b.id[0]) {
+        return id[1] > b.id[1];
+      } else {
+        return id[0] > b.id[0];
+      }
+
+    } else {
+      return false;
+    }
+
+  } else {
+    return type > b.type;
+  }
+}
+
 const NodeID NodeID::operator+(const NodeID& b) const {
   assert(type == Type::NORMAL);
   assert(b.type == Type::NORMAL);

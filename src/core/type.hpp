@@ -17,6 +17,7 @@ namespace std {
 #include <utility>
 #include <vector>
 
+#include "endless_order_id.hpp"
 #include "processwarp/processwarp.h"
 #include "node_id.hpp"
 
@@ -83,19 +84,10 @@ struct NodeInfo {
 };
 
 /**
- * Thread information to use in scheduler.
- */
-struct ThreadInfo {
-  vtid_t tid;
-  NodeID nid;
-  std::time_t heartbeat;
-};
-
-/**
  * Process information to use in scheduler.
  */
 struct ProcessInfo {
-  /** Porcess-id */
+  /** Process-id */
   vpid_t pid;
   /** Root thread-id. */
   vtid_t root_tid;
@@ -105,13 +97,19 @@ struct ProcessInfo {
   NodeID leader_nid;
   /** Process name. */
   std::string name;
-  /** Map of thread-id and node-id, last heartbeat time that thread is running. */
-  std::map<vtid_t, ThreadInfo> threads;
+
+  /** Map of thread-id and node-id */
+  std::map<vtid_t, NodeID> threads;
   /** Node-id that havign gui frontend bundled process or NONE. */
   NodeID gui_nid;
   /** True if vm bundled process is exist in this node. */
   bool having_vm;
   /** Last heartbeat time for process. */
   std::time_t heartbeat;
+
+  /** Update order. */
+  EndlessOrderID order_id;
+  /** Last update node-id. */
+  NodeID last_update_nid;
 };
 }  // namespace processwarp

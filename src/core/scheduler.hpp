@@ -63,7 +63,7 @@ class Scheduler : public PacketControllerDelegate {
   void recv_command_warp_gui(const Packet& packet);
   void recv_command_warp_thread(const Packet& packet);
 
-  void send_command_heartbeat_scheduler();
+  void send_command_heartbeat_scheduler(const ProcessInfo& info);
   void send_command_processes_info();
   void send_command_require_warp_gui(const vpid_t& pid, const NodeID& target_nid);
   void send_command_require_warp_thread(const vpid_t& pid, vtid_t tid, const NodeID& target_nid);

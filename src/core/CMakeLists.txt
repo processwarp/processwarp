@@ -94,6 +94,7 @@ set(PWCORE_FILES
   builtin_va_arg.cpp
   builtin_warp.cpp
   dynamic_library.cpp
+  endless_order_id.cpp
   format.cpp
   interrupt_memory_require.cpp
   logger.cpp

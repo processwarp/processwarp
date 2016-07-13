@@ -3,11 +3,11 @@
 #include <picojson.h>
 #include <uv.h>
 
+#include <deque>
 #include <map>
 #include <string>
 #include <tuple>
 #include <utility>
-#include <vector>
 
 #include "connector.hpp"
 #include "constant_native.hpp"
@@ -44,7 +44,7 @@ class WorkerConnector : public Connector {
     vpid_t pid;
     uv_pipe_t* pipe;
     uv_process_t process;
-    std::vector<picojson::object> send_wait;
+    std::deque<picojson::object> send_wait;
   };
 
   /** Pointer to a instance of delegating some method. */

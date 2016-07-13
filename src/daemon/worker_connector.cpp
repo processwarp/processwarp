@@ -148,7 +148,8 @@ void WorkerConnector::create_vm(const vpid_t& pid, vtid_t root_tid, vaddr_t proc
   connect_data.insert(std::make_pair("name", picojson::value(std::string(name))));
   connect_data.insert(std::make_pair("libs", picojson::value(config_libs)));
   connect_data.insert(std::make_pair("lib_filter", picojson::value(config_lib_filter)));
-  send_data(pid, connect_data);
+
+  property.send_wait.push_front(connect_data);
 }
 
 /**

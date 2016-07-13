@@ -142,13 +142,6 @@ void Scheduler::execute() {
   // Skip if didn't setup yet.
   if (my_info.nid == NodeID::NONE) return;
 
-  // Send a heartbeat each interval time.
-  std::time_t now = std::time(nullptr);
-  if ((now - my_info.heartbeat) > HEARTBEAT_INTERVAL) {
-    my_info.heartbeat = now;
-    send_command_heartbeat_scheduler();
-  }
-
   // Cleanup unresponsive module.
   cleanup_unresponsive_process();
   cleanup_unresponsive_node();
@@ -227,18 +220,6 @@ void Scheduler::cleanup_unresponsive_process() {
   auto it_proc = processes.begin();
   while (it_proc != processes.end()) {
     ProcessInfo& info = it_proc->second;
-
-    // Cleanup threads.
-    auto it_thread = info.threads.begin();
-    while (it_thread != info.threads.end()) {
-      if (it_thread->second.heartbeat + HEARTBEAT_DEADLINE < now) {
-        it_thread = info.threads.erase(it_thread);
-        is_changed = true;
-      } else {
-        it_thread++;
-      }
-    }
-
     // Cleanup processes.
     if (info.threads.size() == 0 &&
         info.heartbeat + HEARTBEAT_DEADLINE < now) {
@@ -270,7 +251,7 @@ void Scheduler::recv_command_activate(const Packet& packet) {
     ProcessInfo& info = it_info.second;
 
     for (auto& it_thread : info.threads) {
-      if (it_thread.second.nid == my_info.nid) {
+      if (it_thread.second == my_info.nid) {
         send_command_require_warp_thread(info.pid, it_thread.first, packet.src_nid);
       }
     }
@@ -342,7 +323,7 @@ void Scheduler::recv_command_distribute(const Packet& packet) {
     ProcessInfo& proc = it_proc.second;
 
     for (auto& it_thread : proc.threads) {
-      if (it_thread.second.nid == my_info.nid) {
+      if (it_thread.second == my_info.nid) {
         send_command_require_warp_thread(proc.pid, it_thread.first, target_nid);
       }
     }
@@ -378,25 +359,40 @@ void Scheduler::recv_command_heartbeat_gui(const Packet& packet) {
  * @param packet Command packet.
  */
 void Scheduler::recv_command_heartbeat_scheduler(const Packet& packet) {
-  std::string name = packet.content.at("name").get<std::string>();
-  std::time_t now  = std::time(nullptr);
-  auto it_info = nodes.find(packet.src_nid);
+  EndlessOrderID order_id = EndlessOrderID::from_json(packet.content.at("order_id"));
+  NodeID last_update_nid = NodeID::from_json(packet.content.at("last_update_nid"));
 
-  assert(packet.pid == PID::BROADCAST);
+  if (processes.find(packet.pid) == processes.end()) {
+    ProcessInfo info;
+    info.pid = packet.pid;
+    info.root_tid = Convert::json2vtid(packet.content.at("root_tid"));
+    info.proc_addr = Convert::json2vaddr(packet.content.at("proc_addr"));
+    info.heartbeat = std::time(nullptr);
+    info.having_vm = false;
 
-  if (packet.src_nid == my_info.nid) return;
+    processes.insert(std::make_pair(packet.pid, info));
+  }
 
-  if (it_info == nodes.end()) {
-    NodeInfo info;
-    info.nid  = packet.src_nid;
-    info.name = name;
-    info.heartbeat = now;
-    nodes.insert(std::make_pair(info.nid, info));
+  ProcessInfo& info = processes.at(packet.pid);
+  assert(info.root_tid == Convert::json2vtid(packet.content.at("root_tid")));
+  assert(info.proc_addr == Convert::json2vaddr(packet.content.at("proc_addr")));
 
-  } else {
-    NodeInfo& info = it_info->second;
-    info.name = name;
-    info.heartbeat = now;
+  if (order_id > info.order_id ||
+      (order_id == info.order_id && last_update_nid > info.last_update_nid)) {
+    info.leader_nid = NodeID::from_json(packet.content.at("leader_nid"));
+    info.name = packet.content.at("name").get<std::string>();
+    info.threads.clear();
+    for (auto& it : packet.content.at("threads").get<picojson::object>()) {
+      vtid_t tid = Convert::str2vtid(it.first);
+      NodeID nid = NodeID::from_json(it.second);
+      info.threads.insert(std::make_pair(tid, nid));
+    }
+    info.gui_nid = NodeID::from_json(packet.content.at("gui_nid"));
+    info.order_id = order_id;
+    info.last_update_nid = last_update_nid;
+
+    send_command_heartbeat_scheduler(info);
+    send_command_processes_info();
   }
 }
 
@@ -410,6 +406,8 @@ void Scheduler::recv_command_heartbeat_vm(const Packet& packet) {
   bool is_changed = false;
   std::time_t now = std::time(nullptr);
 
+  assert(packet.src_nid == my_info.nid);
+
   if (processes.find(packet.pid) == processes.end()) {
     ProcessInfo info;
     info.pid = packet.pid;
@@ -421,7 +419,7 @@ void Scheduler::recv_command_heartbeat_vm(const Packet& packet) {
   ProcessInfo& info = processes.at(packet.pid);
   std::set<vtid_t> tids;
 
-  if (packet.src_nid == my_info.nid) info.having_vm = true;
+  info.having_vm = true;
   info.name = packet.content.at("name").get<std::string>();
   info.heartbeat = now;
 
@@ -431,21 +429,12 @@ void Scheduler::recv_command_heartbeat_vm(const Packet& packet) {
     auto thread_pair = info.threads.find(tid);
 
     if (thread_pair == info.threads.end()) {
-      ThreadInfo thread_info;
-      thread_info.tid = tid;
-      thread_info.nid = packet.src_nid;
-      thread_info.heartbeat = now;
-      info.threads.insert(std::make_pair(tid, thread_info));
+      info.threads.insert(std::make_pair(tid, packet.src_nid));
       is_changed = true;
 
-    } else if (thread_pair->second.nid != packet.src_nid) {
-      ThreadInfo& thread_info = info.threads.at(tid);
-      thread_info.nid = packet.src_nid;
-      thread_info.heartbeat = now;
+    } else if (thread_pair->second != packet.src_nid) {
+      info.threads.at(tid) = packet.src_nid;
       is_changed = true;
-
-    } else {
-      info.threads.at(tid).heartbeat = now;
     }
 
     tids.insert(tid);
@@ -454,9 +443,9 @@ void Scheduler::recv_command_heartbeat_vm(const Packet& packet) {
   // Remove thread-id from list if it had run in source node but not run at now.
   auto it_thread = info.threads.begin();
   while (it_thread != info.threads.end()) {
-    if (it_thread->second.nid == packet.src_nid &&
+    if (it_thread->second == packet.src_nid &&
         tids.find(it_thread->first) == tids.end()) {
-      it_thread->second.nid = NodeID::NONE;
+      it_thread = info.threads.erase(it_thread);
       is_changed = true;
 
     } else {
@@ -464,7 +453,12 @@ void Scheduler::recv_command_heartbeat_vm(const Packet& packet) {
     }
   }
 
-  if (is_changed) send_command_processes_info();
+  if (is_changed) {
+    info.order_id += static_cast<uint32_t>(rnd() % 100);
+    info.last_update_nid = my_info.nid;
+    send_command_heartbeat_scheduler(info);
+    send_command_processes_info();
+  }
 }
 
 /**
@@ -539,12 +533,26 @@ void Scheduler::recv_command_warp_thread(const Packet& packet) {
 /**
  * Send heartbeat_scheduler command to SCHDULER in another node.
  */
-void Scheduler::send_command_heartbeat_scheduler() {
+void Scheduler::send_command_heartbeat_scheduler(const ProcessInfo& info) {
   picojson::object param;
-  param.insert(std::make_pair("name", picojson::value(my_info.name)));
+  param.insert(std::make_pair("order_id", info.order_id.to_json()));
+  param.insert(std::make_pair("last_update_nid", info.last_update_nid.to_json()));
 
-  packet_controller.send("heartbeat_scheduler", Module::SCHEDULER,
-                         false, PID::BROADCAST, NodeID::NEXT, param);
+  param.insert(std::make_pair("root_tid", Convert::vtid2json(info.root_tid)));
+  param.insert(std::make_pair("proc_addr", Convert::vaddr2json(info.proc_addr)));
+  param.insert(std::make_pair("leader_nid", info.leader_nid.to_json()));
+  param.insert(std::make_pair("name", picojson::value(info.name)));
+  picojson::object threads;
+  for (auto& it : info.threads) {
+    vtid_t tid = it.first;
+    const NodeID& nid = it.second;
+    threads.insert(std::make_pair(Convert::vtid2str(tid), nid.to_json()));
+  }
+  param.insert(std::make_pair("threads", picojson::value(threads)));
+  param.insert(std::make_pair("gui_nid", info.gui_nid.to_json()));
+
+  packet_controller.send("heartbeat_scheduler", Module::SCHEDULER, false,
+                         info.pid, NodeID::NEXT, param);
 }
 
 /**
@@ -557,9 +565,9 @@ void Scheduler::send_command_processes_info() {
 
     picojson::object threads;
     for (auto& it_thread : info.threads) {
-      ThreadInfo& thread_info = it_thread.second;
-      threads.insert(std::make_pair(Convert::vtid2str(thread_info.tid),
-                                    thread_info.nid.to_json()));
+      vtid_t tid = it_thread.first;
+      NodeID& nid = it_thread.second;
+      threads.insert(std::make_pair(Convert::vtid2str(tid), nid.to_json()));
     }
 
     picojson::object proc;

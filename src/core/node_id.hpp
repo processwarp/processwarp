@@ -35,6 +35,7 @@ class NodeID {
   bool operator==(const NodeID& b) const;
   bool operator!=(const NodeID& b) const;
   bool operator<(const NodeID& b) const;
+  bool operator>(const NodeID& b) const;
   const NodeID operator+(const NodeID& b) const;
 
   static NodeID center_mod(const NodeID& a, const NodeID& b);
