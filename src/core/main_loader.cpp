@@ -294,7 +294,7 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
                                     Convert::bin2json(it.second.value.get(), it.second.size)));
       content.insert(std::make_pair("leader_nid", NodeID::NONE.to_json()));
       content.insert(std::make_pair("acceptor_nids", picojson::value(picojson::array())));
-      content.insert(std::make_pair("hint_nids", picojson::value(picojson::array())));
+      content.insert(std::make_pair("learner_nids", picojson::value(picojson::array())));
 
       picojson::object packet;
       packet.insert(std::make_pair("packet_id", Convert::int2json(0)));

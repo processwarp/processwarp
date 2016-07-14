@@ -39,12 +39,6 @@ class VMemoryDelegate {
  */
 class VMemory : public PacketControllerDelegate {
  public:
-  /** History of copy command for some page. */
-  struct SendCopyHistory {
-    uint64_t key;
-    std::time_t time;
-  };
-
   /** Page of memory. */
   struct Page {
     /** Page type. */
@@ -59,20 +53,24 @@ class VMemory : public PacketControllerDelegate {
     NodeID leader_nid;
     /** Acceptor node-id for this page. */
     std::set<NodeID> acceptor_nids;
-    /** */
-    std::set<NodeID> hint;
+    /** Learner node-id for this page. */
+    std::set<NodeID> learner_nids;
     /** Reference count to use to master. */
     int master_count;
     /** Access count for change owner or occasion to copy. */
     int referral_count;
-    /** History of copy command for some node. */
-    std::map<NodeID, SendCopyHistory> send_copy_history;
+    /** Set of node-ids that emitting publish command for some nodes. */
+    std::set<NodeID> publish_history;
+    /** Set of node-ids that  emitting write command for acceptor nodes. */
+    std::set<NodeID> write_history;
+    /** Randome id, this value rewritten when the value is rewritten. */
+    uint64_t write_id;
 
     Page(VMemoryPageType::Type type_, bool flg_update_,
          const std::string& value_str,
-         const NodeID& leader_nid_, const std::set<NodeID>& hint_);
+         const NodeID& leader_nid_, const std::set<NodeID>& learner_nids_);
     Page(VMemoryPageType::Type type_, bool flg_update_,
-         const NodeID& leader_nid_, const std::set<NodeID>& hint_);
+         const NodeID& leader_nid_, const std::set<NodeID>& learner_nids_);
   };
 
   struct AllocInfo {
@@ -142,15 +140,11 @@ class VMemory : public PacketControllerDelegate {
       if (page.type & VMemoryPageType::LEADER) {
         assert(page.size >= get_lower_addr(dst) + sizeof(T));
         std::memcpy(page.value.get() + get_lower_addr(dst), &val, sizeof(T));
-        for (auto& it_hint : page.hint) {
-          vmemory.send_command_copy(it_hint, page, get_upper_addr(dst));
-        }
+        vmemory.send_command_write(NodeID::NONE, page, dst, sizeof(T));
 
       } else {
-        assert(page.hint.size() == 1);
-        page.flg_update = false;
-        vmemory.send_command_update(*page.hint.begin(), dst,
-                                    reinterpret_cast<const uint8_t*>(&val), sizeof(T));
+        vmemory.send_command_write_require(page, dst,
+                                           reinterpret_cast<const uint8_t*>(&val), sizeof(T));
       }
     }
 
@@ -240,6 +234,41 @@ class VMemory : public PacketControllerDelegate {
     VMemory& vmemory;
   };
 
+  class PacketPublish : public PacketController::Behavior {
+   public:
+    explicit PacketPublish(VMemory& vmemory_, const NodeID& dst_nid_,
+                           vaddr_t addr_, uint64_t write_id_);
+
+    const PacketController::Define& get_define() override;
+    void on_error(const Packet& packet) override;
+    void on_reply(const Packet& packet) override;
+    void on_packet_error(PacketError::Type code) override;
+
+   private:
+    VMemory& vmemory;
+    const NodeID dst_nid;
+    const vaddr_t addr;
+    const uint64_t write_id;
+  };
+
+  class PacketWrite : public PacketController::Behavior {
+   public:
+    explicit PacketWrite(VMemory& vmemory_, const NodeID& dst_nid_,
+                         vaddr_t addr_, uint64_t size_, uint64_t write_id_);
+
+    const PacketController::Define& get_define() override;
+    void on_error(const Packet& packet) override;
+    void on_reply(const Packet& packet) override;
+    void on_packet_error(PacketError::Type code) override;
+
+   private:
+    VMemory& vmemory;
+    const NodeID dst_nid;
+    const vaddr_t addr;
+    const uint64_t size;
+    const uint64_t write_id;
+  };
+
   /** This memory space's pid. */
   vpid_t my_pid;
   /** This node's node-id. */
@@ -282,12 +311,11 @@ class VMemory : public PacketControllerDelegate {
   void recv_command_delegate(const Packet& packet);
   void recv_command_free(const Packet& packet);
   void recv_command_free_acceptor(const Packet& packet);
+  void recv_command_publish(const Packet& packet);
   void recv_command_require(const Packet& packet);
   void recv_command_routing(const Packet& packet);
-
-  void recv_command_copy(const Packet& packet);
-  void recv_command_copy_reply(const Packet& packet);
-  void recv_command_update(const Packet& packet);
+  void recv_command_write(const Packet& packet);
+  void recv_command_write_require(const Packet& packet);
 
   void send_command_alloc(std::shared_ptr<AllocInfo> alloc_info);
   void send_command_alloc_cancel(std::shared_ptr<AllocInfo> alloc_info);
@@ -297,15 +325,14 @@ class VMemory : public PacketControllerDelegate {
   void send_command_delegate(vaddr_t addr, const uint8_t* value, uint64_t size,
                              const NodeID& leader_nid,
                              const std::set<NodeID>& acceptor_nids,
-                             const std::set<NodeID>& hint_nids);
+                             const std::set<NodeID>& learner_nids);
   void send_command_free(vaddr_t addr);
   void send_command_free_acceptor(vaddr_t addr, const std::set<NodeID>& acceptor_nids);
+  void send_command_publish(const NodeID& dst_nid, Page& page, vaddr_t addr);
   void send_command_require(vaddr_t addr, VMemoryReadMode::Type mode);
   void send_command_require_routing();
-
-  void send_command_copy(const NodeID& dst_nid, Page& page, vaddr_t addr);
-  void send_command_copy_reply(const NodeID& dst_nid, vaddr_t addr, uint64_t key);
-  void send_command_update(const NodeID& dst_nid, vaddr_t addr,
-                           const uint8_t* data, uint64_t size);
+  void send_command_write(const NodeID& dst_nid, Page& page, vaddr_t addr, uint64_t size);
+  void send_command_write_require(Page& page, vaddr_t addr,
+                                  const uint8_t* data, uint64_t size);
 };
 }  // namespace processwarp
