@@ -891,9 +891,11 @@ void VMemory::PacketWrite::on_reply(const Packet& packet) {
 void VMemory::PacketWrite::on_packet_error(PacketError::Type code) {
   auto it_page = vmemory.pages.find(addr);
 
-  Page& page = it_page->second;
-  page.write_history.erase(dst_nid);
-  vmemory.send_command_write(dst_nid, page, addr, size);
+  if (it_page != vmemory.pages.end()) {
+    Page& page = it_page->second;
+    page.write_history.erase(dst_nid);
+    vmemory.send_command_write(dst_nid, page, addr, size);
+  }
 }
 
 AddressRegion::Type VMemory::get_addr_type(uint64_t size) {
