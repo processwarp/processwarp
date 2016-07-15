@@ -431,7 +431,7 @@ void ServerConnector::webrtc_connector_on_change_stateus(WebrtcConnector& connec
     webrtc.set_nid(my_nid);
     webrtc.apply_connector(webrtc_init_connector);
     webrtc_init_connector = nullptr;
-    connect_delegate->server_connector_connect_on_success(*this, NodeID::NONE);
+    connect_delegate->server_connector_connect_on_success(*this, my_nid);
     send_init_webrtc_fin(my_nid);
   }
 }
@@ -686,7 +686,7 @@ void ServerConnector::recv_init_webrtc_deny(const picojson::object& content) {
 
       webrtc.close_connector(webrtc_init_connector);
       webrtc_init_connector = nullptr;
-      connect_delegate->server_connector_connect_on_success(*this, NodeID::NONE);
+      connect_delegate->server_connector_connect_on_success(*this, my_nid);
       send_init_webrtc_fin(my_nid);
       router.set_nid(my_nid);
       webrtc.set_nid(my_nid);
