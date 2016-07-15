@@ -507,14 +507,14 @@ VMemory::Page& VMemory::Accessor::get_page(vaddr_t addr, bool readable) {
   auto it_page = vmemory.pages.find(addr);
 
   if (it_page == vmemory.pages.end()) {
-    vmemory.send_command_require(addr, VMemoryReadMode::CONTINUE);
+    vmemory.send_command_require(addr, VMemoryReadMode::CONTINUE, false);
     throw InterruptMemoryRequire(addr);
   }
 
   Page& page = it_page->second;
   if (readable && page.flg_update == false) {
     assert(~page.type & VMemoryPageType::LEADER);
-    vmemory.send_command_require(addr, VMemoryReadMode::CONTINUE);
+    vmemory.send_command_require(addr, VMemoryReadMode::CONTINUE, false);
     throw InterruptMemoryRequire(addr);
   }
   assert(page.type & VMemoryPageType::LEADER || page.master_count == 0);
@@ -1194,16 +1194,19 @@ void VMemory::recv_command_claim_back(const Packet& packet) {
   auto it_page = pages.find(addr);
   if (it_page == pages.end()) {
     packet_controller.send_reply(packet, picojson::object());
+    return;
   }
 
   Page& page = it_page->second;
   if (~page.type & VMemoryPageType::LEADER) {
     packet_controller.send_reply(packet, picojson::object());
+    return;
   }
 
   if (page.master_count == 0) {
     page.type &= ~VMemoryPageType::LEADER;
     packet_controller.send_reply(packet, picojson::object());
+    return;
   }
 
   packet_controller.send_error(packet, picojson::object());
@@ -1365,8 +1368,9 @@ void VMemory::recv_command_require(const Packet& packet) {
 
   auto it_page = pages.find(addr);
   if (it_page == pages.end()) {
-    packet_controller.send_error(packet, picojson::object());
-    /// @todo get data for address from another acceptor.
+    if (check_acceptor_range(addr)) {
+      send_command_require(addr, VMemoryReadMode::ONCE, true);
+    }
     return;
   }
 
@@ -1417,6 +1421,16 @@ void VMemory::recv_command_publish(const Packet& packet) {
       requiring.erase(it_ri);
       packet_controller.send_reply(packet, picojson::object());
 
+      if (check_acceptor_range(addr)) {
+        Page& page = pages.at(addr);
+        page.type |= VMemoryPageType::ACCEPTOR;
+        if (range_min_nid != NodeID::NONE) {
+          std::set<NodeID> acceptor_nids;
+          acceptor_nids.insert(my_nid);
+          send_command_balance(addr, acceptor_nids);
+        }
+      }
+
     } else {
       packet_controller.send_error(packet, picojson::object());
     }
@@ -1428,11 +1442,13 @@ void VMemory::recv_command_publish(const Packet& packet) {
       packet_controller.send_reply(packet, picojson::object());
       return;
 
-    } else if (page.type & VMemoryPageType::ACCEPTOR) {
+    } else if (page.type & VMemoryPageType::ACCEPTOR &&
+               requiring.find(addr) == requiring.end()) {
       packet_controller.send_error(packet, picojson::object());
       return;
 
-    } else if (page.referral_count >= MEMORY_REFERRAL_LIMIT &&
+    } else if (~page.type & VMemoryPageType::ACCEPTOR &&
+               page.referral_count >= MEMORY_REFERRAL_LIMIT &&
                requiring.find(addr) == requiring.end()) {
       packet_controller.send_error(packet, picojson::object());
       pages.erase(addr);
@@ -1449,6 +1465,7 @@ void VMemory::recv_command_publish(const Packet& packet) {
 
     } else {
       // free
+      assert(~page.type & VMemoryPageType::ACCEPTOR);
       pages.erase(addr);
       packet_controller.send_error(packet, picojson::object());
     }
@@ -1484,6 +1501,9 @@ void VMemory::recv_command_write(const Packet& packet) {
 
   auto it_page = pages.find(get_upper_addr(addr));
   if (it_page == pages.end()) {
+    if (check_acceptor_range(addr)) {
+      send_command_require(addr, VMemoryReadMode::ONCE, true);
+    }
     packet_controller.send_error(packet, picojson::object());
     return;
   }
@@ -1732,16 +1752,30 @@ void VMemory::send_command_publish(const NodeID& dst_nid, Page& page, vaddr_t ad
  * @param dst_nid Destination node-id.
  * @param addr Target address to get value.
  */
-void VMemory::send_command_require(vaddr_t addr, VMemoryReadMode::Type mode) {
+void VMemory::send_command_require(vaddr_t addr, VMemoryReadMode::Type mode, bool to_all) {
   assert(get_upper_addr(addr) == addr);
+
+  if (requiring.find(addr) != requiring.end()) {
+    return;
+  }
+
   requiring.insert(addr);
   picojson::object param;
 
   param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
   param.insert(std::make_pair("mode", Convert::int2json(mode)));
 
-  packet_controller.send("require", Module::MEMORY, false,
-                         my_pid, get_near_acceptor(addr), param);
+  if (to_all) {
+    NodeID acceptor_nid = get_hash_id(addr);
+    for (int i = 0; i < 4; i++) {
+      packet_controller.send("require", Module::MEMORY, false,
+                             my_pid, acceptor_nid, param);
+      acceptor_nid = acceptor_nid + NodeID::QUARTER;
+    }
+  } else {
+    packet_controller.send("require", Module::MEMORY, false,
+                           my_pid, get_near_acceptor(addr), param);
+  }
 }
 
 /**
