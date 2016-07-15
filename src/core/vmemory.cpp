@@ -1052,6 +1052,9 @@ void VMemory::packet_controller_on_recv(const Packet& packet) {
   } else if (packet.command == "alloc_cancel") {
     recv_command_alloc_cancel(packet);
 
+  } else if (packet.command == "balance") {
+    recv_command_balance(packet);
+
   } else if (packet.command == "candidacy") {
     recv_command_candidacy(packet);
 
@@ -1131,6 +1134,32 @@ void VMemory::recv_command_alloc_cancel(const Packet& packet) {
   if (page != pages.end() && page->second.leader_nid == leader_nid) {
     assert(page->second.type & VMemoryPageType::ACCEPTOR);
     pages.erase(page);
+  }
+}
+
+/**
+ * When receive balance command, run rebalance.
+ * Send require if page is need and has not exist
+ * Send delegate if page has exist and that address has not acceptor range.
+ * @param packet A packet containing addr, acceptor_nids.
+ */
+void VMemory::recv_command_balance(const Packet& packet) {
+  vaddr_t addr = Convert::json2vaddr(packet.content.at("addr"));
+  std::set<NodeID> acceptor_nids = NodeID::from_json_array(packet.content.at("acceptor_nids"));
+
+  auto it_page = pages.find(addr);
+  if (it_page == pages.end()) {
+    if (check_acceptor_range(addr)) {
+      send_command_require(addr, VMemoryReadMode::ONCE, true);
+    }
+
+  } else {
+    Page& page = it_page->second;
+    if (!check_acceptor_range(addr) &&
+        page.type & VMemoryPageType::ACCEPTOR) {
+      send_command_delegate(addr, page.value.get(), page.size, page.leader_nid,
+                            page.acceptor_nids, page.learner_nids);
+    }
   }
 }
 
