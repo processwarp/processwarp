@@ -18,12 +18,12 @@ static const uint8_t I8_FALSE   = 0x0;
 static const int MEMORY_REFERRAL_LIMIT  = 5;
 /** Interval time of send require packet (sec). */
 static const int MEMORY_REQUIRE_INTERVAL    = 5;
-/** Heartbeat interval.(sec) */
-static const int HEARTBEAT_INTERVAL = 3;
-/** Interval to call Scheduler::execute.(sec) */
-static const int SCHEDULER_EXECUTE_INTERVAL = HEARTBEAT_INTERVAL;
+/** Heatbeat interval.(sec) */
+static const int HEARTBEAT_INTERVAL = 10;
 /** Deadline time for unresponsive module.(sec) */
-static const int HEARTBEAT_DEADLINE = 10;
+static const int HEARTBEAT_DEADLINE = 60;
+/** Clock routine interval.(sec) */
+static const int BEAT_ROUTINE_INTERVAL = 5;
 
 /**
  * Virtual address types that is able to distinguish by using AND operation with MASK.

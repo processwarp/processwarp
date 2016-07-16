@@ -26,12 +26,13 @@ class Scheduler : public PacketControllerDelegate {
  public:
   Scheduler();
   void initialize(SchedulerDelegate& delegate_);
+  void beat_routine();
   NodeID get_dst_nid(const vpid_t& pid, Module::Type module);
   vpid_t get_new_pid();
+  void heartbeat();
   void recv_packet(const Packet& packet);
   bool require_create_vm(const vpid_t& pid);
   void set_node_information(const NodeID& nid, const std::string& name);
-  void execute();
 
  private:
   /** Node information for this node. */
@@ -63,7 +64,7 @@ class Scheduler : public PacketControllerDelegate {
   void recv_command_warp_gui(const Packet& packet);
   void recv_command_warp_thread(const Packet& packet);
 
-  void send_command_heartbeat_scheduler(const ProcessInfo& info);
+  void send_command_heartbeat_scheduler();
   void send_command_processes_info();
   void send_command_require_warp_gui(const vpid_t& pid, const NodeID& target_nid);
   void send_command_require_warp_thread(const vpid_t& pid, vtid_t tid, const NodeID& target_nid);

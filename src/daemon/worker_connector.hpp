@@ -30,7 +30,7 @@ class WorkerConnector : public Connector {
  public:
   static WorkerConnector& get_instance();
 
-  void clock_routine();
+  void beat_routine();
   void create_vm(const vpid_t& pid, vtid_t root_tid, vaddr_t proc_addr,
                  const NodeID& master_nid, const std::string& name);
   void initialize(WorkerConnectorDelegate& delegate_, uv_loop_t* loop,

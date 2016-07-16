@@ -44,6 +44,19 @@ void Scheduler::initialize(SchedulerDelegate& delegate_) {
 }
 
 /**
+ * Scheduler main routine.
+ * Router or super module must be call this method at least once a BEAT_ROUTINE_INTERVAL.
+ */
+void Scheduler::beat_routine() {
+  // Skip if didn't setup yet.
+  if (my_info.nid == NodeID::NONE) return;
+
+  // Cleanup unresponsive module.
+  cleanup_unresponsive_process();
+  cleanup_unresponsive_node();
+}
+
+/**
  * Resolve destination node-id for packet when source module hasn't resolved it.
  * If target module is FRONTEND, destination node-id is GUI node-id.
  * @param pid Process-id packet is bundled.
@@ -93,6 +106,13 @@ vpid_t Scheduler::get_new_pid() {
 #endif
 
 /**
+ * Send heartbeat command each timing.
+ */
+void Scheduler::heartbeat() {
+  send_command_heartbeat_scheduler();
+}
+
+/**
  * When receive packet, relay it to PacketController module.
  * @param packet A received packet.
  */
@@ -132,19 +152,6 @@ void Scheduler::set_node_information(const NodeID& nid, const std::string& name)
 
   my_info.nid  = nid;
   my_info.name = name;
-}
-
-/**
- * Scheduler main routine.
- * Router or super module must be call this method at least once a HEARTBEAT_INTERVAL.
- */
-void Scheduler::execute() {
-  // Skip if didn't setup yet.
-  if (my_info.nid == NodeID::NONE) return;
-
-  // Cleanup unresponsive module.
-  cleanup_unresponsive_process();
-  cleanup_unresponsive_node();
 }
 
 void Scheduler::packet_controller_on_recv(const Packet& packet) {
@@ -221,10 +228,27 @@ void Scheduler::cleanup_unresponsive_process() {
   while (it_proc != processes.end()) {
     ProcessInfo& info = it_proc->second;
     // Cleanup processes.
-    if (info.threads.size() == 0 &&
-        info.heartbeat + HEARTBEAT_DEADLINE < now) {
-      it_proc = processes.erase(it_proc);
+    if (info.heartbeat_vm + HEARTBEAT_DEADLINE < now) {
+      // Remove information of threads these had run in this node.
+      auto it_thread = info.threads.begin();
+      while (it_thread != info.threads.end()) {
+        if (it_thread->second == my_info.nid) {
+          it_thread = info.threads.erase(it_thread);
+        } else {
+          it_thread++;
+        }
+      }
+      info.threads.erase(it_thread, info.threads.end());
+      // Send new thread information as heartbeat.
+      info.order_id += static_cast<uint32_t>(rnd() % 100);
+      info.last_update_nid = my_info.nid;
+      send_command_heartbeat_scheduler();
       is_changed = true;
+    }
+
+    if (info.threads.size() == 0) {
+      it_proc = processes.erase(it_proc);
+
     } else {
       it_proc++;
     }
@@ -283,12 +307,12 @@ void Scheduler::recv_command_create_gui(const Packet& packet) {
     info.pid = packet.pid;
     info.gui_nid = my_info.nid;
     info.having_vm = false;
-    info.heartbeat = now;
+    info.heartbeat_gui = now;
     processes.insert(std::make_pair(info.pid, info));
 
   } else {
     it_info->second.gui_nid = my_info.nid;
-    it_info->second.heartbeat = now;
+    it_info->second.heartbeat_gui = now;
   }
 
   delegate->scheduler_create_gui(*this, packet.pid);
@@ -345,12 +369,12 @@ void Scheduler::recv_command_heartbeat_gui(const Packet& packet) {
     info.pid = packet.pid;
     info.gui_nid = packet.src_nid;
     info.having_vm = false;
-    info.heartbeat = now;
+    info.heartbeat_gui = now;
     processes.insert(std::make_pair(packet.pid, info));
 
   } else {
     it_info->second.gui_nid = packet.src_nid;
-    it_info->second.heartbeat = now;
+    it_info->second.heartbeat_gui = now;
   }
 }
 
@@ -359,39 +383,52 @@ void Scheduler::recv_command_heartbeat_gui(const Packet& packet) {
  * @param packet Command packet.
  */
 void Scheduler::recv_command_heartbeat_scheduler(const Packet& packet) {
-  EndlessOrderID order_id = EndlessOrderID::from_json(packet.content.at("order_id"));
-  NodeID last_update_nid = NodeID::from_json(packet.content.at("last_update_nid"));
+  bool is_changed = false;
 
-  if (processes.find(packet.pid) == processes.end()) {
-    ProcessInfo info;
-    info.pid = packet.pid;
-    info.root_tid = Convert::json2vtid(packet.content.at("root_tid"));
-    info.proc_addr = Convert::json2vaddr(packet.content.at("proc_addr"));
-    info.heartbeat = std::time(nullptr);
-    info.having_vm = false;
+  for (const auto& it_process : packet.content.at("processes").get<picojson::object>()) {
+    const vpid_t& pid = Convert::str2vpid(it_process.first);
+    const picojson::object& proc = it_process.second.get<picojson::object>();
 
-    processes.insert(std::make_pair(packet.pid, info));
+    EndlessOrderID order_id = EndlessOrderID::from_json(proc.at("order_id"));
+    NodeID last_update_nid = NodeID::from_json(proc.at("last_update_nid"));
+    std::time_t now = std::time(nullptr);
+
+    if (processes.find(pid) == processes.end()) {
+      ProcessInfo info;
+      info.pid = pid;
+      info.root_tid = Convert::json2vtid(proc.at("root_tid"));
+      info.proc_addr = Convert::json2vaddr(proc.at("proc_addr"));
+      info.heartbeat_vm = now;
+      info.heartbeat_gui = now;
+      info.having_vm = false;
+
+      processes.insert(std::make_pair(pid, info));
+    }
+
+    ProcessInfo& info = processes.at(pid);
+    assert(info.root_tid == Convert::json2vtid(proc.at("root_tid")));
+    assert(info.proc_addr == Convert::json2vaddr(proc.at("proc_addr")));
+
+    if (order_id > info.order_id ||
+        (order_id == info.order_id && last_update_nid > info.last_update_nid)) {
+      info.leader_nid = NodeID::from_json(proc.at("leader_nid"));
+      info.name = proc.at("name").get<std::string>();
+      info.threads.clear();
+      for (auto& it : proc.at("threads").get<picojson::object>()) {
+        vtid_t tid = Convert::str2vtid(it.first);
+        NodeID nid = NodeID::from_json(it.second);
+        info.threads.insert(std::make_pair(tid, nid));
+      }
+      info.gui_nid = NodeID::from_json(proc.at("gui_nid"));
+      info.order_id = order_id;
+      info.last_update_nid = last_update_nid;
+
+      is_changed = true;
+    }
   }
 
-  ProcessInfo& info = processes.at(packet.pid);
-  assert(info.root_tid == Convert::json2vtid(packet.content.at("root_tid")));
-  assert(info.proc_addr == Convert::json2vaddr(packet.content.at("proc_addr")));
-
-  if (order_id > info.order_id ||
-      (order_id == info.order_id && last_update_nid > info.last_update_nid)) {
-    info.leader_nid = NodeID::from_json(packet.content.at("leader_nid"));
-    info.name = packet.content.at("name").get<std::string>();
-    info.threads.clear();
-    for (auto& it : packet.content.at("threads").get<picojson::object>()) {
-      vtid_t tid = Convert::str2vtid(it.first);
-      NodeID nid = NodeID::from_json(it.second);
-      info.threads.insert(std::make_pair(tid, nid));
-    }
-    info.gui_nid = NodeID::from_json(packet.content.at("gui_nid"));
-    info.order_id = order_id;
-    info.last_update_nid = last_update_nid;
-
-    send_command_heartbeat_scheduler(info);
+  if (is_changed) {
+    send_command_heartbeat_scheduler();
     send_command_processes_info();
   }
 }
@@ -421,7 +458,7 @@ void Scheduler::recv_command_heartbeat_vm(const Packet& packet) {
 
   info.having_vm = true;
   info.name = packet.content.at("name").get<std::string>();
-  info.heartbeat = now;
+  info.heartbeat_vm = now;
 
   // Compair threads and update for relate threads.
   for (auto& it_thread : packet.content.at("threads").get<picojson::array>()) {
@@ -456,7 +493,7 @@ void Scheduler::recv_command_heartbeat_vm(const Packet& packet) {
   if (is_changed) {
     info.order_id += static_cast<uint32_t>(rnd() % 100);
     info.last_update_nid = my_info.nid;
-    send_command_heartbeat_scheduler(info);
+    send_command_heartbeat_scheduler();
     send_command_processes_info();
   }
 }
@@ -481,12 +518,12 @@ void Scheduler::recv_command_warp_gui(const Packet& packet) {
     info.pid = packet.pid;
     info.gui_nid = my_info.nid;
     info.having_vm = false;
-    info.heartbeat = now;
+    info.heartbeat_gui = now;
     processes.insert(std::make_pair(packet.pid, info));
 
   } else {
     it_info->second.gui_nid = my_info.nid;
-    it_info->second.heartbeat = now;
+    it_info->second.heartbeat_gui = now;
   }
 
   delegate->scheduler_create_gui(*this, packet.pid);
@@ -519,11 +556,11 @@ void Scheduler::recv_command_warp_thread(const Packet& packet) {
     info.name = packet.content.at("name").get<std::string>();
     info.gui_nid = NodeID::NONE;
     info.having_vm = true;
-    info.heartbeat = now;
+    info.heartbeat_vm = now;
     processes.insert(std::make_pair(packet.pid, info));
 
   } else {
-    it_info->second.heartbeat = now;
+    it_info->second.heartbeat_vm = now;
   }
 
   vtid_t tid = Convert::json2vtid(packet.content.at("tid"));
@@ -533,26 +570,37 @@ void Scheduler::recv_command_warp_thread(const Packet& packet) {
 /**
  * Send heartbeat_scheduler command to SCHDULER in another node.
  */
-void Scheduler::send_command_heartbeat_scheduler(const ProcessInfo& info) {
+void Scheduler::send_command_heartbeat_scheduler() {
   picojson::object param;
-  param.insert(std::make_pair("order_id", info.order_id.to_json()));
-  param.insert(std::make_pair("last_update_nid", info.last_update_nid.to_json()));
+  picojson::object procs;
 
-  param.insert(std::make_pair("root_tid", Convert::vtid2json(info.root_tid)));
-  param.insert(std::make_pair("proc_addr", Convert::vaddr2json(info.proc_addr)));
-  param.insert(std::make_pair("leader_nid", info.leader_nid.to_json()));
-  param.insert(std::make_pair("name", picojson::value(info.name)));
-  picojson::object threads;
-  for (auto& it : info.threads) {
-    vtid_t tid = it.first;
-    const NodeID& nid = it.second;
-    threads.insert(std::make_pair(Convert::vtid2str(tid), nid.to_json()));
+  for (auto& it_process : processes) {
+    const vpid_t& pid = it_process.first;
+    ProcessInfo& info = it_process.second;
+    picojson::object proc;
+
+    proc.insert(std::make_pair("order_id", info.order_id.to_json()));
+    proc.insert(std::make_pair("last_update_nid", info.last_update_nid.to_json()));
+
+    proc.insert(std::make_pair("root_tid", Convert::vtid2json(info.root_tid)));
+    proc.insert(std::make_pair("proc_addr", Convert::vaddr2json(info.proc_addr)));
+    proc.insert(std::make_pair("leader_nid", info.leader_nid.to_json()));
+    proc.insert(std::make_pair("name", picojson::value(info.name)));
+    picojson::object threads;
+    for (auto& it : info.threads) {
+      vtid_t tid = it.first;
+      const NodeID& nid = it.second;
+      threads.insert(std::make_pair(Convert::vtid2str(tid), nid.to_json()));
+    }
+    proc.insert(std::make_pair("threads", picojson::value(threads)));
+    proc.insert(std::make_pair("gui_nid", info.gui_nid.to_json()));
+
+    procs.insert(std::make_pair(Convert::vpid2str(pid), picojson::value(proc)));
   }
-  param.insert(std::make_pair("threads", picojson::value(threads)));
-  param.insert(std::make_pair("gui_nid", info.gui_nid.to_json()));
+  param.insert(std::make_pair("processes", picojson::value(procs)));
 
   packet_controller.send("heartbeat_scheduler", Module::SCHEDULER, false,
-                         info.pid, NodeID::NEXT, param);
+                         PID::BROADCAST, NodeID::NEXT, param);
 }
 
 /**
