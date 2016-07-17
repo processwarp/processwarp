@@ -1213,7 +1213,9 @@ void VMemory::recv_command_candidacy(const Packet& packet) {
 
     page.type &= ~VMemoryPageType::LEADER;
     page.leader_nid = packet.src_nid;
-    page.learner_nids.insert(packet.src_nid);
+    if (packet.src_nid != my_nid) {
+      page.learner_nids.insert(packet.src_nid);
+    }
     send_command_publish(NodeID::NONE, page, addr);
 
   } else {
@@ -1430,7 +1432,9 @@ void VMemory::recv_command_require(const Packet& packet) {
 
     case VMemoryReadMode::CONTINUE: {
       send_command_publish(packet.src_nid, page, addr);
-      page.learner_nids.insert(packet.src_nid);
+      if (packet.src_nid != my_nid) {
+        page.learner_nids.insert(packet.src_nid);
+      }
     } break;
 
     default: {
