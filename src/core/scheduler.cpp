@@ -190,6 +190,12 @@ bool Scheduler::require_create_vm(const vpid_t& pid) {
   auto it = processes.find(pid);
   if (it != processes.end()) {
     ProcessInfo& info = it->second;
+
+    assert((AddressRegion::MASK & info.root_tid) == AddressRegion::META &&
+           info.proc_addr != VADDR_NULL);
+    assert((AddressRegion::MASK & info.proc_addr) == AddressRegion::META &&
+           info.proc_addr != VADDR_NULL);
+
     delegate->scheduler_create_vm(*this, pid, info.root_tid, info.proc_addr,
                                   info.leader_nid, info.name);
     return true;
@@ -303,7 +309,9 @@ void Scheduler::cleanup_unresponsive_process() {
       is_changed = true;
     }
 
-    if (info.threads.size() == 0) {
+    if (info.threads.size() == 0 &&
+        info.root_tid != VADDR_NULL &&
+        info.heartbeat_vm + HEARTBEAT_DEADLINE < now) {
       it_proc = processes.erase(it_proc);
 
     } else {
@@ -403,8 +411,9 @@ void Scheduler::recv_command_create_gui(const Packet& packet) {
   auto it_info = processes.find(packet.pid);
   if (it_info == processes.end()) {
     ProcessInfo info;
-
     info.pid = packet.pid;
+    info.root_tid = VADDR_NULL;
+    info.proc_addr = VADDR_NULL;
     info.gui_nid = my_info.nid;
     info.having_vm = false;
     info.heartbeat_gui = now;
@@ -467,6 +476,8 @@ void Scheduler::recv_command_heartbeat_gui(const Packet& packet) {
   if (it_info == processes.end()) {
     ProcessInfo info;
     info.pid = packet.pid;
+    info.root_tid = VADDR_NULL;
+    info.proc_addr = VADDR_NULL;
     info.gui_nid = packet.src_nid;
     info.having_vm = false;
     info.heartbeat_gui = now;
@@ -501,6 +512,11 @@ void Scheduler::recv_command_heartbeat_scheduler(const Packet& packet) {
       info.heartbeat_vm = now;
       info.heartbeat_gui = now;
       info.having_vm = false;
+
+      assert((AddressRegion::MASK & info.root_tid) == AddressRegion::META &&
+           info.proc_addr != VADDR_NULL);
+      assert((AddressRegion::MASK & info.proc_addr) == AddressRegion::META &&
+           info.proc_addr != VADDR_NULL);
 
       processes.insert(std::make_pair(pid, info));
     }
@@ -552,6 +568,8 @@ void Scheduler::recv_command_heartbeat_vm(const Packet& packet) {
   if (processes.find(packet.pid) == processes.end()) {
     ProcessInfo info;
     info.pid = packet.pid;
+    info.root_tid = VADDR_NULL;
+    info.proc_addr = VADDR_NULL;
     info.gui_nid = NodeID::NONE;
     info.having_vm = false;
     processes.insert(std::make_pair(packet.pid, info));
@@ -620,6 +638,8 @@ void Scheduler::recv_command_warp_gui(const Packet& packet) {
   if (it_info == processes.end()) {
     ProcessInfo info;
     info.pid = packet.pid;
+    info.root_tid = VADDR_NULL;
+    info.proc_addr = VADDR_NULL;
     info.gui_nid = my_info.nid;
     info.having_vm = false;
     info.heartbeat_gui = now;
@@ -661,10 +681,29 @@ void Scheduler::recv_command_warp_thread(const Packet& packet) {
     info.gui_nid = NodeID::NONE;
     info.having_vm = true;
     info.heartbeat_vm = now;
+
     processes.insert(std::make_pair(packet.pid, info));
 
+    assert((AddressRegion::MASK & info.root_tid) == AddressRegion::META &&
+           info.proc_addr != VADDR_NULL);
+    assert((AddressRegion::MASK & info.proc_addr) == AddressRegion::META &&
+           info.proc_addr != VADDR_NULL);
+
   } else {
-    it_info->second.heartbeat_vm = now;
+    ProcessInfo& info = it_info->second;
+    assert((info.root_tid == VADDR_NULL) == (info.proc_addr == VADDR_NULL));
+
+    if (info.root_tid == VADDR_NULL &&
+        info.proc_addr == VADDR_NULL) {
+      info.root_tid = Convert::json2vtid(packet.content.at("root_tid"));
+      info.proc_addr = Convert::json2vaddr(packet.content.at("proc_addr"));
+    }
+    info.heartbeat_vm = now;
+
+    assert((AddressRegion::MASK & info.root_tid) == AddressRegion::META &&
+           info.proc_addr != VADDR_NULL);
+    assert((AddressRegion::MASK & info.proc_addr) == AddressRegion::META &&
+           info.proc_addr != VADDR_NULL);
   }
 
   vtid_t tid = Convert::json2vtid(packet.content.at("tid"));
@@ -682,6 +721,15 @@ void Scheduler::send_command_heartbeat_scheduler() {
     const vpid_t& pid = it_process.first;
     ProcessInfo& info = it_process.second;
     picojson::object proc;
+
+    if (info.proc_addr == VADDR_NULL) {
+      continue;
+    }
+
+    assert((AddressRegion::MASK & info.root_tid) == AddressRegion::META &&
+           info.proc_addr != VADDR_NULL);
+    assert((AddressRegion::MASK & info.proc_addr) == AddressRegion::META &&
+           info.proc_addr != VADDR_NULL);
 
     proc.insert(std::make_pair("order_id", info.order_id.to_json()));
     proc.insert(std::make_pair("last_update_nid", info.last_update_nid.to_json()));
