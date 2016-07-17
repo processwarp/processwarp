@@ -263,8 +263,7 @@ void Scheduler::packet_controller_send(const Packet& packet) {
  * Cleanup unresponsive nodes that didn't send any heartbeat over HEATBEAT_DEADLINE seconds.
  */
 void Scheduler::cleanup_unresponsive_node() {
-  std::time_t now = time(nullptr);
-
+  std::time_t now = std::time(nullptr);
   auto it_node = nodes.begin();
   while (it_node != nodes.end()) {
     if (it_node->second.heartbeat + HEARTBEAT_DEADLINE < now) {
@@ -279,7 +278,7 @@ void Scheduler::cleanup_unresponsive_node() {
  * Cleanup unresponsive threads and processes that didn't send any heartbeat over HEATBEAT_DEADLINE seconds.
  */
 void Scheduler::cleanup_unresponsive_process() {
-  std::time_t now = time(nullptr);
+  std::time_t now = std::time(nullptr);
   bool is_changed = false;
 
   auto it_proc = processes.begin();
@@ -394,7 +393,7 @@ void Scheduler::recv_command_activate(const Packet& packet) {
 void Scheduler::recv_command_create_gui(const Packet& packet) {
   assert(packet.pid != PID::BROADCAST);
 
-  std::time_t now = time(nullptr);
+  std::time_t now = std::time(nullptr);
 
   if (packet.src_nid != my_info.nid) {
     /// @todo error
@@ -462,7 +461,7 @@ void Scheduler::recv_command_distribute(const Packet& packet) {
 void Scheduler::recv_command_heartbeat_gui(const Packet& packet) {
   assert(packet.pid != PID::BROADCAST);
 
-  std::time_t now = time(nullptr);
+  std::time_t now = std::time(nullptr);
   auto it_info = processes.find(packet.pid);
 
   if (it_info == processes.end()) {
@@ -616,7 +615,7 @@ void Scheduler::recv_command_require_processes_info(const Packet& packet) {
  */
 void Scheduler::recv_command_warp_gui(const Packet& packet) {
   auto it_info = processes.find(packet.pid);
-  std::time_t now = time(nullptr);
+  std::time_t now = std::time(nullptr);
 
   if (it_info == processes.end()) {
     ProcessInfo info;
