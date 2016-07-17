@@ -1469,11 +1469,13 @@ void VMemory::recv_command_publish(const Packet& packet) {
 
     if (page.type & VMemoryPageType::LEADER) {
       packet_controller.send_reply(packet, picojson::object());
+      delegate.vmemory_recv_update(*this, addr);
       return;
 
     } else if (page.type & VMemoryPageType::ACCEPTOR &&
                requiring.find(addr) == requiring.end()) {
       packet_controller.send_error(packet, picojson::object());
+      delegate.vmemory_recv_update(*this, addr);
       return;
 
     } else if (~page.type & VMemoryPageType::ACCEPTOR &&
