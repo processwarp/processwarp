@@ -44,6 +44,61 @@ void Scheduler::initialize(SchedulerDelegate& delegate_) {
 }
 
 /**
+ * Require thread to warp, according to load (count of runing threads) of next nodes.
+ */
+void Scheduler::balance_load() {
+  // Cleanup load_infos.
+  std::time_t now = std::time(nullptr);
+  auto it_load_info = load_infos.begin();
+  while (it_load_info != load_infos.end()) {
+    if (it_load_info->second.last_update + HEARTBEAT_DEADLINE < now) {
+      it_load_info = load_infos.erase(it_load_info);
+    } else {
+      it_load_info++;
+    }
+  }
+
+  uint32_t my_thread_num = 0;
+  vpid_t candidate_pid = PID::BROADCAST;
+  vtid_t candidate_tid;
+  for (const auto& it_process : processes) {
+    const ProcessInfo& process_info = it_process.second;
+    for (const auto& it_thread : process_info.threads) {
+      if (it_thread.second == my_info.nid) {
+        my_thread_num++;
+        candidate_pid = it_process.first;
+        candidate_tid = it_thread.first;
+      }
+    }
+  }
+
+  if (my_thread_num == 0) {
+    return;
+  }
+
+  uint32_t min_thread_num = my_thread_num;
+  std::time_t earliest_warp = std::time(nullptr);
+  NodeID candidate_nid = my_info.nid;
+  for (auto& it_load_info : load_infos) {
+    const NodeID& nid = it_load_info.first;
+    LoadInfo& load_info = it_load_info.second;
+
+    if (load_info.thread_num < min_thread_num ||
+        (load_info.thread_num == min_thread_num &&
+         load_info.last_warp < earliest_warp)) {
+      min_thread_num = load_info.thread_num;
+      earliest_warp = load_info.last_warp;
+      candidate_nid = nid;
+    }
+  }
+
+  if (candidate_nid != my_info.nid &&
+      my_thread_num - 1 > min_thread_num + 1) {
+    send_command_require_warp_thread(candidate_pid, candidate_tid, candidate_nid);
+  }
+}
+
+/**
  * Scheduler main routine.
  * Router or super module must be call this method at least once a BEAT_ROUTINE_INTERVAL.
  */
@@ -54,6 +109,9 @@ void Scheduler::beat_routine() {
   // Cleanup unresponsive module.
   cleanup_unresponsive_process();
   cleanup_unresponsive_node();
+
+  // Load balancing.
+  balance_load();
 }
 
 /**
@@ -261,6 +319,49 @@ void Scheduler::cleanup_unresponsive_process() {
 }
 
 /**
+ * Get count of threads, running on this node.
+ * @return Count of threads.
+ */
+uint32_t Scheduler::get_my_thread_num() {
+  uint32_t thread_num = 0;
+  for (const auto& it_process : processes) {
+    const ProcessInfo& process_info = it_process.second;
+    for (const auto& it_thread : process_info.threads) {
+      if (it_thread.second == my_info.nid) {
+        thread_num++;
+      }
+    }
+  }
+  return thread_num;
+}
+
+/**
+ * Decode load information from another node, and store it to load_infos.
+ * @param src_nid Source node-id of load information.
+ * @param info JSON object containing last_warp and thread_num.
+ */
+void Scheduler::input_load_info(const NodeID& src_nid, const picojson::object& info) {
+  LoadInfo& load_info = load_infos[src_nid];
+
+  load_info.last_update = std::time(nullptr);
+  load_info.last_warp = Convert::json2time(info.at("last_warp"));
+  load_info.thread_num = Convert::json2int<uint32_t>(info.at("thread_num"));
+}
+
+/**
+ * Encode my node's load information to send to next nodes.
+ * @return Load information as a JSON object.
+ */
+picojson::object Scheduler::output_load_info() {
+  picojson::object load_info;
+
+  load_info.insert(std::make_pair("last_warp", Convert::time2json(last_warp)));
+  load_info.insert(std::make_pair("thread_num", Convert::int2json(get_my_thread_num())));
+
+  return load_info;
+}
+
+/**
  * When receive activate command, listup process and frontend that have to warp active node.
  * Ignode command if receive activate command from this node.
  * call warp method to do it.
@@ -427,7 +528,11 @@ void Scheduler::recv_command_heartbeat_scheduler(const Packet& packet) {
     }
   }
 
+  input_load_info(packet.src_nid,
+                  packet.content.at("load_info").get<picojson::object>());
+
   if (is_changed) {
+    last_warp = std::time(nullptr);
     send_command_heartbeat_scheduler();
     send_command_processes_info();
   }
@@ -598,6 +703,7 @@ void Scheduler::send_command_heartbeat_scheduler() {
     procs.insert(std::make_pair(Convert::vpid2str(pid), picojson::value(proc)));
   }
   param.insert(std::make_pair("processes", picojson::value(procs)));
+  param.insert(std::make_pair("load_info", picojson::value(output_load_info())));
 
   packet_controller.send("heartbeat_scheduler", Module::SCHEDULER, false,
                          PID::BROADCAST, NodeID::NEXT, param);

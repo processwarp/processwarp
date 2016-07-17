@@ -26,6 +26,7 @@ class Scheduler : public PacketControllerDelegate {
  public:
   Scheduler();
   void initialize(SchedulerDelegate& delegate_);
+  void balance_load();
   void beat_routine();
   NodeID get_dst_nid(const vpid_t& pid, Module::Type module);
   vpid_t get_new_pid();
@@ -35,6 +36,18 @@ class Scheduler : public PacketControllerDelegate {
   void set_node_information(const NodeID& nid, const std::string& name);
 
  private:
+  /**
+   * It's used to store another node's load information.
+   */
+  struct LoadInfo {
+    /** Timestamp, update this information. */
+    std::time_t last_update;
+    /** Last time of warping thread on target node.  */
+    std::time_t last_warp;
+    /** Count of threads, runing on target node. */
+    uint32_t thread_num;
+  };
+
   /** Node information for this node. */
   NodeInfo my_info;
   /** Pointer for delegater instance.  */
@@ -47,12 +60,19 @@ class Scheduler : public PacketControllerDelegate {
   std::mt19937_64 rnd;
   /** Packet controller. */
   PacketController packet_controller;
+  /** Last time of warping thread on this node. */
+  std::time_t last_warp;
+  /** Another node's load informations. */
+  std::map<NodeID, LoadInfo> load_infos;
 
   void packet_controller_on_recv(const Packet& packet) override;
   void packet_controller_send(const Packet& packet) override;
 
   void cleanup_unresponsive_node();
   void cleanup_unresponsive_process();
+  uint32_t get_my_thread_num();
+  void input_load_info(const NodeID& src_nid, const picojson::object& info);
+  picojson::object output_load_info();
 
   void recv_command_activate(const Packet& packet);
   void recv_command_create_gui(const Packet& packet);
