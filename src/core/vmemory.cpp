@@ -706,7 +706,14 @@ const PacketController::Define& VMemory::PacketClaimBack::get_define() {
 }
 
 void VMemory::PacketClaimBack::on_error(const Packet& packet) {
-  // Do nothing.
+  auto page_it = vmemory.pages.find(addr);
+  if (page_it == vmemory.pages.end()) {
+    // Do nothing, maybe page is deleted or acceptor node is changed.
+    return;
+  }
+
+  Page& page = page_it->second;
+  assert(packet.src_nid != page.leader_nid);
 }
 
 /**
@@ -721,11 +728,12 @@ void VMemory::PacketClaimBack::on_reply(const Packet& packet) {
   }
 
   Page& page = page_it->second;
-  assert(packet.src_nid == page.leader_nid);
-  page.type |= VMemoryPageType::LEADER;
-  page.flg_update = true;
-  page.leader_nid = vmemory.my_nid;
-  vmemory.send_command_publish(NodeID::NONE, page, addr);
+  if (packet.src_nid == page.leader_nid) {
+    page.type |= VMemoryPageType::LEADER;
+    page.flg_update = true;
+    page.leader_nid = vmemory.my_nid;
+    vmemory.send_command_publish(NodeID::NONE, page, addr);
+  }
 }
 
 void VMemory::PacketClaimBack::on_packet_error(PacketError::Type code) {
@@ -1680,6 +1688,8 @@ void VMemory::send_command_candidacy(vaddr_t addr, Page& page) {
  */
 void VMemory::send_command_claim_back(const NodeID& leader_nid, vaddr_t addr) {
   assert(addr == get_upper_addr(addr));
+  assert(pages.at(addr).leader_nid == leader_nid);
+  assert(pages.at(addr).type & VMemoryPageType::ACCEPTOR);
 
   picojson::object param;
   param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
