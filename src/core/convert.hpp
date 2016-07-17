@@ -2,6 +2,7 @@
 
 #include <picojson.h>
 
+#include <ctime>
 #include <set>
 #include <string>
 #include <vector>
@@ -109,6 +110,8 @@ inline bool json2bool(const picojson::value& json) {
 template<class T> T json2int(const picojson::value& json) {
   return str2int<T>(json.get<std::string>());
 }
+
+std::time_t json2time(const picojson::value& json);
 
 /**
  * Convert a thread-id from JSON.
@@ -241,5 +244,7 @@ picojson::value bin2json(const std::string& bin);
  * @return Binary data as JSON.
  */
 picojson::value bin2json(const uint8_t* bin, unsigned int size);
+
+picojson::value time2json(std::time_t time);
 }  // namespace Convert
 }  // namespace processwarp
