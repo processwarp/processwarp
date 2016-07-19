@@ -288,7 +288,7 @@ vaddr_t VMemory::Accessor::realloc(vaddr_t addr, uint64_t size) {
       page.size = size;
       page.value.swap(tmp);
 
-      vmemory.send_command_write(NodeID::NONE, page, addr, page.size);
+      vmemory.send_command_write(NodeID::NONE, page, addr);
       return addr;
 
     } else {
@@ -411,7 +411,7 @@ void VMemory::Accessor::update_meta_area(vaddr_t addr, const std::string& data) 
       page.value.reset(new uint8_t[page.size]);
     }
     std::memcpy(page.value.get(), data.data(), page.size);
-    vmemory.send_command_write(NodeID::NONE, page, addr, page.size);
+    vmemory.send_command_write(NodeID::NONE, page, addr);
 
   } else {
     vmemory.send_command_write_require(page, addr,
@@ -430,7 +430,7 @@ void VMemory::Accessor::write_copy(vaddr_t dst, vaddr_t src, uint64_t size) {
     assert(dst_page.size >= get_lower_addr(dst) + size);
     std::memmove(dst_page.value.get() + get_lower_addr(dst),
                  src_page.value.get() + get_lower_addr(src), size);
-    vmemory.send_command_write(NodeID::NONE, dst_page, dst, size);
+    vmemory.send_command_write(NodeID::NONE, dst_page, get_upper_addr(dst));
 
   } else {
     vmemory.send_command_write_require(dst_page, dst,
@@ -446,7 +446,7 @@ void VMemory::Accessor::write_copy(vaddr_t dst, const uint8_t *src, uint64_t siz
   if (dst_page.type & VMemoryPageType::LEADER) {
     assert(dst_page.size >= get_lower_addr(dst) + size);
     std::memmove(dst_page.value.get() + get_lower_addr(dst), src, size);
-    vmemory.send_command_write(NodeID::NONE, dst_page, dst, size);
+    vmemory.send_command_write(NodeID::NONE, dst_page, get_upper_addr(dst));
 
   } else {
     vmemory.send_command_write_require(dst_page, dst,
@@ -460,7 +460,7 @@ void VMemory::Accessor::write_fill(vaddr_t dst, uint8_t c, uint64_t size) {
   assert(~page.type & VMemoryPageType::PROGRAM);
   if (page.type & VMemoryPageType::LEADER) {
     std::memset(page.value.get() + get_lower_addr(dst), c, size);
-    vmemory.send_command_write(NodeID::NONE, page, dst, size);
+    vmemory.send_command_write(NodeID::NONE, page, get_upper_addr(dst));
 
   } else {
     std::unique_ptr<char[]> buffer(new char[size]);
@@ -481,7 +481,7 @@ void VMemory::Accessor::write_out() {
     assert(~page.type & VMemoryPageType::PROGRAM);
     if (page.type & VMemoryPageType::LEADER) {
       page.value.swap(it->second);
-      vmemory.send_command_write(NodeID::NONE, page, it->first, page.size);
+      vmemory.send_command_write(NodeID::NONE, page, it->first);
 
     } else {
       vmemory.send_command_write_require(page, it->first,
@@ -507,14 +507,14 @@ VMemory::Page& VMemory::Accessor::get_page(vaddr_t addr, bool readable) {
   auto it_page = vmemory.pages.find(addr);
 
   if (it_page == vmemory.pages.end()) {
-    vmemory.send_command_require(addr, VMemoryReadMode::CONTINUE);
+    vmemory.send_command_require(addr, VMemoryReadMode::CONTINUE, false);
     throw InterruptMemoryRequire(addr);
   }
 
   Page& page = it_page->second;
   if (readable && page.flg_update == false) {
     assert(~page.type & VMemoryPageType::LEADER);
-    vmemory.send_command_require(addr, VMemoryReadMode::CONTINUE);
+    vmemory.send_command_require(addr, VMemoryReadMode::CONTINUE, false);
     throw InterruptMemoryRequire(addr);
   }
   assert(page.type & VMemoryPageType::LEADER || page.master_count == 0);
@@ -681,6 +681,7 @@ void VMemory::PacketCandidacy::on_reply(const Packet& packet) {
 
   Page& page = page_it->second;
   page.type |= VMemoryPageType::LEADER;
+  page.flg_update = true;
 }
 
 void VMemory::PacketCandidacy::on_packet_error(PacketError::Type code) {
@@ -705,7 +706,14 @@ const PacketController::Define& VMemory::PacketClaimBack::get_define() {
 }
 
 void VMemory::PacketClaimBack::on_error(const Packet& packet) {
-  // Do nothing.
+  auto page_it = vmemory.pages.find(addr);
+  if (page_it == vmemory.pages.end()) {
+    // Do nothing, maybe page is deleted or acceptor node is changed.
+    return;
+  }
+
+  Page& page = page_it->second;
+  assert(packet.src_nid != page.leader_nid);
 }
 
 /**
@@ -720,10 +728,12 @@ void VMemory::PacketClaimBack::on_reply(const Packet& packet) {
   }
 
   Page& page = page_it->second;
-  assert(packet.src_nid == page.leader_nid);
-  page.type |= VMemoryPageType::LEADER;
-  page.leader_nid = vmemory.my_nid;
-  vmemory.send_command_publish(NodeID::NONE, page, addr);
+  if (packet.src_nid == page.leader_nid) {
+    page.type |= VMemoryPageType::LEADER;
+    page.flg_update = true;
+    page.leader_nid = vmemory.my_nid;
+    vmemory.send_command_publish(NodeID::NONE, page, addr);
+  }
 }
 
 void VMemory::PacketClaimBack::on_packet_error(PacketError::Type code) {
@@ -841,11 +851,10 @@ void VMemory::PacketPublish::on_packet_error(PacketError::Type code) {
 }
 
 VMemory::PacketWrite::PacketWrite(VMemory& vmemory_, const NodeID& dst_nid_,
-                                  vaddr_t addr_, uint64_t size_, uint64_t write_id_) :
+                                  vaddr_t addr_, uint64_t write_id_) :
     vmemory(vmemory_),
     dst_nid(dst_nid_),
     addr(addr_),
-    size(size_),
     write_id(write_id_) {
 }
 
@@ -878,8 +887,9 @@ void VMemory::PacketWrite::on_reply(const Packet& packet) {
   if (it_page != vmemory.pages.end()) {
     Page& page = it_page->second;
     page.write_history.erase(packet.src_nid);
-    if (write_id != page.write_id) {
-      vmemory.send_command_write(packet.src_nid, page, addr, size);
+    if (write_id != page.write_id &&
+        page.type & VMemoryPageType::LEADER) {
+      vmemory.send_command_write(packet.src_nid, page, addr);
     }
   }
 }
@@ -891,9 +901,13 @@ void VMemory::PacketWrite::on_reply(const Packet& packet) {
 void VMemory::PacketWrite::on_packet_error(PacketError::Type code) {
   auto it_page = vmemory.pages.find(addr);
 
-  Page& page = it_page->second;
-  page.write_history.erase(dst_nid);
-  vmemory.send_command_write(dst_nid, page, addr, size);
+  if (it_page != vmemory.pages.end()) {
+    Page& page = it_page->second;
+    page.write_history.erase(dst_nid);
+    if (page.type & VMemoryPageType::LEADER) {
+      vmemory.send_command_write(dst_nid, page, addr);
+    }
+  }
 }
 
 AddressRegion::Type VMemory::get_addr_type(uint64_t size) {
@@ -1051,6 +1065,9 @@ void VMemory::packet_controller_on_recv(const Packet& packet) {
   } else if (packet.command == "alloc_cancel") {
     recv_command_alloc_cancel(packet);
 
+  } else if (packet.command == "balance") {
+    recv_command_balance(packet);
+
   } else if (packet.command == "candidacy") {
     recv_command_candidacy(packet);
 
@@ -1134,6 +1151,32 @@ void VMemory::recv_command_alloc_cancel(const Packet& packet) {
 }
 
 /**
+ * When receive balance command, run rebalance.
+ * Send require if page is need and has not exist
+ * Send delegate if page has exist and that address has not acceptor range.
+ * @param packet A packet containing addr, acceptor_nids.
+ */
+void VMemory::recv_command_balance(const Packet& packet) {
+  vaddr_t addr = Convert::json2vaddr(packet.content.at("addr"));
+  std::set<NodeID> acceptor_nids = NodeID::from_json_array(packet.content.at("acceptor_nids"));
+
+  auto it_page = pages.find(addr);
+  if (it_page == pages.end()) {
+    if (check_acceptor_range(addr)) {
+      send_command_require(addr, VMemoryReadMode::ONCE, true);
+    }
+
+  } else {
+    Page& page = it_page->second;
+    if (!check_acceptor_range(addr) &&
+        page.type & VMemoryPageType::ACCEPTOR) {
+      send_command_delegate(addr, page.value.get(), page.size, page.leader_nid,
+                            page.acceptor_nids, page.learner_nids);
+    }
+  }
+}
+
+/**
  * When receive candidacy command, if another node havend right of leader, send reply.
  * But another node having right of leader, send error.
  * This command can receive only root acceptor.
@@ -1163,17 +1206,25 @@ void VMemory::recv_command_candidacy(const Packet& packet) {
     return;
   }
 
-  if (page.leader_nid == NodeID::NONE ||
+  if (page.leader_nid == packet.src_nid) {
+    // The leader of the page is the same to candidacy node yet.
+    packet_controller.send_reply(packet, picojson::object());
+
+  } else if (page.leader_nid == NodeID::NONE ||
       (page.type & VMemoryPageType::LEADER && page.master_count == 0)) {
+    // The leader is root acceptor and page's reference count is 0.
     assert(page.flg_update == true);
     packet_controller.send_reply(packet, picojson::object());
 
     page.type &= ~VMemoryPageType::LEADER;
     page.leader_nid = packet.src_nid;
-    page.learner_nids.insert(packet.src_nid);
+    if (packet.src_nid != my_nid) {
+      page.learner_nids.insert(packet.src_nid);
+    }
     send_command_publish(NodeID::NONE, page, addr);
 
   } else {
+    // The leader is nether candidacy node or root acceptor.
     if (page.leader_nid != my_nid) {
       send_command_claim_back(page.leader_nid, addr);
     }
@@ -1193,16 +1244,19 @@ void VMemory::recv_command_claim_back(const Packet& packet) {
   auto it_page = pages.find(addr);
   if (it_page == pages.end()) {
     packet_controller.send_reply(packet, picojson::object());
+    return;
   }
 
   Page& page = it_page->second;
   if (~page.type & VMemoryPageType::LEADER) {
     packet_controller.send_reply(packet, picojson::object());
+    return;
   }
 
   if (page.master_count == 0) {
     page.type &= ~VMemoryPageType::LEADER;
     packet_controller.send_reply(packet, picojson::object());
+    return;
   }
 
   packet_controller.send_error(packet, picojson::object());
@@ -1244,7 +1298,9 @@ void VMemory::recv_command_delegate(const Packet& packet) {
     page.leader_nid = leader_nid;
     page.acceptor_nids = acceptor_nids;
     for (auto& learner_nid : learner_nids) {
-      page.learner_nids.insert(learner_nid);
+      if (learner_nid != my_nid) {
+        page.learner_nids.insert(learner_nid);
+      }
     }
   }
 
@@ -1364,8 +1420,9 @@ void VMemory::recv_command_require(const Packet& packet) {
 
   auto it_page = pages.find(addr);
   if (it_page == pages.end()) {
-    packet_controller.send_error(packet, picojson::object());
-    /// @todo get data for address from another acceptor.
+    if (check_acceptor_range(addr)) {
+      send_command_require(addr, VMemoryReadMode::ONCE, true);
+    }
     return;
   }
 
@@ -1381,7 +1438,9 @@ void VMemory::recv_command_require(const Packet& packet) {
 
     case VMemoryReadMode::CONTINUE: {
       send_command_publish(packet.src_nid, page, addr);
-      page.learner_nids.insert(packet.src_nid);
+      if (packet.src_nid != my_nid) {
+        page.learner_nids.insert(packet.src_nid);
+      }
     } break;
 
     default: {
@@ -1416,6 +1475,16 @@ void VMemory::recv_command_publish(const Packet& packet) {
       requiring.erase(it_ri);
       packet_controller.send_reply(packet, picojson::object());
 
+      if (check_acceptor_range(addr)) {
+        Page& page = pages.at(addr);
+        page.type |= VMemoryPageType::ACCEPTOR;
+        if (range_min_nid != NodeID::NONE) {
+          std::set<NodeID> acceptor_nids;
+          acceptor_nids.insert(my_nid);
+          send_command_balance(addr, acceptor_nids);
+        }
+      }
+
     } else {
       packet_controller.send_error(packet, picojson::object());
     }
@@ -1425,13 +1494,17 @@ void VMemory::recv_command_publish(const Packet& packet) {
 
     if (page.type & VMemoryPageType::LEADER) {
       packet_controller.send_reply(packet, picojson::object());
+      delegate.vmemory_recv_update(*this, addr);
       return;
 
-    } else if (page.type & VMemoryPageType::ACCEPTOR) {
+    } else if (page.type & VMemoryPageType::ACCEPTOR &&
+               requiring.find(addr) == requiring.end()) {
       packet_controller.send_error(packet, picojson::object());
+      delegate.vmemory_recv_update(*this, addr);
       return;
 
-    } else if (page.referral_count >= MEMORY_REFERRAL_LIMIT &&
+    } else if (~page.type & VMemoryPageType::ACCEPTOR &&
+               page.referral_count >= MEMORY_REFERRAL_LIMIT &&
                requiring.find(addr) == requiring.end()) {
       packet_controller.send_error(packet, picojson::object());
       pages.erase(addr);
@@ -1448,6 +1521,7 @@ void VMemory::recv_command_publish(const Packet& packet) {
 
     } else {
       // free
+      assert(~page.type & VMemoryPageType::ACCEPTOR);
       pages.erase(addr);
       packet_controller.send_error(packet, picojson::object());
     }
@@ -1483,6 +1557,9 @@ void VMemory::recv_command_write(const Packet& packet) {
 
   auto it_page = pages.find(get_upper_addr(addr));
   if (it_page == pages.end()) {
+    if (check_acceptor_range(addr)) {
+      send_command_require(addr, VMemoryReadMode::ONCE, true);
+    }
     packet_controller.send_error(packet, picojson::object());
     return;
   }
@@ -1498,15 +1575,14 @@ void VMemory::recv_command_write(const Packet& packet) {
     return;
   }
 
-  if (page.size < get_lower_addr(addr) + value.size()) {
-    packet_controller.send_error(packet, picojson::object());
-    return;
-  }
-
   if (~page.type & VMemoryPageType::LEADER) {
-    std::memcpy(page.value.get() + get_lower_addr(addr), value.data(), value.size());
+    if (page.size != value.size()) {
+      page.value.reset(new uint8_t[value.size()]);
+      page.size = value.size();
+    }
+    std::memcpy(page.value.get(), value.data(), value.size());
   }
-  send_command_publish(NodeID::NONE, page, get_upper_addr(addr));
+  send_command_publish(NodeID::NONE, page, addr);
   packet_controller.send_reply(packet, picojson::object());
 }
 
@@ -1536,7 +1612,7 @@ void VMemory::recv_command_write_require(const Packet& packet) {
   }
 
   std::memcpy(page.value.get() + get_lower_addr(addr), value.data(), value.size());
-  send_command_write(NodeID::NONE, page, addr, value.size());
+  send_command_write(NodeID::NONE, page, get_upper_addr(addr));
 }
 
 /**
@@ -1622,6 +1698,8 @@ void VMemory::send_command_candidacy(vaddr_t addr, Page& page) {
  */
 void VMemory::send_command_claim_back(const NodeID& leader_nid, vaddr_t addr) {
   assert(addr == get_upper_addr(addr));
+  assert(pages.at(addr).leader_nid == leader_nid);
+  assert(pages.at(addr).type & VMemoryPageType::ACCEPTOR);
 
   picojson::object param;
   param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
@@ -1732,16 +1810,30 @@ void VMemory::send_command_publish(const NodeID& dst_nid, Page& page, vaddr_t ad
  * @param dst_nid Destination node-id.
  * @param addr Target address to get value.
  */
-void VMemory::send_command_require(vaddr_t addr, VMemoryReadMode::Type mode) {
+void VMemory::send_command_require(vaddr_t addr, VMemoryReadMode::Type mode, bool to_all) {
   assert(get_upper_addr(addr) == addr);
+
+  if (requiring.find(addr) != requiring.end()) {
+    return;
+  }
+
   requiring.insert(addr);
   picojson::object param;
 
   param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
   param.insert(std::make_pair("mode", Convert::int2json(mode)));
 
-  packet_controller.send("require", Module::MEMORY, false,
-                         my_pid, get_near_acceptor(addr), param);
+  if (to_all) {
+    NodeID acceptor_nid = get_hash_id(addr);
+    for (int i = 0; i < 4; i++) {
+      packet_controller.send("require", Module::MEMORY, false,
+                             my_pid, acceptor_nid, param);
+      acceptor_nid = acceptor_nid + NodeID::QUARTER;
+    }
+  } else {
+    packet_controller.send("require", Module::MEMORY, false,
+                           my_pid, get_near_acceptor(addr), param);
+  }
 }
 
 /**
@@ -1758,9 +1850,12 @@ void VMemory::send_command_require_routing() {
  * @param dst_nid Destination nid or NONE.
  * @param page The target page to write.
  * @param addr The target address of the page.
- * @param size Size of data to write.
  */
-void VMemory::send_command_write(const NodeID& dst_nid, Page& page, vaddr_t addr, uint64_t size) {
+void VMemory::send_command_write(const NodeID& dst_nid, Page& page, vaddr_t addr) {
+  assert(addr == get_upper_addr(addr));
+  assert(page.type & VMemoryPageType::LEADER);
+  assert(page.flg_update == true);
+
   if (is_loading) {
     return;
 
@@ -1768,7 +1863,7 @@ void VMemory::send_command_write(const NodeID& dst_nid, Page& page, vaddr_t addr
     page.write_id = rnd();
     NodeID acceptor_nid = get_hash_id(get_upper_addr(addr));
     for (int i = 0; i < 4; i++) {
-      send_command_write(acceptor_nid, page, addr, size);
+      send_command_write(acceptor_nid, page, addr);
       acceptor_nid = acceptor_nid + NodeID::QUARTER;
     }
     return;
@@ -1777,11 +1872,10 @@ void VMemory::send_command_write(const NodeID& dst_nid, Page& page, vaddr_t addr
   if (page.write_history.find(dst_nid) == page.write_history.end()) {
     picojson::object param;
     param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
-    param.insert(std::make_pair("value", Convert::bin2json(page.value.get() + get_lower_addr(addr),
-                                                           size)));
+    param.insert(std::make_pair("value", Convert::bin2json(page.value.get(), page.size)));
 
     std::unique_ptr<PacketController::Behavior> behavior(
-        new PacketWrite(*this, dst_nid, addr, size, page.write_id));
+        new PacketWrite(*this, dst_nid, addr, page.write_id));
     packet_controller.send(std::move(behavior), my_pid, dst_nid, param);
     page.write_history.insert(dst_nid);
   }
@@ -1796,6 +1890,7 @@ void VMemory::send_command_write(const NodeID& dst_nid, Page& page, vaddr_t addr
  */
 void VMemory::send_command_write_require(Page& page, vaddr_t addr,
                                          const uint8_t* data, uint64_t size) {
+  assert(~page.type & VMemoryPageType::LEADER);
   page.flg_update = false;
 
   picojson::object param;

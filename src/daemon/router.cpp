@@ -205,23 +205,39 @@ void Router::scheduler_send_packet(Scheduler& scheduler, const Packet& packet) {
 }
 
 /**
- * When libuv's a timer event is happen, call Scheduler::execute.
+ * When libuv's a heartbeat timer event is happen, call heartbeat method.
+ * @param handle Libuv's timer event handler containing pointer to Router instance.
  */
-void Router::on_timer_for_execute(uv_timer_t* handle) {
+void Router::on_timer_heartbeat(uv_timer_t* handle) {
+  Router& THIS = *reinterpret_cast<Router*>(handle->data);
+
+  THIS.scheduler.heartbeat();
+}
+
+/**
+ * When libuv's a routine timer event is happen, call routine method.
+ * @param handle Libuv's timer event handler containing pointer to Router instance.
+ */
+void Router::on_timer_routine(uv_timer_t* handle) {
   Router& THIS = *reinterpret_cast<Router*>(handle->data);
   WorkerConnector& worker = WorkerConnector::get_instance();
 
-  worker.clock_routine();
-  THIS.scheduler.execute();
+  THIS.scheduler.beat_routine();
+  worker.beat_routine();
 }
 
 /**
  * Initialize a timer event to call Scheduler::execute for each interval.
  */
 void Router::initialize_timer() {
-  uv_timer_init(loop, &timer_for_execute);
-  timer_for_execute.data = this;
-  uv_timer_start(&timer_for_execute, Router::on_timer_for_execute,
-                 0, SCHEDULER_EXECUTE_INTERVAL * 1000);
+  uv_timer_init(loop, &heartbeat_timer);
+  heartbeat_timer.data = this;
+  uv_timer_start(&heartbeat_timer, Router::on_timer_heartbeat,
+                 0, HEARTBEAT_INTERVAL * 1000);
+
+  uv_timer_init(loop, &routine_timer);
+  routine_timer.data = this;
+  uv_timer_start(&routine_timer, Router::on_timer_routine,
+                 0, BEAT_ROUTINE_INTERVAL * 1000);
 }
 }  // namespace processwarp

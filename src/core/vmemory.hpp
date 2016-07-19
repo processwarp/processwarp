@@ -140,7 +140,7 @@ class VMemory : public PacketControllerDelegate {
       if (page.type & VMemoryPageType::LEADER) {
         assert(page.size >= get_lower_addr(dst) + sizeof(T));
         std::memcpy(page.value.get() + get_lower_addr(dst), &val, sizeof(T));
-        vmemory.send_command_write(NodeID::NONE, page, dst, sizeof(T));
+        vmemory.send_command_write(NodeID::NONE, page, get_upper_addr(dst));
 
       } else {
         vmemory.send_command_write_require(page, dst,
@@ -254,7 +254,7 @@ class VMemory : public PacketControllerDelegate {
   class PacketWrite : public PacketController::Behavior {
    public:
     explicit PacketWrite(VMemory& vmemory_, const NodeID& dst_nid_,
-                         vaddr_t addr_, uint64_t size_, uint64_t write_id_);
+                         vaddr_t addr_, uint64_t write_id_);
 
     const PacketController::Define& get_define() override;
     void on_error(const Packet& packet) override;
@@ -265,7 +265,6 @@ class VMemory : public PacketControllerDelegate {
     VMemory& vmemory;
     const NodeID dst_nid;
     const vaddr_t addr;
-    const uint64_t size;
     const uint64_t write_id;
   };
 
@@ -329,9 +328,9 @@ class VMemory : public PacketControllerDelegate {
   void send_command_free(vaddr_t addr);
   void send_command_free_acceptor(vaddr_t addr, const std::set<NodeID>& acceptor_nids);
   void send_command_publish(const NodeID& dst_nid, Page& page, vaddr_t addr);
-  void send_command_require(vaddr_t addr, VMemoryReadMode::Type mode);
+  void send_command_require(vaddr_t addr, VMemoryReadMode::Type mode, bool to_all);
   void send_command_require_routing();
-  void send_command_write(const NodeID& dst_nid, Page& page, vaddr_t addr, uint64_t size);
+  void send_command_write(const NodeID& dst_nid, Page& page, vaddr_t addr);
   void send_command_write_require(Page& page, vaddr_t addr,
                                   const uint8_t* data, uint64_t size);
 };

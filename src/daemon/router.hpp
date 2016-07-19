@@ -28,8 +28,10 @@ class Router : public SchedulerDelegate {
  private:
   /** Main loop of libuv. */
   uv_loop_t* loop;
-  /** Timer for scheduler execute. */
-  uv_timer_t timer_for_execute;
+  /** Timer for heartbeat. */
+  uv_timer_t heartbeat_timer;
+  /** Timer for beat routine. */
+  uv_timer_t routine_timer;
   /** Configuration. */
   picojson::object config;
   /** This node's node-id. */
@@ -47,7 +49,8 @@ class Router : public SchedulerDelegate {
   void scheduler_create_gui(Scheduler& scheduler, const vpid_t& pid) override;
   void scheduler_send_packet(Scheduler& scheduler, const Packet& packet) override;
 
-  static void on_timer_for_execute(uv_timer_t* handle);
+  static void on_timer_heartbeat(uv_timer_t* handle);
+  static void on_timer_routine(uv_timer_t* handle);
 
   void initialize_timer();
 };

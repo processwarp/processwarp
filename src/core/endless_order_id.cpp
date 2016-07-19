@@ -1,4 +1,6 @@
 
+#include <string>
+
 #include "convert.hpp"
 #include "endless_order_id.hpp"
 
@@ -75,6 +77,14 @@ picojson::value EndlessOrderID::to_json() const {
 }
 
 /**
+ * Convert a endless-order-id to a string.
+ * @return A endless-order-id as a string.
+ */
+std::string EndlessOrderID::to_str() const {
+  return Convert::int2str(value);
+}
+
+/**
  * Compare a pair of innver value like the java's Compare interface.
  * @return -1 if a < b. 0 if a == b. 1 if a > b.
  */
@@ -90,7 +100,15 @@ int EndlessOrderID::compare(uint32_t a, uint32_t b) {
   int head_order = HEAD_ORDER[head];
 
   if (head_order == Order::EQUAL) {
-    return (a & 0x3FFFFFFF) < (b & 0x3FFFFFFF);
+    if ((a & 0x3FFFFFFF) < (b & 0x3FFFFFFF)) {
+      return Order::SMALLER;
+
+    } else if (a == b) {
+      return Order::EQUAL;
+
+    } else {
+      return Order::GREATER;
+    }
 
   } else {
     return head_order;

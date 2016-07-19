@@ -11,6 +11,8 @@ namespace std {
 #endif  // ifndef __ANDROID__
 #include <picojson.h>
 
+#include <string>
+
 namespace processwarp {
 class EndlessOrderID {
  public:
@@ -25,6 +27,7 @@ class EndlessOrderID {
   EndlessOrderID& operator+=(uint32_t b);
 
   picojson::value to_json() const;
+  std::string to_str() const;
 
  private:
   uint32_t value;

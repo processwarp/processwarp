@@ -57,9 +57,9 @@ void WorkerConnector::initialize(WorkerConnectorDelegate& delegate_, uv_loop_t* 
 }
 
 /**
- * Per clock timing, require to create new vm that receive packet and not created yet.
+ * Per beat timing, require to create new vm that receive packet and not created yet.
  */
-void WorkerConnector::clock_routine() {
+void WorkerConnector::beat_routine() {
   for (auto& it : properties) {
     const vpid_t& pid = it.first;
     WorkerProperty& property = it.second;

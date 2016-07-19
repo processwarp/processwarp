@@ -104,8 +104,10 @@ struct ProcessInfo {
   NodeID gui_nid;
   /** True if vm bundled process is exist in this node. */
   bool having_vm;
-  /** Last heartbeat time for process. */
-  std::time_t heartbeat;
+  /** Last heartbeat time from gui. */
+  std::time_t heartbeat_gui;
+  /** Last heartbeat time from vm. */
+  std::time_t heartbeat_vm;
 
   /** Update order. */
   EndlessOrderID order_id;
