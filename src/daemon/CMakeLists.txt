@@ -305,6 +305,7 @@ endif()
 
 # RE2
 if(WITH_RE2)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWITH_RE2=1")
   include_directories(${PROJECT_SOURCE_DIR}/lib/re2)
   link_directories(${PROJECT_SOURCE_DIR}/tmp/re2/src/RE2-build)
   list(APPEND extra_libs re2)
