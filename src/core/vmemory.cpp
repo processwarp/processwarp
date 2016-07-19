@@ -1206,8 +1206,13 @@ void VMemory::recv_command_candidacy(const Packet& packet) {
     return;
   }
 
-  if (page.leader_nid == NodeID::NONE ||
+  if (page.leader_nid == packet.src_nid) {
+    // The leader of the page is the same to candidacy node yet.
+    packet_controller.send_reply(packet, picojson::object());
+
+  } else if (page.leader_nid == NodeID::NONE ||
       (page.type & VMemoryPageType::LEADER && page.master_count == 0)) {
+    // The leader is root acceptor and page's reference count is 0.
     assert(page.flg_update == true);
     packet_controller.send_reply(packet, picojson::object());
 
@@ -1219,6 +1224,7 @@ void VMemory::recv_command_candidacy(const Packet& packet) {
     send_command_publish(NodeID::NONE, page, addr);
 
   } else {
+    // The leader is nether candidacy node or root acceptor.
     if (page.leader_nid != my_nid) {
       send_command_claim_back(page.leader_nid, addr);
     }
