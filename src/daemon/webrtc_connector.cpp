@@ -123,6 +123,11 @@ WebrtcConnector::WebrtcConnector(
     pco(*this),
     ssdo(*this),
     is_remote_sdp_set(false) {
+#ifdef WITH_PTHREAD
+  pthread_mutex_init(&mutex, nullptr);
+  pthread_cond_init(&cond, nullptr);
+#endif
+
   peer_connection =
     peer_connection_factory->CreatePeerConnection(pc_config, nullptr, nullptr, &pco);
   if (peer_connection.get() == nullptr) {
@@ -146,6 +151,11 @@ WebrtcConnector::~WebrtcConnector() {
   peer_connection->Close();
   peer_connection = nullptr;
   data_channel = nullptr;
+
+#ifdef WITH_PTHREAD
+  pthread_mutex_destroy(&mutex);
+  pthread_cond_destroy(&cond);
+#endif
 }
 
 /**
@@ -162,10 +172,18 @@ const std::string& WebrtcConnector::get_local_sdp() {
   }
 
   {
+#ifdef WITH_PTHREAD
+    pthread_mutex_lock(&mutex);
+    while (local_sdp.empty()) {
+      pthread_cond_wait(&cond, &mutex);
+    }
+    pthread_mutex_unlock(&mutex);
+#else
     std::lock_guard<std::mutex> guard(mutex);
     while (local_sdp.empty()) {
       cond.wait(mutex);
     }
+#endif
   }
 
   return local_sdp;
@@ -237,9 +255,16 @@ void WebrtcConnector::update_ice(const std::string& ice) {
 void WebrtcConnector::on_csd_success(webrtc::SessionDescriptionInterface* desc) {
   peer_connection->SetLocalDescription(&ssdo, desc);
 
+#ifdef WITH_PTHREAD
+  pthread_mutex_lock(&mutex);
+  desc->ToString(&local_sdp);
+  pthread_cond_broadcast(&cond);
+  pthread_mutex_unlock(&mutex);
+#else
   std::lock_guard<std::mutex> guard(mutex);
   cond.notify_all();
   desc->ToString(&local_sdp);
+#endif
 }
 
 void WebrtcConnector::on_csd_failure(const std::string& error) {

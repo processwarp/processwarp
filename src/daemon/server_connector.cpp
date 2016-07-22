@@ -152,6 +152,10 @@ ServerConnector& ServerConnector::get_instance() {
  */
 ServerConnector::ServerConnector() :
     connect_status(ConnectStatus::CLOSE) {
+#ifdef WITH_PTHREAD
+  pthread_mutex_init(&sio_mutex, nullptr);
+  pthread_cond_init(&sio_cond, nullptr);
+#endif
 }
 
 /**
@@ -159,6 +163,10 @@ ServerConnector::ServerConnector() :
  */
 ServerConnector::~ServerConnector() {
   disconnect();
+#ifdef WITH_PTHREAD
+  pthread_mutex_destroy(&sio_mutex);
+  pthread_cond_destroy(&sio_cond);
+#endif
 }
 
 /**
@@ -201,8 +209,15 @@ void ServerConnector::disconnect() {
  * @return ServerConnection status.
  */
 ConnectStatus::Type ServerConnector::get_status() {
+#ifdef WITH_PTHREAD
+  pthread_mutex_lock(&sio_mutex);
+  ConnectStatus::Type r = connect_status;
+  pthread_mutex_unlock(&sio_mutex);
+  return r;
+#else
   std::lock_guard<std::mutex> guard(sio_mutex);
   return connect_status;
+#endif
 }
 
 /**
@@ -464,12 +479,25 @@ void ServerConnector::on_recv(uv_async_t* handle) {
     std::string name;
     sio::message::ptr data;
     {
+#ifdef WITH_PTHREAD
+      pthread_mutex_lock(&THIS.sio_mutex);
+      if (THIS.sio_queue.empty()) {
+        pthread_mutex_unlock(&THIS.sio_mutex);
+        break;
+      }
+      auto front = THIS.sio_queue.front();
+      name = front.first;
+      data = front.second;
+      THIS.sio_queue.pop();
+      pthread_mutex_unlock(&THIS.sio_mutex);
+#else
       std::lock_guard<std::mutex> guard(THIS.sio_mutex);
       if (THIS.sio_queue.empty()) break;
       auto front = THIS.sio_queue.front();
       name = front.first;
       data = front.second;
       THIS.sio_queue.pop();
+#endif
     }
 
     if (name == "sys_error") {
@@ -503,27 +531,48 @@ void ServerConnector::on_recv(uv_async_t* handle) {
  * and these status tell why had the node closed by server.
  */
 void ServerConnector::on_close() {
+#ifdef WITH_PTHREAD
+  pthread_mutex_lock(&sio_mutex);
+  connect_status = ConnectStatus::CLOSE;
+  pthread_cond_broadcast(&sio_cond);
+  pthread_mutex_unlock(&sio_mutex);
+#else
   std::lock_guard<std::mutex> guard(sio_mutex);
   sio_cond.notify_all();
   connect_status = ConnectStatus::CLOSE;
+#endif
 }
 
 /**
  * Event listener for Socket.IO's fail event.
  */
 void ServerConnector::on_fail() {
+#ifdef WITH_PTHREAD
+  pthread_mutex_lock(&sio_mutex);
+  connect_status = ConnectStatus::CLOSE;
+  pthread_cond_broadcast(&sio_cond);
+  pthread_mutex_unlock(&sio_mutex);
+#else
   std::lock_guard<std::mutex> guard(sio_mutex);
   sio_cond.notify_all();
   connect_status = ConnectStatus::CLOSE;
+#endif
 }
 
 /**
  * Event listener for Socket.IO's connect event.
  */
 void ServerConnector::on_open() {
+#ifdef WITH_PTHREAD
+  pthread_mutex_lock(&sio_mutex);
+  connect_status = ConnectStatus::OPEN;
+  pthread_cond_broadcast(&sio_cond);
+  pthread_mutex_unlock(&sio_mutex);
+#else
   std::lock_guard<std::mutex> guard(sio_mutex);
   sio_cond.notify_all();
   connect_status = ConnectStatus::OPEN;
+#endif
 }
 
 void ServerConnector::connect_socketio() {
@@ -532,10 +581,18 @@ void ServerConnector::connect_socketio() {
   connect_status = ConnectStatus::BEGIN;
   client.connect(url);
   {
+#ifdef WITH_PTHREAD
+    pthread_mutex_lock(&sio_mutex);
+    while (connect_status == ConnectStatus::BEGIN) {
+      pthread_cond_wait(&sio_cond, &sio_mutex);
+    }
+    pthread_mutex_unlock(&sio_mutex);
+#else
     std::lock_guard<std::mutex> guard(sio_mutex);
     while (connect_status == ConnectStatus::BEGIN) {
       sio_cond.wait(sio_mutex);
     }
+#endif
   }
 
   if (connect_status == ConnectStatus::OPEN) {
@@ -546,7 +603,18 @@ void ServerConnector::connect_socketio() {
   }
 
   // Bind 'on' event to Socket.IO.
-#define M_BIND_SOCKETIO_EVENT(_name) {                                  \
+#ifdef WITH_PTHREAD
+#  define M_BIND_SOCKETIO_EVENT(_name) {                                \
+    socket->on(_name,                                                   \
+               [&](sio::event& event) {                                 \
+                 pthread_mutex_lock(&sio_mutex);                        \
+                 sio_queue.push(make_pair(_name, event.get_message())); \
+                 uv_async_send(&async_receive);                         \
+                 pthread_mutex_unlock(&sio_mutex);                      \
+               });                                                      \
+  }
+#else
+#  define M_BIND_SOCKETIO_EVENT(_name) {                                \
     socket->on(_name,                                                   \
                [&](sio::event& event) {                                 \
                  std::lock_guard<std::mutex> guard(sio_mutex);          \
@@ -554,6 +622,7 @@ void ServerConnector::connect_socketio() {
                  uv_async_send(&async_receive);                         \
                });                                                      \
   }
+#endif
 
   M_BIND_SOCKETIO_EVENT("sys_error");
   M_BIND_SOCKETIO_EVENT("app_error");
@@ -611,8 +680,14 @@ void ServerConnector::recv_auth(sio::message::ptr data) {
 
   if (data->get_map().at("result")->get_int() == 0) {
     {
+#ifdef WITH_PTHREAD
+      pthread_mutex_lock(&sio_mutex);
+      connect_status = ConnectStatus::CONNECT;
+      pthread_mutex_unlock(&sio_mutex);
+#else
       std::lock_guard<std::mutex> guard(sio_mutex);
       connect_status = ConnectStatus::CONNECT;
+#endif
     }
 
     if (!is_auth_yet) {
@@ -623,9 +698,16 @@ void ServerConnector::recv_auth(sio::message::ptr data) {
 
   } else {
     {
+#ifdef WITH_PTHREAD
+      pthread_mutex_lock(&sio_mutex);
+      connect_status = ConnectStatus::OPEN;
+      connect_delegate->server_connector_connect_on_failure(*this, -1);
+      pthread_mutex_unlock(&sio_mutex);
+#else
       std::lock_guard<std::mutex> guard(sio_mutex);
       connect_status = ConnectStatus::OPEN;
       connect_delegate->server_connector_connect_on_failure(*this, -1);
+#endif
     }
     disconnect();
   }

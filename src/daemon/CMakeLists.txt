@@ -1,5 +1,6 @@
 
 option(WITH_WORKER_DEBUG "For debug, worker process has not generate bug run on the same process of main." OFF)
+option(WITH_PTHREAD "Use pthread mutex and cond instead of stdc++'s it." OFF)
 
 find_package(PkgConfig)
 
@@ -508,6 +509,10 @@ endif()
 
 if(WITH_WORKER_DEBUG)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWITH_WORKER_DEBUG=1")
+endif()
+
+if(WITH_PTHREAD)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWITH_PTHREAD=1")
 endif()
 
 # Compile & link

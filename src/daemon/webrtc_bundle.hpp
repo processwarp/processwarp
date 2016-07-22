@@ -9,6 +9,12 @@
 #include <webrtc/base/ssladapter.h>
 #include <webrtc/base/thread.h>
 
+#ifdef WITH_PTHREAD
+#  include <pthread.h>
+#else
+#  include <mutex>
+#endif
+
 #include <deque>
 #include <map>
 #include <memory>
@@ -89,12 +95,21 @@ class WebrtcBundle : public WebrtcConnectorDelegate,
   std::map<WebrtcConnector*, NodeID> init_map;
   std::map<WebrtcConnector*, std::deque<std::string>> ice_send_buffer;
   std::map<WebrtcConnector*, std::deque<std::string>> ice_recv_buffer;
+  /** Mutex for ice. */
+#ifdef WITH_PTHREAD
+  pthread_mutex_t ice_mutex;
+#else
   std::mutex ice_mutex;
+#endif
 
   /** Received data pool. */
   std::deque<std::string> recv_data;
   /** Mutex for received data pool. */
+#ifdef WITH_PTHREAD
+  pthread_mutex_t recv_mutex;
+#else
   std::mutex recv_mutex;
+#endif
 
   NodeID my_nid;
   Routing routing;
