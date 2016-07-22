@@ -2,6 +2,7 @@
 .idea/
 bin/
 doc/
+etc/config.json
 local/
 tmp/
 src/android/app/src/main/java/org/processwarp/android/constant/Module.java
