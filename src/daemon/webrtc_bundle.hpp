@@ -39,6 +39,15 @@ class WebrtcBundle : public WebrtcConnectorDelegate,
   void relay_init_webrtc_offer(const NodeID& prime_nid, const std::string& sdp);
 
  private:
+  class CustomRunnable : public rtc::Runnable {
+   public:
+    explicit CustomRunnable(WebrtcBundle& bundle_);
+    void Run(rtc::Thread* subthread) override;
+
+   private:
+    WebrtcBundle& bundle;
+  };
+
   class PacketConnect : public PacketController::Behavior {
    public:
     explicit PacketConnect(WebrtcConnector* connector_);
@@ -54,15 +63,16 @@ class WebrtcBundle : public WebrtcConnectorDelegate,
 
   /** Main loop of libuv. */
   uv_loop_t* loop;
-  /** Sub-thread instance of libuv. */
-  uv_thread_t subthread;
   /** Async update connector status. */
   uv_async_t async_ucs;
   /** Async receive packet. */
   uv_async_t async_recv;
 
   /** Event loop of webrtc on sub-thread. */
-  rtc::Thread* thread;
+  std::unique_ptr<rtc::Thread> thread;
+  /** Subthread routine wrapped by WebRTC's Runnable class. */
+  CustomRunnable runnable;
+
   /** WebRTC socket server instance. */
   rtc::PhysicalSocketServer socket_server;
 
@@ -113,7 +123,6 @@ class WebrtcBundle : public WebrtcConnectorDelegate,
   static void on_recv(uv_async_t* handle);
   static void on_timer_routing(uv_timer_t* handle);
   static void update_connector_status(uv_async_t* handle);
-  static void subthread_entry(void* arg);
 
   void recv_connect(const Packet& packet);
   void recv_ice(const Packet& packet);

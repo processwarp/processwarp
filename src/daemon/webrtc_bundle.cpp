@@ -96,6 +96,7 @@ WebrtcBundle& WebrtcBundle::get_instance() {
  * This method is private.
  */
 WebrtcBundle::WebrtcBundle() :
+    runnable(*this),
     packet_controller(Module::NETWORK),
     routing(*this, my_nid) {
 }
@@ -171,10 +172,10 @@ void WebrtcBundle::finalize() {
   // It must close connections with subthread alive.
   connectors.clear();
   peer_connection_factory = nullptr;
+  thread->set_socketserver(nullptr);
 
   // Subthread will quit after release resources.
   thread->Quit();
-  uv_thread_join(&subthread);
 
   // Close async handler.
   uv_close(reinterpret_cast<uv_handle_t*>(&async_recv), nullptr);
@@ -198,8 +199,17 @@ void WebrtcBundle::initialize(uv_loop_t* loop_) {
   packet_controller.initialize(this);
 
   // Initialize WebRTC
+  // Using Google's STUN server.
+  /// @todo Read STUN url from configure.
+  webrtc::PeerConnectionInterface::IceServer ice_server;
+  ice_server.uri = "stun:stun.l.google.com:19302";
+  pc_config.servers.push_back(ice_server);
+
+  thread.reset(new rtc::Thread(&socket_server));
+
   rtc::InitializeSSL();
-  uv_thread_create(&subthread, WebrtcBundle::subthread_entry, this);
+
+  thread->Start(&runnable);
 
   // Initialize timer for routing.
   uv_timer_init(loop, &routing_timer);
@@ -304,6 +314,27 @@ void WebrtcBundle::relay_init_webrtc_offer(const NodeID& prime_nid, const std::s
   content.insert(std::make_pair("sdp", picojson::value(sdp)));
 
   packet_controller.send(std::move(behavior), PID::BROADCAST, prime_nid, content);
+}
+
+WebrtcBundle::CustomRunnable::CustomRunnable(WebrtcBundle& bundle_) :
+    bundle(bundle_) {
+}
+
+/**
+ * WrbRTC worker thread.
+ * Create peer connection factory (It bundled to this thread).
+ * Call WebRTC's run method that process any task of WebRTC.
+ * @param subthread WebRTC's thread handler.
+ */
+void WebrtcBundle::CustomRunnable::Run(rtc::Thread* subthread) {
+  bundle.peer_connection_factory = webrtc::CreatePeerConnectionFactory();
+  if (bundle.peer_connection_factory.get() == nullptr) {
+    std::cout << "Error on CreatePeerConnectionFactory." << std::endl;
+    /// @todo error
+    assert(false);
+  }
+
+  subthread->Run();
 }
 
 /**
@@ -530,32 +561,6 @@ void WebrtcBundle::update_connector_status(uv_async_t* handle) {
     }
   }
   THIS.routing.on_change_online_connectors(nids);
-}
-
-/**
- * WebRTC worker thread entry method.
- * Initialize library and start loop.
- */
-void WebrtcBundle::subthread_entry(void* arg) {
-  WebrtcBundle& THIS = *reinterpret_cast<WebrtcBundle*>(arg);
-
-  THIS.peer_connection_factory = webrtc::CreatePeerConnectionFactory();
-  if (THIS.peer_connection_factory.get() == nullptr) {
-    std::cout << "Error on CreatePeerConnectionFactory." << std::endl;
-    /// @todo error
-    assert(false);
-  }
-
-  // Using Google's STUN server.
-  /// @todo Read STUN url from configure.
-  webrtc::PeerConnectionInterface::IceServer ice_server;
-  ice_server.uri = "stun:stun.l.google.com:19302";
-  THIS.pc_config.servers.push_back(ice_server);
-
-  THIS.thread = rtc::Thread::Current();
-  THIS.thread->set_socketserver(&THIS.socket_server);
-  THIS.thread->Run();
-  THIS.thread->set_socketserver(nullptr);
 }
 
 /**
