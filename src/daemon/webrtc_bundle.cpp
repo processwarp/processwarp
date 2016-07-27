@@ -109,6 +109,8 @@ WebrtcBundle::WebrtcBundle() :
 #ifdef WITH_PTHREAD
   pthread_mutex_init(&ice_mutex, nullptr);
   pthread_mutex_init(&recv_mutex, nullptr);
+  pthread_mutex_init(&init_mutex, nullptr);
+  pthread_cond_init(&init_cond, nullptr);
 #endif
 }
 
@@ -119,6 +121,8 @@ WebrtcBundle::~WebrtcBundle() {
 #ifdef WITH_PTHREAD
   pthread_mutex_destroy(&ice_mutex);
   pthread_mutex_destroy(&recv_mutex);
+  pthread_mutex_destroy(&init_mutex);
+  pthread_cond_destroy(&init_cond);
 #endif
 }
 
@@ -225,6 +229,20 @@ void WebrtcBundle::initialize(uv_loop_t* loop_) {
   rtc::InitializeSSL();
 
   thread->Start(&runnable);
+  {
+#ifdef WITH_PTHREAD
+    pthread_mutex_lock(&init_mutex);
+    while (peer_connection_factory.get() == nullptr) {
+      pthread_cond_wait(&init_cond, &init_mutex);
+    }
+    pthread_mutex_unlock(&init_mutex);
+#else
+    std::lock_guard<std::mutex> guard(init_mutex);
+    while (peer_connection_factory.get() == nullptr) {
+      init_cond.wait(init_mutex);
+    }
+#endif
+  }
 
   // Initialize timer for routing.
   uv_timer_init(loop, &routing_timer);
@@ -342,7 +360,18 @@ WebrtcBundle::CustomRunnable::CustomRunnable(WebrtcBundle& bundle_) :
  * @param subthread WebRTC's thread handler.
  */
 void WebrtcBundle::CustomRunnable::Run(rtc::Thread* subthread) {
-  bundle.peer_connection_factory = webrtc::CreatePeerConnectionFactory();
+  {
+#ifdef WITH_PTHREAD
+    pthread_mutex_lock(&bundle.init_mutex);
+    bundle.peer_connection_factory = webrtc::CreatePeerConnectionFactory();
+    pthread_cond_broadcast(&bundle.init_cond);
+    pthread_mutex_unlock(&bundle.init_mutex);
+#else
+    std::lock_guard<std::mutex> guard(bundle.init_mutex);
+    bundle.init_cond.notify_all();
+    bundle.peer_connection_factory = webrtc::CreatePeerConnectionFactory();
+#endif
+  }
   if (bundle.peer_connection_factory.get() == nullptr) {
     std::cout << "Error on CreatePeerConnectionFactory." << std::endl;
     /// @todo error

@@ -111,6 +111,14 @@ class WebrtcBundle : public WebrtcConnectorDelegate,
   std::mutex recv_mutex;
 #endif
 
+#ifdef WITH_PTHREAD
+  pthread_mutex_t init_mutex;
+  pthread_cond_t init_cond;
+#else
+  std::mutex init_mutex;
+  std::condition_variable_any init_cond;
+#endif
+
   NodeID my_nid;
   Routing routing;
   /** Routing event timer. .*/
