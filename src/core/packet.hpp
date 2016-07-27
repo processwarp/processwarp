@@ -47,7 +47,7 @@ class PacketController {
 
     virtual const Define& get_define() = 0;
     virtual void on_error(const Packet& packet);
-    virtual void on_packet_error(PacketError::Type code) = 0;
+    virtual void on_packet_error(PacketError::Type code);
     virtual void on_reply(const Packet& packet);
   };
 
