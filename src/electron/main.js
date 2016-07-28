@@ -567,7 +567,7 @@ function startBackend() {
     server: CONFIG.SERVER,
     message: path.join(PW_PATH, 'src', 'const', 'daemon_mid_c.json'),
     node_name: CONFIG.NODE_NAME || os.hostname(),
-    worker_pipe: path.join(os.tmpdir(), 'pw-worker-' + process.pid + '.pipe'),
+    worker_pipe: path.join(os.tmpdir()),
     frontend_key: COMMON_KEY,
     frontend_pipe: backendPipePath,
     libs: CONFIG.LIBS || [],

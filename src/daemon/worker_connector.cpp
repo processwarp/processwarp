@@ -49,7 +49,7 @@ void WorkerConnector::initialize(WorkerConnectorDelegate& delegate_, uv_loop_t* 
                                  const std::string& pipe_path_,
                                  const picojson::array& libs, const picojson::array& lib_filter) {
   delegate      = &delegate_;
-  pipe_path     = pipe_path_;
+  pipe_path     = pipe_path_ + "/pw-worker-" + Convert::int2str(getpid()) + ".pipe";
   config_libs   = libs;
   config_lib_filter = lib_filter;
 
