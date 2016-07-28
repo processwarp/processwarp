@@ -3,15 +3,6 @@
 #include <sio_client.h>
 #include <uv.h>
 
-#ifdef WITH_PTHREAD
-#  include <pthread.h>
-#else
-#  include <atomic>
-#  include <condition_variable>
-#  include <mutex>
-#  include <thread>
-#endif
-
 #include <map>
 #include <queue>
 #include <string>
@@ -19,6 +10,7 @@
 #include <vector>
 
 #include "constant_native.hpp"
+#include "lock.hpp"
 #include "type.hpp"
 #include "webrtc_connector.hpp"
 
@@ -74,15 +66,9 @@ class ServerConnector : public WebrtcConnectorDelegate {
   /** Socket.IO socket for emit message. */
   sio::socket::ptr socket;
 
-#ifdef WITH_PTHREAD
-  pthread_mutex_t sio_mutex;
-  pthread_cond_t sio_cond;
+  Lock::Mutex sio_mutex;
+  Lock::Cond sio_cond;
   ConnectStatus::Type connect_status;
-#else
-  std::mutex sio_mutex;
-  std::condition_variable_any sio_cond;
-  std::atomic<ConnectStatus::Type> connect_status;
-#endif
   std::queue<std::pair<std::string, sio::message::ptr>> sio_queue;
 
   NodeID my_nid;

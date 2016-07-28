@@ -99,6 +99,7 @@ set(PWCORE_FILES
   endless_order_id.cpp
   format.cpp
   interrupt_memory_require.cpp
+  lock.cpp
   logger.cpp
   logger_stdout.cpp
   logger_syslog.cpp

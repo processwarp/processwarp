@@ -60,11 +60,7 @@ void WebrtcBundle::PacketConnect::on_reply(const Packet& packet) {
 
   WebrtcBundle& webrtc = WebrtcBundle::get_instance();
   {
-#ifdef WITH_PTHREAD
-    pthread_mutex_lock(&webrtc.ice_mutex);
-#else
-    std::lock_guard<std::mutex> guard(webrtc.ice_mutex);
-#endif
+    Lock::Guard guard(webrtc.ice_mutex);
     auto it_ice_buffer = webrtc.ice_send_buffer.find(connector);
     if (it_ice_buffer != webrtc.ice_send_buffer.end()) {
       std::deque<std::string>& ices = it_ice_buffer->second;
@@ -73,9 +69,6 @@ void WebrtcBundle::PacketConnect::on_reply(const Packet& packet) {
       }
       webrtc.ice_send_buffer.erase(it_ice_buffer);
     }
-#ifdef WITH_PTHREAD
-    pthread_mutex_unlock(&webrtc.ice_mutex);
-#endif
   }
   auto it_ice_buffer = webrtc.ice_recv_buffer.find(connector);
   if (it_ice_buffer != webrtc.ice_recv_buffer.end()) {
@@ -106,24 +99,12 @@ WebrtcBundle::WebrtcBundle() :
     runnable(*this),
     packet_controller(Module::NETWORK),
     routing(*this, my_nid) {
-#ifdef WITH_PTHREAD
-  pthread_mutex_init(&ice_mutex, nullptr);
-  pthread_mutex_init(&recv_mutex, nullptr);
-  pthread_mutex_init(&init_mutex, nullptr);
-  pthread_cond_init(&init_cond, nullptr);
-#endif
 }
 
 /**
  * Simple destructor for vtable.
  */
 WebrtcBundle::~WebrtcBundle() {
-#ifdef WITH_PTHREAD
-  pthread_mutex_destroy(&ice_mutex);
-  pthread_mutex_destroy(&recv_mutex);
-  pthread_mutex_destroy(&init_mutex);
-  pthread_cond_destroy(&init_cond);
-#endif
 }
 
 /**
@@ -230,18 +211,10 @@ void WebrtcBundle::initialize(uv_loop_t* loop_) {
 
   thread->Start(&runnable);
   {
-#ifdef WITH_PTHREAD
-    pthread_mutex_lock(&init_mutex);
-    while (peer_connection_factory.get() == nullptr) {
-      pthread_cond_wait(&init_cond, &init_mutex);
-    }
-    pthread_mutex_unlock(&init_mutex);
-#else
-    std::lock_guard<std::mutex> guard(init_mutex);
+    Lock::Guard guard(init_mutex);
     while (peer_connection_factory.get() == nullptr) {
       init_cond.wait(init_mutex);
     }
-#endif
   }
 
   // Initialize timer for routing.
@@ -361,16 +334,9 @@ WebrtcBundle::CustomRunnable::CustomRunnable(WebrtcBundle& bundle_) :
  */
 void WebrtcBundle::CustomRunnable::Run(rtc::Thread* subthread) {
   {
-#ifdef WITH_PTHREAD
-    pthread_mutex_lock(&bundle.init_mutex);
-    bundle.peer_connection_factory = webrtc::CreatePeerConnectionFactory();
-    pthread_cond_broadcast(&bundle.init_cond);
-    pthread_mutex_unlock(&bundle.init_mutex);
-#else
-    std::lock_guard<std::mutex> guard(bundle.init_mutex);
+    Lock::Guard guard(bundle.init_mutex);
     bundle.init_cond.notify_all();
     bundle.peer_connection_factory = webrtc::CreatePeerConnectionFactory();
-#endif
   }
   if (bundle.peer_connection_factory.get() == nullptr) {
     std::cout << "Error on CreatePeerConnectionFactory." << std::endl;
@@ -435,16 +401,9 @@ void WebrtcBundle::routing_connect(const NodeID& nid) {
   connector->delegate = this;
   nid_map.insert(std::make_pair(nid, connector));
   {
-#ifdef WITH_PTHREAD
-    pthread_mutex_lock(&ice_mutex);
+    Lock::Guard guard(ice_mutex);
     ice_send_buffer.insert(std::make_pair(connector, std::deque<std::string>()));
     ice_recv_buffer.insert(std::make_pair(connector, std::deque<std::string>()));
-    pthread_mutex_unlock(&ice_mutex);
-#else
-    std::lock_guard<std::mutex> guard(ice_mutex);
-    ice_send_buffer.insert(std::make_pair(connector, std::deque<std::string>()));
-    ice_recv_buffer.insert(std::make_pair(connector, std::deque<std::string>()));
-#endif
   }
 
   send_connect(connector, nid, connector->get_local_sdp());
@@ -523,8 +482,7 @@ void WebrtcBundle::webrtc_connector_on_update_ice(WebrtcConnector& connector,
                            PID::BROADCAST, it_connector->second, content);
 
   } else {
-#ifdef WITH_PTHREAD
-    pthread_mutex_lock(&ice_mutex);
+    Lock::Guard guard(ice_mutex);
     auto it_ice_buffer = ice_send_buffer.find(&connector);
     if (it_ice_buffer != ice_send_buffer.end()) {
       it_ice_buffer->second.push_back(ice);
@@ -532,17 +490,6 @@ void WebrtcBundle::webrtc_connector_on_update_ice(WebrtcConnector& connector,
     } else {
       send_ice(connector.nid, ice);
     }
-    pthread_mutex_unlock(&ice_mutex);
-#else
-    std::lock_guard<std::mutex> guard(ice_mutex);
-    auto it_ice_buffer = ice_send_buffer.find(&connector);
-    if (it_ice_buffer != ice_send_buffer.end()) {
-      it_ice_buffer->second.push_back(ice);
-
-    } else {
-      send_ice(connector.nid, ice);
-    }
-#endif
   }
 }
 
@@ -552,16 +499,9 @@ void WebrtcBundle::webrtc_connector_on_update_ice(WebrtcConnector& connector,
  * @param data Received data.
  */
 void WebrtcBundle::webrtc_connector_on_recv(WebrtcConnector& connector, const std::string& data) {
-#ifdef WITH_PTHREAD
-  pthread_mutex_lock(&recv_mutex);
+  Lock::Guard guard(recv_mutex);
   recv_data.push_back(data);
   uv_async_send(&async_recv);
-  pthread_mutex_unlock(&recv_mutex);
-#else
-  std::lock_guard<std::mutex> guard(recv_mutex);
-  recv_data.push_back(data);
-  uv_async_send(&async_recv);
-#endif
 }
 
 /**
@@ -574,11 +514,7 @@ void WebrtcBundle::on_recv(uv_async_t* handle) {
   while (true) {
     picojson::value v;
     {
-#ifdef WITH_PTHREAD
-      pthread_mutex_lock(&THIS.recv_mutex);
-#else
-      std::lock_guard<std::mutex> guard(THIS.recv_mutex);
-#endif
+      Lock::Guard guard(THIS.recv_mutex);
       if (THIS.recv_data.empty()) {
         break;
 
@@ -591,9 +527,6 @@ void WebrtcBundle::on_recv(uv_async_t* handle) {
           assert(false);
         }
       }
-#ifdef WITH_PTHREAD
-      pthread_mutex_unlock(&THIS.recv_mutex);
-#endif
     }
 
     picojson::object& js = v.get<picojson::object>();

@@ -2,16 +2,10 @@
 
 #include <webrtc/api/peerconnectioninterface.h>
 
-#ifdef WITH_PTHREAD
-#  include <pthread.h>
-#else
-#  include <condition_variable>
-#  include <mutex>
-#endif
-
 #include <deque>
 #include <string>
 
+#include "lock.hpp"
 #include "node_id.hpp"
 
 namespace processwarp {
@@ -114,13 +108,8 @@ class WebrtcConnector {
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection;
   rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel;
 
-#ifdef WITH_PTHREAD
-  pthread_mutex_t mutex;
-  pthread_cond_t cond;
-#else
-  std::mutex mutex;
-  std::condition_variable_any cond;
-#endif
+  Lock::Mutex mutex;
+  Lock::Cond cond;
   bool is_remote_sdp_set;
   /// SDP of local peer.
   std::string local_sdp;
