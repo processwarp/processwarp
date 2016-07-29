@@ -14,7 +14,7 @@ elif [ -e /etc/debian_version ] ||
 
     elif [ -e /etc/rpi-issue ]; then
         # RaspberryPi
-        bash -ex $(dirname $0)/build_ubuntu.sh
+        bash -ex $(dirname $0)/build_raspbian.sh
 
     else
         # Debian
