@@ -104,7 +104,7 @@ make const_electron
 
 # Install electron and requirement modules.
 if ! type electron >/dev/null 2>&1; then
-    sudo ${_root}/local/bin/npm -g install electron-prebuilt
+    ${_root}/local/bin/npm -g install electron-prebuilt
 fi
 
 cd ${_root}/src/electron
@@ -117,8 +117,8 @@ fi
 # Install babel and convert js files.
 cd ${_root}/src/electron
 if ! type babel >/dev/null 2>&1; then
-    sudo ${_root}/local/bin/npm -g install babel-cli
-    sudo ${_root}/local/bin/npm install babel-preset-es2015
+    ${_root}/local/bin/npm -g install babel-cli
+    ${_root}/local/bin/npm install babel-preset-es2015
 fi
 
 mkdir -p dist
