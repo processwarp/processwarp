@@ -12,6 +12,10 @@ elif [ -e /etc/debian_version ] ||
         # Ubuntu
         bash -ex $(dirname $0)/build_ubuntu.sh
 
+    elif [ -e /etc/rpi-issue ]; then
+        # RaspberryPi
+        bash -ex $(dirname $0)/build_raspbian.sh
+
     else
         # Debian
         echo "Thank you for useing. But sorry, this platform is not supported yet."

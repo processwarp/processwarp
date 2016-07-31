@@ -75,23 +75,13 @@ fi
 
 # Node.js
 cd ${_root}/tmp
-if [ $(uname -m) = "x86_64" ]; then
-    if ! [ -e node-v4.4.2-linux-x64.tar.xz ]; then
-	wget https://nodejs.org/dist/v4.4.2/node-v4.4.2-linux-x64.tar.xz
-    fi
-    if ! [ -e node-v4.4.2-linux-x64 ]; then
-	tar Jxf node-v4.4.2-linux-x64.tar.xz
-    fi
-    cp -Rfp node-v4.4.2-linux-x64/* ${_root}/local/
-else
-    if ! [ -e node-v4.4.2-linux-x86.tar.xz ]; then
-	wget https://nodejs.org/dist/v4.4.2/node-v4.4.2-linux-x86.tar.xz
-    fi
-    if ! [ -e node-v4.4.2-linux-x86 ]; then
-	tar Jxf node-v4.4.2-linux-x86.tar.xz
-    fi
-    cp -Rfp node-v4.4.2-linux-x86/* ${_root}/local/
+if ! [ -e node-v4.4.7-linux-armv7l.tar.xz ]; then
+    wget https://nodejs.org/dist/v4.4.7/node-v4.4.7-linux-armv7l.tar.xz
 fi
+if ! [ -e node-v4.4.7-linux-armv7l ]; then
+    tar Jxf node-v4.4.7-linux-armv7l.tar.xz
+fi
+cp -Rfp node-v4.4.7-linux-armv7l/* ${_root}/local/
 
 sudo ldconfig
 
