@@ -16,6 +16,8 @@ static const uint8_t I8_FALSE   = 0x0;
 
 /** Threshold of access count for change owner or occasion to copy. */
 static const int MEMORY_REFERRAL_LIMIT  = 5;
+/** Interval time of sending candidacy command (sec). */
+static const int MEMORY_CANDIDACY_INTERVAL  = 3;
 /** Interval time of send require packet (sec). */
 static const int MEMORY_REQUIRE_INTERVAL    = 5;
 /** Heatbeat interval.(sec) */

@@ -54,7 +54,9 @@ VMemory::Page::Page(VMemoryPageType::Type type_, bool flg_update_,
     leader_nid(leader_nid_),
     learner_nids(learner_nids_),
     master_count(0),
-    referral_count(0) {
+    referral_count(0),
+    leader_time(0),
+    write_id(0) {
   std::memcpy(value.get(), value_str.data(), size);
 }
 
@@ -69,7 +71,9 @@ VMemory::Page::Page(VMemoryPageType::Type type_, bool flg_update_,
     leader_nid(leader_nid_),
     learner_nids(learner_nids_),
     master_count(0),
-    referral_count(0) {
+    referral_count(0),
+    leader_time(0),
+    write_id(0) {
 }
 
 /**
@@ -627,7 +631,9 @@ void VMemory::PacketAlloc::update_status() {
     } else {
       page->second.type |= VMemoryPageType::LEADER;
       page->second.flg_update = true;
+      page->second.referral_count = 0;
     }
+    page->second.leader_time = std::time(nullptr);
 
     alloc_info->acceptor_nid.clear();
     alloc_info->is_finish = true;
@@ -682,6 +688,8 @@ void VMemory::PacketCandidacy::on_reply(const Packet& packet) {
   Page& page = page_it->second;
   page.type |= VMemoryPageType::LEADER;
   page.flg_update = true;
+  page.referral_count = 0;
+  page.leader_time = std::time(nullptr);
 }
 
 void VMemory::PacketCandidacy::on_packet_error(PacketError::Type code) {
@@ -732,6 +740,8 @@ void VMemory::PacketClaimBack::on_reply(const Packet& packet) {
     page.type |= VMemoryPageType::LEADER;
     page.flg_update = true;
     page.leader_nid = vmemory.my_nid;
+    page.referral_count = 0;
+    page.leader_time = std::time(nullptr);
     vmemory.send_command_publish(NodeID::NONE, page, addr);
   }
 }
@@ -906,6 +916,46 @@ void VMemory::PacketWrite::on_packet_error(PacketError::Type code) {
     page.write_history.erase(dst_nid);
     if (page.type & VMemoryPageType::LEADER) {
       vmemory.send_command_write(dst_nid, page, addr);
+    }
+  }
+}
+
+VMemory::PacketWriteRequire::PacketWriteRequire(VMemory& vmemory_, vaddr_t addr_) :
+    vmemory(vmemory_),
+    addr(get_upper_addr(addr_)) {
+}
+
+const PacketController::Define& VMemory::PacketWriteRequire::get_define() {
+  static const PacketController::Define DEFINE = {
+    "write_require",
+    PacketMode::EXPLICIT,
+    0,
+    Module::MEMORY
+  };
+
+  return DEFINE;
+}
+
+void VMemory::PacketWriteRequire::on_error(const Packet& packet) {
+  on_packet_error(PacketError::CALL_BY_ERROR);
+}
+
+void VMemory::PacketWriteRequire::on_reply(const Packet& packet) {
+  if (packet.content.find("candidacy") != packet.content.end()) {
+    auto it_page = vmemory.pages.find(addr);
+    if (it_page != vmemory.pages.end()) {
+      Page& page = it_page->second;
+      vmemory.send_command_candidacy(addr, page);
+    }
+  }
+}
+
+void VMemory::PacketWriteRequire::on_packet_error(PacketError::Type code) {
+  auto it_page = vmemory.pages.find(addr);
+  if (it_page != vmemory.pages.end()) {
+    Page& page = it_page->second;
+    if (~page.type & VMemoryPageType::LEADER) {
+      vmemory.send_command_candidacy(addr, page);
     }
   }
 }
@@ -1281,8 +1331,11 @@ void VMemory::recv_command_delegate(const Packet& packet) {
   assert(acceptor_nids.size() <= 3);
 
   if (pages.find(addr) == pages.end()) {
+    VMemoryPageType::Type page_type = is_program(addr) ?
+      VMemoryPageType::ACCEPTOR | VMemoryPageType::PROGRAM :
+      VMemoryPageType::ACCEPTOR;
     pages.insert(std::make_pair(addr,
-                                Page(VMemoryPageType::ACCEPTOR, true, value,
+                                Page(page_type, true, value,
                                      leader_nid, learner_nids)));
     Page& page = pages.at(addr);
     page.acceptor_nids = acceptor_nids;
@@ -1310,6 +1363,7 @@ void VMemory::recv_command_delegate(const Packet& packet) {
       check_root_acceptor(addr)) {
     page.type |= VMemoryPageType::LEADER;
     page.leader_nid = my_nid;
+    page.leader_time = std::time(nullptr);
   }
 
   if (packet.src_nid != NodeID::SERVER) {
@@ -1494,14 +1548,10 @@ void VMemory::recv_command_publish(const Packet& packet) {
 
     if (page.type & VMemoryPageType::LEADER) {
       packet_controller.send_reply(packet, picojson::object());
-      delegate.vmemory_recv_update(*this, addr);
-      return;
 
     } else if (page.type & VMemoryPageType::ACCEPTOR &&
                requiring.find(addr) == requiring.end()) {
       packet_controller.send_error(packet, picojson::object());
-      delegate.vmemory_recv_update(*this, addr);
-      return;
 
     } else if (~page.type & VMemoryPageType::ACCEPTOR &&
                page.referral_count >= MEMORY_REFERRAL_LIMIT &&
@@ -1596,14 +1646,14 @@ void VMemory::recv_command_write_require(const Packet& packet) {
 
   auto it_page = pages.find(get_upper_addr(addr));
   if (it_page == pages.end()) {
-    /// @todo error
-    assert(false);
+    packet_controller.send_error(packet, picojson::object());
+    return;
   }
 
   Page& page = it_page->second;
   if (~page.type & VMemoryPageType::LEADER) {
-    /// @todo error
-    assert(false);
+    packet_controller.send_error(packet, picojson::object());
+    return;
   }
 
   if (page.size < get_lower_addr(addr) + value.size()) {
@@ -1613,6 +1663,12 @@ void VMemory::recv_command_write_require(const Packet& packet) {
 
   std::memcpy(page.value.get() + get_lower_addr(addr), value.data(), value.size());
   send_command_write(NodeID::NONE, page, get_upper_addr(addr));
+
+  picojson::object param;
+  if (page.leader_time + MEMORY_CANDIDACY_INTERVAL < std::time(nullptr)) {
+    param.insert(std::make_pair("candidacy", picojson::value(true)));
+  }
+  packet_controller.send_reply(packet, param);
 }
 
 /**
@@ -1777,7 +1833,8 @@ void VMemory::send_command_free_acceptor(vaddr_t addr, const std::set<NodeID>& a
  * @param addr The address of the page.
  */
 void VMemory::send_command_publish(const NodeID& dst_nid, Page& page, vaddr_t addr) {
-  assert(page.type & VMemoryPageType::ACCEPTOR);
+  // assert(page.type & VMemoryPageType::ACCEPTOR);
+  assert(check_acceptor_range(addr));
   assert(dst_nid != my_nid || page.type & VMemoryPageType::LEADER);
   assert(get_upper_addr(addr) == addr);
 
@@ -1813,11 +1870,14 @@ void VMemory::send_command_publish(const NodeID& dst_nid, Page& page, vaddr_t ad
 void VMemory::send_command_require(vaddr_t addr, VMemoryReadMode::Type mode, bool to_all) {
   assert(get_upper_addr(addr) == addr);
 
-  if (requiring.find(addr) != requiring.end()) {
+  const time_t now = std::time(nullptr);
+  auto req_it = requiring.find(addr);
+  if (req_it == requiring.end() || req_it->second + MEMORY_REQUIRE_INTERVAL < now) {
+    requiring[addr] = now;
+  } else {
     return;
   }
 
-  requiring.insert(addr);
   picojson::object param;
 
   param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
@@ -1897,7 +1957,7 @@ void VMemory::send_command_write_require(Page& page, vaddr_t addr,
   param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
   param.insert(std::make_pair("value", Convert::bin2json(data, size)));
 
-  packet_controller.send("write_require", Module::MEMORY, true,
-                         my_pid, page.leader_nid, param);
+  std::unique_ptr<PacketController::Behavior> behavior(new PacketWriteRequire(*this, addr));
+  packet_controller.send(std::move(behavior), my_pid, page.leader_nid, param);
 }
 }  // namespace processwarp

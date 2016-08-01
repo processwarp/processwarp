@@ -59,6 +59,8 @@ class VMemory : public PacketControllerDelegate {
     int master_count;
     /** Access count for change owner or occasion to copy. */
     int referral_count;
+    /** Time that this node become the leader of this page. */
+    time_t leader_time;
     /** Set of node-ids that emitting publish command for some nodes. */
     std::set<NodeID> publish_history;
     /** Set of node-ids that  emitting write command for acceptor nodes. */
@@ -268,6 +270,20 @@ class VMemory : public PacketControllerDelegate {
     const uint64_t write_id;
   };
 
+  class PacketWriteRequire : public PacketController::Behavior {
+   public:
+    PacketWriteRequire(VMemory& vmemory_, vaddr_t addr_);
+
+    const PacketController::Define& get_define() override;
+    void on_error(const Packet& packet) override;
+    void on_reply(const Packet& packet) override;
+    void on_packet_error(PacketError::Type code) override;
+
+   private:
+    VMemory& vmemory;
+    const vaddr_t addr;
+  };
+
   /** This memory space's pid. */
   vpid_t my_pid;
   /** This node's node-id. */
@@ -281,7 +297,7 @@ class VMemory : public PacketControllerDelegate {
   PacketController packet_controller;
   /** Random value generator to use for generating address. */
   std::mt19937_64 rnd;
-  std::set<vaddr_t> requiring;
+  std::map<vaddr_t, time_t> requiring;
   /** Switch of loading mode. */
   bool is_loading;
 
