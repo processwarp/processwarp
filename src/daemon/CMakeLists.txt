@@ -529,7 +529,7 @@ add_executable(processwarp
   routing.cpp
   server_connector.cpp
   webrtc_bundle.cpp
-  webrtc_connector.cpp
+  webrtc_edge.cpp
   worker_connector.cpp
   )
 add_dependencies(processwarp

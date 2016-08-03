@@ -12,7 +12,7 @@
 #include "constant_native.hpp"
 #include "lock.hpp"
 #include "type.hpp"
-#include "webrtc_connector.hpp"
+#include "webrtc_edge.hpp"
 
 namespace processwarp {
 class ServerConnector;
@@ -29,7 +29,7 @@ class ServerConnectorConnectDelegate {
 /**
  * Message sender by using Socket.IO.
  */
-class ServerConnector : public WebrtcConnectorDelegate {
+class ServerConnector : public WebrtcEdgeDelegate {
  public:
   static ServerConnector& get_instance();
 
@@ -77,7 +77,7 @@ class ServerConnector : public WebrtcConnectorDelegate {
   std::string account;
   std::string password;
   bool is_auth_yet;
-  WebrtcConnector* webrtc_init_connector;
+  WebrtcEdge* webrtc_init_edge;
   std::vector<std::string> webrtc_init_ice;
 
   ServerConnector();
@@ -85,8 +85,8 @@ class ServerConnector : public WebrtcConnectorDelegate {
   ServerConnector& operator=(const ServerConnector&);
   virtual ~ServerConnector();
 
-  void webrtc_connector_on_change_stateus(WebrtcConnector& connector, bool is_connect) override;
-  void webrtc_connector_on_update_ice(WebrtcConnector& connector, const std::string& ice) override;
+  void webrtc_edge_on_change_stateus(WebrtcEdge& edge, bool is_connect) override;
+  void webrtc_edge_on_update_ice(WebrtcEdge& edge, const std::string& ice) override;
 
   static void on_recv(uv_async_t* handle);
 
@@ -97,7 +97,7 @@ class ServerConnector : public WebrtcConnectorDelegate {
   void connect_socketio();
   void initialize_async();
   void initialize_socketio();
-  void make_init_webrtc_connector();
+  void make_init_webrtc_edge();
   void recv_auth(sio::message::ptr data);
   void recv_init_webrtc(sio::message::ptr data);
   void recv_init_webrtc_deny(const picojson::object& content);

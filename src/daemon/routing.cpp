@@ -108,9 +108,9 @@ void Routing::execute() {
 }
 
 /**
- * @param nids A set of connectors those are online.
+ * @param nids A set of edges those are online.
  */
-void Routing::on_change_online_connectors(const std::set<NodeID>& nids) {
+void Routing::on_change_online_edges(const std::set<NodeID>& nids) {
   bool is_changed;
   // Add some nid to nid_map if nid exist in nids and do not exist in nid_map.
   for (auto& nid : nids) {

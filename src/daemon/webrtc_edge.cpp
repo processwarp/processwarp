@@ -4,115 +4,115 @@
 #include <string>
 
 #include "convert.hpp"
-#include "webrtc_connector.hpp"
+#include "webrtc_edge.hpp"
 
 namespace processwarp {
 /**
  * Simple destructor for vtable.
  */
-WebrtcConnectorDelegate::~WebrtcConnectorDelegate() {
+WebrtcEdgeDelegate::~WebrtcEdgeDelegate() {
 }
 
 /**
  * If delegate method is not defined, received data is stored to retainsion pool.
- * @param connector WebRTC connector.
+ * @param edge WebRTC edge.
  * @param data Received data string.
  */
-void WebrtcConnectorDelegate::webrtc_connector_on_recv(WebrtcConnector& connector,
-                                                       const std::string& data) {
-  connector.retention_data.push_back(data);
+void WebrtcEdgeDelegate::webrtc_edge_on_recv(WebrtcEdge& edge,
+                                                    const std::string& data) {
+  edge.retention_data.push_back(data);
 }
 
-WebrtcConnector::CSDO::CSDO(WebrtcConnector& parent_) :
+WebrtcEdge::CSDO::CSDO(WebrtcEdge& parent_) :
     parent(parent_) {
 }
 
-void WebrtcConnector::CSDO::OnSuccess(webrtc::SessionDescriptionInterface* desc) {
+void WebrtcEdge::CSDO::OnSuccess(webrtc::SessionDescriptionInterface* desc) {
   parent.on_csd_success(desc);
 }
 
-void WebrtcConnector::CSDO::OnFailure(const std::string& error) {
+void WebrtcEdge::CSDO::OnFailure(const std::string& error) {
   parent.on_csd_failure(error);
 }
 
-int WebrtcConnector::CSDO::AddRef() const {
+int WebrtcEdge::CSDO::AddRef() const {
   return 0;
 }
 
-int WebrtcConnector::CSDO::Release() const {
+int WebrtcEdge::CSDO::Release() const {
   return 0;
 }
 
-WebrtcConnector::DCO::DCO(WebrtcConnector& parent_) :
+WebrtcEdge::DCO::DCO(WebrtcEdge& parent_) :
     parent(parent_) {
 }
 
-void WebrtcConnector::DCO::OnStateChange() {
+void WebrtcEdge::DCO::OnStateChange() {
   parent.on_state_change(parent.data_channel->state());
 }
 
-void WebrtcConnector::DCO::OnMessage(const webrtc::DataBuffer& buffer) {
+void WebrtcEdge::DCO::OnMessage(const webrtc::DataBuffer& buffer) {
   parent.on_message(buffer);
 }
 
-void WebrtcConnector::DCO::OnBufferedAmountChange(uint64_t previous_amount) {
+void WebrtcEdge::DCO::OnBufferedAmountChange(uint64_t previous_amount) {
 }
 
-WebrtcConnector::PCO::PCO(WebrtcConnector& parent_) :
+WebrtcEdge::PCO::PCO(WebrtcEdge& parent_) :
     parent(parent_) {
 }
 
-void WebrtcConnector::PCO::OnAddStream(webrtc::MediaStreamInterface* stream) {
+void WebrtcEdge::PCO::OnAddStream(webrtc::MediaStreamInterface* stream) {
 }
 
-void WebrtcConnector::PCO::OnDataChannel(webrtc::DataChannelInterface* data_channel) {
+void WebrtcEdge::PCO::OnDataChannel(webrtc::DataChannelInterface* data_channel) {
   parent.data_channel = data_channel;
   data_channel->RegisterObserver(&parent.dco);
 }
 
-void WebrtcConnector::PCO::OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {
+void WebrtcEdge::PCO::OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {
   parent.on_ice_candidate(candidate);
 }
 
-void WebrtcConnector::PCO::OnIceConnectionChange(
+void WebrtcEdge::PCO::OnIceConnectionChange(
     webrtc::PeerConnectionInterface::IceConnectionState new_state) {
   parent.on_pco_connection_change(new_state);
 }
 
-void WebrtcConnector::PCO::OnIceGatheringChange(
+void WebrtcEdge::PCO::OnIceGatheringChange(
     webrtc::PeerConnectionInterface::IceGatheringState new_state) {
 }
 
-void WebrtcConnector::PCO::OnRemoveStream(webrtc::MediaStreamInterface* stream) {
+void WebrtcEdge::PCO::OnRemoveStream(webrtc::MediaStreamInterface* stream) {
 }
 
-void WebrtcConnector::PCO::OnRenegotiationNeeded() {
+void WebrtcEdge::PCO::OnRenegotiationNeeded() {
 }
 
-void WebrtcConnector::PCO::OnSignalingChange(
+void WebrtcEdge::PCO::OnSignalingChange(
     webrtc::PeerConnectionInterface::SignalingState new_state) {
 }
 
-WebrtcConnector::SSDO::SSDO(WebrtcConnector& parent_) :
+WebrtcEdge::SSDO::SSDO(WebrtcEdge& parent_) :
     parent(parent_) {
 }
 
-void WebrtcConnector::SSDO::OnSuccess() {
+void WebrtcEdge::SSDO::OnSuccess() {
 }
 
-void WebrtcConnector::SSDO::OnFailure(const std::string& error) {
+void WebrtcEdge::SSDO::OnFailure(const std::string& error) {
   parent.on_ssd_failure(error);
 }
 
-int WebrtcConnector::SSDO::AddRef() const {
+int WebrtcEdge::SSDO::AddRef() const {
   return 0;
 }
 
-int WebrtcConnector::SSDO::Release() const {
+int WebrtcEdge::SSDO::Release() const {
   return 0;
 }
 
-WebrtcConnector::WebrtcConnector(
+WebrtcEdge::WebrtcEdge(
     rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> peer_connection_factory,
     webrtc::PeerConnectionInterface::RTCConfiguration pc_config,
     webrtc::DataChannelInit dc_config) :
@@ -142,7 +142,7 @@ WebrtcConnector::WebrtcConnector(
 /**
  * Destractor, close peer connection and release.
  */
-WebrtcConnector::~WebrtcConnector() {
+WebrtcEdge::~WebrtcEdge() {
   peer_connection->Close();
   peer_connection = nullptr;
   data_channel = nullptr;
@@ -152,7 +152,7 @@ WebrtcConnector::~WebrtcConnector() {
  * Get new SDP of peer.
  * @todo Relase SDP string?
  */
-const std::string& WebrtcConnector::get_local_sdp() {
+const std::string& WebrtcEdge::get_local_sdp() {
   assert(local_sdp.empty());
 
   if (is_remote_sdp_set) {
@@ -175,7 +175,7 @@ const std::string& WebrtcConnector::get_local_sdp() {
  * Send packet by WebRTC data channel.
  * @param packet Packet to send.
  */
-void WebrtcConnector::send(const std::string& packet) {
+void WebrtcEdge::send(const std::string& packet) {
   assert(is_connected);
 
   webrtc::DataBuffer buffer(rtc::CopyOnWriteBuffer(packet.c_str(), packet.size()), true);
@@ -186,7 +186,7 @@ void WebrtcConnector::send(const std::string& packet) {
  * Set remote peer's SDP.
  * @param sdp String of sdp.
  */
-void WebrtcConnector::set_remote_sdp(const std::string& sdp) {
+void WebrtcEdge::set_remote_sdp(const std::string& sdp) {
   webrtc::SdpParseError error;
   webrtc::SessionDescriptionInterface* session_description(
       webrtc::CreateSessionDescription((local_sdp.empty() ? "offer" : "answer"), sdp, &error));
@@ -206,7 +206,7 @@ void WebrtcConnector::set_remote_sdp(const std::string& sdp) {
  * Update ICE data.
  * @param ice String of ice.
  */
-void WebrtcConnector::update_ice(const std::string& ice) {
+void WebrtcEdge::update_ice(const std::string& ice) {
   picojson::value v;
   std::string err = picojson::parse(v, ice);
   if (!err.empty()) {
@@ -234,7 +234,7 @@ void WebrtcConnector::update_ice(const std::string& ice) {
 /**
  * Get SDP string and store.
  */
-void WebrtcConnector::on_csd_success(webrtc::SessionDescriptionInterface* desc) {
+void WebrtcEdge::on_csd_success(webrtc::SessionDescriptionInterface* desc) {
   peer_connection->SetLocalDescription(&ssdo, desc);
 
   Lock::Guard guard(mutex);
@@ -242,7 +242,7 @@ void WebrtcConnector::on_csd_success(webrtc::SessionDescriptionInterface* desc) 
   desc->ToString(&local_sdp);
 }
 
-void WebrtcConnector::on_csd_failure(const std::string& error) {
+void WebrtcEdge::on_csd_failure(const std::string& error) {
   /// @todo error
   assert(false);
 }
@@ -250,7 +250,7 @@ void WebrtcConnector::on_csd_failure(const std::string& error) {
 /**
  * Get ICE string and raise event.
  */
-void WebrtcConnector::on_ice_candidate(const webrtc::IceCandidateInterface* candidate) {
+void WebrtcEdge::on_ice_candidate(const webrtc::IceCandidateInterface* candidate) {
   if (delegate == nullptr) {
     return;
   }
@@ -263,25 +263,25 @@ void WebrtcConnector::on_ice_candidate(const webrtc::IceCandidateInterface* cand
   ice.insert(std::make_pair("sdp_mline_index",
                             picojson::value(std::to_string(candidate->sdp_mline_index()))));
 
-  delegate->webrtc_connector_on_update_ice(*this, picojson::value(ice).serialize());
+  delegate->webrtc_edge_on_update_ice(*this, picojson::value(ice).serialize());
 }
 
 /**
  * Raise status change event by peer connection status.
  * @param status Peer connection status.
  */
-void WebrtcConnector::on_pco_connection_change(
+void WebrtcEdge::on_pco_connection_change(
     webrtc::PeerConnectionInterface::IceConnectionState status) {
   if (delegate == nullptr) {
     return;
 
   } else {
     is_connected = status == webrtc::PeerConnectionInterface::kIceConnectionCompleted;
-    delegate->webrtc_connector_on_change_stateus(*this, is_connected);
+    delegate->webrtc_edge_on_change_stateus(*this, is_connected);
   }
 }
 
-void WebrtcConnector::on_ssd_failure(const std::string& error) {
+void WebrtcEdge::on_ssd_failure(const std::string& error) {
   /// @todo error
   std::cout << error << std::endl;
   assert(false);
@@ -291,13 +291,13 @@ void WebrtcConnector::on_ssd_failure(const std::string& error) {
  * Raise status chagne event by data channel status.
  * @param status Data channel status.
  */
-void WebrtcConnector::on_state_change(webrtc::DataChannelInterface::DataState status) {
+void WebrtcEdge::on_state_change(webrtc::DataChannelInterface::DataState status) {
   if (delegate == nullptr) {
     return;
 
   } else {
     is_connected = status == webrtc::DataChannelInterface::kOpen;
-    delegate->webrtc_connector_on_change_stateus(*this, is_connected);
+    delegate->webrtc_edge_on_change_stateus(*this, is_connected);
   }
 }
 
@@ -305,14 +305,14 @@ void WebrtcConnector::on_state_change(webrtc::DataChannelInterface::DataState st
  * When receive message, raise event for delegate or store data if delegate has not set.
  * @param buffer Received data buffer.
  */
-void WebrtcConnector::on_message(const webrtc::DataBuffer& buffer) {
+void WebrtcEdge::on_message(const webrtc::DataBuffer& buffer) {
   std::string data(buffer.data.data<char>(), buffer.size());
 
   if (delegate == nullptr) {
     retention_data.push_back(data);
 
   } else {
-    delegate->webrtc_connector_on_recv(*this, data);
+    delegate->webrtc_edge_on_recv(*this, data);
   }
 }
 }  // namespace processwarp

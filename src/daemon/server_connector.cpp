@@ -413,15 +413,15 @@ void ServerConnector::send_test_console(const vpid_t& pid,
 }
 
 /**
- * Process on change connector's status and it enable connection.
+ * Process on change edge's status and it enable connection.
  * Apply connecotr to WebRTC bundler.
  * Rise connect success event on delegate.
  * Send init_webrtc command with fin signal.
  * Tell nid to router module.
  */
-void ServerConnector::webrtc_connector_on_change_stateus(WebrtcConnector& connector,
-                                                         bool is_connect) {
-  assert(&connector == webrtc_init_connector);
+void ServerConnector::webrtc_edge_on_change_stateus(WebrtcEdge& edge,
+                                                    bool is_connect) {
+  assert(&edge == webrtc_init_edge);
 
   if (is_connect) {
     Router& router = Router::get_instance();
@@ -429,8 +429,8 @@ void ServerConnector::webrtc_connector_on_change_stateus(WebrtcConnector& connec
 
     router.set_nid(my_nid);
     webrtc.set_nid(my_nid);
-    webrtc.apply_connector(webrtc_init_connector);
-    webrtc_init_connector = nullptr;
+    webrtc.apply_edge(webrtc_init_edge);
+    webrtc_init_edge = nullptr;
     connect_delegate->server_connector_connect_on_success(*this, my_nid);
     send_init_webrtc_fin(my_nid);
   }
@@ -438,18 +438,18 @@ void ServerConnector::webrtc_connector_on_change_stateus(WebrtcConnector& connec
 
 /**
  * When ICE has update, pass it to opposite node.
- * @param connector Connector that event has happen.
+ * @param edge WebRTC edge that event has happen.
  * @param ice ICE string.
  */
-void ServerConnector::webrtc_connector_on_update_ice(WebrtcConnector& connector,
-                                                     const std::string& ice) {
-  assert(&connector == webrtc_init_connector);
+void ServerConnector::webrtc_edge_on_update_ice(WebrtcEdge& edge,
+                                                const std::string& ice) {
+  assert(&edge == webrtc_init_edge);
 
-  if (connector.nid == NodeID::NONE) {
+  if (edge.nid == NodeID::NONE) {
     webrtc_init_ice.push_back(ice);
 
   } else {
-    send_init_webrtc_ice(my_nid, connector.nid, ice);
+    send_init_webrtc_ice(my_nid, edge.nid, ice);
   }
 }
 
@@ -586,18 +586,18 @@ void ServerConnector::initialize_socketio() {
  * Start to make WebRTC connector after open connetion with server.
  * Create new connector and send offer to opposite node.
  */
-void ServerConnector::make_init_webrtc_connector() {
-  assert(webrtc_init_connector == nullptr);
+void ServerConnector::make_init_webrtc_edge() {
+  assert(webrtc_init_edge == nullptr);
 
   WebrtcBundle& webrtc = WebrtcBundle::get_instance();
-  webrtc_init_connector = webrtc.create_connector();
-  webrtc_init_connector->delegate = this;
+  webrtc_init_edge = webrtc.create_edge();
+  webrtc_init_edge->delegate = this;
 
   if (my_nid == NodeID::NONE) {
     my_nid = NodeID::make_random();
   }
 
-  send_init_webrtc_offer(my_nid, webrtc_init_connector->get_local_sdp());
+  send_init_webrtc_offer(my_nid, webrtc_init_edge->get_local_sdp());
 }
 
 /**
@@ -619,7 +619,7 @@ void ServerConnector::recv_auth(sio::message::ptr data) {
       is_auth_yet = true;
     }
 
-    make_init_webrtc_connector();
+    make_init_webrtc_edge();
 
   } else {
     {
@@ -676,7 +676,7 @@ void ServerConnector::recv_init_webrtc_deny(const picojson::object& content) {
     case 0: {
       // If exists duplicate nid, re-assign nid and send init_sdp command.
       my_nid = NodeID::make_random();
-      send_init_webrtc_offer(my_nid, webrtc_init_connector->get_local_sdp());
+      send_init_webrtc_offer(my_nid, webrtc_init_edge->get_local_sdp());
     } break;
 
     case 1: {
@@ -684,8 +684,8 @@ void ServerConnector::recv_init_webrtc_deny(const picojson::object& content) {
       Router& router = Router::get_instance();
       WebrtcBundle& webrtc = WebrtcBundle::get_instance();
 
-      webrtc.close_connector(webrtc_init_connector);
-      webrtc_init_connector = nullptr;
+      webrtc.close_edge(webrtc_init_edge);
+      webrtc_init_edge = nullptr;
       connect_delegate->server_connector_connect_on_success(*this, my_nid);
       send_init_webrtc_fin(my_nid);
       router.set_nid(my_nid);
@@ -709,13 +709,13 @@ void ServerConnector::recv_init_webrtc_ice(const picojson::object& content) {
   NodeID remote_nid = NodeID::from_json(content.at("remote_nid"));
   const std::string& ice = content.at("ice").get<std::string>();
 
-  if (webrtc_init_connector == nullptr) {
+  if (webrtc_init_edge == nullptr) {
     WebrtcBundle& webrtc = WebrtcBundle::get_instance();
     webrtc.relay_init_webrtc_ice(local_nid, remote_nid, ice);
 
-  } else if (webrtc_init_connector->nid == local_nid &&
+  } else if (webrtc_init_edge->nid == local_nid &&
              my_nid == remote_nid) {
-    webrtc_init_connector->update_ice(ice);
+    webrtc_init_edge->update_ice(ice);
   }
 }
 
@@ -724,7 +724,7 @@ void ServerConnector::recv_init_webrtc_ice(const picojson::object& content) {
  * @param content Receive data containing prime_nid, sdp.
  */
 void ServerConnector::recv_init_webrtc_offer(const picojson::object& content) {
-  assert(webrtc_init_connector == nullptr);
+  assert(webrtc_init_edge == nullptr);
 
   NodeID prime_nid = NodeID::from_json(content.at("prime_nid"));
   const std::string& sdp = content.at("sdp").get<std::string>();
@@ -742,15 +742,15 @@ void ServerConnector::recv_init_webrtc_reply(const picojson::object& content) {
   NodeID second_nid = NodeID::from_json(content.at("second_nid"));
   const std::string& sdp = content.at("sdp").get<std::string>();
 
-  if (webrtc_init_connector == nullptr || prime_nid != my_nid) {
+  if (webrtc_init_edge == nullptr || prime_nid != my_nid) {
     return;
   }
 
-  webrtc_init_connector->nid = second_nid;
-  webrtc_init_connector->set_remote_sdp(sdp);
+  webrtc_init_edge->nid = second_nid;
+  webrtc_init_edge->set_remote_sdp(sdp);
 
   for (auto ice : webrtc_init_ice) {
-    send_init_webrtc_ice(my_nid, webrtc_init_connector->nid, ice);
+    send_init_webrtc_ice(my_nid, webrtc_init_edge->nid, ice);
   }
 }
 

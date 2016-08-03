@@ -13,11 +13,11 @@
 
 namespace processwarp {
 /**
- * Constructor with a connector.
- * @param connector_ A connector that is bind for this packet behavior.
+ * Constructor with a edge.
+ * @param edge_ A edge that is bind for this packet behavior.
  */
-WebrtcBundle::PacketConnect::PacketConnect(WebrtcConnector* connector_) :
-    connector(connector_) {
+WebrtcBundle::PacketConnect::PacketConnect(WebrtcEdge* edge_) :
+    edge(edge_) {
 }
 
 const PacketController::Define& WebrtcBundle::PacketConnect::get_define() {
@@ -32,7 +32,7 @@ const PacketController::Define& WebrtcBundle::PacketConnect::get_define() {
 }
 
 /**
- * When it receive error packet, close the connector.
+ * When it receive error packet, close the edge.
  * @param packet A received error packet.
  */
 void WebrtcBundle::PacketConnect::on_error(const Packet& packet) {
@@ -40,28 +40,28 @@ void WebrtcBundle::PacketConnect::on_error(const Packet& packet) {
 }
 
 /**
- * When packet error has happen, close the connecotr.
+ * When packet error has happen, close the edge.
  * @param code Code of the packet error.
  */
 void WebrtcBundle::PacketConnect::on_packet_error(PacketError::Type code) {
   WebrtcBundle& webrtc = WebrtcBundle::get_instance();
 
-  webrtc.close_connector(connector);
+  webrtc.close_edge(edge);
 }
 
 /**
  * When it receive reply packet, set remote SDP string for the connectior and
- * send bufferd ICE strings to the opposite side connector.
+ * send bufferd ICE strings to the opposite side edge.
  * @param A received packet, containing sdp.
  */
 void WebrtcBundle::PacketConnect::on_reply(const Packet& packet) {
   const std::string& sdp = packet.content.at("sdp").get<std::string>();
-  connector->set_remote_sdp(sdp);
+  edge->set_remote_sdp(sdp);
 
   WebrtcBundle& webrtc = WebrtcBundle::get_instance();
   {
     Lock::Guard guard(webrtc.ice_mutex);
-    auto it_ice_buffer = webrtc.ice_send_buffer.find(connector);
+    auto it_ice_buffer = webrtc.ice_send_buffer.find(edge);
     if (it_ice_buffer != webrtc.ice_send_buffer.end()) {
       std::deque<std::string>& ices = it_ice_buffer->second;
       for (auto& ice : ices) {
@@ -70,11 +70,11 @@ void WebrtcBundle::PacketConnect::on_reply(const Packet& packet) {
       webrtc.ice_send_buffer.erase(it_ice_buffer);
     }
   }
-  auto it_ice_buffer = webrtc.ice_recv_buffer.find(connector);
+  auto it_ice_buffer = webrtc.ice_recv_buffer.find(edge);
   if (it_ice_buffer != webrtc.ice_recv_buffer.end()) {
     std::deque<std::string>& ices = it_ice_buffer->second;
     for (auto& ice : ices) {
-      connector->update_ice(ice);
+      edge->update_ice(ice);
     }
     webrtc.ice_recv_buffer.erase(it_ice_buffer);
   }
@@ -108,69 +108,69 @@ WebrtcBundle::~WebrtcBundle() {
 }
 
 /**
- * Apply connector from ServerConnector module.
- * @param connector WebRTC connector.
+ * Apply edge from ServerEdge module.
+ * @param edge WebRTC edge.
  */
-void WebrtcBundle::apply_connector(WebrtcConnector* connector) {
-  assert(connector->nid != NodeID::NONE);
+void WebrtcBundle::apply_edge(WebrtcEdge* edge) {
+  assert(edge->nid != NodeID::NONE);
 
-  // Change connector's handler to me.
-  connector->delegate = this;
+  // Change edge's handler to me.
+  edge->delegate = this;
 
-  // Make a pair of node-id and connector.
-  nid_map.insert(std::make_pair(connector->nid, connector));
+  // Make a pair of node-id and edge.
+  nid_map.insert(std::make_pair(edge->nid, edge));
 
-  // Decode reteindata on connector.
-  for (auto& data : connector->retention_data) {
-    webrtc_connector_on_recv(*connector, data);
+  // Decode reteindata on edge.
+  for (auto& data : edge->retention_data) {
+    webrtc_edge_on_recv(*edge, data);
   }
-  connector->retention_data.clear();
+  edge->retention_data.clear();
 
   uv_async_send(&async_ucs);
 }
 
 /**
- * Close WebRTC connector.
- * Unset handler and delete the connector instance.
- * @param connector WebRTC onnector.
+ * Close WebRTC edge.
+ * Unset handler and delete the edge instance.
+ * @param edge WebRTC onnector.
  */
-void WebrtcBundle::close_connector(WebrtcConnector* connector) {
-  connector->delegate = nullptr;
+void WebrtcBundle::close_edge(WebrtcEdge* edge) {
+  edge->delegate = nullptr;
 
-  auto it_init = init_map.find(connector);
+  auto it_init = init_map.find(edge);
   if (it_init != init_map.end()) {
     init_map.erase(it_init);
   }
 
-  if (connector->nid != NodeID::NONE) {
-    auto it_nid = nid_map.find(connector->nid);
+  if (edge->nid != NodeID::NONE) {
+    auto it_nid = nid_map.find(edge->nid);
     if (it_nid != nid_map.end()) {
       nid_map.erase(it_nid);
     }
   }
 
-  assert(connectors.find(connector) != connectors.end());
-  connectors.erase(connector);
+  assert(edges.find(edge) != edges.end());
+  edges.erase(edge);
 }
 
 /**
- * Create new WebRTC connector.
- * Connector handle will change by apply_connector or will release by purge_connector.
- * @return A new WebRTC connector.
+ * Create new WebRTC edge.
+ * Edge handle will change by apply_edge or will release by purge_edge.
+ * @return A new WebRTC edge.
  */
-WebrtcConnector* WebrtcBundle::create_connector() {
-  WebrtcConnector* connector = new WebrtcConnector(peer_connection_factory, pc_config, dc_config);
-  connectors.insert(std::make_pair(connector, std::unique_ptr<WebrtcConnector>(connector)));
+WebrtcEdge* WebrtcBundle::create_edge() {
+  WebrtcEdge* edge = new WebrtcEdge(peer_connection_factory, pc_config, dc_config);
+  edges.insert(std::make_pair(edge, std::unique_ptr<WebrtcEdge>(edge)));
 
-  return connector;
+  return edge;
 }
 
 /**
- * Release all connectors and release WebRTC resources.
+ * Release all edges and release WebRTC resources.
  */
 void WebrtcBundle::finalize() {
   // It must close connections with subthread alive.
-  connectors.clear();
+  edges.clear();
   peer_connection_factory = nullptr;
   thread->set_socketserver(nullptr);
 
@@ -193,7 +193,7 @@ void WebrtcBundle::initialize(uv_loop_t* loop_) {
 
   // Initialize synchronizer.
   uv_async_init(loop, &async_recv, on_recv);
-  uv_async_init(loop, &async_ucs, update_connector_status);
+  uv_async_init(loop, &async_ucs, update_edge_status);
 
   // Initalize PacketController
   packet_controller.initialize(this);
@@ -260,8 +260,8 @@ void WebrtcBundle::relay(const Packet& packet) {
   } else if (dst_nid == NodeID::NEXT) {
     for (auto& it : nid_map) {
       const NodeID& nid = it.first;
-      const WebrtcConnector& connector = *it.second;
-      if (!connector.is_connected) {
+      const WebrtcEdge& edge = *it.second;
+      if (!edge.is_connected) {
         continue;
       }
 
@@ -389,34 +389,34 @@ void WebrtcBundle::packet_controller_send(const Packet& packet) {
 /**
  * When create a new connectior required from Routing module, setup the nid and delegate,
  * and create ICE buffer before send create packet.
- * @param nid The opposite side node's id for the new connector.
+ * @param nid The opposite side node's id for the new edge.
  */
 void WebrtcBundle::routing_connect(const NodeID& nid) {
   if (nid_map.find(nid) != nid_map.end()) {
     return;
   }
 
-  WebrtcConnector* connector = create_connector();
-  connector->nid = nid;
-  connector->delegate = this;
-  nid_map.insert(std::make_pair(nid, connector));
+  WebrtcEdge* edge = create_edge();
+  edge->nid = nid;
+  edge->delegate = this;
+  nid_map.insert(std::make_pair(nid, edge));
   {
     Lock::Guard guard(ice_mutex);
-    ice_send_buffer.insert(std::make_pair(connector, std::deque<std::string>()));
-    ice_recv_buffer.insert(std::make_pair(connector, std::deque<std::string>()));
+    ice_send_buffer.insert(std::make_pair(edge, std::deque<std::string>()));
+    ice_recv_buffer.insert(std::make_pair(edge, std::deque<std::string>()));
   }
 
-  send_connect(connector, nid, connector->get_local_sdp());
+  send_connect(edge, nid, edge->get_local_sdp());
 }
 
 /**
- * When disconnect required from Routing module, remote target connector.
+ * When disconnect required from Routing module, remote target edge.
  * @param nid The target node-id.
  */
 void WebrtcBundle::routing_disconnect(const NodeID& nid) {
   assert(nid_map.find(nid) != nid_map.end());
 
-  close_connector(nid_map.at(nid));
+  close_edge(nid_map.at(nid));
 }
 
 /**
@@ -441,71 +441,71 @@ void WebrtcBundle::routing_send_routing_local(const picojson::object& content) {
 }
 
 /**
- * Remove the connector from initializeing map,  when a connector status has changed to enable.
- * Raise update_connector_status on another thread, when a connector status has changed.
- * @param connector Connector that status has changed.
+ * Remove the edge from initializeing map,  when a edge status has changed to enable.
+ * Raise update_edge_status on another thread, when a edge status has changed.
+ * @param edge Edge that status has changed.
  * @param is_connect Connection status (True if connection has enabled.).
  */
-void WebrtcBundle::webrtc_connector_on_change_stateus(WebrtcConnector& connector, bool is_connect) {
+void WebrtcBundle::webrtc_edge_on_change_stateus(WebrtcEdge& edge, bool is_connect) {
   if (is_connect) {
-    auto it_init = init_map.find(&connector);
+    auto it_init = init_map.find(&edge);
     if (it_init != init_map.end()) {
       init_map.erase(it_init);
     }
 
-    nid_map.insert(std::make_pair(connector.nid, &connector));
+    nid_map.insert(std::make_pair(edge.nid, &edge));
   }
 
-  // Raise update_connector_status on another thread.
+  // Raise update_edge_status on another thread.
   uv_async_send(&async_ucs);
 }
 
 /**
- * When ice update event has happen on initializing connector,
+ * When ice update event has happen on initializing edge,
  * send init_webrtc_ice command to the opposite side node.
  * When event has happen on not initializeing connecotr, send ice command to the opposite side node.
  * Otherwise, it put the ice string on the buffer, if reply packet has not received yet for the connecotr.
- * @param connector Initializing connector.
+ * @param edge Initializing edge.
  * @param ice ICE string.
  */
-void WebrtcBundle::webrtc_connector_on_update_ice(WebrtcConnector& connector,
+void WebrtcBundle::webrtc_edge_on_update_ice(WebrtcEdge& edge,
                                                   const std::string& ice) {
-  auto it_connector = init_map.find(&connector);
-  if (it_connector != init_map.end()) {
+  auto it_edge = init_map.find(&edge);
+  if (it_edge != init_map.end()) {
     picojson::object content;
 
     content.insert(std::make_pair("local_nid", my_nid.to_json()));
-    content.insert(std::make_pair("remote_nid", connector.nid.to_json()));
+    content.insert(std::make_pair("remote_nid", edge.nid.to_json()));
     content.insert(std::make_pair("ice", picojson::value(ice)));
 
     packet_controller.send("init_webrtc_ice", Module::NETWORK, true,
-                           PID::BROADCAST, it_connector->second, content);
+                           PID::BROADCAST, it_edge->second, content);
 
   } else {
     Lock::Guard guard(ice_mutex);
-    auto it_ice_buffer = ice_send_buffer.find(&connector);
+    auto it_ice_buffer = ice_send_buffer.find(&edge);
     if (it_ice_buffer != ice_send_buffer.end()) {
       it_ice_buffer->second.push_back(ice);
 
     } else {
-      send_ice(connector.nid, ice);
+      send_ice(edge.nid, ice);
     }
   }
 }
 
 /**
  * When receive event has happen, Raise on_recv on another thraed.
- * @param connector Data received connector.
+ * @param edge Data received edge.
  * @param data Received data.
  */
-void WebrtcBundle::webrtc_connector_on_recv(WebrtcConnector& connector, const std::string& data) {
+void WebrtcBundle::webrtc_edge_on_recv(WebrtcEdge& edge, const std::string& data) {
   Lock::Guard guard(recv_mutex);
   recv_data.push_back(data);
   uv_async_send(&async_recv);
 }
 
 /**
- * When receive data from connector, decode it to packet and call relay method to relay it.
+ * When receive data from edge, decode it to packet and call relay method to relay it.
  * @param handle libuv's handler(unused).
  */
 void WebrtcBundle::on_recv(uv_async_t* handle) {
@@ -556,25 +556,25 @@ void WebrtcBundle::on_timer_routing(uv_timer_t* handle) {
 }
 
 /**
- * When update connector status, collect online node-ids and pass to routing module.
+ * When update edge status, collect online node-ids and pass to routing module.
  * @param handle libuv's handler.
  */
-void WebrtcBundle::update_connector_status(uv_async_t* handle) {
+void WebrtcBundle::update_edge_status(uv_async_t* handle) {
   WebrtcBundle& THIS = get_instance();
   std::set<NodeID> nids;
 
   // Tell event for Routing module
-  for (auto& it_connector : THIS.connectors) {
-    WebrtcConnector& connector = *(it_connector.first);
-    if (connector.is_connected) {
-      nids.insert(connector.nid);
+  for (auto& it_edge : THIS.edges) {
+    WebrtcEdge& edge = *(it_edge.first);
+    if (edge.is_connected) {
+      nids.insert(edge.nid);
     }
   }
-  THIS.routing.on_change_online_connectors(nids);
+  THIS.routing.on_change_online_edges(nids);
 }
 
 /**
- * When receive a connect command, crate a new connector and send reply with local SDP string.
+ * When receive a connect command, crate a new edge and send reply with local SDP string.
  * Otherwise, the same node-id is used by this node, send error.
  * @param packet Received packet, containing sdp
  */
@@ -584,38 +584,38 @@ void WebrtcBundle::recv_connect(const Packet& packet) {
 
   } else {
     const std::string& sdp = packet.content.at("sdp").get<std::string>();
-    WebrtcConnector* connector = create_connector();
-    connector->nid = packet.src_nid;
-    connector->delegate = this;
-    connector->set_remote_sdp(sdp);
-    nid_map.insert(std::make_pair(packet.src_nid, connector));
+    WebrtcEdge* edge = create_edge();
+    edge->nid = packet.src_nid;
+    edge->delegate = this;
+    edge->set_remote_sdp(sdp);
+    nid_map.insert(std::make_pair(packet.src_nid, edge));
 
     picojson::object content;
-    content.insert(std::make_pair("sdp", picojson::value(connector->get_local_sdp())));
+    content.insert(std::make_pair("sdp", picojson::value(edge->get_local_sdp())));
     packet_controller.send_reply(packet, content);
   }
 }
 
 /**
- * When receive a ice command, update ICE of connector.
+ * When receive a ice command, update ICE of edge.
  * Otherwise, store the ICE string to buffer, if send offer and has not received reply packet yet.
  * @param packet Received packet, containing ice.
  */
 void WebrtcBundle::recv_ice(const Packet& packet) {
-  WebrtcConnector* connector = nid_map.at(packet.src_nid);
+  WebrtcEdge* edge = nid_map.at(packet.src_nid);
   const std::string& ice = packet.content.at("ice").get<std::string>();
 
-  auto it_ice_buffer = ice_recv_buffer.find(connector);
+  auto it_ice_buffer = ice_recv_buffer.find(edge);
   if (it_ice_buffer != ice_recv_buffer.end()) {
     it_ice_buffer->second.push_back(ice);
 
   } else {
-    connector->update_ice(ice);
+    edge->update_ice(ice);
   }
 }
 
 /**
- * When receive init_webrtc ice command, update ICE of initializeing connector if target is this node.
+ * When receive init_webrtc ice command, update ICE of initializeing edge if target is this node.
  * Otherwise, relay it to the server. Because, it should be relayed by this node.
  */
 void WebrtcBundle::recv_init_webrtc_ice(const Packet& packet) {
@@ -628,10 +628,10 @@ void WebrtcBundle::recv_init_webrtc_ice(const Packet& packet) {
     server.send_init_webrtc_ice(local_nid, remote_nid, ice);
 
   } else {
-    for (auto& it : connectors) {
-      WebrtcConnector* connector = it.second.get();
-      if (connector->nid == local_nid) {
-        connector->update_ice(ice);
+    for (auto& it : edges) {
+      WebrtcEdge* edge = it.second.get();
+      if (edge->nid == local_nid) {
+        edge->update_ice(ice);
       }
     }
   }
@@ -639,7 +639,7 @@ void WebrtcBundle::recv_init_webrtc_ice(const Packet& packet) {
 
 /**
  * When receive init_webrtc offer command,
- * create a pair connector and reply with a SDP string by this node.
+ * create a pair edge and reply with a SDP string by this node.
  * But, the same id is used by this node, send a error reply.
  * If the suggested node-id is used by this node, send error packet as deny.
  * @param packet A packet containing prime_nid, sdp.
@@ -654,17 +654,17 @@ void WebrtcBundle::recv_init_webrtc_offer(const Packet& packet) {
   } else {
     NodeID prime_nid = NodeID::from_json(packet.content.at("prime_nid"));
     const std::string& sdp = packet.content.at("sdp").get<std::string>();
-    WebrtcConnector* connector = create_connector();
+    WebrtcEdge* edge = create_edge();
 
-    init_map.insert(std::make_pair(connector, packet.src_nid));
-    connector->nid  = prime_nid;
-    connector->delegate = this;
-    connector->set_remote_sdp(sdp);
+    init_map.insert(std::make_pair(edge, packet.src_nid));
+    edge->nid  = prime_nid;
+    edge->delegate = this;
+    edge->set_remote_sdp(sdp);
 
     picojson::object content;
     content.insert(std::make_pair("prime_nid", packet.content.at("prime_nid")));
     content.insert(std::make_pair("second_nid", my_nid.to_json()));
-    content.insert(std::make_pair("sdp", picojson::value(connector->get_local_sdp())));
+    content.insert(std::make_pair("sdp", picojson::value(edge->get_local_sdp())));
     packet_controller.send_reply(packet, content);
   }
 }
@@ -721,13 +721,13 @@ void WebrtcBundle::relay_to_local(const Packet& packet) {
 
 /**
  * Send a connect packet, with making a behavior.
- * @param connector The connector that is bind for a new PacketConnect instance.
+ * @param edge The edge that is bind for a new PacketConnect instance.
  * @param dst_nid Destination node-id.
  * @param sdp SDP string generated in this node that is send for the opposite side node.
  */
-void WebrtcBundle::send_connect(WebrtcConnector* connector, const NodeID& dst_nid,
+void WebrtcBundle::send_connect(WebrtcEdge* edge, const NodeID& dst_nid,
                                 const std::string& sdp) {
-  std::unique_ptr<PacketController::Behavior> behavior(new PacketConnect(connector));
+  std::unique_ptr<PacketController::Behavior> behavior(new PacketConnect(edge));
   picojson::object content;
   content.insert(std::make_pair("sdp", picojson::value(sdp)));
   packet_controller.send(std::move(behavior), PID::BROADCAST, dst_nid, content);
@@ -735,7 +735,7 @@ void WebrtcBundle::send_connect(WebrtcConnector* connector, const NodeID& dst_ni
 
 /**
  * Send a ice packet.
- * @param dst_nid Destination node-id, that is the opposite side of a connector.
+ * @param dst_nid Destination node-id, that is the opposite side of a edge.
  * @param ice ICE string for the destination node.
  */
 void WebrtcBundle::send_ice(const NodeID& dst_nid, const std::string& ice) {

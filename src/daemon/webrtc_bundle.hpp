@@ -19,18 +19,18 @@
 #include "packet.hpp"
 #include "routing.hpp"
 #include "type.hpp"
-#include "webrtc_connector.hpp"
+#include "webrtc_edge.hpp"
 
 namespace processwarp {
-class WebrtcBundle : public WebrtcConnectorDelegate,
+class WebrtcBundle : public WebrtcEdgeDelegate,
                      public PacketControllerDelegate,
                      public RoutingDelegate {
  public:
   static WebrtcBundle& get_instance();
 
-  void apply_connector(WebrtcConnector* connector);
-  void close_connector(WebrtcConnector* connector);
-  WebrtcConnector* create_connector();
+  void apply_edge(WebrtcEdge* edge);
+  void close_edge(WebrtcEdge* edge);
+  WebrtcEdge* create_edge();
   void finalize();
   void initialize(uv_loop_t* loop);
   void relay(const Packet& packet);
@@ -51,7 +51,7 @@ class WebrtcBundle : public WebrtcConnectorDelegate,
 
   class PacketConnect : public PacketController::Behavior {
    public:
-    explicit PacketConnect(WebrtcConnector* connector_);
+    explicit PacketConnect(WebrtcEdge* edge_);
 
     const PacketController::Define& get_define() override;
     void on_error(const Packet& packet) override;
@@ -59,12 +59,12 @@ class WebrtcBundle : public WebrtcConnectorDelegate,
     void on_reply(const Packet& packet) override;
 
    private:
-    WebrtcConnector* connector;
+    WebrtcEdge* edge;
   };
 
   /** Main loop of libuv. */
   uv_loop_t* loop;
-  /** Async update connector status. */
+  /** Async update edge status. */
   uv_async_t async_ucs;
   /** Async receive packet. */
   uv_async_t async_recv;
@@ -82,14 +82,14 @@ class WebrtcBundle : public WebrtcConnectorDelegate,
   webrtc::DataChannelInit dc_config;
 
   PacketController packet_controller;
-  /** Connector pool. */
-  std::map<WebrtcConnector*, std::unique_ptr<WebrtcConnector>> connectors;
-  /** Map of node-id and connector. */
-  std::map<NodeID, WebrtcConnector*> nid_map;
-  /** Map of connector and node-id that relayed the packet from the server. */
-  std::map<WebrtcConnector*, NodeID> init_map;
-  std::map<WebrtcConnector*, std::deque<std::string>> ice_send_buffer;
-  std::map<WebrtcConnector*, std::deque<std::string>> ice_recv_buffer;
+  /** Edge pool. */
+  std::map<WebrtcEdge*, std::unique_ptr<WebrtcEdge>> edges;
+  /** Map of node-id and edge. */
+  std::map<NodeID, WebrtcEdge*> nid_map;
+  /** Map of edge and node-id that relayed the packet from the server. */
+  std::map<WebrtcEdge*, NodeID> init_map;
+  std::map<WebrtcEdge*, std::deque<std::string>> ice_send_buffer;
+  std::map<WebrtcEdge*, std::deque<std::string>> ice_recv_buffer;
   /** Mutex for ice. */
   Lock::Mutex ice_mutex;
 
@@ -120,14 +120,14 @@ class WebrtcBundle : public WebrtcConnectorDelegate,
                             const picojson::object& content) override;
   void routing_send_routing_local(const picojson::object& content) override;
 
-  void webrtc_connector_on_change_stateus(WebrtcConnector& connector, bool is_connect) override;
-  void webrtc_connector_on_update_ice(WebrtcConnector& connector,
-                                      const std::string& ice) override;
-  void webrtc_connector_on_recv(WebrtcConnector& connector, const std::string& data) override;
+  void webrtc_edge_on_change_stateus(WebrtcEdge& edge, bool is_connect) override;
+  void webrtc_edge_on_update_ice(WebrtcEdge& edge,
+                                 const std::string& ice) override;
+  void webrtc_edge_on_recv(WebrtcEdge& edge, const std::string& data) override;
 
   static void on_recv(uv_async_t* handle);
   static void on_timer_routing(uv_timer_t* handle);
-  static void update_connector_status(uv_async_t* handle);
+  static void update_edge_status(uv_async_t* handle);
 
   void recv_connect(const Packet& packet);
   void recv_ice(const Packet& packet);
@@ -136,7 +136,7 @@ class WebrtcBundle : public WebrtcConnectorDelegate,
   void recv_require_routing(const Packet& packet);
   void relay_to_another(const NodeID& relay_nid, const Packet& packet);
   void relay_to_local(const Packet& packet);
-  void send_connect(WebrtcConnector* connector, const NodeID& dst_nid, const std::string& sdp);
+  void send_connect(WebrtcEdge* edge, const NodeID& dst_nid, const std::string& sdp);
   void send_ice(const NodeID& dst_nid, const std::string& ice);
   void send_packet_error(const Packet& error_for, PacketError::Type code);
 };

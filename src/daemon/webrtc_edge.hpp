@@ -9,33 +9,33 @@
 #include "node_id.hpp"
 
 namespace processwarp {
-class WebrtcConnector;
+class WebrtcEdge;
 
-class WebrtcConnectorDelegate {
+class WebrtcEdgeDelegate {
  public:
-  virtual ~WebrtcConnectorDelegate();
-  virtual void webrtc_connector_on_change_stateus(WebrtcConnector& connector, bool is_connect) = 0;
-  virtual void webrtc_connector_on_update_ice(WebrtcConnector& connector,
+  virtual ~WebrtcEdgeDelegate();
+  virtual void webrtc_edge_on_change_stateus(WebrtcEdge& edge, bool is_connect) = 0;
+  virtual void webrtc_edge_on_update_ice(WebrtcEdge& edge,
                                               const std::string& ice) = 0;
-  virtual void webrtc_connector_on_recv(WebrtcConnector& connector, const std::string& data);
+  virtual void webrtc_edge_on_recv(WebrtcEdge& edge, const std::string& data);
 };
 
-class WebrtcConnector {
+class WebrtcEdge {
  public:
   /// Opposide peer's node-id.
   NodeID nid;
   /// Connecting status.
   bool is_connected;
   /// Event handler.
-  WebrtcConnectorDelegate* delegate;
+  WebrtcEdgeDelegate* delegate;
   /// Received data retention pool (data is stored when the delegate is not defined).
   std::deque<std::string> retention_data;
 
-  WebrtcConnector(
+  WebrtcEdge(
       rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> peer_connection_factory,
       webrtc::PeerConnectionInterface::RTCConfiguration pc_config,
       webrtc::DataChannelInit dc_config);
-  virtual ~WebrtcConnector();
+  virtual ~WebrtcEdge();
 
   const std::string& get_local_sdp();
   void send(const std::string& data);
@@ -45,7 +45,7 @@ class WebrtcConnector {
  private:
   class CSDO : public webrtc::CreateSessionDescriptionObserver {
    public:
-    explicit CSDO(WebrtcConnector& parent_);
+    explicit CSDO(WebrtcEdge& parent_);
 
     void OnSuccess(webrtc::SessionDescriptionInterface* desc) override;
     void OnFailure(const std::string& error) override;
@@ -53,24 +53,24 @@ class WebrtcConnector {
     int Release() const override;
 
    private:
-    WebrtcConnector& parent;
+    WebrtcEdge& parent;
   };
 
   class DCO : public webrtc::DataChannelObserver {
    public:
-    explicit DCO(WebrtcConnector& parent_);
+    explicit DCO(WebrtcEdge& parent_);
 
     void OnStateChange() override;
     void OnMessage(const webrtc::DataBuffer& buffer) override;
     void OnBufferedAmountChange(uint64_t previous_amount) override;
 
    private:
-    WebrtcConnector& parent;
+    WebrtcEdge& parent;
   };
 
   class PCO : public webrtc::PeerConnectionObserver {
    public:
-    explicit PCO(WebrtcConnector& parent_);
+    explicit PCO(WebrtcEdge& parent_);
 
     void OnAddStream(webrtc::MediaStreamInterface* stream) override;
     void OnDataChannel(webrtc::DataChannelInterface* data_channel) override;
@@ -84,12 +84,12 @@ class WebrtcConnector {
     void OnSignalingChange(webrtc::PeerConnectionInterface::SignalingState new_state) override;
 
    private:
-    WebrtcConnector& parent;
+    WebrtcEdge& parent;
   };
 
   class SSDO : public webrtc::SetSessionDescriptionObserver {
    public:
-    explicit SSDO(WebrtcConnector& parent_);
+    explicit SSDO(WebrtcEdge& parent_);
 
     void OnSuccess() override;
     void OnFailure(const std::string& error) override;
@@ -97,7 +97,7 @@ class WebrtcConnector {
     int Release() const override;
 
    private:
-    WebrtcConnector& parent;
+    WebrtcEdge& parent;
   };
 
   CSDO csdo;
