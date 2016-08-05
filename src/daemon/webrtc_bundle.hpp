@@ -22,6 +22,17 @@
 #include "webrtc_edge.hpp"
 
 namespace processwarp {
+class WebrtcBundleDelegate {
+ public:
+  virtual ~WebrtcBundleDelegate();
+  virtual void webrtc_bundle_relay_to_local(const Packet& packet) = 0;
+  virtual void webrtc_bundle_init_webrtc_deny(const NodeID& prime_nid, int reason) = 0;
+  virtual void webrtc_bundle_init_webrtc_ice(const NodeID& local_nid, const NodeID& remote_nid,
+                                             const std::string& ice) = 0;
+  virtual void webrtc_bundle_init_webrtc_reply(const NodeID& prime_nid, const NodeID& second_nid,
+                                               const std::string& sdp) = 0;
+};
+
 class WebrtcBundle : public WebrtcEdgeDelegate,
                      public PacketControllerDelegate,
                      public RoutingDelegate {
@@ -32,7 +43,7 @@ class WebrtcBundle : public WebrtcEdgeDelegate,
   void close_edge(WebrtcEdge* edge);
   WebrtcEdge* create_edge();
   void finalize();
-  void initialize(uv_loop_t* loop);
+  void initialize(WebrtcBundleDelegate* delegate_, uv_loop_t* loop);
   void relay(const Packet& packet);
   void set_nid(const NodeID& nid);
   void relay_init_webrtc_ice(const NodeID& local_nid, const NodeID& remote_nid,
@@ -62,6 +73,20 @@ class WebrtcBundle : public WebrtcEdgeDelegate,
     WebrtcEdge* edge;
   };
 
+  class PacketInitWebrtcOffer : public PacketController::Behavior {
+   public:
+    explicit PacketInitWebrtcOffer(WebrtcBundle* bundle_);
+
+    const PacketController::Define& get_define() override;
+    void on_error(const Packet& packet) override;
+    void on_packet_error(PacketError::Type code) override;
+    void on_reply(const Packet& packet) override;
+
+   private:
+    WebrtcBundle* bundle;
+  };
+
+  WebrtcBundleDelegate* delegate;
   /** Main loop of libuv. */
   uv_loop_t* loop;
   /** Async update edge status. */

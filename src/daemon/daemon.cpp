@@ -19,7 +19,7 @@
 #include "logger.hpp"
 #include "router.hpp"
 #include "util.hpp"
-#include "webrtc_bundle.hpp"
+#include "webrtc_connector.hpp"
 
 namespace processwarp {
 /**
@@ -226,14 +226,16 @@ bool Daemon::initialize_cui() {
   loop = uv_default_loop();
   Router& router = Router::get_instance();
   ServerConnector& server = ServerConnector::get_instance();
-  WebrtcBundle& webrtc = WebrtcBundle::get_instance();
+  WebrtcConnector& webrtc = WebrtcConnector::get_instance();
   WorkerConnector& worker = WorkerConnector::get_instance();
 
   server.initialize(loop, config.at("server").get<std::string>());
   router.initialize(loop, config);
-  webrtc.initialize(loop);
+  webrtc.initialize(&server, loop,
+                    config.at("pipe_dir").get<std::string>(),
+                    config.at("message").get<std::string>());
   worker.initialize(*this, loop,
-                    config.at("worker_pipe").get<std::string>(),
+                    config.at("pipe_dir").get<std::string>(),
                     config.at("libs").get<picojson::array>(),
                     config.at("lib_filter").get<picojson::array>());
 
@@ -294,7 +296,7 @@ bool Daemon::initialize_subprocess() {
   FrontendConnector& frontend = FrontendConnector::get_instance();
   Router& router = Router::get_instance();
   ServerConnector& server = ServerConnector::get_instance();
-  WebrtcBundle& webrtc = WebrtcBundle::get_instance();
+  WebrtcConnector& webrtc = WebrtcConnector::get_instance();
   WorkerConnector& worker = WorkerConnector::get_instance();
 
   server.initialize(loop, config.at("server").get<std::string>());
@@ -302,9 +304,11 @@ bool Daemon::initialize_subprocess() {
   frontend.initialize(loop,
                       config.at("frontend_pipe").get<std::string>(),
                       config.at("frontend_key").get<std::string>());
-  webrtc.initialize(loop);
+  webrtc.initialize(&server, loop,
+                    config.at("pipe_dir").get<std::string>(),
+                    config.at("message").get<std::string>());
   worker.initialize(*this, loop,
-                    config.at("worker_pipe").get<std::string>(),
+                    config.at("pipe_dir").get<std::string>(),
                     config.at("libs").get<picojson::array>(),
                     config.at("lib_filter").get<picojson::array>());
 

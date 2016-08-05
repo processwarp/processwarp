@@ -4,8 +4,7 @@
     "password":"<your password>",
     "node_name": "<node name>",
 
-    "worker_pipe": "<full path to pipe for worker>",
-    "frontend_pipe": "<full path to pipe for frontend>",
+    "pipe_path": "<directory path to make pipe for subprocess>",
 
     "libs":[
 	"<full path to library for ffi>"
@@ -15,5 +14,6 @@
 	"<full path to library name filter file>"
     ],
 
-    "apps":[]
+    "apps":[],
+    "message": "<full path to message file>"
 }

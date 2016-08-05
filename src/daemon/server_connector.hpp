@@ -12,7 +12,7 @@
 #include "constant_native.hpp"
 #include "lock.hpp"
 #include "type.hpp"
-#include "webrtc_edge.hpp"
+#include "webrtc_connector.hpp"
 
 namespace processwarp {
 class ServerConnector;
@@ -29,7 +29,7 @@ class ServerConnectorConnectDelegate {
 /**
  * Message sender by using Socket.IO.
  */
-class ServerConnector : public WebrtcEdgeDelegate {
+class ServerConnector : public WebrtcConnectorDelegate {
  public:
   static ServerConnector& get_instance();
 
@@ -72,21 +72,25 @@ class ServerConnector : public WebrtcEdgeDelegate {
   std::queue<std::pair<std::string, sio::message::ptr>> sio_queue;
 
   NodeID my_nid;
+  std::string init_sdp;
 
   ServerConnectorConnectDelegate* connect_delegate;
   std::string account;
   std::string password;
   bool is_auth_yet;
-  WebrtcEdge* webrtc_init_edge;
-  std::vector<std::string> webrtc_init_ice;
 
   ServerConnector();
   ServerConnector(const ServerConnector&);
   ServerConnector& operator=(const ServerConnector&);
   virtual ~ServerConnector();
 
-  void webrtc_edge_on_change_stateus(WebrtcEdge& edge, bool is_connect) override;
-  void webrtc_edge_on_update_ice(WebrtcEdge& edge, const std::string& ice) override;
+  void webrtc_connector_on_init_webrtc_deny(const NodeID& prime_nid, int reason) override;
+  void webrtc_connector_on_init_webrtc_fin() override;
+  void webrtc_connector_on_init_webrtc_ice(const NodeID& local_nid, const NodeID& remote_nid,
+                                         const std::string& ice) override;
+  void webrtc_connector_on_init_webrtc_offer(const std::string& sdp) override;
+  void webrtc_connector_on_init_webrtc_reply(const NodeID& prime_nid, const NodeID& second_nid,
+                                           const std::string& sdp) override;
 
   static void on_recv(uv_async_t* handle);
 
@@ -97,7 +101,7 @@ class ServerConnector : public WebrtcEdgeDelegate {
   void connect_socketio();
   void initialize_async();
   void initialize_socketio();
-  void make_init_webrtc_edge();
+  void initialize_webrtc();
   void recv_auth(sio::message::ptr data);
   void recv_init_webrtc(sio::message::ptr data);
   void recv_init_webrtc_deny(const picojson::object& content);

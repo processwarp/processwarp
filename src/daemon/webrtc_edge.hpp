@@ -16,7 +16,7 @@ class WebrtcEdgeDelegate {
   virtual ~WebrtcEdgeDelegate();
   virtual void webrtc_edge_on_change_stateus(WebrtcEdge& edge, bool is_connect) = 0;
   virtual void webrtc_edge_on_update_ice(WebrtcEdge& edge,
-                                              const std::string& ice) = 0;
+                                         const std::string& ice) = 0;
   virtual void webrtc_edge_on_recv(WebrtcEdge& edge, const std::string& data);
 };
 

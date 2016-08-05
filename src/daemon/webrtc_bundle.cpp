@@ -6,12 +6,14 @@
 
 #include "constant.hpp"
 #include "convert.hpp"
-#include "packet_init_webrtc_offer.hpp"
-#include "server_connector.hpp"
 #include "router.hpp"
 #include "webrtc_bundle.hpp"
 
 namespace processwarp {
+
+WebrtcBundleDelegate::~WebrtcBundleDelegate() {
+}
+
 /**
  * Constructor with a edge.
  * @param edge_ A edge that is bind for this packet behavior.
@@ -78,6 +80,51 @@ void WebrtcBundle::PacketConnect::on_reply(const Packet& packet) {
     }
     webrtc.ice_recv_buffer.erase(it_ice_buffer);
   }
+}
+
+const PacketController::Define& WebrtcBundle::PacketInitWebrtcOffer::get_define() {
+  static const PacketController::Define DEFINE = {
+    "init_webrtc_offer",
+    0,
+    0,
+    Module::NETWORK,
+  };
+
+  return DEFINE;
+}
+
+WebrtcBundle::PacketInitWebrtcOffer::PacketInitWebrtcOffer(WebrtcBundle* bundle_) :
+    bundle(bundle_) {
+}
+
+/**
+ * When error packet has arrived from target node, convert to init_webrtc deny command and send it to the server.
+ * @param packet
+ */
+void WebrtcBundle::PacketInitWebrtcOffer::on_error(const Packet& packet) {
+  NodeID prime_nid = NodeID::from_json(packet.content.at("packet_nid"));
+  int reason = Convert::json2int<int>(packet.content.at("reason"));
+
+  // server.send_init_webrtc_deny(prime_nid, reason);
+  bundle->delegate->webrtc_bundle_init_webrtc_deny(prime_nid, reason);
+}
+
+void WebrtcBundle::PacketInitWebrtcOffer::on_packet_error(PacketError::Type code) {
+  /// @todo error
+  assert(false);
+}
+
+/**
+ * When reply packet has arrived, convert to init_webrtc reply command and send it to the server.
+ * @param packet
+ */
+void WebrtcBundle::PacketInitWebrtcOffer::on_reply(const Packet& packet) {
+  NodeID prime_nid = NodeID::from_json(packet.content.at("prime_nid"));
+  NodeID second_nid = NodeID::from_json(packet.content.at("second_nid"));
+  const std::string& sdp = packet.content.at("sdp").get<std::string>();
+
+  // server.send_init_webrtc_reply(prime_nid, second_nid, sdp);
+  bundle->delegate->webrtc_bundle_init_webrtc_reply(prime_nid, second_nid, sdp);
 }
 
 /**
@@ -186,9 +233,11 @@ void WebrtcBundle::finalize() {
 
 /**
  * Initialize WebRTC library and create a thread.
+ * @param delegate_
  * @param loop_ Loop for WebrtcBundle.
  */
-void WebrtcBundle::initialize(uv_loop_t* loop_) {
+void WebrtcBundle::initialize(WebrtcBundleDelegate* delegate_, uv_loop_t* loop_) {
+  delegate = delegate_;
   loop = loop_;
 
   // Initialize synchronizer.
@@ -313,7 +362,7 @@ void WebrtcBundle::relay_init_webrtc_ice(const NodeID& local_nid, const NodeID& 
  * @param sdp SDP string from the primary node.
  */
 void WebrtcBundle::relay_init_webrtc_offer(const NodeID& prime_nid, const std::string& sdp) {
-  std::unique_ptr<PacketController::Behavior> behavior(new PacketInitWebrtcOffer());
+  std::unique_ptr<PacketController::Behavior> behavior(new PacketInitWebrtcOffer(this));
   picojson::object content;
 
   content.insert(std::make_pair("prime_nid", prime_nid.to_json()));
@@ -624,8 +673,7 @@ void WebrtcBundle::recv_init_webrtc_ice(const Packet& packet) {
   const std::string& ice = packet.content.at("ice").get<std::string>();
 
   if (remote_nid != my_nid) {
-    ServerConnector& server = ServerConnector::get_instance();
-    server.send_init_webrtc_ice(local_nid, remote_nid, ice);
+    delegate->webrtc_bundle_init_webrtc_ice(local_nid, remote_nid, ice);
 
   } else {
     for (auto& it : edges) {
@@ -713,9 +761,7 @@ void WebrtcBundle::relay_to_local(const Packet& packet) {
   }
 
   if (packet.dst_module & (~Module::NETWORK)) {
-    Router& router = Router::get_instance();
-
-    router.relay_from_global(packet);
+    delegate->webrtc_bundle_relay_to_local(packet);
   }
 }
 

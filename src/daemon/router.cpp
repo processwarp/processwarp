@@ -16,7 +16,6 @@
 #include "server_connector.hpp"
 #include "type.hpp"
 #include "util.hpp"
-#include "webrtc_bundle.hpp"
 #include "worker_connector.hpp"
 
 namespace processwarp {
@@ -100,6 +99,7 @@ const NodeID& Router::get_my_nid() {
 void Router::relay_from_local(const Packet& packet) {
   NodeID dst_nid;
   if (packet.dst_nid == NodeID::THIS) {
+    assert(my_nid != NodeID::NONE);
     dst_nid = my_nid;
   } else if (packet.dst_nid == NodeID::NONE) {
     dst_nid = scheduler.get_dst_nid(packet.pid, packet.dst_module);
@@ -119,7 +119,7 @@ void Router::relay_from_local(const Packet& packet) {
     packet.content
   };
 
-  WebrtcBundle& webrtc = WebrtcBundle::get_instance();
+  WebrtcConnector& webrtc = WebrtcConnector::get_instance();
   webrtc.relay(real_packet);
 }
 

@@ -20,7 +20,8 @@ Testing/
 # Compiled files
 src/core/loader
 src/daemon/processwarp
-src/daemon/worker
+src/daemon/worker_subprocess
+src/daemon/webrtc_subprocess
 *.test
 
 # Compiled Object files
