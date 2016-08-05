@@ -1,37 +1,23 @@
 #pragma once
 
-#include <uv.h>
-
 #include <map>
 #include <string>
 #include <vector>
 
 #include "dynamic_library.hpp"
 #include "packet.hpp"
+#include "subprocess.hpp"
 #include "vmachine.hpp"
 #include "vmemory.hpp"
 
 namespace processwarp {
-class Worker : public VMachineDelegate, public VMemoryDelegate {
+class WorkerSubprocess : public Subprocess, public VMachineDelegate, public VMemoryDelegate {
  public:
   int entry(int argc, char* argv[]);
 
  private:
-  struct WriteHandler {
-    Worker* THIS;
-    char* buffer;
-  };
-
-  /** Main loop of libuv. */
-  uv_loop_t* loop;
-  /** Pipe connect to backend. */
-  uv_pipe_t pipe;
   /** Idle event handler. */
   uv_idle_t idle;
-  uv_connect_t connect;
-  std::vector<uint8_t> recv_buffer;
-  /** Pipe path to connect to backend. */
-  std::string pipe_path;
 
   /** My node-id. */
   NodeID my_nid;
@@ -44,6 +30,9 @@ class Worker : public VMachineDelegate, public VMemoryDelegate {
   /** Instance of virtual-machine. */
   std::unique_ptr<VMachine> vm;
 
+  void on_connect() override;
+  void on_recv_data(const picojson::object& data) override;
+
   void vmachine_finish(VMachine& vm) override;
   void vmachine_finish_thread(VMachine& vm, const vtid_t& tid) override;
   void vmachine_error(VMachine& vm, const std::string& message) override;
@@ -52,24 +41,16 @@ class Worker : public VMachineDelegate, public VMemoryDelegate {
   void vmemory_recv_update(VMemory& memory, vaddr_t addr) override;
   void vmemory_send_packet(VMemory& memory, const Packet& packet) override;
 
-  static void on_alloc(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf);
-  static void on_close(uv_handle_t* handle);
-  static void on_connect(uv_connect_t* connect, int status);
   static void on_idle(uv_idle_t* handle);
-  static void on_recv(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf);
-  static void on_write_end(uv_write_t *req, int status);
 
-  void read_options(int argc, char* argv[]);
-  void connect_pipe();
+  std::string read_options(int argc, char* argv[]);
   void initialize_libs(const picojson::array& config);
   void initialize_lib_filter(const picojson::array& config);
   void initialize_loop();
   void initialize_vm(vtid_t root_tid, vaddr_t proc_addr,
                      const NodeID& master_nid, const std::string name);
-  void recv_data(const picojson::object& data);
   void recv_connect_worker(const picojson::object& content);
   void recv_relay_packet(const picojson::object& content);
   void send_relay_packet(const Packet& packet);
-  void send_data(const picojson::object& data);
 };
 }  // namespace processwarp

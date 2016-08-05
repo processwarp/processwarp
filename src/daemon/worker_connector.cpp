@@ -82,7 +82,7 @@ void WorkerConnector::beat_routine() {
  */
 void WorkerConnector::create_vm(const vpid_t& pid, vtid_t root_tid, vaddr_t proc_addr,
                                 const NodeID& master_nid, const std::string& name) {
-  std::string worker_path = Util::file_dirname(Util::get_my_fullpath()) + "/worker";
+  std::string worker_path = Util::file_dirname(Util::get_my_fullpath()) + "/worker_subprocess";
   Router& router = Router::get_instance();
 
   // Exists vm for pid yet.
@@ -134,7 +134,7 @@ void WorkerConnector::create_vm(const vpid_t& pid, vtid_t root_tid, vaddr_t proc
     assert(false);
   }
 #else
-  debug_workers.insert(std::make_pair(pid, Worker()));
+  debug_workers.insert(std::make_pair(pid, WorkerSubprocess()));
   debug_workers.at(pid).entry(3, args);
 #endif
 

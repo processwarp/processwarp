@@ -6,6 +6,6 @@ L3004	receive bad packet
 L3005	(packet={%s})
 L3006	connector write failed (name=%s)
 L3007	worker create failed (name=%s)
-L3008	worker connect failed (name=%s)
+L3008	subprocess connect failed (name=%s)
 L3009	native program start
 L3010	start worker process (pid=%)

@@ -14,7 +14,7 @@
 #include "packet.hpp"
 #include "type.hpp"
 #ifdef WITH_WORKER_DEBUG
-#  include "worker.hpp"
+#  include "worker_subprocess.hpp"
 #endif
 
 namespace processwarp {
@@ -59,7 +59,7 @@ class WorkerConnector : public Connector {
   /** Path of pipe that for connecting with worker. */
   std::string pipe_path;
 #ifdef WITH_WORKER_DEBUG
-  std::map<const vpid_t, Worker> debug_workers;
+  std::map<const vpid_t, WorkerSubprocess> debug_workers;
 #endif
 
   WorkerConnector();

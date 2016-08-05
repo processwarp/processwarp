@@ -515,7 +515,8 @@ file(GLOB HEADER_FILES "*.hpp")
 file(GLOB DAEMON_FILES "*.cpp")
 
 if(WITH_WORKER_DEBUG)
-  list(APPEND WORKER_FILES "worker.cpp")
+  list(APPEND WORKER_FILES "subprocess.cpp")
+  list(APPEND WORKER_FILES "worker_subprocess.cpp")
 endif(WITH_WORKER_DEBUG)
 
 add_executable(processwarp
@@ -542,10 +543,12 @@ target_link_libraries(processwarp
   sioclient_tls
   )
 
+# Compile worker_subprocess
 if(NOT WITH_WORKER_DEBUG)
-  add_executable(worker
+  add_executable(worker_subprocess
     ${HEADER_FILES}
-    worker.cpp
+    subprocess.cpp
+    worker_subprocess.cpp
     )
   add_dependencies(worker
     const_processwarp
@@ -561,7 +564,7 @@ endif(NOT WITH_WORKER_DEBUG)
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   install(TARGETS processwarp DESTINATION ${PROJECT_SOURCE_DIR}/bin)
   if(NOT WITH_WORKER_DEBUG)
-    install(TARGETS worker DESTINATION ${PROJECT_SOURCE_DIR}/bin)
+    install(TARGETS worker_subprocess DESTINATION ${PROJECT_SOURCE_DIR}/bin)
   endif(NOT WITH_WORKER_DEBUG)
 endif()
 
