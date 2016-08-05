@@ -1,5 +1,6 @@
 
 #include <cassert>
+#include <memory>
 #include <string>
 
 #include "daemon_mid.hpp"
