@@ -567,11 +567,11 @@ if(NOT WITH_WORKER_DEBUG)
     subprocess.cpp
     worker_subprocess.cpp
     )
-  add_dependencies(worker
+  add_dependencies(worker_subprocess
     const_processwarp
     const_core_constant
     )
-  target_link_libraries(worker
+  target_link_libraries(worker_subprocess
     pwcore
     ${extra_libs}
     )
