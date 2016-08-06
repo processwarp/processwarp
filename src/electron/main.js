@@ -576,7 +576,6 @@ function startBackend() {
   };
 
   // Pass configure.
-  console.log(JSON.stringify(config));
   backendProcess.stdin.write(JSON.stringify(config));
   connectStatus = CONNECT_STATUS.BEGIN;
 }
