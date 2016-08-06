@@ -1,4 +1,8 @@
-#!/usr/bin/env bash
+#!/bin/bash
+
+set -e
+set -u
+set -x
 
 _pwd=`pwd`
 
@@ -10,11 +14,11 @@ elif [ -e /etc/debian_version ] ||
          [ -e /etc/debian_release ]; then
     if [ -e /etc/lsb-release ]; then
         # Ubuntu
-        bash -ex $(dirname $0)/build_ubuntu.sh
+        bash $(dirname $0)/build_ubuntu.sh
 
     elif [ -e /etc/rpi-issue ]; then
         # RaspberryPi
-        bash -ex $(dirname $0)/build_raspbian.sh
+        bash $(dirname $0)/build_raspbian.sh
 
     else
         # Debian
@@ -27,4 +31,4 @@ else
     exit 1
 fi
 
-cd ${pwd}
+cd ${_pwd}
