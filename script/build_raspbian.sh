@@ -37,7 +37,13 @@ cd ${_root}
 mkdir -p tmp
 mkdir -p local
 export PATH=${_root}/local/bin:${PATH}
+if [[ ! -v LD_LIBRARY_PATH ]]; then
+    export LD_LIBRARY_PATH=
+fi
 export LD_LIBRARY_PATH=${_root}/local/lib:${LD_LIBRARY_PATH}
+if [[ ! -v PKG_CONFIG_PATH ]]; then
+    export PKG_CONFIG_PATH=
+fi
 export PKG_CONFIG_PATH=${_root}/local/lib/pkgconfig:${PKG_CONFIG_PATH}
 
 # Compile cmake
