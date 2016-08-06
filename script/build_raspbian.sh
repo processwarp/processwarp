@@ -1,4 +1,8 @@
-#!/bin/bash -ex
+#!/bin/bash
+
+set -e
+set -u
+set -x
 
 _pwd=`pwd`
 _root=$(cd $(dirname $0)/.. && pwd)
