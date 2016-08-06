@@ -34,7 +34,7 @@ class WorkerConnector : public Connector {
   void create_vm(const vpid_t& pid, vtid_t root_tid, vaddr_t proc_addr,
                  const NodeID& master_nid, const std::string& name);
   void initialize(WorkerConnectorDelegate& delegate_, uv_loop_t* loop,
-                  const std::string& pipe_path_,
+                  const std::string& pipe_path_, const std::string& message_fname_,
                   const picojson::array& libs, const picojson::array& lib_filter);
   void relay_packet(const Packet& packet);
 
@@ -58,6 +58,8 @@ class WorkerConnector : public Connector {
   picojson::array config_lib_filter;
   /** Path of pipe that for connecting with worker. */
   std::string pipe_path;
+  /** Message file's path. */
+  std::string message_fname;
 #ifdef WITH_WORKER_DEBUG
   std::map<const vpid_t, WorkerSubprocess> debug_workers;
 #endif

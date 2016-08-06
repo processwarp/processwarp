@@ -7,6 +7,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <tuple>
 
 #include "constant.hpp"
 #include "daemon_mid.hpp"
@@ -23,7 +24,13 @@ namespace processwarp {
  * @return Exit status.
  */
 int WorkerSubprocess::entry(int argc, char* argv[]) {
-  std::string pipe_path = read_options(argc, argv);
+  std::string pipe_path;
+  std::string message_fname;
+  std::tie(pipe_path, message_fname) = read_options(argc, argv);
+
+  initialize_logger(message_fname);
+  processwarp::Logger::dbg(processwarp::DaemonMid::L3010, getpid());
+
   initialize(uv_default_loop());
   connect_pipe(pipe_path);
 
@@ -125,12 +132,12 @@ void WorkerSubprocess::on_idle(uv_idle_t* handle) {
  * @param argv Values of command line arguments.
  * @return Pipe path.
  */
-std::string WorkerSubprocess::read_options(int argc, char* argv[]) {
-  assert(argc == 3);
+std::tuple<std::string, std::string>  WorkerSubprocess::read_options(int argc, char* argv[]) {
+  assert(argc == 4);
 
-  my_pid = Convert::str2vpid(argv[2]);
+  my_pid = Convert::str2vpid(argv[3]);
 
-  return std::string(argv[1]);
+  return std::tuple<std::string, std::string>(std::string(argv[1]), std::string(argv[2]));;
 }
 
 /**
@@ -185,6 +192,18 @@ void WorkerSubprocess::initialize_vm(vtid_t root_tid, vaddr_t proc_addr,
 
   vm.reset(new VMachine(*this, *this, my_nid, libs, lib_filter));
   vm->initialize(my_pid, root_tid, proc_addr, master_nid, name);
+}
+
+/**
+ * Initialize logger.
+ */
+void WorkerSubprocess::initialize_logger(const std::string& message_fname) {
+#ifndef WITH_LOG_STDOUT
+  logger.initialize("native");
+#endif
+  Logger::set_logger_delegate(&logger);
+
+  Message::load(message_fname);
 }
 
 /**
@@ -302,7 +321,6 @@ void WorkerSubprocess::send_relay_packet(const Packet& packet) {
 int main(int argc, char* argv[]) {
   processwarp::WorkerSubprocess THIS;
 
-  processwarp::Logger::dbg(processwarp::DaemonMid::L3010, getpid());
   return THIS.entry(argc, argv);
 }
 #endif

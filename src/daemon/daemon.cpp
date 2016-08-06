@@ -236,6 +236,7 @@ bool Daemon::initialize_cui() {
                     config.at("message").get<std::string>());
   worker.initialize(*this, loop,
                     config.at("pipe_dir").get<std::string>(),
+                    config.at("message").get<std::string>(),
                     config.at("libs").get<picojson::array>(),
                     config.at("lib_filter").get<picojson::array>());
 
@@ -309,6 +310,7 @@ bool Daemon::initialize_subprocess() {
                     config.at("message").get<std::string>());
   worker.initialize(*this, loop,
                     config.at("pipe_dir").get<std::string>(),
+                    config.at("message").get<std::string>(),
                     config.at("libs").get<picojson::array>(),
                     config.at("lib_filter").get<picojson::array>());
 

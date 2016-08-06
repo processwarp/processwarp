@@ -42,14 +42,16 @@ WorkerConnector::WorkerConnector() {
  * Create UNIX domain socket for worker.
  * @param loop libuv's loop for WorkerConnector.
  * @param pipe_path_ Path of pipe that for connecting with worker.
+ * @param message_fname_ 
  * @param libs Library pathes to send to worker process.
  * @param lib_filter Library filter to send to worker process.
  */
 void WorkerConnector::initialize(WorkerConnectorDelegate& delegate_, uv_loop_t* loop,
-                                 const std::string& pipe_path_,
+                                 const std::string& pipe_path_, const std::string& message_fname_,
                                  const picojson::array& libs, const picojson::array& lib_filter) {
   delegate      = &delegate_;
   pipe_path     = pipe_path_ + "/pw-worker-" + Convert::int2str(getpid()) + ".pipe";
+  message_fname = message_fname_;
   config_libs   = libs;
   config_lib_filter = lib_filter;
 
@@ -106,6 +108,7 @@ void WorkerConnector::create_vm(const vpid_t& pid, vtid_t root_tid, vaddr_t proc
     // const_cast<char*>(VALGRIND_PATH),
     const_cast<char*>(worker_path.c_str()),
     const_cast<char*>(pipe_path.c_str()),
+    const_cast<char*>(message_fname.c_str()),
     const_cast<char*>(Convert::vpid2str(pid).c_str()),
     nullptr
   };

@@ -2,8 +2,14 @@
 
 #include <map>
 #include <string>
+#include <tuple>
 #include <vector>
 
+#ifndef WITH_LOG_STDOUT
+#  include "logger_syslog.hpp"
+#else
+#  include "logger_stdout.hpp"
+#endif
 #include "dynamic_library.hpp"
 #include "packet.hpp"
 #include "subprocess.hpp"
@@ -16,6 +22,14 @@ class WorkerSubprocess : public Subprocess, public VMachineDelegate, public VMem
   int entry(int argc, char* argv[]);
 
  private:
+#ifndef WITH_LOG_STDOUT
+  /** Syslog logger. */
+  Logger::Syslog logger;
+#else
+  /** Stdout logger. */
+  Logger::Stdout logger;
+#endif
+
   /** Idle event handler. */
   uv_idle_t idle;
 
@@ -43,9 +57,10 @@ class WorkerSubprocess : public Subprocess, public VMachineDelegate, public VMem
 
   static void on_idle(uv_idle_t* handle);
 
-  std::string read_options(int argc, char* argv[]);
+  std::tuple<std::string, std::string> read_options(int argc, char* argv[]);
   void initialize_libs(const picojson::array& config);
   void initialize_lib_filter(const picojson::array& config);
+  void initialize_logger(const std::string& message_fname);
   void initialize_loop();
   void initialize_vm(vtid_t root_tid, vaddr_t proc_addr,
                      const NodeID& master_nid, const std::string name);
