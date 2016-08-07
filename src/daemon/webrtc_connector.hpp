@@ -61,5 +61,6 @@ class WebrtcConnector : public Connector {
 
   void initialize_subprocess(const std::string& pipe_path, const std::string& message_fname);
   void recv_relay_to_local(const picojson::object& content);
+  void send_data(const picojson::object& data);
 };
 }  // namespace processwarp

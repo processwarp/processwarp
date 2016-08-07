@@ -30,18 +30,14 @@ void WebrtcConnector::cancel_init_edge_by_isolation() {
   picojson::object data;
   data.insert(std::make_pair("command", picojson::value(std::string("cancel_init_edge"))));
 
-  send_data(*client_pipe, data);
+  send_data(data);
 }
 
 void WebrtcConnector::create_init_edge() {
   picojson::object data;
   data.insert(std::make_pair("command", picojson::value(std::string("create_init_edge"))));
 
-  if (client_pipe == nullptr) {
-    send_wait.push_back(data);
-  } else {
-    send_data(*client_pipe, data);
-  }
+  send_data(data);
 }
 
 void WebrtcConnector::initialize(WebrtcConnectorDelegate* delegate_, uv_loop_t* loop,
@@ -67,11 +63,7 @@ void WebrtcConnector::relay(const Packet& packet) {
   data.insert(std::make_pair("src_nid", packet.src_nid.to_json()));
   data.insert(std::make_pair("content", picojson::value(packet.content)));
 
-  if (client_pipe == nullptr) {
-    send_wait.push_back(data);
-  } else {
-    send_data(*client_pipe, data);
-  }
+  send_data(data);
 }
 void WebrtcConnector::relay_init_webrtc_ice(const NodeID& local_nid, const NodeID& remote_nid,
                                             const std::string& ice) {
@@ -81,8 +73,7 @@ void WebrtcConnector::relay_init_webrtc_ice(const NodeID& local_nid, const NodeI
   data.insert(std::make_pair("remote_nid", remote_nid.to_json()));
   data.insert(std::make_pair("ice", picojson::value(ice)));
 
-  assert(client_pipe != nullptr);
-  send_data(*client_pipe, data);
+  send_data(data);
 }
 
 void WebrtcConnector::relay_init_webrtc_offer(const NodeID& prime_nid, const std::string& sdp) {
@@ -91,8 +82,7 @@ void WebrtcConnector::relay_init_webrtc_offer(const NodeID& prime_nid, const std
   data.insert(std::make_pair("prime_nid", prime_nid.to_json()));
   data.insert(std::make_pair("sdp", picojson::value(sdp)));
 
-  assert(client_pipe != nullptr);
-  send_data(*client_pipe, data);
+  send_data(data);
 }
 
 void WebrtcConnector::relay_init_webrtc_reply(const NodeID& prime_nid, const NodeID& second_nid,
@@ -103,8 +93,7 @@ void WebrtcConnector::relay_init_webrtc_reply(const NodeID& prime_nid, const Nod
   data.insert(std::make_pair("second_nid", second_nid.to_json()));
   data.insert(std::make_pair("sdp", picojson::value(sdp)));
 
-  assert(client_pipe != nullptr);
-  send_data(*client_pipe, data);
+  send_data(data);
 }
 
 void WebrtcConnector::set_nid(const NodeID& nid) {
@@ -114,8 +103,7 @@ void WebrtcConnector::set_nid(const NodeID& nid) {
   data.insert(std::make_pair("command", picojson::value(std::string("set_my_nid"))));
   data.insert(std::make_pair("my_nid", nid.to_json()));
 
-  assert(client_pipe != nullptr);
-  send_data(*client_pipe, data);
+  send_data(data);
 }
 
 /**
@@ -134,7 +122,7 @@ void WebrtcConnector::on_connect(uv_pipe_t& client) {
   client_pipe = &client;
 
   for (auto& it : send_wait) {
-    send_data(*client_pipe, it);
+    Connector::send_data(*client_pipe, it);
   }
   send_wait.clear();
 }
@@ -229,5 +217,17 @@ void WebrtcConnector::recv_relay_to_local(const picojson::object& content) {
 
   Router& router = Router::get_instance();
   router.relay_from_global(packet);
+}
+
+/**
+ * Send data by Connecotr, if connection is enable. Otherwise keep data in queue.
+ * @param data A JSON formatten data.
+ */
+void WebrtcConnector::send_data(const picojson::object& data) {
+  if (client_pipe == nullptr) {
+    send_wait.push_back(data);
+  } else {
+    Connector::send_data(*client_pipe, data);
+  }
 }
 }  // namespace processwarp
