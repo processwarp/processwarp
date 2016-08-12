@@ -15,7 +15,6 @@ endif()
 
 option(WITH_DOCUMENT "Generate document by doxygen" OFF)
 option(WITH_RE2 "Use RE2 library for regular expression instead of standerd C++ library" OFF)
-option(WITH_PTHREAD "Use pthread mutex and cond instead of stdc++'s it." OFF)
 
 # Check for Google Coding Style.
 add_custom_target(cpplint
@@ -90,7 +89,14 @@ if (DEBUG_ADDRESS_SANITIZE)
   set(CMAKE_MODULE_LINKER_FLAGS_DEBUG "${CMAKE_MODULE_LINKER_FLAGS} -fsanitize=address")
 endif (DEBUG_ADDRESS_SANITIZE)
 
+# Log output module
+option(WITH_LOG_STDOUT "Output log to stdout." OFF)
+if (WITH_LOG_STDOUT)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWITH_LOG_STDOUT")
+endif (WITH_LOG_STDOUT)
+
 # Enable pthread module
+option(WITH_PTHREAD "Use pthread mutex and cond instead of stdc++'s it." OFF)
 if(WITH_PTHREAD)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWITH_PTHREAD=1")
 endif()

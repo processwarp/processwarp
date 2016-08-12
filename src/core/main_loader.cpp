@@ -187,14 +187,7 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
   void process_change_thread_set(Process& process) override {
   }
 
-  /**
-   * Override a delegter method that call when memory data was update.
-   * Must not use in loader.
-   * @param memory
-   * @param addr
-   */
-  void vmemory_recv_update(VMemory& memory, vaddr_t addr) override {
-    assert(false);
+  void process_on_invoke_thread(Process& process, vtid_t tid) override {
   }
 
   /**
@@ -291,7 +284,7 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
       picojson::object content;
       content.insert(std::make_pair("addr", Convert::vaddr2json(it.first)));
       content.insert(std::make_pair("value",
-                                    Convert::bin2json(it.second.value.get(), it.second.size)));
+                                    Convert::bin2json(it.second->value.get(), it.second->size)));
       content.insert(std::make_pair("leader_nid", NodeID::NONE.to_json()));
       content.insert(std::make_pair("acceptor_nids", picojson::value(picojson::array())));
       content.insert(std::make_pair("learner_nids", picojson::value(picojson::array())));

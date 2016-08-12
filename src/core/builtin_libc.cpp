@@ -361,21 +361,26 @@ BuiltinPostProc::Type BuiltinLibc::strtol(Process& proc, Thread& thread,
   vm_int_t base = static_cast<vm_int_t>(Process::read_builtin_param_i(src, &seek));
   assert(static_cast<signed>(src.size()) == seek);
 
-  const char* raw_ptr = reinterpret_cast<const char*>(thread.memory->read_raw(nptr));
+  std::shared_ptr<VMemory::Page> page;
+  const uint8_t* raw_data;
+  std::tie(page, raw_data) = thread.memory->read_raw(nptr);
   if (endptr == VADDR_NULL) {
     // endptrがnullの場合は、戻り値をそのまま渡すだけ
-    thread.memory->write<int64_t>(dst, std::strtol(raw_ptr, nullptr, base));
+    thread.memory->write<int64_t>(dst, std::strtol(reinterpret_cast<const char*>(raw_data),
+                                                   nullptr, base));
 
   } else {
     // endptrが指定されている場合、ポインタの書き換えが必要
     char *work_ptr;
-    thread.memory->write<int64_t>(dst, std::strtol(raw_ptr, &work_ptr, base));
+    thread.memory->write<int64_t>(dst, std::strtol(reinterpret_cast<const char*>(raw_data),
+                                                   &work_ptr, base));
 
     if (work_ptr == nullptr) {
       thread.memory->write<vaddr_t>(endptr, VADDR_NULL);
 
     } else {
-      thread.memory->write<vaddr_t>(endptr, nptr + (work_ptr - raw_ptr));
+      thread.memory->write<vaddr_t>(endptr,
+                                    nptr + (work_ptr - reinterpret_cast<const char*>(raw_data)));
     }
   }
 

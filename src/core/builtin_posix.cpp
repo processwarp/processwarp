@@ -22,14 +22,13 @@ BuiltinPostProc::Type BuiltinPosix::bi_assert_fail(Process& proc, Thread& thread
   vaddr_t p_func = Process::read_builtin_param_ptr(src, &seek);
 
   // メッセージを出力
-  std::cerr <<
-      "Assertion failed: (" <<
-      reinterpret_cast<const char*> (thread.memory->read_raw(p_assertion)) <<
-      "), function " <<
-      reinterpret_cast<const char*>(thread.memory->read_raw(p_func)) <<
-      ", file " <<
-      reinterpret_cast<const char*>(thread.memory->read_raw(p_file)) <<
-      ", line " << p_line << "." << std::endl;
+  std::cerr << "Assertion failed: ("
+            << reinterpret_cast<const char*>(std::get<1>(thread.memory->read_raw(p_assertion)))
+            << "), function "
+            << reinterpret_cast<const char*>(std::get<1>(thread.memory->read_raw(p_func)))
+            << ", file "
+            << reinterpret_cast<const char*>(std::get<1>(thread.memory->read_raw(p_file)))
+            << ", line " << p_line << "." << std::endl;
 
   // VMを異常終了させる
   thread.status = Thread::ERROR;

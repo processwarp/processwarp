@@ -316,7 +316,7 @@ std::string embed(Thread& thread, const std::string& format,
       } break;
 
       case 's': {
-        output << reinterpret_cast<const char*>(thread.memory->read_raw(content.addr));
+        output << reinterpret_cast<const char*>(std::get<1>(thread.memory->read_raw(content.addr)));
       } break;
 
       case 'p': {

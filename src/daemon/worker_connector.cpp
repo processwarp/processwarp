@@ -137,8 +137,9 @@ void WorkerConnector::create_vm(const vpid_t& pid, vtid_t root_tid, vaddr_t proc
     assert(false);
   }
 #else
-  debug_workers.insert(std::make_pair(pid, WorkerSubprocess()));
-  debug_workers.at(pid).entry(3, args);
+  debug_workers.insert(std::make_pair
+                       (pid, std::unique_ptr<WorkerSubprocess>(new WorkerSubprocess())));
+  debug_workers.at(pid)->entry(4, args);
 #endif
 
   // Send initialize data.

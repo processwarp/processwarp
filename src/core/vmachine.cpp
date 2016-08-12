@@ -21,6 +21,8 @@
 #include "core_mid.hpp"
 #include "error.hpp"
 #include "finally.hpp"
+#include "interrupt.hpp"
+#include "interrupt_memory_require.hpp"
 #include "logger.hpp"
 #include "type.hpp"
 #include "vmachine.hpp"
@@ -83,150 +85,101 @@ void VMachine::initialize(const vpid_t& pid, const vtid_t& root_tid, vaddr_t pro
 /**
  * Main loop.
  */
-void VMachine::execute() {
+void VMachine::execute(vtid_t tid) {
+#ifndef NDEBUG
+  {
+    Lock::Guard guard(process->mutex_active_threads);
+    assert(process->active_threads.find(tid) != process->active_threads.end());
+  }
+#endif
   std::time_t now = std::time(nullptr);
-  vtid_t tid;
-  Thread* thread;
+  Thread* thread = nullptr;
   Finally finally;
 
-  try {
-    if (loop_queue.empty()) {
-      // Make list of process and threads temporary.
-
-      /// @todo migrate method anywhere
-      for (auto& it_waiting : process->waiting_warp_result) {
-        if (it_waiting.second + MEMORY_REQUIRE_INTERVAL < now) {
-          send_command_warp_thread(process->get_thread(it_waiting.first));
-          it_waiting.second = now;
-        }
+  while (1) {
+    try {
+      // Send heartbeat, per interval.
+      if ((now - last_heartbeat) > HEARTBEAT_INTERVAL) {
+        last_heartbeat = now;
+        send_command_heartbeat_vm();
       }
 
-      // Reload thread information from memory.
-      auto it_thread = process->threads.begin();
-      while (it_thread != process->threads.end()) {
-        if (process->active_threads.find(it_thread->first) != process->active_threads.end() ||
-            process->waiting_warp_result.find(it_thread->first) !=
-            process->waiting_warp_result.end()) {
-          it_thread->second->read();
-          it_thread++;
-
-        } else {
-          it_thread = process->threads.erase(it_thread);
-        }
-      }
-
-      for (auto& tid : process->active_threads) {
-        loop_queue.push(tid);
-      }
-
-      // Return if thread to run is empty.
-      if (loop_queue.empty()) return;
-    }
-
-    tid = loop_queue.front();
-    loop_queue.pop();
-
-    // Send heartbeat, per interval.
-    if ((now - last_heartbeat) > HEARTBEAT_INTERVAL) {
-      last_heartbeat = now;
-      send_command_heartbeat_vm();
-    }
-
-    // Skip if thread waiting to update memory.
-    if (process->waiting_addr.find(tid) != process->waiting_addr.end()) {
-      return;
-    }
-
-    // Get instance of thread.
-    auto it_thread = process->active_threads.find(tid);
-    if (it_thread == process->active_threads.end()) {
-      return;
-    } else {
+      // Get instance of thread.
       thread = &process->get_thread(tid);
-    }
 
-    VMemory::Accessor::MasterKey thread_master_key = thread->memory->keep_master(tid);
-    finally.add([&]{
-        thread->write();
-        thread->memory->write_out();
-      });
+      VMemory::Accessor::LeaderKey thread_leader_key = thread->memory->keep_leader(tid);
+      finally.add([&]{
+          thread->write();
+          thread->memory->write_out();
+        });
 
-    Logger::dbg_vm(CoreMid::L1001, "loop pid=%s tid=%016" PRIx64 " status=%d",
-                   process->pid.c_str(), tid, thread->status);
+      Logger::dbg_vm(CoreMid::L1001, "loop pid=%s tid=%016" PRIx64 " status=%d",
+                     process->pid.c_str(), tid, thread->status);
 
-    // Setting of warpuot to thread if need.
-    if (process->waiting_warp_setup.find(tid) != process->waiting_warp_setup.end()) {
-      thread->setup_warpout();
-      process->waiting_warp_setup.erase(tid);
-    }
+      // Setting of warpuot to thread if need.
+      if (process->waiting_warp_setup.find(tid) != process->waiting_warp_setup.end()) {
+        thread->setup_warpout();
+        process->waiting_warp_setup.erase(tid);
+      }
 
-    if (thread->status == Thread::NORMAL ||
-        thread->status == Thread::WAIT_WARP ||
-        thread->status == Thread::BEFOR_WARP ||
-        thread->status == Thread::AFTER_WARP) {
-      // run thread
-      process->execute(*thread, 100);
-      Logger::dbg_vm(CoreMid::L1001, "loop finish status=%d", thread->status);
+      if (thread->status == Thread::NORMAL ||
+          thread->status == Thread::WAIT_WARP ||
+          thread->status == Thread::BEFOR_WARP ||
+          thread->status == Thread::AFTER_WARP) {
+        // run thread
+        process->execute(*thread, 100);
+        Logger::dbg_vm(CoreMid::L1001, "loop finish status=%d", thread->status);
 
-    } else if (thread->status == Thread::WARP) {
-      process->waiting_warp_result.insert(std::make_pair(thread->tid, now));
-      process->active_threads.erase(thread->tid);
-      send_command_warp_thread(*thread);
+      } else if (thread->status == Thread::WARP) {
+        {
+          Lock::Guard guard(process->mutex_waiting_warp_result);
+          process->waiting_warp_result.insert(std::make_pair(thread->tid, now));
+        }
+        {
+          Lock::Guard guard(process->mutex_active_threads);
+          process->active_threads.erase(thread->tid);
+        }
+        send_command_warp_thread(*thread);
+        {
+          Lock::Guard guard(process->mutex_waiting_warp_result);
+          while (process->waiting_warp_result.find(tid) != process->waiting_warp_result.end()) {
+            process->cond_waiting_warp_result.wait(process->mutex_waiting_warp_result);
+          }
+        }
 
-    } else if (thread->status == Thread::ERROR) {
+      } else if (thread->status == Thread::ERROR) {
+        delegate.vmachine_error(*this, "");
+        return;
+
+      } else if (thread->status == Thread::FINISH) {
+        thread_leader_key.reset();
+        if (process->destroy_thread(*thread)) {
+          finally.clear();
+        }
+
+        if (tid == process->root_tid) {
+          delegate.vmachine_finish(*this);
+        }
+        return;
+      }
+    } catch (Interrupt& e) {
+      // Skip thread because waiting to update memroy data.
+      assert(e.type == Interrupt::MEMORY_REQUIRE);
+      vaddr_t waiting_addr = static_cast<InterruptMemoryRequire&>(e).addr;
+      Logger::dbg_mem(CoreMid::L1002, "memory need (addr=%s)",
+                      Convert::vaddr2str(waiting_addr).c_str());
+    } catch (Error& e) {
+      thread->status = Thread::FINISH;
       delegate.vmachine_error(*this, "");
 
-    } else if (thread->status == Thread::FINISH) {
-      thread_master_key.reset();
-      if (process->destroy_thread(*thread)) {
-        finally.clear();
-      }
-
-      delegate.vmachine_finish_thread(*this, tid);
-      if (tid == process->root_tid) {
-        delegate.vmachine_finish(*this);
-      }
-    }
-  } catch (Interrupt& e) {
-    // Skip thread because waiting to update memroy data.
-    assert(e.type == Interrupt::MEMORY_REQUIRE);
-    vaddr_t waiting_addr = static_cast<InterruptMemoryRequire&>(e).addr;
-    Logger::dbg_mem(CoreMid::L1002, "memory need (addr=%s)",
-                    Convert::vaddr2str(waiting_addr).c_str());
-    if (waiting_addr != VADDR_NULL) {
-      process->waiting_addr.insert(std::make_pair(tid, waiting_addr));
-    }
-  } catch (Error& e) {
-    thread->status = Thread::FINISH;
-    delegate.vmachine_error(*this, "");
-
 #ifdef NDEBUG
-  } catch (std::exception& e) {
-    thread->status = Thread::FINISH;
-    delegate.vmachine_error(*this, e.what());
-  } catch (...) {
-    thread->status = Thread::FINISH;
-    delegate.vmachine_error(*this, "unknown exception");
+    } catch (std::exception& e) {
+      thread->status = Thread::FINISH;
+      delegate.vmachine_error(*this, e.what());
+    } catch (...) {
+      thread->status = Thread::FINISH;
+      delegate.vmachine_error(*this, "unknown exception");
 #endif
-  }
-}
-
-/**
- * Tell memory is update by other node.
- * @param addr Updated page address.
- */
-void VMachine::on_recv_update(vaddr_t addr) {
-  assert(addr == VMemory::get_upper_addr(addr));
-
-  auto it_waiting = process->waiting_addr.begin();
-  while (it_waiting != process->waiting_addr.end()) {
-    if (it_waiting->second == addr) {
-      it_waiting = process->waiting_addr.erase(it_waiting);
-      Logger::dbg_mem(CoreMid::L1002, "memory update (addr=%s)",
-                      Convert::vaddr2str(addr).c_str());
-
-    } else {
-      it_waiting++;
     }
   }
 }
@@ -259,6 +212,10 @@ std::unique_ptr<VMemory::Accessor> VMachine::process_assign_accessor(const vpid_
  */
 void VMachine::process_change_thread_set(Process& proc) {
   send_command_heartbeat_vm();
+}
+
+void VMachine::process_on_invoke_thread(Process& process, vtid_t tid) {
+  delegate.vmachine_on_invoke_thread(*this, tid);
 }
 
 /**
@@ -321,12 +278,18 @@ void VMachine::recv_command_heartbeat_vm(const Packet& packet) {
 
   for (auto& it_thread : packet.content.at("threads").get<picojson::array>()) {
     vtid_t tid = Convert::json2vtid(it_thread);
-    process->waiting_warp_result.erase(tid);
-    /// @todo remove from threads?
+    {
+      Lock::Guard guard(process->mutex_waiting_warp_result);
+      process->waiting_warp_result.erase(tid);
+      process->cond_waiting_warp_result.notify_all();
+    }
 
-    if (process->active_threads.find(tid) != process->active_threads.end()) {
-      /// @todo error
-      assert(false);
+    {
+      Lock::Guard guard(process->mutex_active_threads);
+      if (process->active_threads.find(tid) != process->active_threads.end()) {
+        /// @todo error
+        assert(false);
+      }
     }
   }
 }
@@ -340,12 +303,17 @@ void VMachine::recv_command_require_warp_thread(const Packet& packet) {
   const NodeID& target_nid = NodeID::from_json(packet.content.at("target_nid"));
   assert(target_nid != NodeID::NONE);
 
-  if (process->active_threads.find(tid) != process->active_threads.end()) {
-    Thread& thread = process->get_thread(tid);
-    if (thread.require_warp(target_nid)) {
-      thread.write();
-      thread.memory->write_out();
+  {
+    Lock::Guard guard(process->mutex_active_threads);
+    if (process->active_threads.find(tid) == process->active_threads.end()) {
+      return;
     }
+  }
+
+  Thread& thread = process->get_thread(tid);
+  if (thread.require_warp(target_nid)) {
+    thread.write();
+    thread.memory->write_out();
   }
 }
 
@@ -357,6 +325,7 @@ void VMachine::recv_command_require_warp_thread(const Packet& packet) {
 void VMachine::recv_command_warp_thread(const Packet& packet) {
   vtid_t tid = Convert::json2vtid(packet.content.at("tid"));
   process->warp_out_thread(tid);
+  delegate.vmachine_on_invoke_thread(*this, tid);
   send_command_heartbeat_vm();
 }
 

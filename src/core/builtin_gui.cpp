@@ -63,7 +63,10 @@ BuiltinPostProc::Type BuiltinGui::script(Process& proc, Thread& thread, BuiltinF
   int seek = 0;
   vaddr_t format_ptr = Process::read_builtin_param_ptr(src, &seek);
   std::vector<uint8_t> ap(src.begin() + seek, src.end());
-  std::string script = Format::parse(thread, thread.memory->read_raw(format_ptr), ap);
+  std::shared_ptr<VMemory::Page> page;
+  const uint8_t* raw_data;
+  std::tie(page, raw_data) = thread.memory->read_raw(format_ptr);
+  std::string script = Format::parse(thread, raw_data, ap);
 
   picojson::object param;
   param.insert(std::make_pair("script", picojson::value(script)));

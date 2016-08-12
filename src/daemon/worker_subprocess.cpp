@@ -77,14 +77,17 @@ void WorkerSubprocess::vmachine_finish(VMachine& vm) {
   assert(false);
 }
 
-void WorkerSubprocess::vmachine_finish_thread(VMachine& vm, const vtid_t& tid) {
+void WorkerSubprocess::vmachine_error(VMachine& vm, const std::string& message) {
   /// @todo
   assert(false);
 }
 
-void WorkerSubprocess::vmachine_error(VMachine& vm, const std::string& message) {
-  /// @todo
-  assert(false);
+void WorkerSubprocess::vmachine_on_invoke_thread(VMachine& vm, vtid_t tid) {
+  {
+    Lock::Guard guard(mutex_wait_invoke);
+    wait_invoke.insert(tid);
+  }
+  uv_async_send(&async_wait_invoke);
 }
 
 /**
@@ -105,25 +108,37 @@ void WorkerSubprocess::vmemory_send_packet(VMemory& memory, const Packet& packet
   send_relay_packet(packet);
 }
 
-/**
- * When vmemory tell update memory image by another node, relay this event to vm.
- * @param memory Caller instance.
- * @param addr Address updated.
- */
-void WorkerSubprocess::vmemory_recv_update(VMemory& memory, vaddr_t addr) {
-  assert(vm.get() != nullptr);
+void WorkerSubprocess::on_async_wait_invoke(uv_async_t* handle) {
+  WorkerSubprocess& THIS = *reinterpret_cast<WorkerSubprocess*>(handle->data);
+  Lock::Guard guard(THIS.mutex_wait_invoke);
 
-  vm->on_recv_update(addr);
+  for (vtid_t tid : THIS.wait_invoke) {
+    assert(THIS.threads.find(tid) == THIS.threads.end());
+    THIS.threads.insert(std::make_pair(tid,
+                                       std::thread([=, &THIS]{ on_invoke_thread(THIS, tid); })));
+  }
+  THIS.wait_invoke.clear();
 }
 
-/**
- * When real process is idle, execute vm instructions.
- * @param handle
- */
-void WorkerSubprocess::on_idle(uv_idle_t* handle) {
+void WorkerSubprocess::on_async_wait_join(uv_async_t* handle) {
   WorkerSubprocess& THIS = *reinterpret_cast<WorkerSubprocess*>(handle->data);
+  Lock::Guard guard(THIS.mutex_wait_join);
 
-  THIS.vm->execute();
+  for (vtid_t tid : THIS.wait_join) {
+    THIS.threads.at(tid).join();
+    THIS.threads.erase(tid);
+  }
+  THIS.wait_join.clear();
+}
+
+void WorkerSubprocess::on_invoke_thread(WorkerSubprocess& THIS, vtid_t tid) {
+  THIS.vm->execute(tid);
+
+  {
+    Lock::Guard guard(THIS.mutex_wait_join);
+    THIS.wait_join.insert(tid);
+  }
+  uv_async_send(&THIS.async_wait_join);
 }
 
 /**
@@ -198,33 +213,35 @@ void WorkerSubprocess::initialize_vm(vtid_t root_tid, vaddr_t proc_addr,
  * Initialize logger.
  */
 void WorkerSubprocess::initialize_logger(const std::string& message_fname) {
+#ifndef WITH_WORKER_DEBUG
 #ifndef WITH_LOG_STDOUT
   logger.initialize("native");
 #endif
   Logger::set_logger_delegate(&logger);
 
   Message::load(message_fname);
+#endif
 }
 
 /**
  * Initialize virtual machine execute loop.
- * By using libuv, it can call virtual machine loop method while CPU is idle.
  */
 void WorkerSubprocess::initialize_loop() {
   int r;
 
-  r = uv_idle_init(loop, &idle);
+  async_wait_invoke.data = this;
+  r = uv_async_init(loop, &async_wait_invoke, on_async_wait_invoke);
   if (r) {
     /// @todo error
-    Logger::err(DaemonMid::L3007, "uv_idle_init", uv_err_name(r));
+    Logger::err(DaemonMid::L3007, "uv_async_init", uv_err_name(r));
     assert(false);
   }
 
-  idle.data = this;
-  r = uv_idle_start(&idle, WorkerSubprocess::on_idle);
+  async_wait_join.data = this;
+  r = uv_async_init(loop, &async_wait_join, on_async_wait_join);
   if (r) {
     /// @todo error
-    Logger::err(DaemonMid::L3007, "uv_idle_start", uv_err_name(r));
+    Logger::err(DaemonMid::L3007, "uv_async_init", uv_err_name(r));
     assert(false);
   }
 }

@@ -1,7 +1,9 @@
 #pragma once
 
 #include <map>
+#include <set>
 #include <string>
+#include <thread>
 #include <tuple>
 #include <vector>
 
@@ -11,6 +13,7 @@
 #  include "logger_stdout.hpp"
 #endif
 #include "dynamic_library.hpp"
+#include "lock.hpp"
 #include "packet.hpp"
 #include "subprocess.hpp"
 #include "vmachine.hpp"
@@ -30,9 +33,6 @@ class WorkerSubprocess : public Subprocess, public VMachineDelegate, public VMem
   Logger::Stdout logger;
 #endif
 
-  /** Idle event handler. */
-  uv_idle_t idle;
-
   /** My node-id. */
   NodeID my_nid;
   /** My process-id. */
@@ -44,18 +44,30 @@ class WorkerSubprocess : public Subprocess, public VMachineDelegate, public VMem
   /** Instance of virtual-machine. */
   std::unique_ptr<VMachine> vm;
 
+  std::map<vtid_t, std::thread> threads;
+
+  /** Thread-ids waiting to invoke. */
+  std::set<vtid_t> wait_invoke;
+  Lock::Mutex mutex_wait_invoke;
+  uv_async_t async_wait_invoke;
+
+  std::set<vtid_t> wait_join;
+  Lock::Mutex mutex_wait_join;
+  uv_async_t async_wait_join;
+
   void on_connect() override;
   void on_recv_data(const picojson::object& data) override;
 
   void vmachine_finish(VMachine& vm) override;
-  void vmachine_finish_thread(VMachine& vm, const vtid_t& tid) override;
   void vmachine_error(VMachine& vm, const std::string& message) override;
+  void vmachine_on_invoke_thread(VMachine& vm, vtid_t tid) override;
   void vmachine_send_packet(VMachine& vm, const Packet& packet) override;
 
-  void vmemory_recv_update(VMemory& memory, vaddr_t addr) override;
   void vmemory_send_packet(VMemory& memory, const Packet& packet) override;
 
-  static void on_idle(uv_idle_t* handle);
+  static void on_async_wait_invoke(uv_async_t* handle);
+  static void on_async_wait_join(uv_async_t* handle);
+  static void on_invoke_thread(WorkerSubprocess& THIS, vtid_t tid);
 
   std::tuple<std::string, std::string> read_options(int argc, char* argv[]);
   void initialize_libs(const picojson::array& config);

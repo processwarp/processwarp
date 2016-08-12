@@ -12,6 +12,7 @@
 #include "dynamic_library.hpp"
 #include "error.hpp"
 #include "func_store.hpp"
+#include "lock.hpp"
 #include "symbols.hpp"
 #include "thread.hpp"
 #include "vmemory.hpp"
@@ -28,6 +29,7 @@ class ProcessDelegate {
 
   virtual std::unique_ptr<VMemory::Accessor> process_assign_accessor(const vpid_t& pid) = 0;
   virtual void process_change_thread_set(Process& process) = 0;
+  virtual void process_on_invoke_thread(Process& process, vtid_t tid) = 0;
 };
 
 /**
@@ -66,18 +68,21 @@ class Process {
   Globals globals;    ///< 大域変数、関数シンボル→アドレス
   Symbols symbols;    ///< シンボル
   std::map<vtid_t, std::unique_ptr<Thread>> threads;
+
   std::set<vtid_t> active_threads;
+  Lock::Mutex mutex_active_threads;
+
   std::map<vaddr_t, void*> native_ptr;  ///< 仮想アドレスとネイティブポインタのペア
   /** Process name. */
   std::string name;
 
   /** Thread-ids waiting to get memory data and create instance on warp phase. (not dump) */
   std::set<vtid_t> waiting_warp_setup;
+
   /** Thread-ids and timestamp waiting to dealt with on warp phase. (not dump) */
   std::map<vtid_t, std::time_t> waiting_warp_result;
-
-  /** Memory addres waiting to update by other node. (not dump) */
-  std::map<vtid_t, vaddr_t> waiting_addr;
+  Lock::Mutex mutex_waiting_warp_result;
+  Lock::Cond cond_waiting_warp_result;
 
   /**
    * Allocate process on memory from delegate.

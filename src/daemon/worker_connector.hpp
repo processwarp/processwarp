@@ -61,7 +61,7 @@ class WorkerConnector : public Connector {
   /** Message file's path. */
   std::string message_fname;
 #ifdef WITH_WORKER_DEBUG
-  std::map<const vpid_t, WorkerSubprocess> debug_workers;
+  std::map<const vpid_t, std::unique_ptr<WorkerSubprocess>> debug_workers;
 #endif
 
   WorkerConnector();

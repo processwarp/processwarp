@@ -230,8 +230,8 @@ re_entry: {
     }
 
     StackInfo& stackinfo = thread.get_stackinfo(-1);
-    VMemory::Accessor::MasterKey stackinfo_master_key = memory.keep_master(stackinfo.addr);
-    VMemory::Accessor::MasterKey stack_master_key = memory.keep_master(stackinfo.stack);
+    VMemory::Accessor::LeaderKey stackinfo_leader_key = memory.keep_leader(stackinfo.addr);
+    VMemory::Accessor::LeaderKey stack_leader_key = memory.keep_leader(stackinfo.stack);
     resolve_stackinfo_cache(thread, &stackinfo);
 
     const FuncStore& func = *stackinfo.func_store;
@@ -328,7 +328,8 @@ re_entry: {
               std::size_t dest = work.size();
               work.resize(dest + sizeof(vaddr_t) + type->size);
               std::memcpy(work.data() + dest, &(type->addr), sizeof(vaddr_t));
-              std::memcpy(work.data() + dest + sizeof(vaddr_t), memory.read_raw(value), type->size);
+              std::memcpy(work.data() + dest + sizeof(vaddr_t),
+                          std::get<1>(memory.read_raw(value)), type->size);
             }
 
             args += 1;
@@ -422,8 +423,8 @@ re_entry: {
           upperinfo.pc = stackinfo.normal_pc;
 
           // stackinfoを1つ除去してre_entryに移動
-          stack_master_key.reset();
-          stackinfo_master_key.reset();
+          stack_leader_key.reset();
+          stackinfo_leader_key.reset();
           thread.pop_stack();
           goto re_entry;
         } break;
@@ -1133,6 +1134,7 @@ vtid_t Process::create_thread(Thread& thread, vaddr_t func_addr, vaddr_t arg_add
   active_threads.insert(create_thread_info->tid);
   threads.insert(std::make_pair(create_thread_info->tid,
                                 std::move(create_thread_info->thread)));
+  delegate.process_on_invoke_thread(*this, create_thread_info->tid);
   delegate.process_change_thread_set(*this);
 
   create_thread_info.reset();

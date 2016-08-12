@@ -25,8 +25,8 @@ class VMachineDelegate {
  public:
   virtual ~VMachineDelegate();
 
+  virtual void vmachine_on_invoke_thread(VMachine& vm, vtid_t tid) = 0;
   virtual void vmachine_finish(VMachine& vm) = 0;
-  virtual void vmachine_finish_thread(VMachine& vm, const vtid_t& tid) = 0;
   virtual void vmachine_error(VMachine& vm, const std::string& message) = 0;
   virtual void vmachine_send_packet(VMachine& vm, const Packet& packet) = 0;
 };
@@ -48,9 +48,8 @@ class VMachine : private ProcessDelegate, public PacketControllerDelegate {
            const std::map<std::string, std::string>& lib_filter_);
   void initialize(const vpid_t& pid, const vtid_t& root_tid, vaddr_t proc_addr,
                   const NodeID& master_nid, const std::string& name);
-  void execute();
+  void execute(vtid_t tid);
 
-  void on_recv_update(vaddr_t addr);
   void recv_packet(const Packet& packet);
   Process& get_process();
   void regist_builtin_func(const std::string& name, builtin_func_t func, int i64);
@@ -58,6 +57,7 @@ class VMachine : private ProcessDelegate, public PacketControllerDelegate {
 
   std::unique_ptr<VMemory::Accessor> process_assign_accessor(const vpid_t& pid) override;
   void process_change_thread_set(Process& process) override;
+  void process_on_invoke_thread(Process& process, vtid_t tid) override;
 
  private:
   /** Event assignee */
@@ -74,8 +74,6 @@ class VMachine : private ProcessDelegate, public PacketControllerDelegate {
   std::unique_ptr<Process> process;
   /** Map of API name and built-in function pointer and parameter. */
   std::map<std::string, std::pair<builtin_func_t, BuiltinFuncParam>> builtin_funcs;
-  /** Executable threads pool in this node's process. */
-  std::queue<vtid_t> loop_queue;
 
   PacketController packet_controller;
   std::time_t last_heartbeat;

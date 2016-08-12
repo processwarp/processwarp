@@ -10,12 +10,13 @@
 #include <random>
 #include <set>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "constant.hpp"
 #include "constant_vm.hpp"
 #include "convert.hpp"
-#include "interrupt_memory_require.hpp"
+#include "lock.hpp"
 #include "packet.hpp"
 #include "type.hpp"
 #include "util.hpp"
@@ -30,7 +31,6 @@ class VMemoryDelegate {
  public:
   virtual ~VMemoryDelegate();
 
-  virtual void vmemory_recv_update(VMemory& memory, vaddr_t addr) = 0;
   virtual void vmemory_send_packet(VMemory& memory, const Packet& packet) = 0;
 };
 
@@ -42,9 +42,9 @@ class VMemory : public PacketControllerDelegate {
   /** Page of memory. */
   struct Page {
     /** Page type. */
-    VMemoryPageType::Type type;
+    std::atomic<VMemoryPageType::Type> type;
     /** True if can read. */
-    bool flg_update;
+    std::atomic<bool> flg_update;
     /** Page value. */
     std::unique_ptr<uint8_t[]> value;
     /** Page size. */
@@ -75,40 +75,25 @@ class VMemory : public PacketControllerDelegate {
          const NodeID& leader_nid_, const std::set<NodeID>& learner_nids_);
   };
 
-  struct AllocInfo {
-    /** Allocating address. */
-    vaddr_t addr;
-    /** Allocating address type. */
-    AddressRegion::Type type;
-    /** Node-id, it reply acceptr or error packet. */
-    std::vector<NodeID> acceptor_nid;
-    /** True if received error packet from at least 1 acceptor. */
-    bool is_cancel;
-    /** True if accepting process is finished. */
-    bool is_finish;
-  };
-
   /**
    * Memory accessor.
    * Use per thread.
    */
   class Accessor {
    public:
-    typedef std::unique_ptr<int, std::function<void(int*)>> MasterKey;
-
-    std::shared_ptr<AllocInfo> alloc_info;
+    typedef std::unique_ptr<int, std::function<void(int*)>> LeaderKey;
 
     explicit Accessor(VMemory& vmemory);
     virtual ~Accessor();
 
     vaddr_t alloc(uint64_t size);
     void free(vaddr_t addr);
-    const NodeID& get_leader(vaddr_t addr);
+    NodeID get_leader(vaddr_t addr);
     std::string get_meta_area(vaddr_t addr);
     std::string get_program_area(vaddr_t addr);
-    MasterKey keep_master(vaddr_t addr);
+    LeaderKey keep_leader(vaddr_t addr);
     void print_dump();
-    const uint8_t* read_raw(vaddr_t src);
+    std::tuple<std::shared_ptr<Page>, const uint8_t*> read_raw(vaddr_t src);
     uint8_t* read_writable(vaddr_t src);
     vaddr_t realloc(vaddr_t addr, uint64_t size);
     vaddr_t reserve_program_area();
@@ -127,9 +112,9 @@ class VMemory : public PacketControllerDelegate {
      * @return Saved value.
      */
     template <typename T> T read(vaddr_t src) {
-      Page& page = get_page(get_upper_addr(src), true);
-      assert(page.size >= get_lower_addr(src) + sizeof(T));
-      return *reinterpret_cast<const T*>(page.value.get() + get_lower_addr(src));
+      std::shared_ptr<Page> page = get_page(get_upper_addr(src), true);
+      assert(page->size >= get_lower_addr(src) + sizeof(T));
+      return *reinterpret_cast<const T*>(page->value.get() + get_lower_addr(src));
     }
 
     /**
@@ -138,14 +123,14 @@ class VMemory : public PacketControllerDelegate {
      * @param val Value to be set.
      */
     template <typename T> void write(vaddr_t dst, T val) {
-      Page& page = get_page(get_upper_addr(dst), false);
-      if (page.type & VMemoryPageType::LEADER) {
-        assert(page.size >= get_lower_addr(dst) + sizeof(T));
-        std::memcpy(page.value.get() + get_lower_addr(dst), &val, sizeof(T));
-        vmemory.send_command_write(NodeID::NONE, page, get_upper_addr(dst));
+      std::shared_ptr<Page> page = get_page(get_upper_addr(dst), false);
+      if (page->type & VMemoryPageType::LEADER) {
+        assert(page->size >= get_lower_addr(dst) + sizeof(T));
+        std::memcpy(page->value.get() + get_lower_addr(dst), &val, sizeof(T));
+        vmemory.send_command_write(NodeID::NONE, *page, get_upper_addr(dst));
 
       } else {
-        vmemory.send_command_write_require(page, dst,
+        vmemory.send_command_write_require(*page, dst,
                                            reinterpret_cast<const uint8_t*>(&val), sizeof(T));
       }
     }
@@ -161,12 +146,14 @@ class VMemory : public PacketControllerDelegate {
     /** Block copy constructor. */
     Accessor(const Accessor&);
 
-    Page& get_page(vaddr_t addr, bool readable);
+    std::shared_ptr<Page> get_page(vaddr_t addr, bool readable);
   };
 
   static const vaddr_t UPPER_MASKS[];
   /** Map of page name and page space having on this node. */
-  std::map<vaddr_t, Page> pages;
+  std::map<vaddr_t, std::shared_ptr<Page>> pages;
+  Lock::Mutex mutex_pages;
+  Lock::Cond cond_pages;
 
   VMemory(VMemoryDelegate& delegate, const NodeID& nid);
 
@@ -180,6 +167,22 @@ class VMemory : public PacketControllerDelegate {
   void set_loading(bool flg);
 
  private:
+  struct AllocInfo {
+    /** Allocating address. */
+    vaddr_t addr;
+    /** Allocating address type. */
+    AddressRegion::Type type;
+    /** Node-id, it reply acceptr or error packet. */
+    std::vector<NodeID> acceptor_nid;
+    /** True if received error packet from at least 1 acceptor. */
+    bool is_cancel;
+    /** True if accepting process is finished. */
+    bool is_finish;
+    Lock::Mutex mutex;
+    Lock::Cond cond;
+    std::shared_ptr<Page> page;
+  };
+
   class PacketAlloc : public PacketController::Behavior {
    public:
     PacketAlloc(VMemory& vmemory_, std::shared_ptr<AllocInfo> alloc_info_);
@@ -311,11 +314,13 @@ class VMemory : public PacketControllerDelegate {
   void packet_controller_on_recv(const Packet& packet) override;
   void packet_controller_send(const Packet& packet) override;
 
-  vaddr_t alloc_addr(Accessor& accessor, AddressRegion::Type type);
+  std::tuple<vaddr_t, std::shared_ptr<Page>> alloc_addr(Accessor& accessor,
+                                                        AddressRegion::Type type);
   bool check_acceptor_range(vaddr_t addr);
   bool check_root_acceptor(vaddr_t addr);
   NodeID get_hash_id(vaddr_t addr);
   NodeID get_near_acceptor(vaddr_t addr);
+  std::shared_ptr<Page> get_page(vaddr_t addr);
   void rebalance();
 
   void recv_command_alloc(const Packet& packet);
