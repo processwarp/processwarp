@@ -67,6 +67,8 @@ class VMemory : public PacketControllerDelegate {
     std::set<NodeID> write_history;
     /** Randome id, this value rewritten when the value is rewritten. */
     uint64_t write_id;
+    /** Mutex for this page. */
+    Lock::Mutex mutex;
 
     Page(VMemoryPageType::Type type_, bool flg_update_,
          const std::string& value_str,
@@ -81,7 +83,7 @@ class VMemory : public PacketControllerDelegate {
    */
   class Accessor {
    public:
-    typedef std::unique_ptr<int, std::function<void(int*)>> LeaderKey;
+    typedef std::unique_ptr<Page, std::function<void(Page*)>> LeaderKey;
 
     explicit Accessor(VMemory& vmemory);
     virtual ~Accessor();
@@ -113,6 +115,7 @@ class VMemory : public PacketControllerDelegate {
      */
     template <typename T> T read(vaddr_t src) {
       std::shared_ptr<Page> page = get_page(get_upper_addr(src), true);
+      Lock::Guard guard(page->mutex);
       assert(page->size >= get_lower_addr(src) + sizeof(T));
       return *reinterpret_cast<const T*>(page->value.get() + get_lower_addr(src));
     }
@@ -124,6 +127,7 @@ class VMemory : public PacketControllerDelegate {
      */
     template <typename T> void write(vaddr_t dst, T val) {
       std::shared_ptr<Page> page = get_page(get_upper_addr(dst), false);
+      Lock::Guard guard(page->mutex);
       if (page->type & VMemoryPageType::LEADER) {
         assert(page->size >= get_lower_addr(dst) + sizeof(T));
         std::memcpy(page->value.get() + get_lower_addr(dst), &val, sizeof(T));
