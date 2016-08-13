@@ -249,7 +249,7 @@ re_entry: {
         });
 
       instruction_t code = insts.at(stackinfo.pc);
-      Logger::dbg_vm(CoreMid::L1001, "tid:%016" PRIx64 "pc:%d, insts:%" PRIu64 ", code:%08x %s",
+      Logger::dbg_vm(CoreMid::L1001, "tid:%016" PRIx64 ", pc:%d, insts:%" PRIu64 ", code:%08x %s",
                      thread.tid, stackinfo.pc, static_cast<longest_uint_t>(insts.size()),
                      code, Util::code2str(code).c_str());
 
