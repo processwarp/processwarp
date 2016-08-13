@@ -4,6 +4,8 @@
 #include <map>
 #include <memory>
 
+#include "lock.hpp"
+
 namespace processwarp {
 /**
  * 同一の文字列に対して、同一のインスタンス：シンボルを生成するクラス。
@@ -22,37 +24,21 @@ class Symbols {
  public:
   class Symbol : private std::string {
    public:
-    /**
-     * シンボル文字列を取得する。
-     * @return シンボル文字列。
-     */
     const std::string& str() const;
 
    private:
     friend Symbols;
 
-    /** デフォルトコンストラクタへはアクセス禁止 */
     Symbol();
-
-    /** コピーコンストラクタへはアクセス禁止 */
     explicit Symbol(const Symbol&);
-
-    /**
-     * 文字列を指定してシンボルを作成。
-     * @param str_ シンボルに対応する文字列
-     */
     explicit Symbol(const std::string& str_);
   };
 
-  /**
-   * 文字列に対応するシンボル文字列を取得する。
-   * @param src 文字列
-   * @return シンンボル文字列。
-   */
   const Symbol& get(const std::string& src);
 
  private:
   /** シンボル文字列の集合。 */
   std::map<std::string, std::unique_ptr<Symbol>> store;
+  Lock::Mutex mutex;
 };
 }  // namespace processwarp
