@@ -333,7 +333,7 @@ vaddr_t VMemory::Accessor::reserve_program_area() {
   vaddr_t new_addr;
 
   do {
-    new_addr = AddressRegion::PROGRAM | (~AddressRegion::MASK & vmemory.rnd());
+    new_addr = AddressRegion::PROGRAM | (~AddressRegion::MASK & vmemory.get_rnd());
   } while (vmemory.pages.find(new_addr) != vmemory.pages.end());
 
   std::shared_ptr<Page> new_page(new Page(VMemoryPageType::PROGRAM, true,
@@ -677,13 +677,13 @@ void VMemory::PacketAlloc::update_status() {
     vmemory.send_command_alloc_cancel(alloc_info);
 
     alloc_info->addr = get_upper_addr(alloc_info->type |
-                                      (~AddressRegion::MASK & vmemory.rnd()));
+                                      (~AddressRegion::MASK & vmemory.get_rnd()));
     {
       Lock::Guard guard(vmemory.mutex_pages);
       while ((alloc_info->type == AddressRegion::META && alloc_info->addr <= 0xFF) ||
              vmemory.pages.find(alloc_info->addr) != vmemory.pages.end()) {
         alloc_info->addr = get_upper_addr(alloc_info->type |
-                                          (~AddressRegion::MASK & vmemory.rnd()));
+                                          (~AddressRegion::MASK & vmemory.get_rnd()));
       }
     }
 
@@ -1014,11 +1014,11 @@ AddressRegion::Type VMemory::get_addr_type(uint64_t size) {
 std::tuple<vaddr_t, std::shared_ptr<VMemory::Page>>
   VMemory::alloc_addr(Accessor& accessor, AddressRegion::Type type) {
   if (is_loading) {
-    vaddr_t new_addr = get_upper_addr(type | (~AddressRegion::MASK & rnd()));
+    vaddr_t new_addr = get_upper_addr(type | (~AddressRegion::MASK & get_rnd()));
     Lock::Guard guard(mutex_pages);
     while ((type == AddressRegion::META && new_addr <= 0xFF) ||
            pages.find(new_addr) != pages.end()) {
-      new_addr = get_upper_addr(type | (~AddressRegion::MASK & rnd()));
+      new_addr = get_upper_addr(type | (~AddressRegion::MASK & get_rnd()));
     }
     std::shared_ptr<Page> new_page(new Page(VMemoryPageType::LEADER, true,
                                             my_nid, std::set<NodeID>()));
@@ -1028,12 +1028,12 @@ std::tuple<vaddr_t, std::shared_ptr<VMemory::Page>>
 
   std::shared_ptr<AllocInfo> alloc_info(new AllocInfo());
 
-  alloc_info->addr = get_upper_addr(type | (~AddressRegion::MASK & rnd()));
+  alloc_info->addr = get_upper_addr(type | (~AddressRegion::MASK & get_rnd()));
   {
     Lock::Guard guard(mutex_pages);
     while ((type == AddressRegion::META && alloc_info->addr <= 0xFF) ||
            pages.find(alloc_info->addr) != pages.end()) {
-      alloc_info->addr = get_upper_addr(type | (~AddressRegion::MASK & rnd()));
+      alloc_info->addr = get_upper_addr(type | (~AddressRegion::MASK & get_rnd()));
     }
   }
   alloc_info->type = type;
@@ -1132,6 +1132,11 @@ std::shared_ptr<VMemory::Page> VMemory::get_page(vaddr_t addr) {
   } else {
     return std::shared_ptr<VMemory::Page>();
   }
+}
+
+uint64_t VMemory::get_rnd() {
+  Lock::Guard guard(mutex_rnd);
+  return rnd();
 }
 
 /**
@@ -1908,7 +1913,7 @@ void VMemory::send_command_publish(const NodeID& dst_nid, Page& page, vaddr_t ad
   assert(get_upper_addr(addr) == addr);
 
   if (dst_nid == NodeID::NONE) {
-    page.write_id = rnd();
+    page.write_id = get_rnd();
     for (const auto& learner_nid : page.learner_nids) {
       send_command_publish(learner_nid, page, addr);
     }
@@ -1989,7 +1994,7 @@ void VMemory::send_command_write(const NodeID& dst_nid, Page& page, vaddr_t addr
     return;
 
   } else if (dst_nid == NodeID::NONE) {
-    page.write_id = rnd();
+    page.write_id = get_rnd();
     NodeID acceptor_nid = get_hash_id(get_upper_addr(addr));
     for (int i = 0; i < 4; i++) {
       send_command_write(acceptor_nid, page, addr);

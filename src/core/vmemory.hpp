@@ -300,6 +300,7 @@ class VMemory : public PacketControllerDelegate {
   PacketController packet_controller;
   /** Random value generator to use for generating address. */
   std::mt19937_64 rnd;
+  Lock::Mutex mutex_rnd;
   std::map<vaddr_t, time_t> requiring;
   /** Switch of loading mode. */
   bool is_loading;
@@ -321,6 +322,7 @@ class VMemory : public PacketControllerDelegate {
   NodeID get_hash_id(vaddr_t addr);
   NodeID get_near_acceptor(vaddr_t addr);
   std::shared_ptr<Page> get_page(vaddr_t addr);
+  uint64_t get_rnd();
   void rebalance();
 
   void recv_command_alloc(const Packet& packet);
