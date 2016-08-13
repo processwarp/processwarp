@@ -1056,17 +1056,24 @@ void Process::close() {
 
 // Get activated thread instance have had process.
 Thread& Process::get_thread(vtid_t tid) {
-  auto it = threads.find(tid);
-  if (it == threads.end() || it->second.get() == nullptr) {
-    return *threads.insert
-        (std::make_pair(tid, Thread::read(tid, delegate.process_assign_accessor(pid)))).
-        first->second.get();
+  Thread* thread = nullptr;
+  {
+    Lock::Guard guard(mutex_threads);
+    auto it = threads.find(tid);
+    if (it != threads.end()) {
+      thread = it->second.get();
+    }
+  }
+
+  if (thread == nullptr) {
+    std::unique_ptr<Thread> new_thread(Thread::read(tid, delegate.process_assign_accessor(pid)));
+    thread = new_thread.get();
+    threads.insert(std::make_pair(tid, std::move(new_thread)));
 
   } else {
-    Thread& thread = *it->second.get();
-    thread.read();
-    return thread;
+    thread->read();
   }
+  return *thread;
 }
 
 // Warp out thread.
@@ -1281,6 +1288,25 @@ M_READ_BUILTIN_PARAM(read_builtin_param_i32, uint32_t, BasicTypeAddress::UI32);
 M_READ_BUILTIN_PARAM(read_builtin_param_i64, uint64_t, BasicTypeAddress::UI64);
 
 #undef M_READ_BUILTIN_PARAM
+
+bool Process::require_warp(vtid_t tid, const NodeID& dst_nid) {
+  {
+    Lock::Guard guard(mutex_threads);
+    if (active_threads.find(tid) == active_threads.end()) {
+      return false;
+    }
+  }
+
+  {
+    Lock::Guard guard(mutex_require_warp_threads);
+    if (require_warp_threads.find(tid) != require_warp_threads.end()) {
+      return false;
+    } else {
+      require_warp_threads.insert(std::make_pair(tid, dst_nid));
+      return true;
+    }
+  }
+}
 
 // StackInfoのキャッシュを解決し、実行前の状態にする。
 void Process::resolve_stackinfo_cache(Thread& thread, StackInfo* stackinfo) {

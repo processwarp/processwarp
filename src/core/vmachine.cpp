@@ -87,7 +87,7 @@ void VMachine::initialize(const vpid_t& pid, const vtid_t& root_tid, vaddr_t pro
 void VMachine::execute(vtid_t tid) {
 #ifndef NDEBUG
   {
-    Lock::Guard guard(process->mutex_active_threads);
+    Lock::Guard guard(process->mutex_threads);
     assert(process->active_threads.find(tid) != process->active_threads.end());
   }
 #endif
@@ -110,6 +110,21 @@ void VMachine::execute(vtid_t tid) {
                      process->pid.c_str(), tid, thread->status);
 
       // Setting of warpuot to thread if need.
+      NodeID warp_dst_nid;
+      {
+        Lock::Guard guard(process->mutex_require_warp_threads);
+        auto it_warp = process->require_warp_threads.find(tid);
+        if (it_warp != process->require_warp_threads.end()) {
+          warp_dst_nid = it_warp->second;
+          process->require_warp_threads.erase(it_warp);
+        }
+      }
+
+      if (warp_dst_nid != NodeID::NONE && thread->require_warp(warp_dst_nid)) {
+        thread->write();
+        thread->memory->write_out();
+      }
+
       if (process->waiting_warp_setup.find(tid) != process->waiting_warp_setup.end()) {
         thread->setup_warpout();
         process->waiting_warp_setup.erase(tid);
@@ -129,7 +144,7 @@ void VMachine::execute(vtid_t tid) {
           process->waiting_warp_result.insert(std::make_pair(thread->tid, now));
         }
         {
-          Lock::Guard guard(process->mutex_active_threads);
+          Lock::Guard guard(process->mutex_threads);
           process->active_threads.erase(thread->tid);
         }
         send_command_warp_thread(*thread);
@@ -282,7 +297,7 @@ void VMachine::recv_command_heartbeat_vm(const Packet& packet) {
     }
 
     {
-      Lock::Guard guard(process->mutex_active_threads);
+      Lock::Guard guard(process->mutex_threads);
       if (process->active_threads.find(tid) != process->active_threads.end()) {
         /// @todo error
         assert(false);
@@ -300,18 +315,7 @@ void VMachine::recv_command_require_warp_thread(const Packet& packet) {
   const NodeID& target_nid = NodeID::from_json(packet.content.at("target_nid"));
   assert(target_nid != NodeID::NONE);
 
-  {
-    Lock::Guard guard(process->mutex_active_threads);
-    if (process->active_threads.find(tid) == process->active_threads.end()) {
-      return;
-    }
-  }
-
-  Thread& thread = process->get_thread(tid);
-  if (thread.require_warp(target_nid)) {
-    thread.write();
-    thread.memory->write_out();
-  }
+  process->require_warp(tid, target_nid);
 }
 
 /**

@@ -67,10 +67,13 @@ class Process {
   CallsAtExit calls_at_exit;    //< 終了処理時に呼び出す関数一覧
   Globals globals;    ///< 大域変数、関数シンボル→アドレス
   Symbols symbols;    ///< シンボル
-  std::map<vtid_t, std::unique_ptr<Thread>> threads;
 
+  std::map<vtid_t, std::unique_ptr<Thread>> threads;
   std::set<vtid_t> active_threads;
-  Lock::Mutex mutex_active_threads;
+  Lock::Mutex mutex_threads;
+
+  std::map<vtid_t, NodeID> require_warp_threads;
+  Lock::Mutex mutex_require_warp_threads;
 
   std::map<vaddr_t, void*> native_ptr;  ///< 仮想アドレスとネイティブポインタのペア
   /** Process name. */
@@ -282,6 +285,8 @@ class Process {
   static inline uint64_t read_builtin_param_size(const std::vector<uint8_t>& src, int* seek) {
     return read_builtin_param_i64(src, seek);
   }
+
+  bool require_warp(vtid_t tid, const NodeID& dst_nid);
 
   /**
    * StackInfoのキャッシュを解決し、実行前の状態にする。
