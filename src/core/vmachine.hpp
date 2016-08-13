@@ -49,7 +49,7 @@ class VMachine : private ProcessDelegate, public PacketControllerDelegate {
   void initialize(const vpid_t& pid, const vtid_t& root_tid, vaddr_t proc_addr,
                   const NodeID& master_nid, const std::string& name);
   void execute(vtid_t tid);
-
+  void heartbeat();
   void recv_packet(const Packet& packet);
   Process& get_process();
   void regist_builtin_func(const std::string& name, builtin_func_t func, int i64);
@@ -60,6 +60,7 @@ class VMachine : private ProcessDelegate, public PacketControllerDelegate {
   void process_on_invoke_thread(Process& process, vtid_t tid) override;
 
  private:
+  Lock::Mutex mutex_execute;
   /** Event assignee */
   VMachineDelegate& delegate;
   /** Loaded external libraries for ffi. */
@@ -76,7 +77,6 @@ class VMachine : private ProcessDelegate, public PacketControllerDelegate {
   std::map<std::string, std::pair<builtin_func_t, BuiltinFuncParam>> builtin_funcs;
 
   PacketController packet_controller;
-  std::time_t last_heartbeat;
 
   void initialize_builtin();
 

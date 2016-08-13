@@ -54,8 +54,7 @@ VMachine::VMachine(VMachineDelegate& delegate_,
     delegate(delegate_),
     libs(libs_),
     lib_filter(lib_filter_),
-    packet_controller(Module::VM),
-    last_heartbeat(0) {
+    packet_controller(Module::VM) {
 }
 
 /**
@@ -98,12 +97,6 @@ void VMachine::execute(vtid_t tid) {
 
   while (1) {
     try {
-      // Send heartbeat, per interval.
-      if ((now - last_heartbeat) > HEARTBEAT_INTERVAL) {
-        last_heartbeat = now;
-        send_command_heartbeat_vm();
-      }
-
       // Get instance of thread.
       thread = &process->get_thread(tid);
 
@@ -182,6 +175,10 @@ void VMachine::execute(vtid_t tid) {
 #endif
     }
   }
+}
+
+void VMachine::heartbeat() {
+  send_command_heartbeat_vm();
 }
 
 /**

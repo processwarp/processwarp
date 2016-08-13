@@ -60,6 +60,8 @@ class WorkerSubprocess : public Subprocess, public VMachineDelegate, public VMem
   Lock::Mutex mutex_send_que;
   uv_async_t async_send_que;
 
+  uv_timer_t heartbeat_timer;
+
   void on_connect() override;
   void on_recv_data(const picojson::object& data) override;
 
@@ -74,12 +76,14 @@ class WorkerSubprocess : public Subprocess, public VMachineDelegate, public VMem
   static void on_async_wait_invoke(uv_async_t* handle);
   static void on_async_wait_join(uv_async_t* handle);
   static void on_invoke_thread(WorkerSubprocess& THIS, vtid_t tid);
+  static void on_timer_heartbeat(uv_timer_t* handle);
 
   std::tuple<std::string, std::string> read_options(int argc, char* argv[]);
   void initialize_libs(const picojson::array& config);
   void initialize_lib_filter(const picojson::array& config);
   void initialize_logger(const std::string& message_fname);
   void initialize_loop();
+  void initialize_timer();
   void initialize_vm(vtid_t root_tid, vaddr_t proc_addr,
                      const NodeID& master_nid, const std::string name);
   void recv_connect_worker(const picojson::object& content);

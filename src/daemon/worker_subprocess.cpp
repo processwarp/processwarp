@@ -93,6 +93,12 @@ void WorkerSubprocess::vmachine_on_invoke_thread(VMachine& vm, vtid_t tid) {
   uv_async_send(&async_wait_invoke);
 }
 
+void WorkerSubprocess::on_timer_heartbeat(uv_timer_t* handle) {
+  WorkerSubprocess& THIS = *reinterpret_cast<WorkerSubprocess*>(handle->data);
+
+  THIS.vm->heartbeat();
+}
+
 /**
  * When vmachine require send packet, relay it to backend.
  * @param vm Caller instance.
@@ -267,6 +273,13 @@ void WorkerSubprocess::initialize_loop() {
   }
 }
 
+void WorkerSubprocess::initialize_timer() {
+  uv_timer_init(loop, &heartbeat_timer);
+  heartbeat_timer.data = this;
+  uv_timer_start(&heartbeat_timer, WorkerSubprocess::on_timer_heartbeat,
+                 0, HEARTBEAT_INTERVAL * 1000);
+}
+
 /**
  * When receive connect_worker, read configuration from packet,
  * and create a virtual machine, start libuv's loop.
@@ -292,6 +305,7 @@ void WorkerSubprocess::recv_connect_worker(const picojson::object& content) {
                 NodeID::from_json(content.at("master_nid")),
                 content.at("name").get<std::string>());
   initialize_loop();
+  initialize_timer();
 }
 
 /**
