@@ -1,5 +1,6 @@
 #pragma once
 
+#include <deque>
 #include <map>
 #include <set>
 #include <string>
@@ -55,6 +56,10 @@ class WorkerSubprocess : public Subprocess, public VMachineDelegate, public VMem
   Lock::Mutex mutex_wait_join;
   uv_async_t async_wait_join;
 
+  std::deque<picojson::object> send_que;
+  Lock::Mutex mutex_send_que;
+  uv_async_t async_send_que;
+
   void on_connect() override;
   void on_recv_data(const picojson::object& data) override;
 
@@ -65,6 +70,7 @@ class WorkerSubprocess : public Subprocess, public VMachineDelegate, public VMem
 
   void vmemory_send_packet(VMemory& memory, const Packet& packet) override;
 
+  static void on_async_send_que(uv_async_t* handle);
   static void on_async_wait_invoke(uv_async_t* handle);
   static void on_async_wait_join(uv_async_t* handle);
   static void on_invoke_thread(WorkerSubprocess& THIS, vtid_t tid);

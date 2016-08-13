@@ -49,7 +49,10 @@ void WorkerSubprocess::on_connect() {
   picojson::object packet;
   packet.insert(std::make_pair("command", picojson::value(std::string("connect_worker"))));
   packet.insert(std::make_pair("pid", Convert::vpid2json(my_pid)));
-  send_data(packet);
+  {
+    Lock::Guard guard(mutex_send_que);
+    send_data(packet);
+  }
 }
 
 /**
@@ -106,6 +109,16 @@ void WorkerSubprocess::vmachine_send_packet(VMachine& vm, const Packet& packet) 
  */
 void WorkerSubprocess::vmemory_send_packet(VMemory& memory, const Packet& packet) {
   send_relay_packet(packet);
+}
+
+void WorkerSubprocess::on_async_send_que(uv_async_t* handle) {
+  WorkerSubprocess& THIS = *reinterpret_cast<WorkerSubprocess*>(handle->data);
+  Lock::Guard guard(THIS.mutex_send_que);
+
+  for (auto& send_obj : THIS.send_que) {
+    THIS.send_data(send_obj);
+  }
+  THIS.send_que.clear();
 }
 
 void WorkerSubprocess::on_async_wait_invoke(uv_async_t* handle) {
@@ -229,6 +242,14 @@ void WorkerSubprocess::initialize_logger(const std::string& message_fname) {
 void WorkerSubprocess::initialize_loop() {
   int r;
 
+  async_send_que.data = this;
+  r = uv_async_init(loop, &async_send_que, on_async_send_que);
+  if (r) {
+    /// @todo error
+    Logger::err(DaemonMid::L3007, "uv_async_init", uv_err_name(r));
+    assert(false);
+  }
+
   async_wait_invoke.data = this;
   r = uv_async_init(loop, &async_wait_invoke, on_async_wait_invoke);
   if (r) {
@@ -324,7 +345,11 @@ void WorkerSubprocess::send_relay_packet(const Packet& packet) {
   data.insert(std::make_pair("src_nid", packet.src_nid.to_json()));
   data.insert(std::make_pair("content", picojson::value(packet.content)));
 
-  send_data(data);
+  {
+    Lock::Guard guard(mutex_send_que);
+    send_que.push_back(data);
+    uv_async_send(&async_send_que);
+  }
 }
 }  // namespace processwarp
 
