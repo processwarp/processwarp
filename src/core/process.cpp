@@ -1068,6 +1068,7 @@ Thread& Process::get_thread(vtid_t tid) {
   if (thread == nullptr) {
     std::unique_ptr<Thread> new_thread(Thread::read(tid, delegate.process_assign_accessor(pid)));
     thread = new_thread.get();
+    Lock::Guard guard(mutex_threads);
     threads.insert(std::make_pair(tid, std::move(new_thread)));
 
   } else {
@@ -1079,7 +1080,10 @@ Thread& Process::get_thread(vtid_t tid) {
 // Warp out thread.
 void Process::warp_out_thread(vtid_t tid) {
   if (waiting_warp_result.find(tid) == waiting_warp_result.end()) {
-    active_threads.insert(tid);
+    {
+      Lock::Guard guard(mutex_threads);
+      active_threads.insert(tid);
+    }
     waiting_warp_setup.insert(tid);
     delegate.process_change_thread_set(*this);
   }
@@ -1138,9 +1142,12 @@ vtid_t Process::create_thread(Thread& thread, vaddr_t func_addr, vaddr_t arg_add
   }
   create_thread_info->thread->write();
 
-  active_threads.insert(create_thread_info->tid);
-  threads.insert(std::make_pair(create_thread_info->tid,
-                                std::move(create_thread_info->thread)));
+  {
+    Lock::Guard guard(mutex_threads);
+    active_threads.insert(create_thread_info->tid);
+    threads.insert(std::make_pair(create_thread_info->tid,
+                                  std::move(create_thread_info->thread)));
+  }
   delegate.process_on_invoke_thread(*this, create_thread_info->tid);
   delegate.process_change_thread_set(*this);
 
@@ -1169,6 +1176,7 @@ bool Process::destroy_thread(Thread& thread) {
       thread.pop_stack();
     }
     proc_memory->free(thread.tid);
+    Lock::Guard guard(mutex_threads);
     active_threads.erase(thread.tid);
     threads.erase(thread.tid);
     return true;
@@ -1216,10 +1224,17 @@ bool Process::join_thread(vtid_t current, vtid_t target, vaddr_t retval) {
 
 // Change status in order to exit force.
 void Process::terminate() {
-  auto it_thread = active_threads.find(root_tid);
-  assert(it_thread != active_threads.end());
+  bool have_root = false;
+  {
+    Lock::Guard guard(mutex_threads);
+    auto it_thread = active_threads.find(root_tid);
+    assert(it_thread != active_threads.end());
+    if (it_thread != active_threads.end()) {
+      have_root = true;
+    }
+  }
 
-  if (it_thread != active_threads.end()) {
+  if (have_root) {
     Thread& root_thread = get_thread(root_tid);
     if (root_thread.status != Thread::ERROR) {
       root_thread.status = Thread::FINISH;

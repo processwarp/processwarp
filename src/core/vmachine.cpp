@@ -336,12 +336,15 @@ void VMachine::recv_command_warp_thread(const Packet& packet) {
 void VMachine::send_command_heartbeat_vm() {
   // List up activate thread.
   picojson::array threads;
-  for (auto& it_thread : process->threads) {
-    Thread& thread = *it_thread.second;
-    if (thread.status == Thread::NORMAL ||
-        thread.status == Thread::AFTER_WARP ||
-        thread.status == Thread::JOIN_WAIT) {
-      threads.push_back(Convert::vtid2json(it_thread.first));
+  {
+    Lock::Guard guard(process->mutex_threads);
+    for (auto& it_thread : process->threads) {
+      Thread& thread = *it_thread.second;
+      if (thread.status == Thread::NORMAL ||
+          thread.status == Thread::AFTER_WARP ||
+          thread.status == Thread::JOIN_WAIT) {
+        threads.push_back(Convert::vtid2json(it_thread.first));
+      }
     }
   }
 
