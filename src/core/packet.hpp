@@ -9,6 +9,7 @@
 #include <string>
 
 #include "constant.hpp"
+#include "lock.hpp"
 #include "node_id.hpp"
 #include "type.hpp"
 
@@ -73,11 +74,14 @@ class PacketController {
   };
 
   std::mt19937 rnd;
+  Lock::Mutex mutex_rnd;
 
   PacketControllerDelegate* delegate;
 
   const Module::Type src_module;
 
   std::map<uint32_t, Container> containers;
+
+  uint32_t get_rnd();
 };
 }  // namespace processwarp

@@ -97,9 +97,9 @@ void PacketController::recv(const Packet& packet) {
  */
 void PacketController::send(std::unique_ptr<Behavior> behavior, const vpid_t& pid,
                             const NodeID& dst_nid, const picojson::object& content) {
-  uint32_t packet_id = rnd();
+  uint32_t packet_id = get_rnd();
   while (containers.find(packet_id) != containers.end()) {
-    packet_id = rnd();
+    packet_id = get_rnd();
   }
 
   const Define& define = behavior->get_define();
@@ -137,9 +137,9 @@ void PacketController::send(std::unique_ptr<Behavior> behavior, const vpid_t& pi
 void PacketController::send(const std::string& command, Module::Type dst_module, bool is_explicit,
                             const vpid_t& pid, const NodeID& dst_nid,
                             const picojson::object& content) {
-  uint32_t packet_id = rnd();
+  uint32_t packet_id = get_rnd();
   while (containers.find(packet_id) != containers.end()) {
-    packet_id = rnd();
+    packet_id = get_rnd();
   }
 
   Packet packet = {
@@ -197,5 +197,10 @@ void PacketController::send_error(const Packet& error_for, const picojson::objec
   };
 
   delegate->packet_controller_send(packet);
+}
+
+uint32_t PacketController::get_rnd() {
+  Lock::Guard guard(mutex_rnd);
+  return rnd();
 }
 }  // namespace processwarp
