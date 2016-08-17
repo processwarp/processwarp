@@ -1346,6 +1346,7 @@ void Process::resolve_stackinfo_cache(Thread& thread, StackInfo* stackinfo) {
 void Process::run(const std::vector<std::string>& args,
                   const std::map<std::string, std::string>& envs) {
   // make root thread
+  // Not need lock mutex because this method is run on loader.
   Thread& root_thread =
     *threads.insert(Thread::alloc(*proc_memory, delegate.process_assign_accessor(pid), root_tid)).
     first->second.get();
