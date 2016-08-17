@@ -93,7 +93,6 @@ void VMachine::execute(vtid_t tid) {
 #endif
   std::time_t now = std::time(nullptr);
   Thread* thread = nullptr;
-  Finally finally;
 
   while (1) {
     try {
@@ -101,6 +100,7 @@ void VMachine::execute(vtid_t tid) {
       thread = &process->get_thread(tid);
 
       VMemory::Accessor::LeaderKey thread_leader_key = thread->memory->keep_leader(tid);
+      Finally finally;
       finally.add([&]{
           thread->write();
           thread->memory->write_out();
