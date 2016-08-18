@@ -793,7 +793,7 @@ void VMemory::PacketClaimBack::on_error(const Packet& packet) {
   if (page) {
 #ifndef NDEBUG
     PageLock lock(vmemory, addr);
-    assert(packet.src_nid != page->leader_nid);
+    assert(packet.src_nid == page->leader_nid);
 #endif
 
   } else {
