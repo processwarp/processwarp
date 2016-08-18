@@ -1057,14 +1057,16 @@ VMemory::PageLock::PageLock(VMemory& vmemory, vaddr_t addr) {
     assert(vmemory.pages.find(addr) != vmemory.pages.end());
   }
 #endif
-  Lock::Guard guard_page(vmemory.mutex_page_lock);
-  auto it = vmemory.page_lock.find(addr);
+  {
+    Lock::Guard guard_page(vmemory.mutex_page_lock);
+    auto it = vmemory.page_lock.find(addr);
 
-  if (it == vmemory.page_lock.end()) {
-    lock.reset(new M());
-    vmemory.page_lock.insert(std::make_pair(addr, lock));
-  } else {
-    lock = it->second;
+    if (it == vmemory.page_lock.end()) {
+      lock.reset(new M());
+      vmemory.page_lock.insert(std::make_pair(addr, lock));
+    } else {
+      lock = it->second;
+    }
   }
 
   guard.reset(new Lock::Guard(lock->mutex));
