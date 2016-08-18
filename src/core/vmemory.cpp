@@ -747,7 +747,7 @@ const PacketController::Define& VMemory::PacketCandidacy::get_define() {
 }
 
 void VMemory::PacketCandidacy::on_error(const Packet& packet) {
-  // Do nothing, may be retry after.
+  retry();
 }
 
 /**
@@ -766,14 +766,24 @@ void VMemory::PacketCandidacy::on_reply(const Packet& packet) {
     vmemory.notify_page(addr);
 
   } else {
-    // Do nothing, may be retry after or will claim back right of leader by root acceptor.
-    return;
+    assert(false);
   }
 }
 
 void VMemory::PacketCandidacy::on_packet_error(PacketError::Type code) {
   /// @todo error
   assert(false);
+}
+
+void VMemory::PacketCandidacy::retry() {
+  std::shared_ptr<Page> page = vmemory.get_page(addr);
+
+  if (page) {
+    PageLock lock(vmemory, addr);
+    if (~page->type & VMemoryPageType::LEADER) {
+      vmemory.send_command_candidacy(addr, *page);
+    }
+  }
 }
 
 VMemory::PacketClaimBack::PacketClaimBack(VMemory& vmemory_, vaddr_t addr_) :
@@ -833,6 +843,8 @@ void VMemory::PacketClaimBack::on_reply(const Packet& packet) {
 }
 
 void VMemory::PacketClaimBack::on_packet_error(PacketError::Type code) {
+  // @todo error
+  assert(false);
 }
 
 VMemory::PacketDelegate::PacketDelegate(VMemory& vmemory_) :

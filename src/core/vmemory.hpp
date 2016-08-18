@@ -214,6 +214,8 @@ class VMemory : public PacketControllerDelegate {
    private:
     VMemory& vmemory;
     vaddr_t addr;
+
+    void retry();
   };
 
   class PacketClaimBack : public PacketController::Behavior {
