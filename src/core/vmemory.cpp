@@ -351,6 +351,7 @@ vaddr_t VMemory::Accessor::reserve_program_area() {
   std::shared_ptr<Page> new_page(new Page(VMemoryPageType::PROGRAM, true,
                                           NodeID::NONE, std::set<NodeID>()));
   vmemory.pages.insert(std::make_pair(new_addr, new_page));
+  vmemory.cond_pages.notify_all();
 
   return new_addr;
 }
@@ -378,6 +379,7 @@ vaddr_t VMemory::Accessor::set_meta_area(const std::string& data, vaddr_t addr) 
                                             vmemory.my_nid, std::set<NodeID>()));
     Lock::Guard guard(vmemory.mutex_pages);
     vmemory.pages.insert(std::make_pair(addr, new_page));
+    vmemory.cond_pages.notify_all();
   }
 
   return addr;
@@ -391,6 +393,7 @@ vaddr_t VMemory::Accessor::set_meta_area(const std::string& data, vaddr_t addr,
                                           leader_nid, std::set<NodeID>()));
   Lock::Guard guard(vmemory.mutex_pages);
   vmemory.pages.insert(std::make_pair(addr, new_page));
+  vmemory.cond_pages.notify_all();
 
   return addr;
 }
@@ -417,6 +420,7 @@ void VMemory::Accessor::set_program_area(vaddr_t addr, const std::string& data) 
     std::shared_ptr<Page> new_page(new Page(VMemoryPageType::PROGRAM, true, data,
                                             NodeID::NONE, std::set<NodeID>()));
     vmemory.pages.insert(std::make_pair(addr, new_page));
+    vmemory.cond_pages.notify_all();
   }
 }
 
@@ -699,6 +703,7 @@ void VMemory::PacketAlloc::update_status() {
       new_page->leader_time = std::time(nullptr);
       Lock::Guard guard(vmemory.mutex_pages);
       vmemory.pages.insert(std::make_pair(alloc_info->addr, new_page));
+      vmemory.cond_pages.notify_all();
       alloc_info->page = new_page;
     }
 
@@ -1334,6 +1339,7 @@ void VMemory::recv_command_alloc(const Packet& packet) {
       std::shared_ptr<Page> new_page(new Page(VMemoryPageType::ACCEPTOR, false,
                                               leader_nid, std::set<NodeID>()));
       pages.insert(std::make_pair(addr, new_page));
+      cond_pages.notify_all();
     }
     packet_controller.send_reply(packet, picojson::object());
 
@@ -1515,6 +1521,7 @@ void VMemory::recv_command_delegate(const Packet& packet) {
 
     Lock::Guard guard(mutex_pages);
     pages.insert(std::make_pair(addr, new_page));
+    cond_pages.notify_all();
 
   } else {
     PageLock lock(*this, addr);
@@ -1715,6 +1722,7 @@ void VMemory::recv_command_publish(const Packet& packet) {
       {
         Lock::Guard guard(mutex_pages);
         pages.insert(std::make_pair(addr, new_page));
+        cond_pages.notify_all();
       }
       requiring.erase(it_ri);
       packet_controller.send_reply(packet, picojson::object());
