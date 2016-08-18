@@ -148,6 +148,7 @@ void VMachine::execute(vtid_t tid) {
           process->active_threads.erase(thread->tid);
         }
         send_command_warp_thread(*thread);
+        thread_leader_key.reset();
         {
           Lock::Guard guard(process->mutex_waiting_warp_result);
           while (process->waiting_warp_result.find(tid) != process->waiting_warp_result.end()) {
