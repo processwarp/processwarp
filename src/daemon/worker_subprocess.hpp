@@ -61,6 +61,7 @@ class WorkerSubprocess : public Subprocess, public VMachineDelegate, public VMem
   uv_async_t async_send_que;
 
   uv_timer_t heartbeat_timer;
+  uv_timer_t routine_timer;
 
   void on_connect() override;
   void on_recv_data(const picojson::object& data) override;
@@ -77,6 +78,7 @@ class WorkerSubprocess : public Subprocess, public VMachineDelegate, public VMem
   static void on_async_wait_join(uv_async_t* handle);
   static void on_invoke_thread(WorkerSubprocess& THIS, vtid_t tid);
   static void on_timer_heartbeat(uv_timer_t* handle);
+  static void on_timer_routine(uv_timer_t* handle);
 
   std::tuple<std::string, std::string> read_options(int argc, char* argv[]);
   void initialize_libs(const picojson::array& config);

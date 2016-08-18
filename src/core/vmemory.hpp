@@ -67,8 +67,6 @@ class VMemory : public PacketControllerDelegate {
     std::set<NodeID> write_history;
     /** Randome id, this value rewritten when the value is rewritten. */
     uint64_t write_id;
-    /** Mutex for this page. */
-    Lock::Mutex mutex;
 
     Page(VMemoryPageType::Type type_, bool flg_update_,
          const std::string& value_str,
@@ -115,7 +113,7 @@ class VMemory : public PacketControllerDelegate {
      */
     template <typename T> T read(vaddr_t src) {
       std::shared_ptr<Page> page = get_page(get_upper_addr(src), true);
-      Lock::Guard guard(page->mutex);
+      PageLock lock(vmemory, get_upper_addr(src));
       assert(page->size >= get_lower_addr(src) + sizeof(T));
       return *reinterpret_cast<const T*>(page->value.get() + get_lower_addr(src));
     }
@@ -127,7 +125,7 @@ class VMemory : public PacketControllerDelegate {
      */
     template <typename T> void write(vaddr_t dst, T val) {
       std::shared_ptr<Page> page = get_page(get_upper_addr(dst), false);
-      Lock::Guard guard(page->mutex);
+      PageLock lock(vmemory, get_upper_addr(dst));
       if (page->type & VMemoryPageType::LEADER) {
         assert(page->size >= get_lower_addr(dst) + sizeof(T));
         std::memcpy(page->value.get() + get_lower_addr(dst), &val, sizeof(T));
@@ -165,6 +163,7 @@ class VMemory : public PacketControllerDelegate {
   static vaddr_t get_upper_addr(vaddr_t addr);
   static bool is_program(vaddr_t addr);
 
+  void beat_routine();
   std::unique_ptr<VMemory::Accessor> get_accessor();
   void initialize(const vpid_t& pid);
   void recv_packet(const Packet& packet);
@@ -291,6 +290,26 @@ class VMemory : public PacketControllerDelegate {
     const vaddr_t addr;
   };
 
+  class PageLock {
+   public:
+    struct M {
+      Lock::Mutex mutex;
+      Lock::Cond cond;
+    };
+
+    explicit PageLock(VMemory& vmemory, vaddr_t addr);
+    virtual ~PageLock();
+
+    void wait();
+    void notify_all();
+
+   private:
+    std::shared_ptr<M> lock;
+    std::unique_ptr<Lock::Guard> guard;
+
+    PageLock();
+  };
+
   /** This memory space's pid. */
   vpid_t my_pid;
   /** This node's node-id. */
@@ -298,6 +317,9 @@ class VMemory : public PacketControllerDelegate {
   /** Node-id range of supported by this node. */
   NodeID range_min_nid;
   NodeID range_max_nid;
+
+  Lock::Mutex mutex_page_lock;
+  std::map<vaddr_t, std::shared_ptr<PageLock::M>> page_lock;
 
   /** Delegate for controller. */
   VMemoryDelegate& delegate;
@@ -323,10 +345,12 @@ class VMemory : public PacketControllerDelegate {
                                                         AddressRegion::Type type);
   bool check_acceptor_range(vaddr_t addr);
   bool check_root_acceptor(vaddr_t addr);
+  void cleanup_page_lock();
   NodeID get_hash_id(vaddr_t addr);
   NodeID get_near_acceptor(vaddr_t addr);
   std::shared_ptr<Page> get_page(vaddr_t addr);
   uint64_t get_rnd();
+  void notify_page(vaddr_t addr);
   void rebalance();
 
   void recv_command_alloc(const Packet& packet);

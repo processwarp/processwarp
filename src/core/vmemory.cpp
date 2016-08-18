@@ -99,8 +99,8 @@ vaddr_t VMemory::Accessor::alloc(uint64_t size) {
   vaddr_t addr;
   std::shared_ptr<Page> page;
   std::tie(addr, page) = vmemory.alloc_addr(*this, get_addr_type(size));
+  PageLock lock(vmemory, addr);
 
-  Lock::Guard guard(page->mutex);
   page->size = size;
   page->value.reset(new uint8_t[size]);
 
@@ -124,7 +124,7 @@ void VMemory::Accessor::free(vaddr_t addr) {
 
 #ifndef NDEBUG
   {
-    Lock::Guard guard(page->mutex);
+    PageLock lock(vmemory, addr);
     assert(~page->type & VMemoryPageType::PROGRAM);
     assert(page->master_count == 0 && raw_writable.find(addr) == raw_writable.end());
   }
@@ -139,7 +139,7 @@ void VMemory::Accessor::free(vaddr_t addr) {
  */
 NodeID VMemory::Accessor::get_leader(vaddr_t addr) {
   std::shared_ptr<Page> page = get_page(addr, false);
-  Lock::Guard guard(page->mutex);
+  PageLock lock(vmemory, addr);
 
   if (page->type & VMemoryPageType::PROGRAM) {
     // @todo return neighborhood acceptor node-id.
@@ -162,7 +162,7 @@ NodeID VMemory::Accessor::get_leader(vaddr_t addr) {
 std::string VMemory::Accessor::get_meta_area(vaddr_t addr) {
   assert((AddressRegion::MASK & addr) == AddressRegion::META);
   std::shared_ptr<Page> page = get_page(addr, true);
-  Lock::Guard guard(page->mutex);
+  PageLock lock(vmemory, addr);
   return std::string(reinterpret_cast<char*>(page->value.get()), page->size);
 }
 
@@ -173,7 +173,7 @@ std::string VMemory::Accessor::get_meta_area(vaddr_t addr) {
  */
 std::string VMemory::Accessor::get_program_area(vaddr_t addr) {
   std::shared_ptr<Page> page = get_page(addr, true);
-  Lock::Guard guard(page->mutex);
+  PageLock lock(vmemory, addr);
   return std::string(reinterpret_cast<const char*>(page->value.get()), page->size);
 }
 
@@ -184,19 +184,18 @@ VMemory::Accessor::LeaderKey VMemory::Accessor::keep_leader(vaddr_t addr) {
 
   addr = get_upper_addr(addr);
   std::shared_ptr<Page> page = get_page(addr, true);
-  Lock::Guard guard(page->mutex);
+  PageLock lock(vmemory, addr);
   assert(~page->type & VMemoryPageType::PROGRAM);
   if (~page->type & VMemoryPageType::LEADER) {
     vmemory.send_command_candidacy(addr, *page);
-    Lock::Guard guard(vmemory.mutex_pages);
     while (~page->type & VMemoryPageType::LEADER) {
-      vmemory.cond_pages.wait(vmemory.mutex_pages);
+      lock.wait();
     }
   }
 
   page->master_count++;
-  return LeaderKey(page.get(), [](Page* page){
-      Lock::Guard guard(page->mutex);
+  return LeaderKey(page.get(), [this, addr](Page* page){
+      PageLock lock(this->vmemory, addr);
       (page->master_count)--;
     });
 }
@@ -210,7 +209,7 @@ void VMemory::Accessor::print_dump() {
   for (auto& it_page : vmemory.pages) {
     vaddr_t addr = it_page.first;
     std::shared_ptr<Page> page = it_page.second;
-    Lock::Guard guard(page->mutex);
+    PageLock lock(vmemory, it_page.first);
 
     Logger::dbg_raw(CoreMid::L1007, "addr:%s", Convert::vaddr2str(addr).c_str());
     if ((addr & AddressRegion::MASK) == AddressRegion::META) {
@@ -251,7 +250,7 @@ void VMemory::Accessor::print_dump() {
 std::tuple<std::shared_ptr<VMemory::Page>, const uint8_t*>
 VMemory::Accessor::read_raw(vaddr_t src) {
   std::shared_ptr<Page> page = get_page(get_upper_addr(src), true);
-  Lock::Guard guard(page->mutex);
+  PageLock lock(vmemory, get_upper_addr(src));
   assert(page->size >= get_lower_addr(src));
 
   return std::tuple<std::shared_ptr<Page>, const uint8_t*>
@@ -266,7 +265,7 @@ uint8_t* VMemory::Accessor::read_writable(vaddr_t src) {
 
   if (raw_writable.find(upper) == raw_writable.end()) {
     std::shared_ptr<Page> page = get_page(upper, true);
-    Lock::Guard guard(page->mutex);
+    PageLock lock(vmemory, upper);
     std::unique_ptr<uint8_t[]> tmp(new uint8_t[page->size]);
     std::memcpy(tmp.get(), page->value.get(), page->size);
     raw_writable.insert(std::make_pair(upper, std::move(tmp)));
@@ -293,7 +292,7 @@ vaddr_t VMemory::Accessor::realloc(vaddr_t addr, uint64_t size) {
   if (size == 0) size = 1;
 
   std::shared_ptr<Page> page = get_page(addr, false);
-  Lock::Guard guard(page->mutex);
+  PageLock lock(vmemory, addr);
   assert(~page->type & VMemoryPageType::PROGRAM);
   LeaderKey key = keep_leader(addr);
 
@@ -367,7 +366,7 @@ vaddr_t VMemory::Accessor::set_meta_area(const std::string& data, vaddr_t addr) 
   if (addr == VADDR_NULL) {
     std::shared_ptr<Page> page;
     std::tie(addr, page) = vmemory.alloc_addr(*this, AddressRegion::META);
-    Lock::Guard guard(page->mutex);
+    PageLock lock(vmemory, addr);
     page->value.reset(new uint8_t[data.size()]);
     page->size = data.size();
     memcpy(page->value.get(), data.data(), page->size);
@@ -407,7 +406,7 @@ void VMemory::Accessor::set_program_area(vaddr_t addr, const std::string& data) 
   std::shared_ptr<Page> page = vmemory.get_page(addr);
 
   if (page) {
-    Lock::Guard guard(page->mutex);
+    PageLock lock(vmemory, addr);
     assert(page->size == 0);
     page->size = data.size();
     page->value.reset(new uint8_t[page->size]);
@@ -429,7 +428,7 @@ void VMemory::Accessor::set_program_area(vaddr_t addr, const std::string& data) 
 void VMemory::Accessor::update_meta_area(vaddr_t addr, const std::string& data) {
   assert((AddressRegion::MASK & addr) == AddressRegion::META);
   std::shared_ptr<Page> page = get_page(addr, true);
-  Lock::Guard guard(page->mutex);
+  PageLock lock(vmemory, addr);
 
   if (page->size == data.size() &&
       std::memcmp(page->value.get(), data.data(), page->size) == 0) return;
@@ -457,8 +456,8 @@ void VMemory::Accessor::write_copy(vaddr_t dst, vaddr_t src, uint64_t size) {
   }
   std::shared_ptr<Page> src_page = get_page(get_upper_addr(src), true);
   std::shared_ptr<Page> dst_page = get_page(get_upper_addr(dst), false);
-  Lock::Guard guard1(dst < src ? dst_page->mutex : src_page->mutex);
-  Lock::Guard guard2(dst < src ? src_page->mutex : dst_page->mutex);
+  PageLock lock1(vmemory, get_upper_addr(dst < src ? dst : src));
+  PageLock lock2(vmemory, get_upper_addr(dst < src ? src : dst));
 
   assert(~dst_page->type & VMemoryPageType::PROGRAM);
   if (dst_page->type & VMemoryPageType::LEADER) {
@@ -476,7 +475,7 @@ void VMemory::Accessor::write_copy(vaddr_t dst, vaddr_t src, uint64_t size) {
 
 void VMemory::Accessor::write_copy(vaddr_t dst, const uint8_t *src, uint64_t size) {
   std::shared_ptr<Page> dst_page = get_page(get_upper_addr(dst), false);
-  Lock::Guard guard(dst_page->mutex);
+  PageLock lock(vmemory, get_upper_addr(dst));
 
   assert(~dst_page->type & VMemoryPageType::PROGRAM);
   if (dst_page->type & VMemoryPageType::LEADER) {
@@ -492,7 +491,7 @@ void VMemory::Accessor::write_copy(vaddr_t dst, const uint8_t *src, uint64_t siz
 
 void VMemory::Accessor::write_fill(vaddr_t dst, uint8_t c, uint64_t size) {
   std::shared_ptr<Page> page = get_page(get_upper_addr(dst), false);
-  Lock::Guard guard(page->mutex);
+  PageLock lock(vmemory, get_upper_addr(dst));
 
   assert(~page->type & VMemoryPageType::PROGRAM);
   if (page->type & VMemoryPageType::LEADER) {
@@ -515,7 +514,7 @@ void VMemory::Accessor::write_out() {
 
   while (it != raw_writable.end()) {
     std::shared_ptr<Page> page = get_page(it->first, false);
-    Lock::Guard guard(page->mutex);
+    PageLock lock (vmemory, it->first);
     assert(~page->type & VMemoryPageType::PROGRAM);
     if (page->type & VMemoryPageType::LEADER) {
       page->value.swap(it->second);
@@ -556,13 +555,12 @@ std::shared_ptr<VMemory::Page> VMemory::Accessor::get_page(vaddr_t addr, bool re
     page = it_page->second;
   }
 
-  Lock::Guard guard(page->mutex);
+  PageLock lock(vmemory, addr);
   if (readable && page->flg_update == false) {
     assert(~page->type & VMemoryPageType::LEADER);
     vmemory.send_command_require(addr, VMemoryReadMode::CONTINUE, false);
-    Lock::Guard guard(vmemory.mutex_pages);
     while (page->flg_update == false) {
-      vmemory.cond_pages.wait(vmemory.mutex_pages);
+      lock.wait();
     }
   }
   assert(page->type & VMemoryPageType::LEADER || page->master_count == 0);
@@ -594,6 +592,14 @@ vaddr_t VMemory::get_upper_addr(vaddr_t addr) {
 
 bool VMemory::is_program(vaddr_t addr) {
   return (addr & AddressRegion::MASK) == AddressRegion::PROGRAM;
+}
+
+/**
+ * VMemory routine per beat.
+ * Cleanup routine.
+ */
+void VMemory::beat_routine() {
+  cleanup_page_lock();
 }
 
 /**
@@ -679,12 +685,13 @@ void VMemory::PacketAlloc::update_status() {
   if (!alloc_info->is_cancel) {
     std::shared_ptr<Page> page = vmemory.get_page(alloc_info->addr);
     if (page) {
-      Lock::Guard guard(page->mutex);
+      PageLock lock(vmemory, alloc_info->addr);
       page->type |= VMemoryPageType::LEADER;
       page->flg_update = true;
       page->referral_count = 0;
       page->leader_time = std::time(nullptr);
       alloc_info->page = page;
+      vmemory.notify_page(alloc_info->addr);
 
     } else {
       std::shared_ptr<Page> new_page(new Page(VMemoryPageType::LEADER, true,
@@ -746,11 +753,12 @@ void VMemory::PacketCandidacy::on_reply(const Packet& packet) {
   std::shared_ptr<Page> page = vmemory.get_page(addr);
 
   if (page) {
-    Lock::Guard guard(page->mutex);
+    PageLock lock(vmemory, addr);
     page->type |= VMemoryPageType::LEADER;
     page->flg_update = true;
     page->referral_count = 0;
     page->leader_time = std::time(nullptr);
+    vmemory.notify_page(addr);
 
   } else {
     // Do nothing, may be retry after or will claim back right of leader by root acceptor.
@@ -784,7 +792,7 @@ void VMemory::PacketClaimBack::on_error(const Packet& packet) {
 
   if (page) {
 #ifndef NDEBUG
-    Lock::Guard guard(page->mutex);
+    PageLock lock(vmemory, addr);
     assert(packet.src_nid != page->leader_nid);
 #endif
 
@@ -802,13 +810,14 @@ void VMemory::PacketClaimBack::on_reply(const Packet& packet) {
   std::shared_ptr<Page> page = vmemory.get_page(addr);
 
   if (page) {
-    Lock::Guard guard(page->mutex);
+    PageLock lock(vmemory, addr);
     if (packet.src_nid == page->leader_nid) {
       page->type |= VMemoryPageType::LEADER;
       page->flg_update = true;
       page->leader_nid = vmemory.my_nid;
       page->referral_count = 0;
       page->leader_time = std::time(nullptr);
+      vmemory.notify_page(addr);
       vmemory.send_command_publish(NodeID::NONE, *page, addr);
     }
 
@@ -845,7 +854,7 @@ void VMemory::PacketDelegate::on_reply(const Packet& packet) {
   std::shared_ptr<Page> page = vmemory.get_page(addr);
 
   if (page) {
-    Lock::Guard guard(page->mutex);
+    PageLock lock(vmemory, addr);
     page->type &= ~VMemoryPageType::ACCEPTOR;
 
   } else {
@@ -885,7 +894,7 @@ void VMemory::PacketPublish::on_error(const Packet& packet) {
   std::shared_ptr<Page> page = vmemory.get_page(addr);
 
   if (page) {
-    Lock::Guard guard(page->mutex);
+    PageLock lock(vmemory, addr);
     page->publish_history.erase(packet.src_nid);
     page->learner_nids.erase(packet.src_nid);
   }
@@ -899,7 +908,7 @@ void VMemory::PacketPublish::on_reply(const Packet& packet) {
   std::shared_ptr<Page> page = vmemory.get_page(addr);
 
   if (page) {
-    Lock::Guard guard(page->mutex);
+    PageLock lock(vmemory, addr);
     page->publish_history.erase(packet.src_nid);
     if (write_id != page->write_id &&
         page->learner_nids.find(packet.src_nid) != page->learner_nids.end()) {
@@ -921,7 +930,7 @@ void VMemory::PacketPublish::on_packet_error(PacketError::Type code) {
   std::shared_ptr<Page> page = vmemory.get_page(addr);
 
   if (page) {
-    Lock::Guard guard(page->mutex);
+    PageLock lock(vmemory, addr);
     page->publish_history.erase(dst_nid);
     if (page->learner_nids.find(dst_nid) != page->learner_nids.end()) {
       vmemory.send_command_publish(dst_nid, *page, addr);
@@ -968,7 +977,7 @@ void VMemory::PacketWrite::on_reply(const Packet& packet) {
   std::shared_ptr<Page> page = vmemory.get_page(addr);
 
   if (page) {
-    Lock::Guard guard(page->mutex);
+    PageLock lock(vmemory, addr);
     page->write_history.erase(packet.src_nid);
     if (write_id != page->write_id &&
         page->type & VMemoryPageType::LEADER) {
@@ -985,7 +994,7 @@ void VMemory::PacketWrite::on_packet_error(PacketError::Type code) {
   std::shared_ptr<Page> page = vmemory.get_page(addr);
 
   if (page) {
-    Lock::Guard guard(page->mutex);
+    PageLock lock(vmemory, addr);
     page->write_history.erase(dst_nid);
     if (page->type & VMemoryPageType::LEADER) {
       vmemory.send_command_write(dst_nid, *page, addr);
@@ -1018,7 +1027,7 @@ void VMemory::PacketWriteRequire::on_reply(const Packet& packet) {
     std::shared_ptr<Page> page = vmemory.get_page(addr);
 
     if (page) {
-      Lock::Guard guard(page->mutex);
+      PageLock lock(vmemory, addr);
       vmemory.send_command_candidacy(addr, *page);
     }
   }
@@ -1028,11 +1037,43 @@ void VMemory::PacketWriteRequire::on_packet_error(PacketError::Type code) {
   std::shared_ptr<Page> page = vmemory.get_page(addr);
 
   if (page) {
-    Lock::Guard guard(page->mutex);
+    PageLock lock(vmemory, addr);
     if (~page->type & VMemoryPageType::LEADER) {
       vmemory.send_command_candidacy(addr, *page);
     }
   }
+}
+
+VMemory::PageLock::PageLock(VMemory& vmemory, vaddr_t addr) {
+  assert(addr == get_upper_addr(addr));
+#ifndef NDEBUG
+  {
+    Lock::Guard guard(vmemory.mutex_pages);
+    assert(vmemory.pages.find(addr) != vmemory.pages.end());
+  }
+#endif
+  Lock::Guard guard_page(vmemory.mutex_page_lock);
+  auto it = vmemory.page_lock.find(addr);
+
+  if (it == vmemory.page_lock.end()) {
+    lock.reset(new M());
+    vmemory.page_lock.insert(std::make_pair(addr, lock));
+  } else {
+    lock = it->second;
+  }
+
+  guard.reset(new Lock::Guard(lock->mutex));
+}
+
+VMemory::PageLock::~PageLock() {
+}
+
+void VMemory::PageLock::wait() {
+  lock->cond.wait(lock->mutex);
+}
+
+void VMemory::PageLock::notify_all() {
+  lock->cond.notify_all();
 }
 
 AddressRegion::Type VMemory::get_addr_type(uint64_t size) {
@@ -1133,6 +1174,19 @@ bool VMemory::check_root_acceptor(vaddr_t addr) {
   }
 }
 
+void VMemory::cleanup_page_lock() {
+  Lock::Guard guard(mutex_page_lock);
+
+  auto it_page_lock = page_lock.begin();
+  while (it_page_lock != page_lock.end()) {
+    if (it_page_lock->second.unique()) {
+      it_page_lock = page_lock.erase(it_page_lock);
+    } else {
+      it_page_lock++;
+    }
+  }
+}
+
 /**
  * Calculate node-id that is hash of process-id and address.
  * @param addr A address.
@@ -1180,6 +1234,15 @@ uint64_t VMemory::get_rnd() {
   return rnd();
 }
 
+void VMemory::notify_page(vaddr_t addr) {
+  Lock::Guard guard(mutex_page_lock);
+
+  auto it = page_lock.find(addr);
+  if (it != page_lock.end()) {
+    it->second->cond.notify_all();
+  }
+}
+
 /**
  * After support node-id range has changed, check all page addresses and
  * delegate page if a page is out of support node-id range.
@@ -1189,7 +1252,7 @@ void VMemory::rebalance() {
   for (auto& page_it : pages) {
     vaddr_t addr = page_it.first;
     std::shared_ptr<Page> page = page_it.second;
-    Lock::Guard guard(page->mutex);
+    PageLock lock(*this, page_it.first);
     if (page->type & VMemoryPageType::ACCEPTOR && !check_acceptor_range(addr)) {
       send_command_delegate(addr, page->value.get(), page->size, page->leader_nid,
                             page->acceptor_nids, page->learner_nids);
@@ -1275,7 +1338,7 @@ void VMemory::recv_command_alloc(const Packet& packet) {
     packet_controller.send_reply(packet, picojson::object());
 
   } else {
-    Lock::Guard guard(page->mutex);
+    PageLock lock(*this, addr);
     if (page->leader_nid == leader_nid) {
       assert(page->type & VMemoryPageType::ACCEPTOR);
       packet_controller.send_reply(packet, picojson::object());
@@ -1297,7 +1360,7 @@ void VMemory::recv_command_alloc_cancel(const Packet& packet) {
   Lock::Guard guard(mutex_pages);
   auto it_page = pages.find(addr);
   if (it_page != pages.end()) {
-    Lock::Guard guard(it_page->second->mutex);
+    PageLock lock(*this, addr);
     if (it_page->second->leader_nid == leader_nid) {
       assert(it_page->second->type & VMemoryPageType::ACCEPTOR);
       pages.erase(it_page);
@@ -1317,7 +1380,7 @@ void VMemory::recv_command_balance(const Packet& packet) {
   std::shared_ptr<Page> page = get_page(addr);
 
   if (page) {
-    Lock::Guard guard(page->mutex);
+    PageLock lock(*this, addr);
     if (!check_acceptor_range(addr) &&
         page->type & VMemoryPageType::ACCEPTOR) {
       send_command_delegate(addr, page->value.get(), page->size, page->leader_nid,
@@ -1355,7 +1418,7 @@ void VMemory::recv_command_candidacy(const Packet& packet) {
     return;
   }
 
-  Lock::Guard guard(page->mutex);
+  PageLock lock(*this, addr);
 
   /// Maybe changing acceptor status.
   if (~page->type & VMemoryPageType::ACCEPTOR) {
@@ -1401,7 +1464,7 @@ void VMemory::recv_command_claim_back(const Packet& packet) {
   std::shared_ptr<Page> page = get_page(addr);
 
   if (page) {
-    Lock::Guard guard(page->mutex);
+    PageLock lock(*this, addr);
     if (~page->type & VMemoryPageType::LEADER) {
       packet_controller.send_reply(packet, picojson::object());
       return;
@@ -1454,7 +1517,7 @@ void VMemory::recv_command_delegate(const Packet& packet) {
     pages.insert(std::make_pair(addr, new_page));
 
   } else {
-    Lock::Guard guard(page->mutex);
+    PageLock lock(*this, addr);
     page->type |= VMemoryPageType::ACCEPTOR;
     if (page->size != value.size()) {
       page->value.reset(new uint8_t[value.size()]);
@@ -1470,13 +1533,14 @@ void VMemory::recv_command_delegate(const Packet& packet) {
     }
   }
 
-  Lock::Guard guard(page->mutex);
+  PageLock lock(*this, addr);
   // If leader page is not fixed and this node is root acceptor, set this node-id for leader.
   if (page->leader_nid == NodeID::NONE &&
       check_root_acceptor(addr)) {
     page->type |= VMemoryPageType::LEADER;
     page->leader_nid = my_nid;
     page->leader_time = std::time(nullptr);
+    notify_page(addr);
   }
 
   if (packet.src_nid != NodeID::SERVER) {
@@ -1515,7 +1579,7 @@ void VMemory::recv_command_free(const Packet& packet) {
     send_command_free_acceptor(addr, acceptor_nids);
 
   } else {
-    Lock::Guard guard(page->mutex);
+    PageLock lock(*this, addr);
     if (~page->type & VMemoryPageType::ACCEPTOR) {
       NodeID acceptor_nid = get_near_acceptor(addr);
       std::set<NodeID> acceptor_nids;
@@ -1557,7 +1621,7 @@ void VMemory::recv_command_free_acceptor(const Packet& packet) {
     send_command_free_acceptor(addr, acceptor_nids);
 
   } else {
-    Lock::Guard guard1(page->mutex);
+    PageLock lock(*this, addr);
     for (auto& acceptor_nid : page->acceptor_nids) {
       acceptor_nids.insert(acceptor_nid);
     }
@@ -1600,7 +1664,7 @@ void VMemory::recv_command_require(const Packet& packet) {
     return;
   }
 
-  Lock::Guard guard(page->mutex);
+  PageLock lock(*this, addr);
   switch (mode) {
     case VMemoryReadMode::STOP: {
       page->learner_nids.erase(packet.src_nid);
@@ -1669,7 +1733,7 @@ void VMemory::recv_command_publish(const Packet& packet) {
     }
 
   } else {
-    Lock::Guard guard(page->mutex);
+    PageLock lock(*this, addr);
     if (page->type & VMemoryPageType::LEADER) {
       packet_controller.send_reply(packet, picojson::object());
 
@@ -1693,6 +1757,7 @@ void VMemory::recv_command_publish(const Packet& packet) {
       std::memcpy(page->value.get(), value.data(), page->size);
       page->flg_update = true;
       page->referral_count++;
+      notify_page(addr);
       packet_controller.send_reply(packet, picojson::object());
 
     } else {
@@ -1744,7 +1809,7 @@ void VMemory::recv_command_write(const Packet& packet) {
     return;
   }
 
-  Lock::Guard guard(page->mutex);
+  PageLock lock(*this, get_upper_addr(addr));
   if (~page->type & VMemoryPageType::ACCEPTOR) {
     packet_controller.send_error(packet, picojson::object());
     return;
@@ -1782,7 +1847,7 @@ void VMemory::recv_command_write_require(const Packet& packet) {
     return;
   }
 
-  Lock::Guard guard(page->mutex);
+  PageLock lock(*this, get_upper_addr(addr));
   if (~page->type & VMemoryPageType::LEADER) {
     packet_controller.send_error(packet, picojson::object());
     return;

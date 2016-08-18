@@ -99,6 +99,12 @@ void WorkerSubprocess::on_timer_heartbeat(uv_timer_t* handle) {
   THIS.vm->heartbeat();
 }
 
+void WorkerSubprocess::on_timer_routine(uv_timer_t* handle) {
+  WorkerSubprocess& THIS = *reinterpret_cast<WorkerSubprocess*>(handle->data);
+
+  THIS.vm->vmemory.beat_routine();
+}
+
 /**
  * When vmachine require send packet, relay it to backend.
  * @param vm Caller instance.
@@ -278,6 +284,11 @@ void WorkerSubprocess::initialize_timer() {
   heartbeat_timer.data = this;
   uv_timer_start(&heartbeat_timer, WorkerSubprocess::on_timer_heartbeat,
                  0, HEARTBEAT_INTERVAL * 1000);
+
+  uv_timer_init(loop, &routine_timer);
+  routine_timer.data = this;
+  uv_timer_start(&routine_timer, WorkerSubprocess::on_timer_routine,
+                 0, BEAT_ROUTINE_INTERVAL * 1000);
 }
 
 /**
