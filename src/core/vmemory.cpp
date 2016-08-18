@@ -514,7 +514,7 @@ void VMemory::Accessor::write_out() {
 
   while (it != raw_writable.end()) {
     std::shared_ptr<Page> page = get_page(it->first, false);
-    PageLock lock (vmemory, it->first);
+    PageLock lock(vmemory, it->first);
     assert(~page->type & VMemoryPageType::PROGRAM);
     if (page->type & VMemoryPageType::LEADER) {
       page->value.swap(it->second);
