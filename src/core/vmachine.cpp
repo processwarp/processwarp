@@ -340,6 +340,8 @@ void VMachine::send_command_heartbeat_vm() {
     Lock::Guard guard(process->mutex_threads);
     for (auto& it_thread : process->threads) {
       Thread& thread = *it_thread.second;
+      Lock::Guard guard(thread.mutex);
+
       if (thread.status == Thread::NORMAL ||
           thread.status == Thread::AFTER_WARP ||
           thread.status == Thread::JOIN_WAIT) {

@@ -129,6 +129,8 @@ void Thread::read() {
   }
   picojson::object& js_thread = js_tmp.get<picojson::object>();
 
+  Lock::Guard guard(mutex);
+
   status = static_cast<Status>(Convert::json2int<uint8_t>(js_thread.at("status")));
   join_waiting = Convert::json2vtid(js_thread.at("join_waiting"));
   stack = Convert::json2vaddr_vector(js_thread.at("stack"));

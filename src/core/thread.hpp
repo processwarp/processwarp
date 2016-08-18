@@ -7,6 +7,7 @@
 #include <memory>
 #include <utility>
 
+#include "lock.hpp"
 #include "stackinfo.hpp"
 #include "type.hpp"
 #include "type_store.hpp"
@@ -72,6 +73,9 @@ class Thread {
   vaddr_t call_stackinfo_addr;
   /// This value is used to store address of var-arguments on execute CALL instruction.
   vaddr_t call_vararg_addr;
+
+  /// Mutex for parameters of thread instance.
+  Lock::Mutex mutex;
 
   WrappedOperator* const OPERATORS[0x36];
 
