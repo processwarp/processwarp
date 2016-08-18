@@ -56,7 +56,6 @@ class PacketController {
 
   explicit PacketController(Module::Type module);
 
-  void execute();
   void initialize(PacketControllerDelegate* delegate_);
   void recv(const Packet& packet);
   void send(std::unique_ptr<Behavior> behavior, const vpid_t& pid,
