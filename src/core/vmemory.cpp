@@ -1065,12 +1065,6 @@ void VMemory::PacketWriteRequire::on_packet_error(PacketError::Type code) {
 
 VMemory::PageLock::PageLock(VMemory& vmemory, vaddr_t addr) {
   assert(addr == get_upper_addr(addr));
-#ifndef NDEBUG
-  {
-    Lock::Guard guard(vmemory.mutex_pages);
-    assert(vmemory.pages.find(addr) != vmemory.pages.end());
-  }
-#endif
   {
     Lock::Guard guard_page(vmemory.mutex_page_lock);
     auto it = vmemory.page_lock.find(addr);
