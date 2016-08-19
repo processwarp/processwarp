@@ -620,6 +620,8 @@ std::unique_ptr<VMemory::Accessor> VMemory::get_accessor() {
  */
 void VMemory::initialize(const vpid_t& pid) {
   my_pid = pid;
+
+  send_command_require_routing();
 }
 
 /**

@@ -310,12 +310,12 @@ void WorkerSubprocess::recv_connect_worker(const picojson::object& content) {
     initialize_lib_filter(content.at("lib_filter").get<picojson::array>());
   }
 
+  initialize_loop();
   // Create virtual machine.
   initialize_vm(Convert::json2vtid(content.at("root_tid")),
                 Convert::json2vaddr(content.at("proc_addr")),
                 NodeID::from_json(content.at("master_nid")),
                 content.at("name").get<std::string>());
-  initialize_loop();
   initialize_timer();
 }
 
