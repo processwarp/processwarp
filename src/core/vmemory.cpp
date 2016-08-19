@@ -872,7 +872,7 @@ void VMemory::PacketDelegate::on_reply(const Packet& packet) {
   vaddr_t addr = Convert::json2vaddr(packet.content.at("addr"));
   std::shared_ptr<Page> page = vmemory.get_page(addr);
 
-  if (page) {
+  if (page && packet.src_nid != packet.dst_nid) {
     PageLock lock(vmemory, addr);
     page->type &= ~VMemoryPageType::ACCEPTOR;
 
