@@ -42,9 +42,9 @@ class VMemory : public PacketControllerDelegate {
   /** Page of memory. */
   struct Page {
     /** Page type. */
-    std::atomic<VMemoryPageType::Type> type;
+    VMemoryPageType::Type type;
     /** True if can read. */
-    std::atomic<bool> flg_update;
+    bool flg_update;
     /** Page value. */
     std::unique_ptr<uint8_t[]> value;
     /** Page size. */
