@@ -1511,7 +1511,7 @@ void VMemory::recv_command_delegate(const Packet& packet) {
   std::set<NodeID> acceptor_nids = NodeID::from_json_array(packet.content.at("acceptor_nids"));
   std::set<NodeID> learner_nids  = NodeID::from_json_array(packet.content.at("learner_nids"));
 
-  assert(check_acceptor_range(addr));
+  assert(packet.src_nid == NodeID::SERVER || check_acceptor_range(addr));
   assert(acceptor_nids.size() == 0 ||
          acceptor_nids.find(packet.src_nid) != acceptor_nids.end());
   acceptor_nids.erase(packet.src_nid);
