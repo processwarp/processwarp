@@ -1436,7 +1436,7 @@ void VMemory::recv_command_candidacy(const Packet& packet) {
   if (!page) {
     packet_controller.send_error(packet, picojson::object());
     /// @todo get data for address from another acceptor.
-    assert(false);
+    send_command_require(addr, VMemoryReadMode::ONCE, true);
     return;
   }
 
