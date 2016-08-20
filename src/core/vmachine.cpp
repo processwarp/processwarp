@@ -174,9 +174,8 @@ void VMachine::execute(vtid_t tid) {
     } catch (Interrupt& e) {
       // Skip thread because waiting to update memroy data.
       assert(e.type == Interrupt::MEMORY_REQUIRE);
-      vaddr_t waiting_addr = static_cast<InterruptMemoryRequire&>(e).addr;
       Logger::dbg_mem(CoreMid::L1002, "memory need (addr=%s)",
-                      Convert::vaddr2str(waiting_addr).c_str());
+                      Convert::vaddr2str(static_cast<InterruptMemoryRequire&>(e).addr).c_str());
     } catch (Error& e) {
       thread->status = Thread::FINISH;
       delegate.vmachine_error(*this, "");

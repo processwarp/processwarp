@@ -144,6 +144,7 @@ NodeID VMemory::Accessor::get_leader(vaddr_t addr) {
   if (page->type & VMemoryPageType::PROGRAM) {
     // @todo return neighborhood acceptor node-id.
     assert(false);
+    return NodeID::NONE;
 
   } else if (page->type & VMemoryPageType::LEADER) {
     return vmemory.my_nid;
