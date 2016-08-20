@@ -92,7 +92,6 @@ class VMemory : public PacketControllerDelegate {
     std::string get_meta_area(vaddr_t addr);
     std::string get_program_area(vaddr_t addr);
     LeaderKey keep_leader(vaddr_t addr);
-    void print_dump();
     std::tuple<std::shared_ptr<Page>, const uint8_t*> read_raw(vaddr_t src);
     uint8_t* read_writable(vaddr_t src);
     vaddr_t realloc(vaddr_t addr, uint64_t size);
@@ -353,6 +352,9 @@ class VMemory : public PacketControllerDelegate {
   std::shared_ptr<Page> get_page(vaddr_t addr);
   uint64_t get_rnd();
   void notify_page(vaddr_t addr);
+#ifndef NDEBUG
+  void print_dump();
+#endif
   void rebalance();
 
   void recv_command_alloc(const Packet& packet);

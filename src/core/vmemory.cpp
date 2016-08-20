@@ -201,51 +201,6 @@ VMemory::Accessor::LeaderKey VMemory::Accessor::keep_leader(vaddr_t addr) {
 }
 
 /**
- * For debug, show all memory dump there are store in this node.
- * This method is usable when compiled by debug mode, otherwise, this method do nothing.
- */
-void VMemory::Accessor::print_dump() {
-#ifndef NDEBUG
-  for (auto& it_page : vmemory.pages) {
-    vaddr_t addr = it_page.first;
-    std::shared_ptr<Page> page = it_page.second;
-    PageLock lock(vmemory, it_page.first);
-
-    Logger::dbg_raw(CoreMid::L1007, "addr:%s", Convert::vaddr2str(addr).c_str());
-    if ((addr & AddressRegion::MASK) == AddressRegion::META) {
-      Logger::dbg_raw(CoreMid::L1007, "value:%s",
-                      std::string(reinterpret_cast<const char*>(page->value.get()), page->size).
-                      c_str());
-
-    } else if ((addr & AddressRegion::MASK) == AddressRegion::PROGRAM) {
-      picojson::value v;
-      picojson::parse(v, std::string(reinterpret_cast<char*>(page->value.get()), page->size));
-      Logger::dbg_raw(CoreMid::L1007, v.serialize(true));
-      if (v.get<picojson::object>().at("program_type").get<std::string>() == "01") {
-        Logger::dbg_raw(CoreMid::L1007, "code:");
-        for (auto& code : v.get<picojson::object>().at("code").get<picojson::array>()) {
-          Logger::dbg_raw(CoreMid::L1007, "  %s", Util::code2str(Convert::json2code(code)).c_str());
-        }
-      }
-    } else {
-      Logger::dbg_raw(CoreMid::L1007, "value(size=%" PRIu64 "):", page->size);
-      std::string tmp;
-      for (unsigned int i = 0; i < page->size; i ++) {
-        if (i % 16 == 0) {
-          if (i != 0) {
-            Logger::dbg_raw(CoreMid::L1007, tmp);
-          }
-          tmp = Convert::vaddr2str(addr + i) + " : ";
-        }
-        tmp += Convert::int2str(0xFF & page->value[i]) + " ";
-      }
-      Logger::dbg_raw(CoreMid::L1007, tmp);
-    }
-  }
-#endif
-}
-
-/**
  */
 std::tuple<std::shared_ptr<VMemory::Page>, const uint8_t*>
 VMemory::Accessor::read_raw(vaddr_t src) {
@@ -604,6 +559,9 @@ bool VMemory::is_program(vaddr_t addr) {
  */
 void VMemory::beat_routine() {
   cleanup_page_lock();
+#ifndef NDEBUG
+  print_dump();
+#endif
 }
 
 /**
@@ -1257,6 +1215,56 @@ void VMemory::notify_page(vaddr_t addr) {
     it->second->cond.notify_all();
   }
 }
+
+/**
+ * For debug, show all memory dump there are store in this node.
+ * This method is usable when compiled by debug mode, otherwise, this method do nothing.
+ */
+#ifndef NDEBUG
+void VMemory::print_dump() {
+  Lock::Guard guard(mutex_pages);
+  for (auto& it_page : pages) {
+    vaddr_t addr = it_page.first;
+    std::shared_ptr<Page> page = it_page.second;
+    PageLock lock(*this, it_page.first);
+
+    Logger::dbg_raw(CoreMid::L1007, "addr:%s type:%x, update:%d, chk_root:%d chk_acc:%d",
+                    Convert::vaddr2str(addr).c_str(), page->type, page->flg_update,
+                    check_acceptor_range(addr), check_root_acceptor(addr));
+    /*
+    if ((addr & AddressRegion::MASK) == AddressRegion::META) {
+      Logger::dbg_raw(CoreMid::L1007, "value:%s",
+                      std::string(reinterpret_cast<const char*>(page->value.get()), page->size).
+                      c_str());
+
+    } else if ((addr & AddressRegion::MASK) == AddressRegion::PROGRAM) {
+      picojson::value v;
+      picojson::parse(v, std::string(reinterpret_cast<char*>(page->value.get()), page->size));
+      Logger::dbg_raw(CoreMid::L1007, v.serialize(true));
+      if (v.get<picojson::object>().at("program_type").get<std::string>() == "01") {
+        Logger::dbg_raw(CoreMid::L1007, "code:");
+        for (auto& code : v.get<picojson::object>().at("code").get<picojson::array>()) {
+          Logger::dbg_raw(CoreMid::L1007, "  %s", Util::code2str(Convert::json2code(code)).c_str());
+        }
+      }
+    } else {
+      Logger::dbg_raw(CoreMid::L1007, "value(size=%" PRIu64 "):", page->size);
+      std::string tmp;
+      for (unsigned int i = 0; i < page->size; i ++) {
+        if (i % 16 == 0) {
+          if (i != 0) {
+            Logger::dbg_raw(CoreMid::L1007, tmp);
+          }
+          tmp = Convert::vaddr2str(addr + i) + " : ";
+        }
+        tmp += Convert::int2str(0xFF & page->value[i]) + " ";
+      }
+      Logger::dbg_raw(CoreMid::L1007, tmp);
+    }
+    //*/
+  }
+}
+#endif
 
 /**
  * After support node-id range has changed, check all page addresses and
