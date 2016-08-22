@@ -6,3 +6,4 @@ L1004	(packet={0})
 L1005	(pid=%s, dst_nid=%s, src_nid=%s, module=%d, content=%s)
 L1006	std error exception (error_no=%d)
 L1007	<memory dump>
+L1008	node status nid=%s pid=%s name=%s threads=%d

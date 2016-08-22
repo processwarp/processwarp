@@ -112,6 +112,24 @@ void Scheduler::beat_routine() {
 
   // Load balancing.
   balance_load();
+
+  // Output debug log.
+  for (auto& it_process : processes) {
+    ProcessInfo& info = it_process.second;
+
+    int thread_count = 0;
+    for (auto& it_thread : info.threads) {
+      if (it_thread.second == my_info.nid) {
+        thread_count++;
+      }
+    }
+
+    Logger::dbg(CoreMid::L1008,
+                my_info.nid.to_str().c_str(),
+                Convert::vpid2str(info.pid).c_str(),
+                info.name.c_str(),
+                thread_count);
+  }
 }
 
 /**
