@@ -74,3 +74,10 @@ inline void do_nothing() {}
 #  define dbg_mem(MID, MSG, ...)                                        \
   output_raw(processwarp::Logger::Level::DEBUG, __FILE__, __LINE__, MID, MSG, 0, ##__VA_ARGS__)
 #endif
+
+#if defined(NDEBUG) || !defined(DEBUG_NET)
+#  define dbg_net(MID, MSG, ...) do_nothing()
+#else
+#  define dbg_net(MID, MSG, ...)                                        \
+  output_raw(processwarp::Logger::Level::DEBUG, __FILE__, __LINE__, MID, MSG, 0, ##__VA_ARGS__)
+#endif

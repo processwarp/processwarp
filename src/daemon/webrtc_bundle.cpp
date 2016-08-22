@@ -6,6 +6,8 @@
 
 #include "constant.hpp"
 #include "convert.hpp"
+#include "daemon_mid.hpp"
+#include "logger.hpp"
 #include "router.hpp"
 #include "webrtc_bundle.hpp"
 
@@ -285,20 +287,18 @@ void WebrtcBundle::set_nid(const NodeID& nid) {
  * @param packet A packet.
  */
 void WebrtcBundle::relay(const Packet& packet) {
-#ifndef NDEBUG
-  std::cout << __LINE__ << "@" << __FILE__ << ":relay" << std::endl;
-  std::cout << "  packet_id:" << Convert::int2str(packet.packet_id) << std::endl;
-  std::cout << "  command:" << packet.command << std::endl;
-  std::cout << "  mode:" << Convert::int2str(packet.mode) << std::endl;
-  std::cout << "  dst_module:" << Convert::int2str(packet.dst_module) << std::endl;
-  std::cout << "  src_module:" << Convert::int2str(packet.src_module) << std::endl;
-  std::cout << "  pid:" << Convert::vpid2str(packet.pid) << std::endl;
-  std::cout << "  dst_nid:" << packet.dst_nid.to_str() << std::endl;
-  std::cout << "  src_nid:" << packet.src_nid.to_str() << std::endl;
-  std::cout << "  content:" << picojson::value(packet.content).serialize()
-            << std::endl << std::endl;
-  std::cout << "  my_nid:" << my_nid.to_str() << std::endl;
-#endif  // NDEBUG
+  Logger::dbg_net(DaemonMid::L3011,
+                  "relay packet_id=%s command=%s mode=%s "
+                  "dst_module=%s src_module=%s pid=%s dst_nid=%s src_nid=%s content=%s",
+                  Convert::int2str(packet.packet_id).c_str(),
+                  packet.command.c_str(),
+                  Convert::int2str(packet.mode).c_str(),
+                  Convert::int2str(packet.dst_module).c_str(),
+                  Convert::int2str(packet.src_module).c_str(),
+                  Convert::vpid2str(packet.pid).c_str(),
+                  packet.dst_nid.to_str().c_str(),
+                  packet.src_nid.to_str().c_str(),
+                  picojson::value(packet.content).serialize().c_str());
 
   NodeID dst_nid = routing.get_relay_nid(packet.dst_nid,
                                          packet.mode & PacketMode::EXPLICIT);

@@ -1229,7 +1229,7 @@ void VMemory::print_dump() {
     std::shared_ptr<Page> page = it_page.second;
     PageLock lock(*this, it_page.first);
 
-    Logger::dbg_raw(CoreMid::L1007, "addr:%s type:%x, update:%d, chk_root:%d chk_acc:%d",
+    Logger::dbg_mem(CoreMid::L1007, "addr:%s type:%x, update:%d, chk_root:%d chk_acc:%d",
                     Convert::vaddr2str(addr).c_str(), page->type, page->flg_update,
                     check_acceptor_range(addr), check_root_acceptor(addr));
     /*
