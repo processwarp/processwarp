@@ -546,14 +546,9 @@ function startBackend() {
 
   // Setup stdout, stderr and event listener.
   backendProcess.stdout.setEncoding('utf8');
-  backendProcess.stdout.on('data', function(data) {
-    process.stdout.write(data);
-  });
-
+  backendProcess.stdout.pipe(process.stdout);
   backendProcess.stderr.setEncoding('utf8');
-  backendProcess.stderr.on('data', function(data) {
-    process.stderr.write(data);
-  });
+  backendProcess.stderr.pipe(process.stderr);
 
   backendProcess.on('exit', function() {
     // @todo error
