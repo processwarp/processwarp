@@ -80,6 +80,7 @@ class PacketController {
   const Module::Type src_module;
 
   std::map<uint32_t, Container> containers;
+  Lock::Mutex mutex_containers;
 
   uint32_t get_rnd();
 };

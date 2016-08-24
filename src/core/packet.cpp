@@ -62,6 +62,7 @@ void PacketController::initialize(PacketControllerDelegate* delegate_) {
  */
 void PacketController::recv(const Packet& packet) {
   if (packet.command == "reply") {
+    Lock::Guard guard(mutex_containers);
     auto container = containers.find(packet.packet_id);
     if (container != containers.end()) {
       container->second.behavior->on_reply(packet);
@@ -69,6 +70,7 @@ void PacketController::recv(const Packet& packet) {
     }
 
   } else if (packet.command == "error") {
+    Lock::Guard guard(mutex_containers);
     auto container = containers.find(packet.packet_id);
     if (container != containers.end()) {
       container->second.behavior->on_error(packet);
@@ -76,6 +78,7 @@ void PacketController::recv(const Packet& packet) {
     }
 
   } else if (packet.command == "packet_error") {
+    Lock::Guard guard(mutex_containers);
     auto container = containers.find(packet.packet_id);
     if (container != containers.end()) {
       PacketError::Type code = Convert::json2int<PacketError::Type>(packet.content.at("code"));
@@ -98,31 +101,25 @@ void PacketController::recv(const Packet& packet) {
 void PacketController::send(std::unique_ptr<Behavior> behavior, const vpid_t& pid,
                             const NodeID& dst_nid, const picojson::object& content) {
   uint32_t packet_id = get_rnd();
-  while (containers.find(packet_id) != containers.end()) {
-    packet_id = get_rnd();
+  std::unique_ptr<Packet> packet;
+  {
+    Lock::Guard guard(mutex_containers);
+    while (containers.find(packet_id) != containers.end()) {
+      packet_id = get_rnd();
+    }
+
+    const Define& define = behavior->get_define();
+
+    assert(define.mode & PacketMode::ONE_WAY ||
+           dst_nid != NodeID::NEXT);
+
+    packet.reset(new Packet({ packet_id, define.command, define.mode, define.dst_module, src_module,
+            pid, dst_nid, my_nid, content }));
+
+    containers.insert(
+        std::make_pair(packet_id, Container({packet_id, std::time(nullptr), std::move(behavior)})));
   }
-
-  const Define& define = behavior->get_define();
-
-  assert(define.mode & PacketMode::ONE_WAY ||
-         dst_nid != NodeID::NEXT);
-
-  Packet packet = {
-    packet_id,
-    define.command,
-    define.mode,
-    define.dst_module,
-    src_module,
-    pid,
-    dst_nid,
-    my_nid,
-    content
-  };
-
-  containers.insert(
-      std::make_pair(packet_id, Container({packet_id, std::time(nullptr), std::move(behavior)})));
-
-  delegate->packet_controller_send(packet);
+  delegate->packet_controller_send(*packet);
 }
 
 /**
@@ -138,8 +135,11 @@ void PacketController::send(const std::string& command, Module::Type dst_module,
                             const vpid_t& pid, const NodeID& dst_nid,
                             const picojson::object& content) {
   uint32_t packet_id = get_rnd();
-  while (containers.find(packet_id) != containers.end()) {
-    packet_id = get_rnd();
+  {
+    Lock::Guard guard(mutex_containers);
+    while (containers.find(packet_id) != containers.end()) {
+      packet_id = get_rnd();
+    }
   }
 
   Packet packet = {
