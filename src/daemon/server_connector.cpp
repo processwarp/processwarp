@@ -7,7 +7,9 @@
 
 #include "constant.hpp"
 #include "convert.hpp"
+#include "core_mid.hpp"
 #include "error.hpp"
+#include "logger.hpp"
 #include "router.hpp"
 #include "server_connector.hpp"
 #include "util.hpp"
@@ -183,6 +185,8 @@ void ServerConnector::connect(ServerConnectorConnectDelegate* delegate,
   if (connect_status != ConnectStatus::OPEN) {
     connect_socketio();
   }
+
+  Logger::info(CoreMid::L1009, url.c_str());
 
   send_auth();
 }
@@ -625,6 +629,7 @@ void ServerConnector::recv_auth(sio::message::ptr data) {
       is_auth_yet = true;
     }
 
+    Logger::info(CoreMid::L1010, account.c_str());
     initialize_webrtc();
 
   } else {
@@ -633,6 +638,7 @@ void ServerConnector::recv_auth(sio::message::ptr data) {
       connect_status = ConnectStatus::OPEN;
       connect_delegate->server_connector_connect_on_failure(*this, -1);
     }
+    Logger::info(CoreMid::L1011, account.c_str());
     disconnect();
   }
 }

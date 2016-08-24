@@ -7,3 +7,6 @@ L1005	(pid=%s, dst_nid=%s, src_nid=%s, module=%d, content=%s)
 L1006	std error exception (error_no=%d)
 L1007	<memory dump>
 L1008	node status nid=%s pid=%s name=%s threads=%d
+L1009	connecting to the server is successful (url=%s)
+L1010	authenticateing account is successful (account=%s)
+L1011	authenticateing account is failed (account=%s)
