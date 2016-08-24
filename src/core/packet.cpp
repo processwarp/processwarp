@@ -61,29 +61,30 @@ void PacketController::initialize(PacketControllerDelegate* delegate_) {
  * If pacekt is another type, call delegate method for general process.
  */
 void PacketController::recv(const Packet& packet) {
-  if (packet.command == "reply") {
+  std::unique_ptr<Behavior> behavior;
+  {
     Lock::Guard guard(mutex_containers);
     auto container = containers.find(packet.packet_id);
     if (container != containers.end()) {
-      container->second.behavior->on_reply(packet);
+      behavior = std::move(container->second.behavior);
       containers.erase(container);
+    }
+  }
+
+  if (packet.command == "reply") {
+    if (behavior) {
+      behavior->on_reply(packet);
     }
 
   } else if (packet.command == "error") {
-    Lock::Guard guard(mutex_containers);
-    auto container = containers.find(packet.packet_id);
-    if (container != containers.end()) {
-      container->second.behavior->on_error(packet);
-      containers.erase(container);
+    if (behavior) {
+      behavior->on_error(packet);
     }
 
   } else if (packet.command == "packet_error") {
-    Lock::Guard guard(mutex_containers);
-    auto container = containers.find(packet.packet_id);
-    if (container != containers.end()) {
+    if (behavior) {
       PacketError::Type code = Convert::json2int<PacketError::Type>(packet.content.at("code"));
-      container->second.behavior->on_packet_error(code);
-      containers.erase(container);
+      behavior->on_packet_error(code);
     }
 
   } else {
