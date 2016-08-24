@@ -808,8 +808,9 @@ void VMemory::PacketClaimBack::on_packet_error(PacketError::Type code) {
   assert(false);
 }
 
-VMemory::PacketDelegate::PacketDelegate(VMemory& vmemory_) :
-    vmemory(vmemory_) {
+VMemory::PacketDelegate::PacketDelegate(VMemory& vmemory_, vaddr_t addr_) :
+    vmemory(vmemory_),
+    addr(addr_) {
 }
 
 const PacketController::Define& VMemory::PacketDelegate::get_define() {
@@ -828,7 +829,6 @@ const PacketController::Define& VMemory::PacketDelegate::get_define() {
  * @param packet A reply packet containing a address of target.
  */
 void VMemory::PacketDelegate::on_reply(const Packet& packet) {
-  vaddr_t addr = Convert::json2vaddr(packet.content.at("addr"));
   std::shared_ptr<Page> page = vmemory.get_page(addr);
 
   if (page && packet.src_nid != packet.dst_nid) {
@@ -2012,7 +2012,7 @@ void VMemory::send_command_delegate(vaddr_t addr,
   param.insert(std::make_pair("acceptor_nids", NodeID::to_json_array(acceptor_nids)));
   param.insert(std::make_pair("learner_nids", NodeID::to_json_array(learner_nids)));
 
-  std::unique_ptr<PacketController::Behavior> behavior(new PacketDelegate(*this));
+  std::unique_ptr<PacketController::Behavior> behavior(new PacketDelegate(*this, addr));
   packet_controller.send(std::move(behavior),
                          my_pid, get_near_acceptor(addr), param);
 }

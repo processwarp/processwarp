@@ -233,7 +233,7 @@ class VMemory : public PacketControllerDelegate {
 
   class PacketDelegate : public PacketController::Behavior {
    public:
-    explicit PacketDelegate(VMemory& vmemory_);
+    explicit PacketDelegate(VMemory& vmemory_, vaddr_t addr_);
 
     const PacketController::Define& get_define() override;
     void on_reply(const Packet& packet) override;
@@ -241,6 +241,7 @@ class VMemory : public PacketControllerDelegate {
 
    private:
     VMemory& vmemory;
+    const vaddr_t addr;
   };
 
   class PacketPublish : public PacketController::Behavior {
