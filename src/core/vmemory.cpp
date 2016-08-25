@@ -1908,8 +1908,8 @@ void VMemory::send_command_alloc(std::shared_ptr<AllocInfo> alloc_info) {
   alloc_info->acceptor_nid.clear();
   NodeID acceptor_nid = get_hash_id(alloc_info->addr);
   for (int i = 0; i < 4; i ++) {
-    packet_controller.send(std::unique_ptr<PacketController::Behavior>
-                           (new PacketAlloc(*this, alloc_info)), my_pid, acceptor_nid, param);
+    std::unique_ptr<PacketController::Behavior> behavior(new PacketAlloc(*this, alloc_info));
+    packet_controller.send(std::move(behavior), my_pid, acceptor_nid, param);
     acceptor_nid = acceptor_nid + NodeID::QUARTER;
   }
 }
