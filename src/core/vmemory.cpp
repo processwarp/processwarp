@@ -794,7 +794,7 @@ void VMemory::PacketClaimBack::on_reply(const Packet& packet) {
       page->referral_count = 0;
       page->leader_time = std::time(nullptr);
       vmemory.notify_page(addr);
-      vmemory.send_command_publish(NodeID::NONE, *page, addr);
+      vmemory.send_command_publish(NodeID::NONE, addr, *page);
     }
 
   } else {
@@ -890,13 +890,11 @@ void VMemory::PacketPublish::on_reply(const Packet& packet) {
     page->publish_history.erase(packet.src_nid);
     if (write_id != page->write_id &&
         page->learner_nids.find(packet.src_nid) != page->learner_nids.end()) {
-      vmemory.send_command_publish(packet.src_nid, *page, addr);
+      vmemory.send_command_publish(packet.src_nid, addr, *page);
     }
 
   } else {
-    /// @todo publish freeing page
-    assert(false);
-    return;
+    vmemory.send_command_publish(packet.src_nid, addr);
   }
 }
 
@@ -911,12 +909,11 @@ void VMemory::PacketPublish::on_packet_error(PacketError::Type code) {
     PageLock lock(vmemory, addr);
     page->publish_history.erase(dst_nid);
     if (page->learner_nids.find(dst_nid) != page->learner_nids.end()) {
-      vmemory.send_command_publish(dst_nid, *page, addr);
+      vmemory.send_command_publish(dst_nid, addr, *page);
     }
 
   } else {
-    /// @todo publish freeing page
-    assert(false);
+    vmemory.send_command_publish(dst_nid, addr);
   }
 }
 
@@ -1466,7 +1463,7 @@ void VMemory::recv_command_candidacy(const Packet& packet) {
     if (packet.src_nid != my_nid) {
       page->learner_nids.insert(packet.src_nid);
     }
-    send_command_publish(NodeID::NONE, *page, addr);
+    send_command_publish(NodeID::NONE, addr, *page);
 
   } else {
     // The leader is nether candidacy node or root acceptor.
@@ -1655,7 +1652,7 @@ void VMemory::recv_command_free_acceptor(const Packet& packet) {
     send_command_free_acceptor(addr, acceptor_nids);
     page->value.reset();
     page->size = 0;
-    send_command_publish(NodeID::NONE, *page, addr);
+    send_command_publish(NodeID::NONE, addr, *page);
 
     Lock::Guard guard2(mutex_pages);
     pages.erase(addr);
@@ -1697,11 +1694,11 @@ void VMemory::recv_command_require(const Packet& packet) {
     } break;
 
     case VMemoryReadMode::ONCE: {
-      send_command_publish(packet.src_nid, *page, addr);
+      send_command_publish(packet.src_nid, addr, *page);
     } break;
 
     case VMemoryReadMode::CONTINUE: {
-      send_command_publish(packet.src_nid, *page, addr);
+      send_command_publish(packet.src_nid, addr, *page);
       if (packet.src_nid != my_nid) {
         page->learner_nids.insert(packet.src_nid);
       }
@@ -1855,7 +1852,7 @@ void VMemory::recv_command_write(const Packet& packet) {
     std::memcpy(page->value.get(), value.data(), value.size());
     cond_pages.notify_all();
   }
-  send_command_publish(NodeID::NONE, *page, addr);
+  send_command_publish(NodeID::NONE, addr, *page);
   packet_controller.send_reply(packet, picojson::object());
 }
 
@@ -2050,14 +2047,29 @@ void VMemory::send_command_free_acceptor(vaddr_t addr, const std::set<NodeID>& a
   }
 }
 
+void VMemory::send_command_publish(const NodeID& dst_nid, vaddr_t addr) {
+  assert(check_acceptor_range(addr));
+  assert(get_upper_addr(addr) == addr);
+  assert(dst_nid != NodeID::NONE);
+
+  picojson::object param;
+  param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
+  param.insert(std::make_pair("value", Convert::bin2json(std::string())));
+  param.insert(std::make_pair("leader_nid", NodeID::NONE.to_json()));
+
+  std::unique_ptr<PacketController::Behavior> behavior(
+      new PacketPublish(*this, dst_nid, addr, 0));
+  packet_controller.send(std::move(behavior), my_pid, dst_nid, param);
+}
+
 /**
  * Send publish command, to tell value from acceptor to learner nodes.
  * If dst_nid is NONE, send it to all of page's learner_nids nodes.
  * @param dst_nid Destination node-id or NONE to send to all of page's learner nodes..
- * @param page The target page to publish.
  * @param addr The address of the page.
+ * @param page The target page to publish.
  */
-void VMemory::send_command_publish(const NodeID& dst_nid, Page& page, vaddr_t addr) {
+void VMemory::send_command_publish(const NodeID& dst_nid, vaddr_t addr, Page& page) {
   // assert(page.type & VMemoryPageType::ACCEPTOR);
   assert(check_acceptor_range(addr));
   assert(dst_nid != my_nid || page.type & VMemoryPageType::LEADER);
@@ -2066,7 +2078,7 @@ void VMemory::send_command_publish(const NodeID& dst_nid, Page& page, vaddr_t ad
   if (dst_nid == NodeID::NONE) {
     page.write_id = get_rnd();
     for (const auto& learner_nid : page.learner_nids) {
-      send_command_publish(learner_nid, page, addr);
+      send_command_publish(learner_nid, addr, page);
     }
     return;
   }

@@ -383,7 +383,8 @@ class VMemory : public PacketControllerDelegate {
                              const std::set<NodeID>& learner_nids);
   void send_command_free(vaddr_t addr);
   void send_command_free_acceptor(vaddr_t addr, const std::set<NodeID>& acceptor_nids);
-  void send_command_publish(const NodeID& dst_nid, Page& page, vaddr_t addr);
+  void send_command_publish(const NodeID& dst_nid, vaddr_t addr);
+  void send_command_publish(const NodeID& dst_nid, vaddr_t addr, Page& page);
   void send_command_require(vaddr_t addr, VMemoryReadMode::Type mode, bool to_all);
   void send_command_require_routing();
   void send_command_write(const NodeID& dst_nid, Page& page, vaddr_t addr);
