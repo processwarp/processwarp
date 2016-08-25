@@ -9,6 +9,9 @@
 #include "connector.hpp"
 #include "node_id.hpp"
 #include "packet.hpp"
+#ifdef WITH_WEBRTC_DEBUG
+#  include "webrtc_subprocess.hpp"
+#endif
 
 namespace processwarp {
 class WebrtcConnectorDelegate {
@@ -44,6 +47,9 @@ class WebrtcConnector : public Connector {
 
   uv_pipe_t* client_pipe;
   uv_process_t subprocess;
+#ifdef WITH_WEBRTC_DEBUG
+  std::unique_ptr<WebrtcSubprocess> debug_subprocess;
+#endif
 
   std::deque<picojson::object> send_wait;
 

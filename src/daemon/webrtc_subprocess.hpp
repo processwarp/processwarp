@@ -10,6 +10,7 @@
 #  include "logger_stdout.hpp"
 #endif
 #include "subprocess.hpp"
+#include "webrtc_bundle.hpp"
 #include "webrtc_edge.hpp"
 
 namespace processwarp {

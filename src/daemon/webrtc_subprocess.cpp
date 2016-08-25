@@ -297,8 +297,11 @@ void WebrtcSubprocess::send_relay_to_local(const Packet& packet) {
 
 }  // namespace processwarp
 
+
+#ifndef WITH_WEBRTC_DEBUG
 int main(int argc, char* argv[]) {
   processwarp::WebrtcSubprocess THIS;
 
   return THIS.entry(argc, argv);
 }
+#endif

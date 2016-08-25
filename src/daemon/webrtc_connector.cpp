@@ -179,6 +179,7 @@ void WebrtcConnector::initialize_subprocess(const std::string& pipe_path,
     nullptr
   };
 
+#ifndef WITH_WEBRTC_DEBUG
   uv_stdio_container_t program_stdio[3];
   program_stdio[0].flags = UV_IGNORE;
   program_stdio[1].flags = UV_INHERIT_FD;
@@ -200,6 +201,10 @@ void WebrtcConnector::initialize_subprocess(const std::string& pipe_path,
     /// @todo error
     assert(false);
   }
+#else
+  debug_subprocess.reset(new WebrtcSubprocess());
+  debug_subprocess->entry(sizeof(args) / sizeof(args[0]) - 1, args);
+#endif
 }
 
 void WebrtcConnector::recv_relay_to_local(const picojson::object& content) {

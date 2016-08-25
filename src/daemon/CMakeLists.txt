@@ -1,5 +1,6 @@
 
 option(WITH_WORKER_DEBUG "For debug, worker process has not generate bug run on the same process of main." OFF)
+option(WITH_WEBRTC_DEBUG "For debug, subprocess of WebRTC has not generate but run on the same process of main." OFF)
 
 find_package(PkgConfig)
 
@@ -501,66 +502,65 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWEBRTC_WIN=1")
 endif()
 
+if(WITH_WEBRTC_DEBUG)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWITH_WEBRTC_DEBUG=1")
+endif()
+
 if(WITH_WORKER_DEBUG)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWITH_WORKER_DEBUG=1")
 endif()
 
 # Compile & link
 file(GLOB HEADER_FILES "*.hpp")
-file(GLOB DAEMON_FILES "*.cpp")
+
+list(APPEND WEBRTC_FILES "routing.cpp")
+list(APPEND WEBRTC_FILES "subprocess.cpp")
+list(APPEND WEBRTC_FILES "webrtc_bundle.cpp")
+list(APPEND WEBRTC_FILES "webrtc_subprocess.cpp")
+list(APPEND WEBRTC_FILES "webrtc_edge.cpp")
+
+list(APPEND WORKER_FILES "subprocess.cpp")
+list(APPEND WORKER_FILES "worker_subprocess.cpp")
+
+list(APPEND MAIN_FILES "connector.cpp")
+list(APPEND MAIN_FILES "daemon.cpp")
+list(APPEND MAIN_FILES "frontend_connector.cpp")
+list(APPEND MAIN_FILES "router.cpp")
+list(APPEND MAIN_FILES "server_connector.cpp")
+list(APPEND MAIN_FILES "webrtc_connector.cpp")
+list(APPEND MAIN_FILES "worker_connector.cpp")
+
+if(WITH_WEBRTC_DEBUG)
+  list(APPEND MAIN_FILES "${WEBRTC_FILES}")
+  list(APPEND extra_libs "${webrtc_libs}")
+endif()
 
 if(WITH_WORKER_DEBUG)
-  list(APPEND WORKER_FILES "subprocess.cpp")
-  list(APPEND WORKER_FILES "worker_subprocess.cpp")
-endif(WITH_WORKER_DEBUG)
-
-# Compile processwarp
-add_executable(processwarp
-  ${HEADER_FILES}
-  ${WORKER_FILES}
-  connector.cpp
-  daemon.cpp
-  frontend_connector.cpp
-  router.cpp
-  server_connector.cpp
-  webrtc_connector.cpp
-  worker_connector.cpp
-  )
-add_dependencies(processwarp
-  const_processwarp
-  const_core_constant
-  )
-target_link_libraries(processwarp
-  pwcore
-  ${extra_libs}
-  sioclient_tls
-  )
+  list(APPEND MAIN_FILES "${WORKER_FILES}")
+endif()
 
 # Compile webrtc_subprocess
-add_executable(webrtc_subprocess
-  ${HEADER_FILES}
-  routing.cpp
-  subprocess.cpp
-  webrtc_bundle.cpp
-  webrtc_subprocess.cpp
-  webrtc_edge.cpp
-  )
-add_dependencies(webrtc_subprocess
-  const_processwarp
-  const_core_constant
-  )
-target_link_libraries(webrtc_subprocess
-  pwcore
-  ${webrtc_libs}
-  ${extra_libs}
-  )
+if(NOT WITH_WEBRTC_DEBUG)
+  add_executable(webrtc_subprocess
+    ${HEADER_FILES}
+    ${WEBRTC_FILES}
+    )
+  add_dependencies(webrtc_subprocess
+    const_processwarp
+    const_core_constant
+    )
+  target_link_libraries(webrtc_subprocess
+    pwcore
+    ${webrtc_libs}
+    ${extra_libs}
+    )
+endif(NOT WITH_WEBRTC_DEBUG)
 
 # Compile worker_subprocess
 if(NOT WITH_WORKER_DEBUG)
   add_executable(worker_subprocess
     ${HEADER_FILES}
-    subprocess.cpp
-    worker_subprocess.cpp
+    ${WORKER_FILES}
     )
   add_dependencies(worker_subprocess
     const_processwarp
@@ -572,10 +572,29 @@ if(NOT WITH_WORKER_DEBUG)
     )
 endif(NOT WITH_WORKER_DEBUG)
 
+# Compile processwarp
+add_executable(processwarp
+  ${HEADER_FILES}
+  ${MAIN_FILES}
+  )
+add_dependencies(processwarp
+  const_processwarp
+  const_core_constant
+  )
+target_link_libraries(processwarp
+  pwcore
+  ${extra_libs}
+  sioclient_tls
+  )
+
 # Install
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   install(TARGETS processwarp DESTINATION ${PROJECT_SOURCE_DIR}/bin)
-  install(TARGETS webrtc_subprocess DESTINATION ${PROJECT_SOURCE_DIR}/bin)
+
+  if(NOT WITH_WEBRTC_DEBUG)
+    install(TARGETS webrtc_subprocess DESTINATION ${PROJECT_SOURCE_DIR}/bin)
+  endif(NOT WITH_WEBRTC_DEBUG)
+
   if(NOT WITH_WORKER_DEBUG)
     install(TARGETS worker_subprocess DESTINATION ${PROJECT_SOURCE_DIR}/bin)
   endif(NOT WITH_WORKER_DEBUG)
