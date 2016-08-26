@@ -455,7 +455,7 @@ endif()
 # OpenSSL
 find_package(OpenSSL REQUIRED)
 include_directories(${OPENSSL_INCLUDE_DIR})
-list(APPEND extra_libs ${OPENSSL_LIBRARIES})
+list(APPEND ssl_libs ${OPENSSL_LIBRARIES})
 
 # libuv
 pkg_search_module(UV libuv)
@@ -584,6 +584,7 @@ add_dependencies(processwarp
 target_link_libraries(processwarp
   pwcore
   ${extra_libs}
+  ${ssl_libs}
   sioclient_tls
   )
 
