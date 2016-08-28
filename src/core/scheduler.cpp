@@ -732,6 +732,10 @@ void Scheduler::recv_command_warp_thread(const Packet& packet) {
  * Send heartbeat_scheduler command to SCHDULER in another node.
  */
 void Scheduler::send_command_heartbeat_scheduler() {
+  if (my_info.nid == NodeID::NONE) {
+    return;
+  }
+
   picojson::object param;
   picojson::object procs;
 

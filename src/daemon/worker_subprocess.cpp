@@ -120,6 +120,7 @@ void WorkerSubprocess::vmachine_send_packet(VMachine& vm, const Packet& packet) 
  * @param packet A packet to send.
  */
 void WorkerSubprocess::vmemory_send_packet(VMemory& memory, const Packet& packet) {
+  assert(packet.dst_nid != NodeID::NONE);
   send_relay_packet(packet);
 }
 
@@ -357,6 +358,7 @@ void WorkerSubprocess::recv_relay_packet(const picojson::object& content) {
  * @param packet A packet to relay.
  */
 void WorkerSubprocess::send_relay_packet(const Packet& packet) {
+  assert(packet.dst_nid != NodeID::NONE);
   picojson::object data;
 
   data.insert(std::make_pair("command", picojson::value(std::string("relay_packet"))));

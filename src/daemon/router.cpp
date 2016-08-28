@@ -97,6 +97,8 @@ const NodeID& Router::get_my_nid() {
  * @param packet Command packet.
  */
 void Router::relay_from_local(const Packet& packet) {
+  assert(my_nid != NodeID::NONE);
+
   NodeID dst_nid;
   if (packet.dst_nid == NodeID::THIS) {
     assert(my_nid != NodeID::NONE);
