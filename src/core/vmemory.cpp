@@ -331,6 +331,8 @@ vaddr_t VMemory::Accessor::set_meta_area(const std::string& data, vaddr_t addr) 
   } else {
     assert(vmemory.is_loading);
     assert(!vmemory.get_page(addr));
+    assert(vmemory.my_nid != NodeID::NONE);
+
     std::shared_ptr<Page> new_page(new Page(VMemoryPageType::LEADER, true, data,
                                             vmemory.my_nid, std::set<NodeID>()));
     Lock::Guard guard(vmemory.mutex_pages);
@@ -345,6 +347,8 @@ vaddr_t VMemory::Accessor::set_meta_area(const std::string& data, vaddr_t addr,
                                          const NodeID& leader_nid) {
   assert(addr != VADDR_NULL);
   assert(!vmemory.get_page(addr));
+  assert(leader_nid != NodeID::NONE);
+
   std::shared_ptr<Page> new_page(new Page(VMemoryPageType::NONE, true, data,
                                           leader_nid, std::set<NodeID>()));
   Lock::Guard guard(vmemory.mutex_pages);
@@ -788,6 +792,8 @@ void VMemory::PacketClaimBack::on_reply(const Packet& packet) {
   if (page) {
     PageLock lock(vmemory, addr);
     if (packet.src_nid == page->leader_nid) {
+      assert(vmemory.my_nid != NodeID::NONE);
+
       page->type |= VMemoryPageType::LEADER;
       page->flg_update = true;
       page->leader_nid = vmemory.my_nid;
@@ -1456,6 +1462,8 @@ void VMemory::recv_command_candidacy(const Packet& packet) {
       (page->type & VMemoryPageType::LEADER && page->master_count == 0)) {
     // The leader is root acceptor and page's reference count is 0.
     assert(page->flg_update == true);
+    assert(packet.src_nid != NodeID::NONE);
+
     packet_controller.send_reply(packet, picojson::object());
 
     page->type &= ~VMemoryPageType::LEADER;
@@ -1560,6 +1568,8 @@ void VMemory::recv_command_delegate(const Packet& packet) {
   // If leader page is not fixed and this node is root acceptor, set this node-id for leader.
   if (page->leader_nid == NodeID::NONE &&
       check_root_acceptor(addr)) {
+    assert(my_nid != NodeID::NONE);
+
     page->type |= VMemoryPageType::LEADER;
     page->leader_nid = my_nid;
     page->leader_time = std::time(nullptr);
@@ -1978,6 +1988,7 @@ void VMemory::send_command_claim_back(const NodeID& leader_nid, vaddr_t addr) {
   assert(addr == get_upper_addr(addr));
   assert(get_page(addr)->leader_nid == leader_nid);
   assert(get_page(addr)->type & VMemoryPageType::ACCEPTOR);
+  assert(leader_nid != NodeID::NONE);
 
   picojson::object param;
   param.insert(std::make_pair("addr", Convert::vaddr2json(addr)));
@@ -2074,6 +2085,7 @@ void VMemory::send_command_publish(const NodeID& dst_nid, vaddr_t addr, Page& pa
   assert(check_acceptor_range(addr));
   assert(dst_nid != my_nid || page.type & VMemoryPageType::LEADER);
   assert(get_upper_addr(addr) == addr);
+  assert(dst_nid != NodeID::NONE);
 
   if (dst_nid == NodeID::NONE) {
     page.write_id = get_rnd();
@@ -2188,6 +2200,7 @@ void VMemory::send_command_write(const NodeID& dst_nid, Page& page, vaddr_t addr
 void VMemory::send_command_write_require(Page& page, vaddr_t addr,
                                          const uint8_t* data, uint64_t size) {
   assert(~page.type & VMemoryPageType::LEADER);
+  assert(page.leader_nid != NodeID::NONE);
   page.flg_update = false;
 
   picojson::object param;
