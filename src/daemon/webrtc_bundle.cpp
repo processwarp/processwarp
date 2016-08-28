@@ -287,9 +287,12 @@ void WebrtcBundle::set_nid(const NodeID& nid) {
  * @param packet A packet.
  */
 void WebrtcBundle::relay(const Packet& packet) {
+  NodeID dst_nid = routing.get_relay_nid(packet.dst_nid,
+                                         packet.mode & PacketMode::EXPLICIT);
+
   Logger::dbg_net(DaemonMid::L3011,
                   "relay packet_id=%s command=%s mode=%s "
-                  "dst_module=%s src_module=%s pid=%s dst_nid=%s src_nid=%s content=%s",
+                  "dst_module=%s src_module=%s pid=%s dst_nid=%s[%s] src_nid=%s[%s] content=%s",
                   Convert::int2str(packet.packet_id).c_str(),
                   packet.command.c_str(),
                   Convert::int2str(packet.mode).c_str(),
@@ -297,11 +300,10 @@ void WebrtcBundle::relay(const Packet& packet) {
                   Convert::int2str(packet.src_module).c_str(),
                   Convert::vpid2str(packet.pid).c_str(),
                   packet.dst_nid.to_str().c_str(),
+                  dst_nid.to_str().c_str(),
                   packet.src_nid.to_str().c_str(),
+                  (packet.src_nid == my_nid ? "." : "?"),
                   picojson::value(packet.content).serialize().c_str());
-
-  NodeID dst_nid = routing.get_relay_nid(packet.dst_nid,
-                                         packet.mode & PacketMode::EXPLICIT);
 
   if (dst_nid == NodeID::THIS) {
     relay_to_local(packet);
