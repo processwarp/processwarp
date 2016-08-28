@@ -1533,10 +1533,18 @@ void VMemory::recv_command_delegate(const Packet& packet) {
 
   std::shared_ptr<Page> page = get_page(addr);
 
+  if (packet.src_nid == NodeID::SERVER && !is_program(addr)) {
+    assert(my_nid != NodeID::NONE);
+    assert(leader_nid == NodeID::NONE);
+    leader_nid = my_nid;
+  }
+
   if (!page) {
     VMemoryPageType::Type page_type = is_program(addr) ?
       VMemoryPageType::ACCEPTOR | VMemoryPageType::PROGRAM :
       VMemoryPageType::ACCEPTOR;
+
+    assert(page_type & VMemoryPageType::PROGRAM || leader_nid != NodeID::NONE);
 
     std::shared_ptr<Page> new_page(new Page(page_type, true, value,
                                             leader_nid, learner_nids));
