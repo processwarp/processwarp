@@ -529,6 +529,7 @@ std::shared_ptr<VMemory::Page> VMemory::Accessor::get_page(vaddr_t addr, bool re
   }
   assert(page->type & VMemoryPageType::LEADER || page->master_count == 0);
   assert(page->type & VMemoryPageType::ACCEPTOR || page->acceptor_nids.size() == 0);
+  assert(~page->type & VMemoryPageType::LEADER || page->leader_nid == vmemory.my_nid);
   page->referral_count = 0;
   return page;
 }
@@ -1009,7 +1010,9 @@ void VMemory::PacketWriteRequire::on_reply(const Packet& packet) {
 
     if (page) {
       PageLock lock(vmemory, addr);
-      vmemory.send_command_candidacy(addr, *page);
+      if (~page->type & VMemoryPageType::LEADER) {
+        vmemory.send_command_candidacy(addr, *page);
+      }
     }
   }
 }
