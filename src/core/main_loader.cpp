@@ -254,7 +254,7 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
       picojson::object content;
       content.insert(std::make_pair("pid", Convert::vpid2json(in_pid)));
       content.insert(std::make_pair("root_tid", Convert::vtid2json(proc->root_tid)));
-      content.insert(std::make_pair("proc_addr", Convert::vaddr2json(proc->addr)));
+      content.insert(std::make_pair("proc_addr", Convert::vaddr2json(proc->proc_addr)));
       content.insert(std::make_pair("master_nid", NodeID::SERVER.to_json()));
       content.insert(std::make_pair("name", picojson::value(in_name)));
       content.insert(std::make_pair("tid", Convert::vtid2json(proc->root_tid)));

@@ -16,8 +16,7 @@ class SchedulerDelegate {
  public:
   virtual ~SchedulerDelegate();
   virtual void scheduler_create_vm(Scheduler& scheduler, const vpid_t& pid, vtid_t root_tid,
-                                   vaddr_t proc_addr, const NodeID& master_nid,
-                                   const std::string& name) = 0;
+                                   vaddr_t proc_addr, const std::string& name) = 0;
   virtual void scheduler_create_gui(Scheduler& scheduler, const vpid_t& pid) = 0;
   virtual void scheduler_send_packet(Scheduler& scheduler, const Packet& packet) = 0;
 };

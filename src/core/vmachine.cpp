@@ -62,17 +62,15 @@ VMachine::VMachine(VMachineDelegate& delegate_,
  * @param pid New process's process-id.
  * @param root_tid Root thread-id.
  * @param proc_addr Address where are meta informations assigned.
- * @param master_nid Node-id that process's root thread running.
  * @param name Process name for new vm.
  */
 void VMachine::initialize(const vpid_t& pid, const vtid_t& root_tid, vaddr_t proc_addr,
-                          const NodeID& master_nid, const std::string& name) {
+                          const std::string& name) {
   assert(process.get() == nullptr);
   packet_controller.initialize(this);
   vmemory.initialize(pid);
 
-  process = Process::alloc(*this, pid, root_tid, libs, lib_filter, builtin_funcs,
-                           proc_addr, master_nid);
+  process = Process::alloc(*this, pid, root_tid, libs, lib_filter, builtin_funcs, proc_addr);
   process->setup();
   process->name = name;
 
@@ -366,9 +364,7 @@ void VMachine::send_command_warp_thread(Thread& thread) {
 
   picojson::object param;
   param.insert(std::make_pair("root_tid", Convert::vtid2json(process->root_tid)));
-  param.insert(std::make_pair("proc_addr", Convert::vaddr2json(process->addr)));
-  param.insert(std::make_pair("master_nid",
-                              (process->proc_memory->get_leader(process->addr).to_json())));
+  param.insert(std::make_pair("proc_addr", Convert::vaddr2json(process->proc_addr)));
   param.insert(std::make_pair("name", picojson::value(process->name)));
   param.insert(std::make_pair("tid", Convert::vtid2json(thread.tid)));
   param.insert(std::make_pair("dst_nid", thread.warp_dst.to_json()));

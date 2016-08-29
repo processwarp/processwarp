@@ -86,8 +86,7 @@ class WorkerSubprocess : public Subprocess, public VMachineDelegate, public VMem
   void initialize_logger(const std::string& message_fname);
   void initialize_loop();
   void initialize_timer();
-  void initialize_vm(vtid_t root_tid, vaddr_t proc_addr,
-                     const NodeID& master_nid, const std::string name);
+  void initialize_vm(vtid_t root_tid, vaddr_t proc_addr, const std::string name);
   void recv_connect_worker(const picojson::object& content);
   void recv_relay_packet(const picojson::object& content);
   void send_relay_packet(const Packet& packet);

@@ -224,15 +224,13 @@ void WorkerSubprocess::initialize_lib_filter(const picojson::array& config) {
  * Create new instance of virtual machine. And initialize this virtual machine.
  * @param root_tid Root thread-id for a process that it execute in the new vm.
  * @param proc_addr Address of the process infromation is stored.
- * @param master_nid Node-id that is owner of the process. 
  * @param name Process name.
  */
-void WorkerSubprocess::initialize_vm(vtid_t root_tid, vaddr_t proc_addr,
-                                     const NodeID& master_nid, const std::string name) {
+void WorkerSubprocess::initialize_vm(vtid_t root_tid, vaddr_t proc_addr, const std::string name) {
   assert(vm.get() == nullptr);
 
   vm.reset(new VMachine(*this, *this, my_nid, libs, lib_filter));
-  vm->initialize(my_pid, root_tid, proc_addr, master_nid, name);
+  vm->initialize(my_pid, root_tid, proc_addr, name);
 }
 
 /**
@@ -315,7 +313,6 @@ void WorkerSubprocess::recv_connect_worker(const picojson::object& content) {
   // Create virtual machine.
   initialize_vm(Convert::json2vtid(content.at("root_tid")),
                 Convert::json2vaddr(content.at("proc_addr")),
-                NodeID::from_json(content.at("master_nid")),
                 content.at("name").get<std::string>());
   initialize_timer();
 }
@@ -358,7 +355,7 @@ void WorkerSubprocess::recv_relay_packet(const picojson::object& content) {
  * @param packet A packet to relay.
  */
 void WorkerSubprocess::send_relay_packet(const Packet& packet) {
-  assert(packet.dst_nid != NodeID::NONE);
+  assert(packet.dst_nid != NodeID::NONE || packet.dst_module == Module::GUI);
   picojson::object data;
 
   data.insert(std::make_pair("command", picojson::value(std::string("relay_packet"))));

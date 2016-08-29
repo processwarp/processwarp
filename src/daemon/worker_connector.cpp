@@ -79,11 +79,10 @@ void WorkerConnector::beat_routine() {
  * @param pid Process-id for new vm.
  * @param root_tid Root thread-id for new vm.
  * @param proc_addr Address of process information for new vm.
- * @param master_nid Node-id of master node for new vm.
  * @param name Process name for new vm.
  */
 void WorkerConnector::create_vm(const vpid_t& pid, vtid_t root_tid, vaddr_t proc_addr,
-                                const NodeID& master_nid, const std::string& name) {
+                                const std::string& name) {
   std::string worker_path = Util::file_dirname(Util::get_my_fullpath()) + "/worker_subprocess";
   Router& router = Router::get_instance();
 
@@ -148,7 +147,6 @@ void WorkerConnector::create_vm(const vpid_t& pid, vtid_t root_tid, vaddr_t proc
   connect_data.insert(std::make_pair("my_nid", router.get_my_nid().to_json()));
   connect_data.insert(std::make_pair("root_tid", Convert::vtid2json(root_tid)));
   connect_data.insert(std::make_pair("proc_addr", Convert::vaddr2json(proc_addr)));
-  connect_data.insert(std::make_pair("master_nid", master_nid.to_json()));
   connect_data.insert(std::make_pair("name", picojson::value(std::string(name))));
   connect_data.insert(std::make_pair("libs", picojson::value(config_libs)));
   connect_data.insert(std::make_pair("lib_filter", picojson::value(config_lib_filter)));

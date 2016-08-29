@@ -214,8 +214,8 @@ bool Scheduler::require_create_vm(const vpid_t& pid) {
     assert((AddressRegion::MASK & info.proc_addr) == AddressRegion::META &&
            info.proc_addr != VADDR_NULL);
 
-    delegate->scheduler_create_vm(*this, pid, info.root_tid, info.proc_addr,
-                                  info.leader_nid, info.name);
+    delegate->scheduler_create_vm(*this, pid, info.root_tid, info.proc_addr, info.name);
+
     return true;
 
   } else {
@@ -545,7 +545,6 @@ void Scheduler::recv_command_heartbeat_scheduler(const Packet& packet) {
 
     if (order_id > info.order_id ||
         (order_id == info.order_id && last_update_nid > info.last_update_nid)) {
-      info.leader_nid = NodeID::from_json(proc.at("leader_nid"));
       info.name = proc.at("name").get<std::string>();
       info.threads.clear();
       for (auto& it : proc.at("threads").get<picojson::object>()) {
@@ -685,7 +684,6 @@ void Scheduler::recv_command_warp_thread(const Packet& packet) {
     delegate->scheduler_create_vm(*this, packet.pid,
                                   Convert::json2vtid(packet.content.at("root_tid")),
                                   Convert::json2vaddr(packet.content.at("proc_addr")),
-                                  NodeID::from_json(packet.content.at("master_nid")),
                                   packet.content.at("name").get<std::string>());
   }
 
@@ -694,7 +692,6 @@ void Scheduler::recv_command_warp_thread(const Packet& packet) {
     info.pid = packet.pid;
     info.root_tid = Convert::json2vtid(packet.content.at("root_tid"));
     info.proc_addr = Convert::json2vaddr(packet.content.at("proc_addr"));
-    info.leader_nid = NodeID::from_json(packet.content.at("master_nid"));
     info.name = packet.content.at("name").get<std::string>();
     info.gui_nid = NodeID::NONE;
     info.having_vm = true;
@@ -758,7 +755,6 @@ void Scheduler::send_command_heartbeat_scheduler() {
 
     proc.insert(std::make_pair("root_tid", Convert::vtid2json(info.root_tid)));
     proc.insert(std::make_pair("proc_addr", Convert::vaddr2json(info.proc_addr)));
-    proc.insert(std::make_pair("leader_nid", info.leader_nid.to_json()));
     proc.insert(std::make_pair("name", picojson::value(info.name)));
     picojson::object threads;
     for (auto& it : info.threads) {

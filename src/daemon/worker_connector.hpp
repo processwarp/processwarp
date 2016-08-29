@@ -31,8 +31,7 @@ class WorkerConnector : public Connector {
   static WorkerConnector& get_instance();
 
   void beat_routine();
-  void create_vm(const vpid_t& pid, vtid_t root_tid, vaddr_t proc_addr,
-                 const NodeID& master_nid, const std::string& name);
+  void create_vm(const vpid_t& pid, vtid_t root_tid, vaddr_t proc_addr, const std::string& name);
   void initialize(WorkerConnectorDelegate& delegate_, uv_loop_t* loop,
                   const std::string& pipe_path_, const std::string& message_fname_,
                   const picojson::array& libs, const picojson::array& lib_filter);

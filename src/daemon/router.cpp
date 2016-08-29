@@ -179,11 +179,10 @@ void Router::set_nid(const NodeID& nid) {
  * @param name Process name for new vm.
  */
 void Router::scheduler_create_vm(Scheduler& scheduler, const vpid_t& pid, vtid_t root_tid,
-                                 vaddr_t proc_addr, const NodeID& master_nid,
-                                 const std::string& name) {
+                                 vaddr_t proc_addr, const std::string& name) {
   WorkerConnector& worker = WorkerConnector::get_instance();
 
-  worker.create_vm(pid, root_tid, proc_addr, master_nid, name);
+  worker.create_vm(pid, root_tid, proc_addr, name);
 }
 
 /**

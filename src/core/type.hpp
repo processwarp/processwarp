@@ -93,8 +93,6 @@ struct ProcessInfo {
   vtid_t root_tid;
   /** Address of process information. */
   vaddr_t proc_addr;
-  /** Leader-nid of proc_addr. */
-  NodeID leader_nid;
   /** Process name. */
   std::string name;
 

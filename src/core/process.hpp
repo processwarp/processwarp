@@ -50,7 +50,7 @@ class Process {
   /** Accessotr to binded memory. */
   std::unique_ptr<VMemory::Accessor> proc_memory;
   /** Address of process information. */
-  const vaddr_t addr;
+  const vaddr_t proc_addr;
   /** My process-id. */
   const vpid_t pid;
   /** Root thread-id. */
@@ -103,34 +103,8 @@ class Process {
         vtid_t root_tid,
         const std::vector<DynamicLibrary::lib_handler_t>& libs,
         const std::map<std::string, std::string>& lib_filter,
-        const std::map<std::string, std::pair<builtin_func_t, BuiltinFuncParam>>& builtin_funcs);
-
-  static std::unique_ptr<Process>
-  alloc(ProcessDelegate& delegate,
-        const vpid_t& pid,
-        vtid_t root_tid,
-        const std::vector<DynamicLibrary::lib_handler_t>& libs,
-        const std::map<std::string, std::string>& lib_filter,
         const std::map<std::string, std::pair<builtin_func_t, BuiltinFuncParam>>& builtin_funcs,
-        vaddr_t proc_addr,
-        const NodeID& master_nid);
-
-  /**
-   * Read out process information from memory.
-   * @param delegate
-   * @param memory
-   * @param addr
-   * @param libs
-   * @param lib_filter
-   * @param builtin_funcs
-   */
-  static std::unique_ptr<Process>
-  read(ProcessDelegate& delegate,
-       std::unique_ptr<VMemory::Accessor> memory,
-       vaddr_t addr,
-       const std::vector<DynamicLibrary::lib_handler_t>& libs,
-       const std::map<std::string, std::string>& lib_filter,
-       const std::map<std::string, std::pair<builtin_func_t, BuiltinFuncParam>>& builtin_funcs);
+        vaddr_t proc_addr = VADDR_NULL);
 
   /**
    * 外部の関数を呼び出す。
@@ -339,13 +313,13 @@ class Process {
    * @param libs List of external libraries.
    * @param lib_filter Map of API name call from and call for.
    */
-  Process(ProcessDelegate& delegate,
-          std::unique_ptr<VMemory::Accessor> proc_memory,
-          const vaddr_t addr,
-          const vpid_t& pid,
-          const vtid_t& root_tid,
-          const std::vector<DynamicLibrary::lib_handler_t>& libs,
-          const std::map<std::string, std::string>& lib_filter,
-          const std::map<std::string, std::pair<builtin_func_t, BuiltinFuncParam>>& builtin_funcs);
+  Process(ProcessDelegate& delegate_,
+          std::unique_ptr<VMemory::Accessor> proc_memory_,
+          const vaddr_t proc_addr_,
+          const vpid_t& pid_,
+          const vtid_t& root_tid_,
+          const std::vector<DynamicLibrary::lib_handler_t>& libs_,
+          const std::map<std::string, std::string>& lib_filter_,
+          const std::map<std::string, std::pair<builtin_func_t, BuiltinFuncParam>>& builtin_funcs_);
 };
 }  // namespace processwarp

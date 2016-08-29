@@ -2093,7 +2093,6 @@ void VMemory::send_command_publish(const NodeID& dst_nid, vaddr_t addr, Page& pa
   assert(check_acceptor_range(addr));
   assert(dst_nid != my_nid || page.type & VMemoryPageType::LEADER);
   assert(get_upper_addr(addr) == addr);
-  assert(dst_nid != NodeID::NONE);
 
   if (dst_nid == NodeID::NONE) {
     page.write_id = get_rnd();

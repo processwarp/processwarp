@@ -86,16 +86,16 @@ ProcessDelegate::~ProcessDelegate() {
 // Constructor.
 Process::Process(ProcessDelegate& delegate_,
                  std::unique_ptr<VMemory::Accessor> proc_memory_,
-                 const vaddr_t addr_,
+                 const vaddr_t proc_addr_,
                  const vpid_t& pid_,
                  const vtid_t& root_tid_,
                  const std::vector<DynamicLibrary::lib_handler_t>& libs_,
                  const std::map<std::string, std::string>& lib_filter_,
-                 const std::map<std::string,
-                 std::pair<builtin_func_t, BuiltinFuncParam>>& builtin_funcs_) :
+                 const std::map<std::string, std::pair<builtin_func_t, BuiltinFuncParam>>&
+                 builtin_funcs_) :
     delegate(delegate_),
     proc_memory(std::move(proc_memory_)),
-    addr(addr_),
+    proc_addr(proc_addr_),
     pid(pid_),
     root_tid(root_tid_),
     libs(libs_),
@@ -110,66 +110,18 @@ std::unique_ptr<Process> Process::alloc(ProcessDelegate& delegate,
                                         const std::vector<DynamicLibrary::lib_handler_t>& libs,
                                         const std::map<std::string, std::string>& lib_filter,
                                         const std::map<std::string, std::pair
-                                        <builtin_func_t, BuiltinFuncParam>>& builtin_funcs) {
-  picojson::object js_proc;
-  std::unique_ptr<VMemory::Accessor> memory(delegate.process_assign_accessor(pid));
-
-  js_proc.insert(std::make_pair("pid", Convert::vpid2json(pid)));
-  js_proc.insert(std::make_pair("root_tid", Convert::vtid2json(root_tid)));
-
-  std::string str_proc = picojson::value(js_proc).serialize();
-  vaddr_t addr = memory->set_meta_area(str_proc, VADDR_NULL);
-
-  return Process::read(delegate, std::move(memory),
-                       addr, libs, lib_filter, builtin_funcs);
-}
-
-// Allocate process on memory from delegate.
-std::unique_ptr<Process> Process::alloc(ProcessDelegate& delegate,
-                                        const vpid_t& pid,
-                                        vtid_t root_tid,
-                                        const std::vector<DynamicLibrary::lib_handler_t>& libs,
-                                        const std::map<std::string, std::string>& lib_filter,
-                                        const std::map<std::string, std::pair
                                         <builtin_func_t, BuiltinFuncParam>>& builtin_funcs,
-                                        vaddr_t proc_addr,
-                                        const NodeID& master_nid) {
-  picojson::object js_proc;
+                                        vaddr_t proc_addr) {
   std::unique_ptr<VMemory::Accessor> memory(delegate.process_assign_accessor(pid));
 
-  js_proc.insert(std::make_pair("pid", Convert::vpid2json(pid)));
-  js_proc.insert(std::make_pair("root_tid", Convert::vtid2json(root_tid)));
-
-  std::string str_proc = picojson::value(js_proc).serialize();
-  vaddr_t addr = memory->set_meta_area(str_proc, proc_addr, master_nid);
-
-  return Process::read(delegate, std::move(memory),
-                       addr, libs, lib_filter, builtin_funcs);
-}
-
-// Read out process information from memory.
-std::unique_ptr<Process> Process::read(ProcessDelegate& delegate,
-                                       std::unique_ptr<VMemory::Accessor> memory,
-                                       vaddr_t addr,
-                                       const std::vector<DynamicLibrary::lib_handler_t>& libs,
-                                       const std::map<std::string, std::string>& lib_filter,
-                                       const std::map<std::string, std::pair
-                                       <builtin_func_t, BuiltinFuncParam>>& builtin_funcs) {
-  picojson::value js_tmp;
-  std::istringstream is(memory->get_meta_area(addr));
-  std::string err = picojson::parse(js_tmp, is);
-  if (!err.empty()) {
-    /// @todo error
-    assert(false);
+  if (proc_addr == VADDR_NULL) {
+    std::string str_proc = picojson::value(picojson::object()).serialize();
+    proc_addr = memory->set_meta_area(str_proc, VADDR_NULL);
   }
-  picojson::object& js_proc = js_tmp.get<picojson::object>();
-
-  vpid_t pid = Convert::json2vpid(js_proc.at("pid"));
-  vtid_t root_tid = Convert::json2vtid(js_proc.at("root_tid"));
 
   return std::unique_ptr<Process>
-      (new Process(delegate, std::move(memory), addr,
-                   pid, root_tid, libs, lib_filter, builtin_funcs));
+    (new Process(delegate, std::move(memory), proc_addr,
+                 pid, root_tid, libs, lib_filter, builtin_funcs));
 }
 
 // VM命令を実行する。

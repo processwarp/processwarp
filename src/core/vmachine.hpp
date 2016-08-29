@@ -47,7 +47,7 @@ class VMachine : private ProcessDelegate, public PacketControllerDelegate {
            const std::vector<DynamicLibrary::lib_handler_t>& libs_,
            const std::map<std::string, std::string>& lib_filter_);
   void initialize(const vpid_t& pid, const vtid_t& root_tid, vaddr_t proc_addr,
-                  const NodeID& master_nid, const std::string& name);
+                  const std::string& name);
   void execute(vtid_t tid);
   void heartbeat();
   void recv_packet(const Packet& packet);
