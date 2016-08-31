@@ -565,6 +565,8 @@ bool VMemory::is_program(vaddr_t addr) {
  */
 void VMemory::beat_routine() {
   cleanup_page_lock();
+  rebalance();
+
 #ifndef NDEBUG
   print_dump();
 #endif
