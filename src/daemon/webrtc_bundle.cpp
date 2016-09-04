@@ -404,6 +404,9 @@ void WebrtcBundle::CustomRunnable::Run(rtc::Thread* subthread) {
  */
 void WebrtcBundle::packet_controller_on_recv(const Packet& packet) {
   if (packet.command == "routing") {
+    if (!routing.is_direct_connect(packet.src_nid)) {
+      update_edge_status(nullptr);
+    }
     routing.recv_routing(packet);
 
   } else if (packet.command == "ice") {

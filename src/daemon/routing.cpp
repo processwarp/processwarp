@@ -107,6 +107,10 @@ void Routing::execute() {
   connect_next_node();
 }
 
+bool Routing::is_direct_connect(const NodeID& nid) {
+  return (nid_map.find(nid) != nid_map.end());
+}
+
 /**
  * @param nids A set of edges those are online.
  */

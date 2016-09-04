@@ -24,6 +24,7 @@ class Routing {
 
   NodeID get_relay_nid(const NodeID& nid, bool is_explicit);
   void execute();
+  bool is_direct_connect(const NodeID& nid);
   void on_change_online_edges(const std::set<NodeID>& nids);
   void recv_routing(const Packet& packet);
   void require_routing_local();
