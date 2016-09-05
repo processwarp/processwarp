@@ -7,3 +7,6 @@
 [submodule "lib/re2"]
 	path = lib/re2
 	url = https://github.com/google/re2.git
+[submodule "lib/libfluent"]
+	path = lib/libfluent
+	url = https://github.com/m-mizutani/libfluent.git
