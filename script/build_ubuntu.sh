@@ -19,7 +19,7 @@ git submodule init
 git submodule update
 
 # Install requirements package.
-sudo apt-get install -y pkg-config automake build-essential libtool libssl-dev libffi-dev libncurses5-dev curl wget libgtk2.0-dev
+sudo apt-get install -y pkg-config automake build-essential libtool libssl-dev libffi-dev libncurses5-dev curl wget libgtk2.0-dev libmsgpack-dev
 if sudo apt-get install -y libboost1.58-dev libboost-system1.58-dev libboost-date-time1.58-dev libboost-random1.58-dev >/dev/null
 then
     echo libboost 1.58 installed
@@ -63,6 +63,14 @@ else
     make
     make install
 fi
+
+# Compile fluentd
+cd ${_root}
+mkdir -p tmp/libfluent
+mkdir -p local
+cd ${_root}/tmp/libfluent
+${_root}/local/bin/cmake -DCMAKE_INSTALL_PREFIX:PATH=${_root}/local ${_root}/lib/libfluent
+make all install
 
 # Compile libuv
 if pkg-config --modversion libuv | grep -o 1.8.0 >/dev/null
