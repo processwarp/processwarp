@@ -4,11 +4,6 @@
 #include <tuple>
 #include <vector>
 
-#ifndef WITH_LOG_STDOUT
-#  include "logger_syslog.hpp"
-#else
-#  include "logger_stdout.hpp"
-#endif
 #include "subprocess.hpp"
 #include "webrtc_bundle.hpp"
 #include "webrtc_edge.hpp"
@@ -23,13 +18,8 @@ class WebrtcSubprocess : public Subprocess,
   int entry(int argc, char* argv[]);
 
  private:
-#ifndef WITH_LOG_STDOUT
-  /** Syslog logger. */
-  Logger::Syslog logger;
-#else
-  /** Stdout logger. */
-  Logger::Stdout logger;
-#endif
+  /** Configure. */
+  picojson::object config;
 
   NodeID my_nid;
 
@@ -49,13 +39,13 @@ class WebrtcSubprocess : public Subprocess,
   void webrtc_edge_on_change_stateus(WebrtcEdge& edge, bool is_connect) override;
   void webrtc_edge_on_update_ice(WebrtcEdge& edge, const std::string& ice) override;
 
-  bool initialize_logger(const std::string& message_fname);
   std::tuple<std::string, std::string> read_options(int argc, char* argv[]);
   void recv_cancel_init_edge(const picojson::object& content);
   void recv_create_init_edge(const picojson::object& content);
   void recv_init_webrtc_ice(const picojson::object& content);
   void recv_init_webrtc_offer(const picojson::object& content);
   void recv_init_webrtc_reply(const picojson::object& content);
+  void recv_initialize(const picojson::object& content);
   void recv_relay_packet(const picojson::object& content);
   void recv_set_my_nid(const picojson::object& content);
   void send_connect_subprocess();

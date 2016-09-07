@@ -17,7 +17,9 @@ int WebrtcSubprocess::entry(int argc, char* argv[]) {
   std::string message_fname;
   std::tie(pipe_path, message_fname) = read_options(argc, argv);
 
-  initialize_logger(message_fname);
+  Logger::initialize_boot();
+  Message::load(message_fname);
+
   initialize(uv_default_loop());
   connect_pipe(pipe_path);
 
@@ -51,6 +53,9 @@ void WebrtcSubprocess::on_recv_data(const picojson::object& data) {
 
   } else if (command == "init_webrtc_reply") {
     recv_init_webrtc_reply(data);
+
+  } else if (command == "initialize") {
+    recv_initialize(data);
 
   } else if (command == "set_my_nid") {
     recv_set_my_nid(data);
@@ -109,21 +114,6 @@ void WebrtcSubprocess::webrtc_edge_on_update_ice(WebrtcEdge& edge, const std::st
   } else {
     send_init_webrtc_ice(my_nid, edge.nid, ice);
   }
-}
-
-/**
- * Initialize logger.
- * @return True if initialize was succeed.
- */
-bool WebrtcSubprocess::initialize_logger(const std::string& message_fname) {
-#ifndef WITH_LOG_STDOUT
-  logger.initialize("native");
-#endif
-  Logger::set_logger_delegate(&logger);
-
-  Message::load(message_fname);
-
-  return true;
 }
 
 /**
@@ -194,6 +184,13 @@ void WebrtcSubprocess::recv_init_webrtc_reply(const picojson::object& content) {
   for (auto ice : init_ice) {
     send_init_webrtc_ice(my_nid, init_edge->nid, ice);
   }
+}
+
+void WebrtcSubprocess::recv_initialize(const picojson::object& content) {
+  // Save configure.
+  config = content.at("config").get<picojson::object>();
+
+  Logger::initialize(config, "native");
 }
 
 void WebrtcSubprocess::recv_relay_packet(const picojson::object& content) {

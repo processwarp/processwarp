@@ -28,7 +28,10 @@ int WorkerSubprocess::entry(int argc, char* argv[]) {
   std::string message_fname;
   std::tie(pipe_path, message_fname) = read_options(argc, argv);
 
-  initialize_logger(message_fname);
+#ifndef WITH_WORKER_DEBUG
+  Logger::initialize_boot();
+  Message::load(message_fname);
+#endif
   processwarp::Logger::dbg(processwarp::DaemonMid::L3010, getpid());
 
   initialize(uv_default_loop());
@@ -66,8 +69,8 @@ void WorkerSubprocess::on_recv_data(const picojson::object& data) {
   if (command == "relay_packet") {
     recv_relay_packet(data);
 
-  } else if (command == "connect_worker") {
-    recv_connect_worker(data);
+  } else if (command == "initialize") {
+    recv_initialize(data);
 
   } else {
     /// @todo
@@ -234,20 +237,6 @@ void WorkerSubprocess::initialize_vm(vtid_t root_tid, vaddr_t proc_addr, const s
 }
 
 /**
- * Initialize logger.
- */
-void WorkerSubprocess::initialize_logger(const std::string& message_fname) {
-#ifndef WITH_WORKER_DEBUG
-#ifndef WITH_LOG_STDOUT
-  logger.initialize("native");
-#endif
-  Logger::set_logger_delegate(&logger);
-
-  Message::load(message_fname);
-#endif
-}
-
-/**
  * Initialize virtual machine execute loop.
  */
 void WorkerSubprocess::initialize_loop() {
@@ -291,22 +280,28 @@ void WorkerSubprocess::initialize_timer() {
 }
 
 /**
- * When receive connect_worker, read configuration from packet,
+ * When receive initialize, read configuration from packet,
  * and create a virtual machine, start libuv's loop.
  * @param content Packet content that contain configuration to a new virtual machine.
  */
-void WorkerSubprocess::recv_connect_worker(const picojson::object& content) {
+void WorkerSubprocess::recv_initialize(const picojson::object& content) {
+  // Save configure.
+  config = content.at("config").get<picojson::object>();
+#ifndef WITH_WORKER_DEBUG
+  Logger::initialize(config, "native");
+#endif
+
   // Save my node-id.
   my_nid = NodeID::from_json(content.at("my_nid"));
 
   // Load dynamic link libraries.
-  if (content.find("libs") != content.end()) {
-    initialize_libs(content.at("libs").get<picojson::array>());
+  if (config.find("libs") != content.end()) {
+    initialize_libs(config.at("libs").get<picojson::array>());
   }
 
   // Load api filter.
-  if (content.find("lib_filter") != content.end()) {
-    initialize_lib_filter(content.at("lib_filter").get<picojson::array>());
+  if (config.find("lib_filter") != content.end()) {
+    initialize_lib_filter(config.at("lib_filter").get<picojson::array>());
   }
 
   initialize_loop();

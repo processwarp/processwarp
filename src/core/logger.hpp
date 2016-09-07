@@ -23,13 +23,16 @@ class Delegate {
 };
 
 const char* get_level_string(Level lv);
+bool initialize(const picojson::object& config, const std::string& type);
+bool initialize(Delegate* delegate_);
+bool initialize_boot();
 void output(Level lv, const char* file, const std::size_t line,
             Message::Type mid, int dummy, ...);
 void output_raw(Level lv, const char* file, const std::size_t line,
                 Message::Type mid, const std::string& message);
 void output_raw(Level lv, const char* file, const std::size_t line,
                 Message::Type mid, const std::string& message, int dummy, ...);
-void set_logger_delegate(Delegate* delegate_);
+
 // For dummy to avoid error that "expected unqualified-id".
 inline void do_nothing() {}
 }  // namespace Logger

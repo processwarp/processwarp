@@ -469,6 +469,11 @@ else()
   list(APPEND extra_libs ${UV_LIBRARIES})
 endif()
 
+# libfluent
+if (WITH_LOG_FLUENTD)
+  list(APPEND extra_libs "fluent")
+endif (WITH_LOG_FLUENTD)
+
 # RE2
 if(WITH_RE2)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWITH_RE2=1")

@@ -33,8 +33,7 @@ class WorkerConnector : public Connector {
   void beat_routine();
   void create_vm(const vpid_t& pid, vtid_t root_tid, vaddr_t proc_addr, const std::string& name);
   void initialize(WorkerConnectorDelegate& delegate_, uv_loop_t* loop,
-                  const std::string& pipe_path_, const std::string& message_fname_,
-                  const picojson::array& libs, const picojson::array& lib_filter);
+                  const picojson::object& config_);
   void relay_packet(const Packet& packet);
 
  private:
@@ -48,17 +47,15 @@ class WorkerConnector : public Connector {
 
   /** Pointer to a instance of delegating some method. */
   WorkerConnectorDelegate* delegate;
+  /** Configuration. */
+  const picojson::object* config;
+  /** Path of pipe that for connecting with worker. */
+  std::string pipe_path;
+
   std::map<uv_pipe_t*, const vpid_t> pid_map;
   /** Map of pid and propertiy. */
   std::map<const vpid_t, WorkerProperty> properties;
-  /** Library pathes to dynamic link on worker. */
-  picojson::array config_libs;
-  /** Library filter that list of api names to allow virtual machine to call. */
-  picojson::array config_lib_filter;
-  /** Path of pipe that for connecting with worker. */
-  std::string pipe_path;
-  /** Message file's path. */
-  std::string message_fname;
+
 #ifdef WITH_WORKER_DEBUG
   std::map<const vpid_t, std::unique_ptr<WorkerSubprocess>> debug_workers;
 #endif

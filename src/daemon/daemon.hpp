@@ -6,11 +6,7 @@
 #include <string>
 
 #include "constant_native.hpp"
-#ifndef WITH_LOG_STDOUT
-#  include "logger_syslog.hpp"
-#else
-#  include "logger_stdout.hpp"
-#endif
+#include "logger.hpp"
 #include "server_connector.hpp"
 #include "worker_connector.hpp"
 
@@ -22,13 +18,6 @@ class Daemon : public ServerConnectorConnectDelegate, public WorkerConnectorDele
   int entry(int argc, char* argv[]);
 
  private:
-#ifndef WITH_LOG_STDOUT
-  /** Syslog logger. */
-  Logger::Syslog logger;
-#else
-  /** Stdout logger. */
-  Logger::Stdout logger;
-#endif
   /** Daemon run mode. */
   RunMode::Type run_mode;
   /** Configuration. */
@@ -46,8 +35,6 @@ class Daemon : public ServerConnectorConnectDelegate, public WorkerConnectorDele
   int daemonize();
   bool config_subprocess();
   bool initialize_cui();
-  bool initialize_logger();
-  bool initialize_message();
   bool initialize_subprocess();
   bool read_config(const std::string& file);
   bool read_options(int argc, char* argv[]);

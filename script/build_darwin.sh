@@ -25,7 +25,7 @@ git submodule update
 if ! type brew >/dev/null 2>&1; then
     ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 fi
-brew install cmake boost libffi libuv openssl
+brew install cmake boost libffi libuv msgpack openssl
 brew link openssl
 
 if ! type python >/dev/null 2>&1; then
@@ -35,6 +35,14 @@ fi
 if ! type npm >/dev/null 2>&1; then
     brew install node
 fi
+
+# Compile libfluent
+cd ${_root}
+mkdir -p tmp/libfluent
+mkdir -p local
+cd ${_root}/tmp/libfluent
+cmake -DCMAKE_INSTALL_PREFIX:PATH=${_root}/local ${_root}/lib/libfluent
+make all install
 
 # Compile native programes.
 cd ${_root}

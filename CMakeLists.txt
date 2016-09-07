@@ -89,11 +89,18 @@ if (DEBUG_ADDRESS_SANITIZE)
   set(CMAKE_MODULE_LINKER_FLAGS_DEBUG "${CMAKE_MODULE_LINKER_FLAGS} -fsanitize=address")
 endif (DEBUG_ADDRESS_SANITIZE)
 
-# Log output module
-option(WITH_LOG_STDOUT "Output log to stdout." OFF)
-if (WITH_LOG_STDOUT)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWITH_LOG_STDOUT")
-endif (WITH_LOG_STDOUT)
+# Log output
+option(WITH_LOG_FLUENTD "Enable fluentd for destination of log output." ON)
+if (WITH_LOG_FLUENTD)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWITH_LOG_FLUENTD")
+endif (WITH_LOG_FLUENTD)
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWITH_LOG_STDOUT")
+
+option(WITH_LOG_SYSLOG "Enable syslog for destination of log output." ON)
+if (WITH_LOG_SYSLOG)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWITH_LOG_SYSLOG")
+endif (WITH_LOG_SYSLOG)
 
 # Enable pthread module
 option(WITH_PTHREAD "Use pthread mutex and cond instead of stdc++'s it." OFF)
@@ -107,6 +114,7 @@ include_directories(${PROJECT_SOURCE_DIR}/src/core)
 include_directories(${PROJECT_SOURCE_DIR}/lib/picojson)
 include_directories(${PROJECT_SOURCE_DIR}/lib/safeint)
 include_directories(${PROJECT_SOURCE_DIR}/lib/socket.io-client-cpp/src)
+include_directories(${PROJECT_SOURCE_DIR}/local/include)
 
 add_subdirectory(src)
 

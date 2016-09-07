@@ -40,20 +40,16 @@ WorkerConnector::WorkerConnector() {
 /**
  * Initialize for WorkerConnector.
  * Create UNIX domain socket for worker.
+ * @param delegate_
  * @param loop libuv's loop for WorkerConnector.
- * @param pipe_path_ Path of pipe that for connecting with worker.
- * @param message_fname_ 
- * @param libs Library pathes to send to worker process.
- * @param lib_filter Library filter to send to worker process.
+ * @param config_
  */
 void WorkerConnector::initialize(WorkerConnectorDelegate& delegate_, uv_loop_t* loop,
-                                 const std::string& pipe_path_, const std::string& message_fname_,
-                                 const picojson::array& libs, const picojson::array& lib_filter) {
+                                 const picojson::object& config_) {
   delegate      = &delegate_;
-  pipe_path     = pipe_path_ + "/pw-worker-" + Convert::int2str(getpid()) + ".pipe";
-  message_fname = message_fname_;
-  config_libs   = libs;
-  config_lib_filter = lib_filter;
+  config        = &config_;
+  pipe_path     = config->at("pipe_dir").get<std::string>() +
+    "/pw-worker-" + Convert::int2str(getpid()) + ".pipe";
 
   Connector::initialize(loop, pipe_path);
 }
@@ -84,6 +80,7 @@ void WorkerConnector::beat_routine() {
 void WorkerConnector::create_vm(const vpid_t& pid, vtid_t root_tid, vaddr_t proc_addr,
                                 const std::string& name) {
   std::string worker_path = Util::file_dirname(Util::get_my_fullpath()) + "/worker_subprocess";
+  std::string message_fname = config->at("message").get<std::string>();
   Router& router = Router::get_instance();
 
   // Exists vm for pid yet.
@@ -143,13 +140,12 @@ void WorkerConnector::create_vm(const vpid_t& pid, vtid_t root_tid, vaddr_t proc
 
   // Send initialize data.
   picojson::object connect_data;
-  connect_data.insert(std::make_pair("command", picojson::value(std::string("connect_worker"))));
+  connect_data.insert(std::make_pair("command", picojson::value(std::string("initialize"))));
   connect_data.insert(std::make_pair("my_nid", router.get_my_nid().to_json()));
   connect_data.insert(std::make_pair("root_tid", Convert::vtid2json(root_tid)));
   connect_data.insert(std::make_pair("proc_addr", Convert::vaddr2json(proc_addr)));
   connect_data.insert(std::make_pair("name", picojson::value(std::string(name))));
-  connect_data.insert(std::make_pair("libs", picojson::value(config_libs)));
-  connect_data.insert(std::make_pair("lib_filter", picojson::value(config_lib_filter)));
+  connect_data.insert(std::make_pair("config", picojson::value(*config)));
 
   property.send_wait.push_front(connect_data);
 }

@@ -41,13 +41,15 @@ void WebrtcConnector::create_init_edge() {
 }
 
 void WebrtcConnector::initialize(WebrtcConnectorDelegate* delegate_, uv_loop_t* loop,
-                                 const std::string& pipe_path_, const std::string& message_fname) {
+                                 const picojson::object& config_) {
   delegate = delegate_;
-  std::string pipe_path = pipe_path_ + "/pw-webrtc-" + Convert::int2str(getpid()) + ".pipe";
+  config = &config_;
+  std::string pipe_path = config->at("pipe_dir").get<std::string>() +
+    "/pw-webrtc-" + Convert::int2str(getpid()) + ".pipe";
 
   Connector::initialize(loop, pipe_path);
 
-  initialize_subprocess(pipe_path, message_fname);
+  initialize_subprocess(pipe_path);
 }
 
 void WebrtcConnector::relay(const Packet& packet) {
@@ -167,9 +169,9 @@ void WebrtcConnector::on_close(uv_pipe_t& client) {
   assert(false);
 }
 
-void WebrtcConnector::initialize_subprocess(const std::string& pipe_path,
-                                            const std::string& message_fname) {
+void WebrtcConnector::initialize_subprocess(const std::string& pipe_path) {
   std::string program_path = Util::file_dirname(Util::get_my_fullpath()) + "/webrtc_subprocess";
+  std::string message_fname = config->at("message").get<std::string>();
 
   char* args[] = {
     // const_cast<char*>(VALGRIND_PATH),
@@ -205,6 +207,12 @@ void WebrtcConnector::initialize_subprocess(const std::string& pipe_path,
   debug_subprocess.reset(new WebrtcSubprocess());
   debug_subprocess->entry(sizeof(args) / sizeof(args[0]) - 1, args);
 #endif
+
+  // Send initialize data.
+  picojson::object initialize_data;
+  initialize_data.insert(std::make_pair("command", picojson::value(std::string("initialize"))));
+  initialize_data.insert(std::make_pair("config", picojson::value(*config)));
+  send_data(initialize_data);
 }
 
 void WebrtcConnector::recv_relay_to_local(const picojson::object& content) {

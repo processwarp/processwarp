@@ -1,10 +1,20 @@
 
 #include <cassert>
 #include <cstdarg>
+#include <memory>
 #include <string>
 #include <vector>
 
+#include "core_mid.hpp"
+#include "lock.hpp"
 #include "logger.hpp"
+#ifdef WITH_LOG_FLUENTD
+#  include "logger_fluentd.hpp"
+#endif
+#include "logger_stdout.hpp"
+#ifdef WITH_LOG_SYSLOG
+#  include "logger_syslog.hpp"
+#endif
 #include "util.hpp"
 
 namespace processwarp {
@@ -18,6 +28,10 @@ static const char* LOG_NAMES[] = {
 };
 /** Saving delegater. */
 static Delegate* delegate = nullptr;
+/** Logger instance. */
+static std::unique_ptr<Logger::Delegate> logger;
+/** Mutex for logger. */
+static Lock::Mutex mutex;
 
 /**
  * Simple destructor for vtable.
@@ -34,6 +48,79 @@ const char* get_level_string(Level lv) {
 }
 
 /**
+ * Initialize logger.
+ * @return True if initialize was succeed.
+ */
+bool initialize(const picojson::object& config, const std::string& type) {
+  bool ret = true;
+  std::string logger_type;
+  {
+    Lock::Guard guard(mutex);
+
+    if (config.find("logger") != config.end()) {
+      logger_type = config.at("logger").get<std::string>();
+    } else {
+      logger_type = "stdout";
+    }
+
+#ifdef WITH_LOG_FLUENTD
+    if (logger_type == "fluentd") {
+      Logger::Fluentd* logger_fluentd = new Logger::Fluentd();
+      logger.reset(logger_fluentd);
+      logger_fluentd->initialize("native",
+                                 config.at("fluentd_host").get<std::string>(),
+                                 floorl(config.at("fluentd_port").get<double>()),
+                                 config.at("fluentd_tag").get<std::string>());
+    }
+#endif
+
+#ifdef WITH_LOG_SYSLOG
+    if (logger_type == "syslog") {
+      Logger::Syslog* logger_syslog = new Logger::Syslog();
+      logger.reset(logger_syslog);
+      logger_syslog->initialize("native");
+    }
+#endif
+
+    if (!logger) {
+      logger.reset(new Logger::Stdout());
+      if (logger_type != "stdout") {
+        ret = false;
+      }
+    }
+
+    delegate = logger.get();
+  }
+
+  err(CoreMid::L1012, logger_type.c_str());
+
+  return ret;
+}
+
+/**
+ * Initialize logger with log output module.
+ * @param delegate_ Output module.
+ */
+bool initialize(Delegate* delegate_) {
+  Lock::Guard guard(mutex);
+
+  delegate = delegate_;
+}
+
+/**
+ * Initialize logger without configure (stdout).
+ */
+bool initialize_boot() {
+  assert(!logger);
+  Lock::Guard guard(mutex);
+
+  logger.reset(new Logger::Stdout());
+  delegate = logger.get();
+
+  return true;
+}
+
+/**
  * Output log with format similer to printf.
  * Log message was find by Message module.
  * @param lv Log level.
@@ -46,6 +133,7 @@ const char* get_level_string(Level lv) {
 void output(Level lv, const char* file, const std::size_t line,
             Message::Type mid, int dummy, ...) {
   assert(delegate != nullptr);
+  Lock::Guard guard(mutex);
 
   // Generate message.
   va_list args;
@@ -67,6 +155,8 @@ void output(Level lv, const char* file, const std::size_t line,
 void output_raw(Level lv, const char* file, const std::size_t line,
                 Message::Type mid, const std::string& message) {
   assert(delegate != nullptr);
+  Lock::Guard guard(mutex);
+
   delegate->output(lv, Util::get_filename(file), line, mid, message);
 }
 
@@ -83,6 +173,7 @@ void output_raw(Level lv, const char* file, const std::size_t line,
 void output_raw(Level lv, const char* file, const std::size_t line,
                 Message::Type mid, const std::string& message, int dummy, ...) {
   assert(delegate != nullptr);
+  Lock::Guard guard(mutex);
 
   // Generate message.
   std::vector<char> buffer;
@@ -102,16 +193,6 @@ void output_raw(Level lv, const char* file, const std::size_t line,
   va_end(args_copy);
 
   delegate->output(lv, Util::get_filename(file), line, mid, std::string(buffer.data()));
-}
-
-/**
- * Set log output module.
- * @param delegate_ Output module.
- */
-void set_logger_delegate(Delegate* delegate_) {
-  assert(delegate_ != nullptr);
-
-  delegate = delegate_;
 }
 }  // namespace Logger
 }  // namespace processwarp

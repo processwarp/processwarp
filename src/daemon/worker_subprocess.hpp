@@ -8,11 +8,6 @@
 #include <tuple>
 #include <vector>
 
-#ifndef WITH_LOG_STDOUT
-#  include "logger_syslog.hpp"
-#else
-#  include "logger_stdout.hpp"
-#endif
 #include "dynamic_library.hpp"
 #include "lock.hpp"
 #include "packet.hpp"
@@ -26,13 +21,8 @@ class WorkerSubprocess : public Subprocess, public VMachineDelegate, public VMem
   int entry(int argc, char* argv[]);
 
  private:
-#ifndef WITH_LOG_STDOUT
-  /** Syslog logger. */
-  Logger::Syslog logger;
-#else
-  /** Stdout logger. */
-  Logger::Stdout logger;
-#endif
+  /** Configure. */
+  picojson::object config;
 
   /** My node-id. */
   NodeID my_nid;
@@ -83,11 +73,10 @@ class WorkerSubprocess : public Subprocess, public VMachineDelegate, public VMem
   std::tuple<std::string, std::string> read_options(int argc, char* argv[]);
   void initialize_libs(const picojson::array& config);
   void initialize_lib_filter(const picojson::array& config);
-  void initialize_logger(const std::string& message_fname);
   void initialize_loop();
   void initialize_timer();
   void initialize_vm(vtid_t root_tid, vaddr_t proc_addr, const std::string name);
-  void recv_connect_worker(const picojson::object& content);
+  void recv_initialize(const picojson::object& content);
   void recv_relay_packet(const picojson::object& content);
   void send_relay_packet(const Packet& packet);
 };

@@ -7,6 +7,7 @@
 
 #include <cassert>
 #include <cerrno>
+#include <cmath>
 #include <csignal>
 #include <cstdlib>
 #include <fstream>
@@ -16,7 +17,14 @@
 #include "daemon.hpp"
 #include "daemon_mid.hpp"
 #include "frontend_connector.hpp"
-#include "logger.hpp"
+
+#ifdef WITH_LOG_FLUENTD
+#  include "logger_fluentd.hpp"
+#endif
+#include "logger_stdout.hpp"
+#ifdef WITH_LOG_SYSLOG
+#  include "logger_syslog.hpp"
+#endif
 #include "router.hpp"
 #include "util.hpp"
 #include "webrtc_connector.hpp"
@@ -64,17 +72,19 @@ int Daemon::entry(int argc, char* argv[]) {
   switch (run_mode) {
     case RunMode::CONSOLE:
     case RunMode::DAEMON: {
-      if (!initialize_logger() ||
-          !initialize_message() ||
+      if (!Logger::initialize_boot() ||
+          !Message::load(config.at("message").get<std::string>()) ||
+          !Logger::initialize(config, "native") ||
           !initialize_cui()) {
         return EXIT_FAILURE;
       }
     } break;
 
     case RunMode::SUBPROCESS: {
-      if (!config_subprocess() ||
-          !initialize_logger() ||
-          !initialize_message() ||
+      if (!Logger::initialize_boot() ||
+          !config_subprocess() ||
+          !Message::load(config.at("message").get<std::string>()) ||
+          !Logger::initialize(config, "native") ||
           !initialize_subprocess()) {
         return EXIT_FAILURE;
       }
@@ -231,14 +241,8 @@ bool Daemon::initialize_cui() {
 
   server.initialize(loop, config.at("server").get<std::string>());
   router.initialize(loop, config);
-  webrtc.initialize(&server, loop,
-                    config.at("pipe_dir").get<std::string>(),
-                    config.at("message").get<std::string>());
-  worker.initialize(*this, loop,
-                    config.at("pipe_dir").get<std::string>(),
-                    config.at("message").get<std::string>(),
-                    config.at("libs").get<picojson::array>(),
-                    config.at("lib_filter").get<picojson::array>());
+  webrtc.initialize(&server, loop, config);
+  worker.initialize(*this, loop, config);
 
   if (config.find("account") != config.end()) {
     std::string password;
@@ -265,28 +269,6 @@ bool Daemon::initialize_cui() {
 }
 
 /**
- * Initialize logger.
- * @return True if initialize was succeed.
- */
-bool Daemon::initialize_logger() {
-#ifndef WITH_LOG_STDOUT
-  logger.initialize("native");
-#endif
-  Logger::set_logger_delegate(&logger);
-  return true;
-}
-
-/**
- * Initialize message.
- * Load message file selected by configure.
- * @return True if initialize was succeed.
- */
-bool Daemon::initialize_message() {
-  // Load messages.
-  return Message::load(config.at("message").get<std::string>());
-}
-
-/**
  * Initialize modules used by subprocess mode.
  * @return True if initialize has success.
  */
@@ -305,14 +287,8 @@ bool Daemon::initialize_subprocess() {
   frontend.initialize(loop,
                       config.at("frontend_pipe").get<std::string>(),
                       config.at("frontend_key").get<std::string>());
-  webrtc.initialize(&server, loop,
-                    config.at("pipe_dir").get<std::string>(),
-                    config.at("message").get<std::string>());
-  worker.initialize(*this, loop,
-                    config.at("pipe_dir").get<std::string>(),
-                    config.at("message").get<std::string>(),
-                    config.at("libs").get<picojson::array>(),
-                    config.at("lib_filter").get<picojson::array>());
+  webrtc.initialize(&server, loop, config);
+  worker.initialize(*this, loop, config);
 
   Logger::info(DaemonMid::L3009, "subprocess");
 

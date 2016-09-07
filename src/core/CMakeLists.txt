@@ -38,6 +38,12 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   include_directories(${OPENSSL_INCLUDE_DIR})
   list(APPEND extra_libs ${OPENSSL_LIBRARIES})
 
+  # libfluent
+  if (WITH_LOG_FLUENTD)
+    list(APPEND extra_libs "fluent")
+    link_directories(${PROJECT_SOURCE_DIR}/local/lib)
+  endif (WITH_LOG_FLUENTD)
+
   # RE2
   if(WITH_RE2)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWITH_RE2=1")
@@ -54,6 +60,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   # MaxOSX
+  include_directories(/usr/local/include)
 
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   # Emscripten
@@ -102,7 +109,6 @@ set(PWCORE_FILES
   lock.cpp
   logger.cpp
   logger_stdout.cpp
-  logger_syslog.cpp
   message.cpp
   node_id.cpp
   packet.cpp
@@ -118,6 +124,19 @@ set(PWCORE_FILES
   vmemory.cpp
   wrapped_operator.cpp
   )
+
+set(LOADER_FILES
+  llvm_asm_loader.cpp
+  main_loader.cpp
+  )
+
+if (WITH_LOG_FLUENTD)
+  list(APPEND PWCORE_FILES logger_fluentd.cpp)
+endif (WITH_LOG_FLUENTD)
+
+if (WITH_LOG_SYSLOG)
+  list(APPEND PWCORE_FILES logger_syslog.cpp)
+endif (WITH_LOG_SYSLOG)
   
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   add_library(pwcore STATIC
@@ -131,8 +150,7 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
 
   if(LLVM_FOUND)
     add_executable(loader
-      llvm_asm_loader.cpp
-      main_loader.cpp
+      ${LOADER_FILES}
       )
     add_dependencies(loader
       const_loader

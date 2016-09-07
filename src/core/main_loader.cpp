@@ -93,7 +93,7 @@ class Loader : public ProcessDelegate, public VMemoryDelegate {
     // Create logger.
     Logger::Syslog logger;
     logger.initialize("loader");
-    Logger::set_logger_delegate(&logger);
+    Logger::initialize(&logger);
 
     // Load messages.
     Message::load("loader_message.json");

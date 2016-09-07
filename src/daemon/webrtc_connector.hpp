@@ -33,7 +33,7 @@ class WebrtcConnector : public Connector {
   void cancel_init_edge_by_isolation();
   void create_init_edge();
   void initialize(WebrtcConnectorDelegate* delegate_, uv_loop_t* loop,
-                  const std::string& pipe_path_, const std::string& message_fname);
+                  const picojson::object& config_);
   void relay(const Packet& packet);
   void relay_init_webrtc_ice(const NodeID& local_nid, const NodeID& remote_nid,
                              const std::string& ice);
@@ -54,6 +54,8 @@ class WebrtcConnector : public Connector {
   std::deque<picojson::object> send_wait;
 
   WebrtcConnectorDelegate* delegate;
+  /** Configuration. */
+  const picojson::object* config;
 
   WebrtcConnector();
   WebrtcConnector(const WebrtcConnector&);
@@ -65,7 +67,7 @@ class WebrtcConnector : public Connector {
   void on_recv_data(uv_pipe_t& client, picojson::object& data) override;
   void on_close(uv_pipe_t& client) override;
 
-  void initialize_subprocess(const std::string& pipe_path, const std::string& message_fname);
+  void initialize_subprocess(const std::string& pipe_path);
   void recv_relay_to_local(const picojson::object& content);
   void send_data(const picojson::object& data);
 };

@@ -40,7 +40,7 @@ const PW_PATH = path.join(__dirname, '..', '..', '..');
 const ROOT_PATH = path.join(__dirname, '..');
 
 // Load configuration.
-const CONFIG = require(path.join(ROOT_PATH, 'config.json'));
+var config = require(path.join(PW_PATH, 'etc', 'config.json'));
 
 var controller = null;
 var backendProcess = null;
@@ -538,8 +538,7 @@ function startBackend() {
   console.assert(connectStatus === CONNECT_STATUS.CLOSE, connectStatus);
 
   // Spawn backend process.
-  backendProcess = spawn.spawn(CONFIG.BACKEND ||
-                               path.join(PW_PATH, 'bin', 'processwarp'),
+  backendProcess = spawn.spawn(path.join(PW_PATH, 'bin', 'processwarp'),
                                ['--subprocess']);
   // 'valgrind',
   // ['--trace-children=yes', path.join(PW_PATH, 'bin', 'processwarp'), '--subprocess']);
@@ -558,17 +557,9 @@ function startBackend() {
 
   // Generate configure for the backend process.
   backendPipePath = path.join(os.tmpdir(), 'pw-frontend-' + process.pid + '.pipe');
-  var config = {
-    server: CONFIG.SERVER,
-    message: path.join(PW_PATH, 'src', 'const', 'daemon_mid_c.json'),
-    node_name: CONFIG.NODE_NAME || os.hostname(),
-    pipe_dir: path.join(os.tmpdir()),
-    frontend_key: COMMON_KEY,
-    frontend_pipe: backendPipePath,
-    libs: CONFIG.LIBS || [],
-    lib_filter: CONFIG.LIB_FILTER ||
-    [path.join(PW_PATH, 'etc', os.platform(), 'libfilter.json')]
-  };
+  config['node_name'] = config['node_name'] || os.hostname();
+  config['frontend_key'] = config['frontend_key'] || COMMON_KEY;
+  config['frontend_pipe'] = config['frontend_pipe'] || backendPipePath;
 
   // Pass configure.
   backendProcess.stdin.write(JSON.stringify(config));
