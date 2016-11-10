@@ -1,7 +1,7 @@
 # PROCESS WARP
 [![Build Status](https://travis-ci.org/processwarp/processwarp.svg?branch=master)](https://travis-ci.org/processwarp/processwarp)
 
-PROCESS WARP is the new distributed processing platfome.
+PROCESS WARP is the new distributed processing platform.
 
 Main project page : [www.processwarp.org](http://www.processwarp.org/).
 
