@@ -14,6 +14,7 @@
 #include "error.hpp"
 #include "instruction.hpp"
 #include "llvm_asm_loader.hpp"
+#include "llvm_util.hpp"
 #include "loader_mid.hpp"
 #include "logger.hpp"
 #include "process.hpp"

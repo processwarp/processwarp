@@ -64,7 +64,6 @@ M_BINARY_OPERATOR_VIOLATION(op_not_equal);            // a!=b
 
 // type_cast命令に対応したキャスト演算を行う。
 void BasicOperator::type_cast(uint8_t* dst, vaddr_t type, uint8_t* src) const {
-  print_llvm_instruction();
   throw_error(Error::INST_VIOLATION);
 }
 

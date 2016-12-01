@@ -1,3 +1,4 @@
+*~
 .cproject
 .DS_Store
 .idea/
@@ -21,10 +22,10 @@ src/electron/node_modules/
 Testing/
 
 # Compiled files
-src/core/loader
 src/daemon/processwarp
 src/daemon/worker_subprocess
 src/daemon/webrtc_subprocess
+src/loader/loader
 *.test
 
 # Compiled Object files

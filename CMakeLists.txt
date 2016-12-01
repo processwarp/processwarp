@@ -4,17 +4,23 @@ project(processwarp)
 include(ExternalProject)
 
 # Options.
-if(NOT CMAKE_BUILD_TYPE)
+if (NOT CMAKE_BUILD_TYPE)
   message("CMAKE_BUILD_TYPE was not set, Automatically set to Release." )
   set(CMAKE_BUILD_TYPE Release )
 
-elseif(NOT (${CMAKE_BUILD_TYPE} STREQUAL "Release" OR ${CMAKE_BUILD_TYPE} STREQUAL "Debug" ))
+elseif (NOT (${CMAKE_BUILD_TYPE} STREQUAL "Release" OR ${CMAKE_BUILD_TYPE} STREQUAL "Debug" ))
   message("CMAKE_BUILD_TYPE must be either Release or Debug.")
   return()
-endif()
+endif ()
 
-option(WITH_DOCUMENT "Generate document by doxygen" OFF)
-option(WITH_RE2 "Use RE2 library for regular expression instead of standerd C++ library" OFF)
+if (NOT PROCESSWARP_BUILD_TYPE)
+  message("PROCESSWARP_BUILD_TYPE was not set, Automatically set to Client.")
+  set(PROCESSWARP_BUILD_TYPE Client)
+
+elseif (NOT (${PROCESSWARP_BUILD_TYPE} STREQUAL "Client" OR ${PROCESSWARP_BUILD_TYPE} STREQUAL "Server"))
+  message("PROCESSWARP_BUILD_TYPE must be ether Client or Server.")
+  return()
+endif ()
 
 # Check for Google Coding Style.
 add_custom_target(cpplint
@@ -32,6 +38,7 @@ add_custom_target(cpplint
   )
 
 # Generate develop document.
+option(WITH_DOCUMENT "Generate document by doxygen" OFF)
 if (WITH_DOCUMENT)
   find_package(Doxygen)
 
@@ -50,11 +57,14 @@ if (WITH_DOCUMENT)
 endif (WITH_DOCUMENT)
 
 # Socket.io
-add_subdirectory(${PROJECT_SOURCE_DIR}/lib/socket.io-client-cpp)
+if (${PROCESSWARP_BUILD_TYPE} STREQUAL "Client")
+  add_subdirectory(${PROJECT_SOURCE_DIR}/lib/socket.io-client-cpp)
+endif ()
 
 # RE2
+option(WITH_RE2 "Use RE2 library for regular expression instead of standerd C++ library" OFF)
 if (WITH_RE2)
-  if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+  if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     # Linux
     ExternalProject_Add(
       RE2
@@ -63,21 +73,21 @@ if (WITH_RE2)
       CMAKE_ARGS -DEXTRA_TARGET_LINK_LIBRARIES="rt"
       INSTALL_COMMAND echo "Nothing for install RE2."
       )
-  else()
+  else ()
     ExternalProject_Add(
       RE2
       PREFIX ${PROJECT_SOURCE_DIR}/tmp/re2
       SOURCE_DIR ${PROJECT_SOURCE_DIR}/lib/re2
       INSTALL_COMMAND echo "Nothing for install RE2."
       )
-  endif()
+  endif ()
 endif (WITH_RE2)
 
 # Compile.
 option(DEBUG_VERBOSE "Output debug log with verbose mode" OFF)
 if (DEBUG_VERBOSE)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D DEBUG_VM=1 -D DEBUG_MEM=1 -D DEBUG_NET=1")
-endif()
+endif ()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D PICOJSON_USE_LOCALE=0")
 
 # AddressSnitizer
@@ -104,9 +114,9 @@ endif (WITH_LOG_SYSLOG)
 
 # Enable pthread module
 option(WITH_PTHREAD "Use pthread mutex and cond instead of stdc++'s it." OFF)
-if(WITH_PTHREAD)
+if (WITH_PTHREAD)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWITH_PTHREAD=1")
-endif()
+endif ()
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/src/const)
@@ -116,7 +126,13 @@ include_directories(${PROJECT_SOURCE_DIR}/lib/safeint)
 include_directories(${PROJECT_SOURCE_DIR}/lib/socket.io-client-cpp/src)
 include_directories(${PROJECT_SOURCE_DIR}/local/include)
 
-add_subdirectory(src)
+add_subdirectory(src/const)
+add_subdirectory(src/core)
+if (${PROCESSWARP_BUILD_TYPE} STREQUAL "Client")
+  add_subdirectory(src/daemon)
+elseif (${PROCESSWARP_BUILD_TYPE} STREQUAL "Server")
+  add_subdirectory(src/loader)
+endif ()
 
 # Sample
 add_custom_target(sample
@@ -124,10 +140,10 @@ add_custom_target(sample
   )
 
 # Test
-if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
+if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   option(WITH_TEST "Compile test program" ON)
   if (WITH_TEST)
     enable_testing()
     add_subdirectory(test)
   endif (WITH_TEST)
-endif()
+endif ()

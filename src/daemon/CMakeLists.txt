@@ -64,6 +64,7 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   list(APPEND webrtc_libs "simd")
   list(APPEND webrtc_libs "processwarp_webrtc")
   list(APPEND webrtc_libs "simd_asm")
+  list(APPEND webrtc_libs "openmax_dl")
 
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWEBRTC_LINUX=1 -DWEBRTC_POSIX=1")
   pkg_search_module(GDK REQUIRED gdk-x11-2.0)
@@ -203,7 +204,9 @@ if(NOT WITH_WEBRTC_DEBUG)
     )
   target_link_libraries(webrtc_subprocess
     pwcore
+    -Wl,--start-group
     ${webrtc_libs}
+    -Wl,--end-group
     ${extra_libs}
     )
 endif(NOT WITH_WEBRTC_DEBUG)

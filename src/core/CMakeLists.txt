@@ -1,23 +1,6 @@
 find_package(PkgConfig)
 
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
-  # LLVM (http://llvm.org/docs/CMake.html)
-  find_package(LLVM CONFIG)
-  if(LLVM_FOUND)
-    message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
-    message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
-  
-    include_directories(${LLVM_INCLUDE_DIRS})
-    if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-      list(APPEND llvm_libs "-L/usr/lib/llvm-3.6/lib/ -lLLVMIRReader -lLLVMBitReader -lLLVMAsmParser -lLLVMCore -lLLVMSupport -lcurses")
-    else()
-      llvm_map_components_to_libnames(llvm_libs support core irreader)
-    endif()
-    list(APPEND extra_libs ${llvm_libs})
-    add_definitions(${LLVM_DEFINITIONS})
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D ENABLE_LLVM")
-  endif()
-
   # libffi
   pkg_search_module(FFI libffi)
   if(FFI_FOUND)
@@ -77,8 +60,8 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
 
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   # Linux
-  list(APPEND extra_libs pthread)
-  list(APPEND extra_libs dl)
+  list(APPEND extra_libs "pthread")
+  list(APPEND extra_libs "dl")
 
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   # Windows
@@ -125,11 +108,6 @@ set(PWCORE_FILES
   wrapped_operator.cpp
   )
 
-set(LOADER_FILES
-  llvm_asm_loader.cpp
-  main_loader.cpp
-  )
-
 if (WITH_LOG_FLUENTD)
   list(APPEND PWCORE_FILES logger_fluentd.cpp)
 endif (WITH_LOG_FLUENTD)
@@ -147,21 +125,6 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     const_core
     const_core_constant
     )
-
-  if(LLVM_FOUND)
-    add_executable(loader
-      ${LOADER_FILES}
-      )
-    add_dependencies(loader
-      const_loader
-      const_core_constant
-      )
-    target_link_libraries(loader
-      pwcore
-      ${extra_libs}
-      )
-    install(TARGETS loader DESTINATION ${PROJECT_SOURCE_DIR}/bin)
-  endif()
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")

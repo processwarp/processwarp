@@ -74,10 +74,6 @@ static const char* OPCODE_STR[] = {
   "VA_ARG",
 };
 
-#if defined(ENABLE_LLVM) && !defined(NDEBUG) && !defined(EMSCRIPTEN)
-const llvm::Instruction* Util::llvm_instruction;
-#endif
-
 #if !defined(__ANDROID__)
 #define M_CALC_HASH(FUNC, TYPE)                         \
   std::string Util::FUNC(const std::string& src) {      \

@@ -19,7 +19,9 @@ git submodule init
 git submodule update
 
 # Install requirements package.
-sudo apt-get install -y pkg-config automake build-essential libtool libssl-dev libffi-dev libncurses5-dev curl wget libgtk2.0-dev libmsgpack-dev
+sudo apt-get install -y pkg-config automake build-essential clang libtool libssl-dev libffi-dev libncurses5-dev curl wget libgtk2.0-dev libmsgpack-dev libc++-dev
+export CC=/usr/bin/clang
+export CXX=/usr/bin/clang++
 if sudo apt-get install -y libboost1.58-dev libboost-system1.58-dev libboost-date-time1.58-dev libboost-random1.58-dev >/dev/null
 then
     echo libboost 1.58 installed
@@ -113,23 +115,33 @@ fi
 
 sudo ldconfig
 
+if ! [ -e /usr/share/llvm/cmake ]; then
+    sudo ln -s /usr/share/llvm-3.6 /usr/share/llvm
+fi
+
 # Compile native programes.
 cd ${_root}
-${_root}/local/bin/cmake -DCMAKE_EXE_LINKER_FLAGS="-L${_root}/local/lib" -DUV_INCLUDE_DIRS=${_root}/local/include/ -DUV_LIBRARIES=uv -DWITH_RE2=ON -DWITH_TEST=OFF -DCMAKE_BUILD_TYPE=Debug .
+if [ -v PROCESSWARP_SERVER ]; then
+    ${_root}/local/bin/cmake -DPROCESSWARP_BUILD_TYPE=Server -DCMAKE_EXE_LINKER_FLAGS="-L${_root}/local/lib" -DUV_INCLUDE_DIRS=${_root}/local/include/ -DUV_LIBRARIES=uv -DWITH_RE2=ON -DWITH_TEST=OFF -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=/usr/bin/clang -DCMAKE_CXX_COMPILER=/usr/bin/clang++ -DLLVM_DIR=/usr/share/llvm-3.6/ .
+else
+    ${_root}/local/bin/cmake -DPROCESSWARP_BUILD_TYPE=Client -DCMAKE_EXE_LINKER_FLAGS="-L${_root}/local/lib" -DUV_INCLUDE_DIRS=${_root}/local/include/ -DUV_LIBRARIES=uv -DWITH_RE2=ON -DWITH_TEST=OFF -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=/usr/bin/clang -DCMAKE_CXX_COMPILER=/usr/bin/clang++ .
+fi
 make
 make install
 make const_electron
 
 # Install electron and requirement modules.
-if ! type electron >/dev/null 2>&1; then
-    ${_root}/local/bin/npm -g install electron-prebuilt
-fi
+if ! [ -v PROCESSWARP_SERVER ]; then
+    if ! type electron >/dev/null 2>&1; then
+	${_root}/local/bin/npm -g install electron-prebuilt
+    fi
 
-cd ${_root}/src/electron
-if [ -e node_modules ]; then
-    ${_root}/local/bin/npm update
-else
-    ${_root}/local/bin/npm install
+    cd ${_root}/src/electron
+    if [ -e node_modules ]; then
+	${_root}/local/bin/npm update
+    else
+	${_root}/local/bin/npm install
+    fi
 fi
 
 # Install babel and convert js files.
@@ -139,14 +151,18 @@ if ! type babel >/dev/null 2>&1; then
     ${_root}/local/bin/npm install babel-preset-es2015
 fi
 
-mkdir -p dist
-${_root}/local/bin/babel --no-babelrc --presets es2015 --retain-lines -o dist/constant.js constant.js
-${_root}/local/bin/babel --no-babelrc --presets es2015 --retain-lines -o dist/main.js main.js
-${_root}/local/bin/babel --no-babelrc --presets es2015 --retain-lines -o dist/packet_controller.js packet_controller.js
+if [ -v PROCESSWARP_SERVER ]; then
+    mkdir -p dist
+    ${_root}/local/bin/babel --no-babelrc --presets es2015 --retain-lines -o dist/constant.js constant.js
+    ${_root}/local/bin/babel --no-babelrc --presets es2015 --retain-lines -o dist/main.js main.js
+    ${_root}/local/bin/babel --no-babelrc --presets es2015 --retain-lines -o dist/packet_controller.js packet_controller.js
+fi
 
 # Finish.
 cd ${_pwd}
 
 echo "Finish to build processwarp."
-echo "Please input like below to run processwarp."
-echo "  <processwarp path>/script/run_gui.sh"
+if ! [ -v PROCESSWARP_SERVER ]; then
+    echo "Please input like below to run processwarp."
+    echo "  <processwarp path>/script/run_gui.sh"
+fi
