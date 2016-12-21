@@ -45,7 +45,7 @@ make all install
 
 # Compile native programes.
 cd ${_root}
-cmake -DCMAKE_BUILD_TYPE=Debug .
+cmake -DCMAKE_BUILD_TYPE=Debug -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DOPENSSL_INCLUDE_DIR=/usr/local/opt/openssl/include .
 make
 make install
 make const_electron
