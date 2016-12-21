@@ -19,7 +19,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   list(APPEND webrtc_libs "processwarp_webrtc")
   list(APPEND webrtc_libs "rtc_task_queue")
   list(APPEND webrtc_libs "vpx")
-  list(APPEND webrtc_libs "dl")
   list(APPEND webrtc_libs "protobuf_lite")
   list(APPEND webrtc_libs "simd")
   list(APPEND webrtc_libs "vpx_yasm")
@@ -30,6 +29,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   list(APPEND webrtc_libs "jpeg")
   list(APPEND webrtc_libs "rtc_base_approved")
   list(APPEND webrtc_libs "srtp")
+  list(APPEND webrtc_libs "openmax_dl")
 
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWEBRTC_MAC=1 -DWEBRTC_POSIX=1")
   find_library(CORE_FOUNDATION CoreFoundation)
@@ -101,9 +101,16 @@ else()
 endif()
 
 # OpenSSL
-find_package(OpenSSL REQUIRED)
-include_directories(${OPENSSL_INCLUDE_DIR})
-list(APPEND ssl_libs ${OPENSSL_LIBRARIES})
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  include_directories("/usr/local/opt/openssl/include")
+  link_directories("/usr/local/opt/openssl/lib")
+  list(APPEND ssl_libs "crypto")
+  list(APPEND ssl_libs "ssl")
+else()
+  find_package(OpenSSL REQUIRED)
+  include_directories(${OPENSSL_INCLUDE_DIR})
+  list(APPEND ssl_libs ${OPENSSL_LIBRARIES})
+endif()
 
 # libuv
 pkg_search_module(UV libuv)
@@ -202,13 +209,21 @@ if(NOT WITH_WEBRTC_DEBUG)
     const_processwarp
     const_core_constant
     )
-  target_link_libraries(webrtc_subprocess
-    pwcore
-    -Wl,--start-group
-    ${webrtc_libs}
-    -Wl,--end-group
-    ${extra_libs}
-    )
+  if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    target_link_libraries(webrtc_subprocess
+      pwcore
+      ${webrtc_libs}
+      ${extra_libs}
+      )
+  else()
+    target_link_libraries(webrtc_subprocess
+      pwcore
+      -Wl,--start-group
+      ${webrtc_libs}
+      -Wl,--end-group
+      ${extra_libs}
+      )
+  endif()
 endif(NOT WITH_WEBRTC_DEBUG)
 
 # Compile worker_subprocess

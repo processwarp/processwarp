@@ -17,9 +17,16 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   endif()
 
   # OpenSSL
-  find_package(OpenSSL REQUIRED)
-  include_directories(${OPENSSL_INCLUDE_DIR})
-  list(APPEND extra_libs ${OPENSSL_LIBRARIES})
+  if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    include_directories("/usr/local/opt/openssl/include")
+    link_directories("/usr/local/opt/openssl/lib")
+    list(APPEND ssl_libs "crypto")
+    list(APPEND ssl_libs "ssl")
+  else()
+    find_package(OpenSSL REQUIRED)
+    include_directories(${OPENSSL_INCLUDE_DIR})
+    list(APPEND ssl_libs ${OPENSSL_LIBRARIES})
+  endif()
 
   # libfluent
   if (WITH_LOG_FLUENTD)
