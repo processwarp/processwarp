@@ -42,6 +42,8 @@ mkdir -p local
 cd ${_root}/tmp/libfluent
 cmake -DCMAKE_INSTALL_PREFIX:PATH=${_root}/local ${_root}/lib/libfluent
 make all install
+# Remove dylib file to avoid dynamic-link because we cannot change DYLD_LIBRARY_PATH.
+rm ${_root}/local/lib/libfluent.dylib
 
 # Compile native programes.
 cd ${_root}
