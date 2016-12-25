@@ -293,6 +293,7 @@ void WorkerSubprocess::recv_initialize(const picojson::object& content) {
 
   // Save my node-id.
   my_nid = NodeID::from_json(content.at("my_nid"));
+  Logger::dbg(DaemonMid::L1013, getpid(), my_nid.to_str().c_str());
 
   // Load dynamic link libraries.
   if (config.find("libs") != content.end()) {

@@ -10,7 +10,9 @@
 
 #include "constant.hpp"
 #include "constant_vm.hpp"
+#include "daemon_mid.hpp"
 #include "frontend_connector.hpp"
+#include "logger.hpp"
 #include "router.hpp"
 #include "scheduler.hpp"
 #include "server_connector.hpp"
@@ -160,6 +162,7 @@ bool Router::require_create_vm(const vpid_t& pid) {
  */
 void Router::set_nid(const NodeID& nid) {
   my_nid = nid;
+  Logger::dbg(DaemonMid::L1013, getpid(), my_nid.to_str().c_str());
 
   // get local hostname
   char hostname[Definition::NODE_NAME_MAX + 1];

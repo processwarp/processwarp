@@ -1,8 +1,11 @@
 
+#include <unistd.h>
+
 #include <string>
 #include <tuple>
 
 #include "convert.hpp"
+#include "daemon_mid.hpp"
 #include "logger.hpp"
 #include "webrtc_bundle.hpp"
 #include "webrtc_subprocess.hpp"
@@ -212,6 +215,7 @@ void WebrtcSubprocess::recv_relay_packet(const picojson::object& content) {
 
 void WebrtcSubprocess::recv_set_my_nid(const picojson::object& content) {
   my_nid = NodeID::from_json(content.at("my_nid"));
+  Logger::dbg(DaemonMid::L1013, getpid(), my_nid.to_str().c_str());
 
   WebrtcBundle& bundle = WebrtcBundle::get_instance();
   bundle.set_nid(my_nid);

@@ -1,5 +1,5 @@
 
-#include <syslog.h>
+#include <unistd.h>
 
 #include <cassert>
 #include <cstdlib>
@@ -37,6 +37,7 @@ void Fluentd::output(Level lv, const std::string& file, unsigned int line,
   msg->set("class", file);
 #ifndef NDEBUG
   msg->set("line", line);
+  msg->set("pid", getpid());
 #endif
   msg->set("mid", mid);
   msg->set("message", message);
