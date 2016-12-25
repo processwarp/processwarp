@@ -127,6 +127,7 @@ endif()
 # libfluent
 if (WITH_LOG_FLUENTD)
   list(APPEND extra_libs "fluent")
+  link_directories(${PROJECT_SOURCE_DIR}/local/lib)
 endif (WITH_LOG_FLUENTD)
 
 # RE2
