@@ -10,7 +10,7 @@
 #include "convert.hpp"
 #include "frontend_connector.hpp"
 #include "router.hpp"
-#include "server_connector.hpp"
+#include "net/webrtc/server_connector.hpp"
 #include "worker_connector.hpp"
 
 namespace processwarp {

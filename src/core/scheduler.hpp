@@ -7,7 +7,7 @@
 #include <string>
 
 #include "packet.hpp"
-#include "type.hpp"
+#include "types.hpp"
 
 namespace processwarp {
 class Scheduler;

@@ -5,10 +5,9 @@
 #include <string>
 #include <vector>
 
+#include "const/daemon_mid.hpp"
 #include "connector.hpp"
-#include "daemon_mid.hpp"
 #include "logger.hpp"
-#include "util.hpp"
 
 namespace processwarp {
 /**

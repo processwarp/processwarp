@@ -4,8 +4,8 @@
 #include <vector>
 
 #include "func_store.hpp"
-#include "type.hpp"
 #include "type_store.hpp"
+#include "types.hpp"
 #include "wrapped_operator.hpp"
 
 namespace processwarp {

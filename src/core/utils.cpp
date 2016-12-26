@@ -17,8 +17,8 @@
 #include <sstream>
 #include <string>
 
-#include "util.hpp"
 #include "instruction.hpp"
+#include "utils.hpp"
 
 namespace processwarp {
 
@@ -76,7 +76,7 @@ static const char* OPCODE_STR[] = {
 
 #if !defined(__ANDROID__)
 #define M_CALC_HASH(FUNC, TYPE)                         \
-  std::string Util::FUNC(const std::string& src) {      \
+  std::string Utils::FUNC(const std::string& src) {      \
     unsigned char bin_hash[TYPE##_DIGEST_LENGTH];       \
     TYPE##_CTX ctx;                                     \
     std::ostringstream os;                              \
@@ -109,7 +109,7 @@ M_CALC_HASH(calc_md5, MD5);
  * @param cutoff_ext Cut off the extension from basename if the basename have a externsion and option is true.
  * @return The last component of a pathname.
  */
-std::string Util::file_basename(const std::string& path, bool cutoff_ext) {
+std::string Utils::file_basename(const std::string& path, bool cutoff_ext) {
   std::string basename;
   std::string::size_type pos = path.find_last_of('/');
 
@@ -137,7 +137,7 @@ std::string Util::file_basename(const std::string& path, bool cutoff_ext) {
  * @param path A target path to split.
  * @return A string of dirname.
  */
-std::string Util::file_dirname(const std::string& path) {
+std::string Utils::file_dirname(const std::string& path) {
   std::unique_ptr<char[]> buffer(new char[path.size() + 1]);
 
   memcpy(buffer.get(), path.c_str(), path.size());
@@ -150,7 +150,7 @@ std::string Util::file_dirname(const std::string& path) {
  * Get a fullpath of executable-file just now running.
  * @return A full path of executable-file.
  */
-std::string Util::get_my_fullpath() {
+std::string Utils::get_my_fullpath() {
 #if defined(__APPLE__) && defined(__MACH__)
   char buffer[MAXPATHLEN];
   uint32_t len = sizeof(buffer);
@@ -178,7 +178,7 @@ std::string Util::get_my_fullpath() {
  * @param from String befor replace.
  * @param to String after replace.
  */
-void Util::replace_string(std::string* str, const std::string& from, const std::string& to) {
+void Utils::replace_string(std::string* str, const std::string& from, const std::string& to) {
   std::string::size_type pos = str->find(from);
   while (pos != std::string::npos) {
     str->replace(pos, from.size(), to);
@@ -187,20 +187,20 @@ void Util::replace_string(std::string* str, const std::string& from, const std::
 }
 
 // Convert instruction code to readable string.
-std::string Util::code2str(instruction_t code) {
+std::string Utils::code2str(instruction_t code) {
   std::string opcode  = OPCODE_STR[Instruction::get_opcode(code)];
   std::string operand = num2dec_str(Instruction::get_operand_value(code));
   return opcode + "\t" + operand;
 }
 
-template<> std::string Util::num2hex_str<uint8_t>(uint8_t v) {
+template<> std::string Utils::num2hex_str<uint8_t>(uint8_t v) {
   std::ostringstream os;
   os << std::hex << std::setfill('0') <<
       std::setw(sizeof(uint8_t) * 2) << static_cast<uint32_t>(v);
   return os.str();
 }
 
-template<> uint8_t Util::hex_str2num<uint8_t>(const std::string& str) {
+template<> uint8_t Utils::hex_str2num<uint8_t>(const std::string& str) {
   std::istringstream is(str);
   uint32_t v;
   is >> std::hex >> v;

@@ -8,7 +8,6 @@ find_package(PkgConfig)
 include_directories(${WEBRTC_INCLUDE_DIR})
 link_directories(${WEBRTC_LIBRARY_DIR})
 
-
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   # macOS
   list(APPEND webrtc_libs "audioproc_debug_proto")
@@ -143,10 +142,6 @@ list(APPEND extra_libs "crypto")
 list(APPEND extra_libs "dl")
 list(APPEND extra_libs "ssl")
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wno-unused-parameter")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
-
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   # MaxOSX
 
@@ -174,22 +169,22 @@ endif()
 # Compile & link
 file(GLOB HEADER_FILES "*.hpp")
 
-list(APPEND WEBRTC_FILES "routing.cpp")
-list(APPEND WEBRTC_FILES "subprocess.cpp")
-list(APPEND WEBRTC_FILES "webrtc_bundle.cpp")
-list(APPEND WEBRTC_FILES "webrtc_subprocess.cpp")
-list(APPEND WEBRTC_FILES "webrtc_edge.cpp")
+set(WEBRTC_FILES
+  subprocess.cpp
+  webrtc_subprocess.cpp
+  )
 
-list(APPEND WORKER_FILES "subprocess.cpp")
-list(APPEND WORKER_FILES "worker_subprocess.cpp")
+set(WORKER_FILES
+  subprocess.cpp
+  worker_subprocess.cpp
+  )
 
-list(APPEND MAIN_FILES "connector.cpp")
-list(APPEND MAIN_FILES "daemon.cpp")
-list(APPEND MAIN_FILES "frontend_connector.cpp")
-list(APPEND MAIN_FILES "router.cpp")
-list(APPEND MAIN_FILES "server_connector.cpp")
-list(APPEND MAIN_FILES "webrtc_connector.cpp")
-list(APPEND MAIN_FILES "worker_connector.cpp")
+set(MAIN_FILES
+  daemon.cpp
+  frontend_connector.cpp
+  router.cpp
+  worker_connector.cpp
+  )
 
 if(WITH_WEBRTC_DEBUG)
   list(APPEND MAIN_FILES "${WEBRTC_FILES}")
@@ -213,12 +208,14 @@ if(NOT WITH_WEBRTC_DEBUG)
   if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     target_link_libraries(webrtc_subprocess
       pwcore
+      pwwebrtc
       ${webrtc_libs}
       ${extra_libs}
       )
   else()
     target_link_libraries(webrtc_subprocess
       pwcore
+      pwwebrtc
       -Wl,--start-group
       ${webrtc_libs}
       -Wl,--end-group
@@ -254,6 +251,7 @@ add_dependencies(processwarp
   )
 target_link_libraries(processwarp
   pwcore
+  pwwebrtc
   ${extra_libs}
   ${ssl_libs}
   sioclient_tls

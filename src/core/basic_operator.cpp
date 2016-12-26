@@ -9,7 +9,6 @@
 #include "error.hpp"
 #include "logger.hpp"
 #include "type_store.hpp"
-#include "util.hpp"
 
 namespace processwarp {
 
@@ -277,13 +276,13 @@ void PrimitiveOperator<T>::type_cast(uint8_t* dst, vaddr_t type, uint8_t* src)  
 #undef M_CASE_TYPE_CAST
 
     default: {
-      throw_error_message(Error::CAST_VIOLATION, Util::vaddr2str(type));
+      throw_error_message(Error::CAST_VIOLATION, Utils::vaddr2str(type));
     } break;
   }
 
   Logger::dbg_vm(CoreMid::L1001, "type_cast:%s <- %s",
-                 Util::numptr2str(dst, 8).c_str(),
-                 Util::numptr2str(src, sizeof(T)).c_str());
+                 Utils::numptr2str(dst, 8).c_str(),
+                 Utils::numptr2str(src, sizeof(T)).c_str());
 }
 
 // bit_cast命令に対応したキャスト演算を行う。
@@ -292,14 +291,14 @@ void PointerOperator::bit_cast(uint8_t* dst, size_t size, uint8_t* src) const {
   assert(size == sizeof(vaddr_t));
   *reinterpret_cast<vaddr_t*>(dst) = *reinterpret_cast<vaddr_t*>(src);
   Logger::dbg_vm(CoreMid::L1001, "bitcast %s (%p <- %p)",
-                 Util::numptr2str(dst, size).c_str(), dst, src);
+                 Utils::numptr2str(dst, size).c_str(), dst, src);
 }
 
 // 値をコピーする。
 void PointerOperator::copy_value(uint8_t* dst, uint8_t* src) const {
   *reinterpret_cast<vaddr_t*>(dst) = *reinterpret_cast<vaddr_t*>(src);
   Logger::dbg_vm(CoreMid::L1001, "copy_value %s (%p <- %p)",
-                 Util::numptr2str(dst, sizeof(vaddr_t)).c_str(), dst, src);
+                 Utils::numptr2str(dst, sizeof(vaddr_t)).c_str(), dst, src);
 }
 
 // 比較命令(a==b)に対応した演算を行う。
@@ -310,9 +309,9 @@ void PointerOperator::op_equal(uint8_t* dst, uint8_t* a, uint8_t* b) const {
     *reinterpret_cast<uint8_t*>(dst) = I8_FALSE;
   }
   Logger::dbg_vm(CoreMid::L1001, "%p : %s = %s == %s", dst,
-                 Util::numptr2str(dst, 1).c_str(),
-                 Util::numptr2str(a, sizeof(vaddr_t)).c_str(),
-                 Util::numptr2str(b, sizeof(vaddr_t)).c_str());
+                 Utils::numptr2str(dst, 1).c_str(),
+                 Utils::numptr2str(a, sizeof(vaddr_t)).c_str(),
+                 Utils::numptr2str(b, sizeof(vaddr_t)).c_str());
 }
 
 // 比較命令(a>b)に対応した演算を行う。
@@ -323,9 +322,9 @@ void PointerOperator::op_greater(uint8_t* dst, uint8_t* a, uint8_t* b) const {
     *reinterpret_cast<uint8_t*>(dst) = I8_FALSE;
   }
   Logger::dbg_vm(CoreMid::L1001, "%p : %s = %s > %s", dst,
-                 Util::numptr2str(dst, 1).c_str(),
-                 Util::numptr2str(a, sizeof(vaddr_t)).c_str(),
-                 Util::numptr2str(b, sizeof(vaddr_t)).c_str());
+                 Utils::numptr2str(dst, 1).c_str(),
+                 Utils::numptr2str(a, sizeof(vaddr_t)).c_str(),
+                 Utils::numptr2str(b, sizeof(vaddr_t)).c_str());
 }
 
 // 比較命令(a>=b)に対応した演算を行う。
@@ -336,9 +335,9 @@ void PointerOperator::op_greater_equal(uint8_t* dst, uint8_t* a, uint8_t* b) con
     *reinterpret_cast<uint8_t*>(dst) = I8_FALSE;
   }
   Logger::dbg_vm(CoreMid::L1001, "%p : %s = %s >= %s", dst,
-                 Util::numptr2str(dst, 1).c_str(),
-                 Util::numptr2str(a, sizeof(vaddr_t)).c_str(),
-                 Util::numptr2str(b, sizeof(vaddr_t)).c_str());
+                 Utils::numptr2str(dst, 1).c_str(),
+                 Utils::numptr2str(a, sizeof(vaddr_t)).c_str(),
+                 Utils::numptr2str(b, sizeof(vaddr_t)).c_str());
 }
 
 // 比較命令(a!=b)に対応した演算を行う。
@@ -349,9 +348,9 @@ void PointerOperator::op_not_equal(uint8_t* dst, uint8_t* a, uint8_t* b) const {
     *reinterpret_cast<uint8_t*>(dst) = I8_TRUE;
   }
   Logger::dbg_vm(CoreMid::L1001, "%p : %s = %s != %s", dst,
-                 Util::numptr2str(dst, 1).c_str(),
-                 Util::numptr2str(a, sizeof(vaddr_t)).c_str(),
-                 Util::numptr2str(b, sizeof(vaddr_t)).c_str());
+                 Utils::numptr2str(dst, 1).c_str(),
+                 Utils::numptr2str(a, sizeof(vaddr_t)).c_str(),
+                 Utils::numptr2str(b, sizeof(vaddr_t)).c_str());
 }
 
 // type_cast命令に対応したキャスト演算を行う。
@@ -382,12 +381,12 @@ void PointerOperator::type_cast(uint8_t* dst, vaddr_t type, uint8_t* src) const 
       break;
 
     default:
-      throw_error_message(Error::CAST_VIOLATION, Util::vaddr2str(type));
+      throw_error_message(Error::CAST_VIOLATION, Utils::vaddr2str(type));
   }
 
   Logger::dbg_vm(CoreMid::L1001, "type_cast:%s <- %s",
-                 Util::numptr2str(dst, 8).c_str(),
-                 Util::numptr2str(src, sizeof(vaddr_t)).c_str());
+                 Utils::numptr2str(dst, 8).c_str(),
+                 Utils::numptr2str(src, sizeof(vaddr_t)).c_str());
 }
 
 // 明示的テンプレートのインスタンス化

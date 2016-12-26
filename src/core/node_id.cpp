@@ -13,7 +13,7 @@
 
 #include "constant.hpp"
 #include "node_id.hpp"
-#include "util.hpp"
+#include "utils.hpp"
 
 namespace processwarp {
 // Node types.
@@ -101,8 +101,8 @@ NodeID NodeID::from_str(const std::string str) {
 #endif  // WITH_RE2
 
   if (is_normal) {
-    return NodeID(Util::hex_str2num<uint64_t>(str.substr(0,  16)),
-                  Util::hex_str2num<uint64_t>(str.substr(16, 16)));
+    return NodeID(Utils::hex_str2num<uint64_t>(str.substr(0,  16)),
+                  Utils::hex_str2num<uint64_t>(str.substr(16, 16)));
 
   } else {
     if (str == NID::NONE) {
@@ -368,7 +368,7 @@ std::string NodeID::to_str() const {
     } break;
 
     case Type::NORMAL: {
-      return Util::num2hex_str(id[0]) + Util::num2hex_str(id[1]);
+      return Utils::num2hex_str(id[0]) + Utils::num2hex_str(id[1]);
     } break;
 
     case Type::THIS: {

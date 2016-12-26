@@ -30,9 +30,9 @@
 #include "logger.hpp"
 #include "process.hpp"
 #include "stackinfo.hpp"
-#include "type_store.hpp"
-#include "util.hpp"
 #include "std_error.hpp"
+#include "type_store.hpp"
+#include "utils.hpp"
 #include "wrapped_operator.hpp"
 
 namespace processwarp {
@@ -633,7 +633,7 @@ re_entry: {
 
         default: {
           // EXTRAARGを含む想定外の命令
-          throw_error_message(Error::INST_VIOLATION, Util::num2hex_str(insts.at(stackinfo.pc)));
+          throw_error_message(Error::INST_VIOLATION, Utils::num2hex_str(insts.at(stackinfo.pc)));
         } break;
 
 #undef M_BIN_OPERATOR
@@ -760,7 +760,7 @@ void Process::call_external(Thread& thread,
                                    ffi_ret_type, ffi_arg_types.data());
 
   if (status != FFI_OK) {
-    throw_error_message(Error::EXT_CALL, Util::num2hex_str(status));
+    throw_error_message(Error::EXT_CALL, Utils::num2hex_str(status));
   }
 
   // 戻り値格納用の領域を作成
@@ -949,7 +949,7 @@ void Process::call_external(Thread& thread,
     case BasicTypeAddress::F64:  asm_code << ", 'double');"; break;
 
     default: {
-      fixme(Util::vaddr2str(func.ret_type));
+      fixme(Utils::vaddr2str(func.ret_type));
       assert(false);  /// @todo 他の型の対応
     } break;
   }

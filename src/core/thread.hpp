@@ -9,8 +9,8 @@
 
 #include "lock.hpp"
 #include "stackinfo.hpp"
-#include "type.hpp"
 #include "type_store.hpp"
+#include "types.hpp"
 #include "wrapped_operator.hpp"
 
 namespace processwarp {

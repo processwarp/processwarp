@@ -15,9 +15,9 @@
 #include "logger.hpp"
 #include "router.hpp"
 #include "scheduler.hpp"
-#include "server_connector.hpp"
-#include "type.hpp"
-#include "util.hpp"
+#include "net/webrtc/server_connector.hpp"
+#include "types.hpp"
+#include "utils.hpp"
 #include "worker_connector.hpp"
 
 namespace processwarp {
@@ -79,7 +79,7 @@ void Router::load_llvm(const std::string& filename, const std::vector<std::strin
   }
   ifs.close();
 
-  server.send_load_llvm(Util::file_basename(filename, true), file.str(), args,
+  server.send_load_llvm(Utils::file_basename(filename, true), file.str(), args,
                         scheduler.get_new_pid(), my_nid);
 }
 

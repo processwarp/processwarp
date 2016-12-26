@@ -173,7 +173,7 @@ vpid_t Scheduler::get_new_pid() {
   vpid_t pid;
 
   do {
-    seed = Util::calc_sha256(seed);
+    seed = Utils::calc_sha256(seed);
     pid  = Convert::str2vpid(seed);
   } while (processes.find(pid) != processes.end());
 

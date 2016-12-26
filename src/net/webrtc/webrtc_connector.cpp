@@ -5,7 +5,8 @@
 #include <string>
 
 #include "convert.hpp"
-#include "router.hpp"
+#include "daemon/router.hpp"
+#include "utils.hpp"
 #include "webrtc_connector.hpp"
 
 namespace processwarp {
@@ -170,7 +171,7 @@ void WebrtcConnector::on_close(uv_pipe_t& client) {
 }
 
 void WebrtcConnector::initialize_subprocess(const std::string& pipe_path) {
-  std::string program_path = Util::file_dirname(Util::get_my_fullpath()) + "/webrtc_subprocess";
+  std::string program_path = Utils::file_dirname(Utils::get_my_fullpath()) + "/webrtc_subprocess";
   std::string message_fname = config->at("message").get<std::string>();
 
   char* args[] = {

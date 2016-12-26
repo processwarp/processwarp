@@ -18,8 +18,8 @@
 #include "convert.hpp"
 #include "lock.hpp"
 #include "packet.hpp"
-#include "type.hpp"
-#include "util.hpp"
+#include "types.hpp"
+#include "utils.hpp"
 
 namespace processwarp {
 class VMemory;

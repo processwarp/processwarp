@@ -7,7 +7,7 @@
 #include "convert.hpp"
 #include "func_store.hpp"
 #include "process.hpp"
-#include "type.hpp"
+#include "types.hpp"
 
 namespace processwarp {
 

@@ -9,9 +9,9 @@
 #include "connector.hpp"
 #include "constant.hpp"
 #include "constant_native.hpp"
+#include "net/webrtc/server_connector.hpp"
 #include "packet.hpp"
-#include "server_connector.hpp"
-#include "type.hpp"
+#include "types.hpp"
 
 namespace processwarp {
 class FrontendConnector : public Connector, public ServerConnectorConnectDelegate {

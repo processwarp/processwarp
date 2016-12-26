@@ -3,7 +3,6 @@
 #include <uv.h>
 
 #include <webrtc/api/peerconnectioninterface.h>
-#include <webrtc/api/test/fakeconstraints.h>
 #include <webrtc/base/flags.h>
 #include <webrtc/base/physicalsocketserver.h>
 #include <webrtc/base/ssladapter.h>
@@ -18,7 +17,7 @@
 #include "lock.hpp"
 #include "packet.hpp"
 #include "routing.hpp"
-#include "type.hpp"
+#include "types.hpp"
 #include "webrtc_edge.hpp"
 
 namespace processwarp {

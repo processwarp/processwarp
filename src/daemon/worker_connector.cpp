@@ -11,6 +11,7 @@
 #include "frontend_connector.hpp"
 #include "logger.hpp"
 #include "router.hpp"
+#include "utils.hpp"
 #include "worker_connector.hpp"
 
 namespace processwarp {
@@ -79,7 +80,7 @@ void WorkerConnector::beat_routine() {
  */
 void WorkerConnector::create_vm(const vpid_t& pid, vtid_t root_tid, vaddr_t proc_addr,
                                 const std::string& name) {
-  std::string worker_path = Util::file_dirname(Util::get_my_fullpath()) + "/worker_subprocess";
+  std::string worker_path = Utils::file_dirname(Utils::get_my_fullpath()) + "/worker_subprocess";
   std::string message_fname = config->at("message").get<std::string>();
   Router& router = Router::get_instance();
 

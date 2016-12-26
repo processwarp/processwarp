@@ -5,7 +5,7 @@
 
 #include "dynamic_library.hpp"
 #include "symbols.hpp"
-#include "type.hpp"
+#include "types.hpp"
 #include "vmemory.hpp"
 
 namespace processwarp {

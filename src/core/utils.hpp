@@ -1,19 +1,15 @@
 #pragma once
 
-#if defined(__ANDROID__)
-#include <android/log.h>
-#endif
-
 #include <cstring>
 #include <string>
 #include <sstream>
 #include <iomanip>
 #include <iostream>
 
-#include "type.hpp"
+#include "types.hpp"
 
 namespace processwarp {
-namespace Util {
+namespace Utils {
 std::string calc_md5(const std::string& src);
 std::string calc_sha256(const std::string& src);
 std::string file_basename(const std::string& path, bool cutoff_ext = false);
@@ -72,6 +68,14 @@ template<class T> T hex_str2num(const std::string& str) {
 
 template<> uint8_t hex_str2num<uint8_t>(const std::string& str);
 
+inline const char* get_filename(const std::string fullpath) {
+  std::string::size_type sep = fullpath.rfind('/');
+  if (sep == std::string::npos) sep = fullpath.rfind('\\');
+  const char* file_cstr = fullpath.c_str();
+  if (sep != std::string::npos) file_cstr += sep + 1;
+  return file_cstr;
+}
+
 /**
  * Convert address string to vaddr_t.
  * @param str address string.
@@ -89,13 +93,5 @@ inline vaddr_t str2vaddr(const std::string& str) {
 inline std::string vaddr2str(vaddr_t addr) {
   return num2hex_str<vaddr_t>(addr);
 }
-
-inline const char* get_filename(const std::string fullpath) {
-  std::string::size_type sep = fullpath.rfind('/');
-  if (sep == std::string::npos) sep = fullpath.rfind('\\');
-  const char* file_cstr = fullpath.c_str();
-  if (sep != std::string::npos) file_cstr += sep + 1;
-  return file_cstr;
-}
-}  // namespace Util
+}  // namespace Utils
 }  // namespace processwarp

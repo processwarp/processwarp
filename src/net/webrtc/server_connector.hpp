@@ -9,9 +9,9 @@
 #include <utility>
 #include <vector>
 
-#include "constant_native.hpp"
 #include "lock.hpp"
-#include "type.hpp"
+#include "net/constant_net.hpp"
+#include "types.hpp"
 #include "webrtc_connector.hpp"
 
 namespace processwarp {

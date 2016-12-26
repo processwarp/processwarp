@@ -81,25 +81,63 @@ if (WITH_RE2)
       INSTALL_COMMAND echo "Nothing for install RE2."
       )
   endif ()
+
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWITH_RE2=1")
+  include_directories(${PROJECT_SOURCE_DIR}/lib/re2)
+  link_directories(${PROJECT_SOURCE_DIR}/tmp/re2/src/RE2-build)
 endif (WITH_RE2)
 
-# Compile.
-option(DEBUG_VERBOSE "Output debug log with verbose mode" OFF)
-if (DEBUG_VERBOSE)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D DEBUG_VM=1 -D DEBUG_MEM=1 -D DEBUG_NET=1")
-endif ()
+# C++ compile options
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D PICOJSON_USE_LOCALE=0")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wno-unused-parameter")
 
-# AddressSnitizer
-option(DEBUG_ADDRESS_SANITIZE "Enable AddressSanitizer" OFF)
-if (DEBUG_ADDRESS_SANITIZE)
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
+
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  # MaxOSX
+  include_directories(/usr/local/include)
+
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
+  # Emscripten
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-warn-absolute-paths")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --bind -s EXPORT_ALL=1")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -s DISABLE_EXCEPTION_CATCHING=0")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -s ASSERTIONS=2")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -s DEMANGLE_SUPPORT=1")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g4")
+
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
+  # FreeBSD
+  list(APPEND extra_libs pthread)
+
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+  # Linux
+  list(APPEND extra_libs "pthread")
+  list(APPEND extra_libs "dl")
+
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  # Windows
+  add_definitions(-DUNICODE)
+  add_definitions(-D_UNICODE)
+endif()
+
+# AddressSnitizer.
+option(WITH_ADDRESS_SANITIZE "Enable AddressSanitizer" OFF)
+if (WITH_ADDRESS_SANITIZE)
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address -fno-omit-frame-pointer")
   set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
   set(CMAKE_SHARED_LINKER_FLAGS_DEBUG "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=address")
   set(CMAKE_MODULE_LINKER_FLAGS_DEBUG "${CMAKE_MODULE_LINKER_FLAGS} -fsanitize=address")
-endif (DEBUG_ADDRESS_SANITIZE)
+endif (WITH_ADDRESS_SANITIZE)
 
-# Log output
+# Debug log options.
+option(WITH_DEBUG_VERBOSE "Output debug log with verbose mode" OFF)
+if (WITH_DEBUG_VERBOSE)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D DEBUG_VM=1 -D DEBUG_MEM=1 -D DEBUG_NET=1")
+endif (WITH_DEBUG_VERBOSE)
+
+# Log output destination.
 option(WITH_LOG_FLUENTD "Enable fluentd for destination of log output." ON)
 if (WITH_LOG_FLUENTD)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWITH_LOG_FLUENTD")
@@ -119,15 +157,20 @@ if (WITH_PTHREAD)
 endif ()
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
-include_directories(${PROJECT_SOURCE_DIR}/src/const)
-include_directories(${PROJECT_SOURCE_DIR}/src/core)
 include_directories(${PROJECT_SOURCE_DIR}/lib/picojson)
 include_directories(${PROJECT_SOURCE_DIR}/lib/safeint)
 include_directories(${PROJECT_SOURCE_DIR}/lib/socket.io-client-cpp/src)
 include_directories(${PROJECT_SOURCE_DIR}/local/include)
+include_directories(${PROJECT_SOURCE_DIR}/src)
+include_directories(${PROJECT_SOURCE_DIR}/src/const)
+include_directories(${PROJECT_SOURCE_DIR}/src/core)
+
+link_directories(${PROJECT_SOURCE_DIR}/local/lib)
 
 add_subdirectory(src/const)
 add_subdirectory(src/core)
+add_subdirectory(src/net/webrtc)
+
 if (${PROCESSWARP_BUILD_TYPE} STREQUAL "Client")
   add_subdirectory(src/daemon)
 elseif (${PROCESSWARP_BUILD_TYPE} STREQUAL "Server")

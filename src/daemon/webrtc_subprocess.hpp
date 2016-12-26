@@ -5,8 +5,8 @@
 #include <vector>
 
 #include "subprocess.hpp"
-#include "webrtc_bundle.hpp"
-#include "webrtc_edge.hpp"
+#include "net/webrtc/webrtc_bundle.hpp"
+#include "net/webrtc/webrtc_edge.hpp"
 
 namespace processwarp {
 class WebrtcSubprocess : public Subprocess,

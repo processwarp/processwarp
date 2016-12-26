@@ -11,7 +11,7 @@
 
 #include "logger.hpp"
 #include "message.hpp"
-#include "util.hpp"
+#include "utils.hpp"
 
 namespace processwarp {
 namespace Message {
@@ -85,7 +85,7 @@ bool load(const std::string& fname) {
     }
 
     // Replace reserved keyword.
-    Util::replace_string(&message, "%{tid}", "%016" PRIx64);
+    Utils::replace_string(&message, "%{tid}", "%016" PRIx64);
 
     messages.insert(std::make_pair(mid, message));
   }

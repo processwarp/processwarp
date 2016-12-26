@@ -1,9 +1,10 @@
 #pragma once
 
+#include <picojson.h>
+
 #include <string>
 
 #include "message.hpp"
-#include "type.hpp"
 
 namespace processwarp {
 namespace Logger {

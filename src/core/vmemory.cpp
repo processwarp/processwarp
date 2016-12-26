@@ -12,7 +12,7 @@
 #include "error.hpp"
 #include "finally.hpp"
 #include "logger.hpp"
-#include "util.hpp"
+#include "utils.hpp"
 #include "vmemory.hpp"
 
 namespace processwarp {
@@ -1176,7 +1176,7 @@ void VMemory::cleanup_page_lock() {
  */
 NodeID VMemory::get_hash_id(vaddr_t addr) {
   std::string key = my_pid + Convert::vaddr2str(addr);
-  return NodeID::from_str(Util::calc_md5(key));
+  return NodeID::from_str(Utils::calc_md5(key));
 }
 
 /**
@@ -1253,7 +1253,7 @@ void VMemory::print_dump() {
       if (v.get<picojson::object>().at("program_type").get<std::string>() == "01") {
         Logger::dbg_raw(CoreMid::L1007, "code:");
         for (auto& code : v.get<picojson::object>().at("code").get<picojson::array>()) {
-          Logger::dbg_raw(CoreMid::L1007, "  %s", Util::code2str(Convert::json2code(code)).c_str());
+          Logger::dbg_raw(CoreMid::L1007, "  %s", Utils::code2str(Convert::json2code(code)).c_str());
         }
       }
     } else {

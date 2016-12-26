@@ -65,7 +65,7 @@ if args.cpp_dst:
     out.write(HEADER)
     out.write('#pragma once\n\n'
               '#include <string>\n\n'
-              '#include "type.hpp"\n\n'
+              '#include "types.hpp"\n\n'
               'namespace processwarp {\n\n')
     for fname in args.input:
         print 'processing {}'.format(fname)

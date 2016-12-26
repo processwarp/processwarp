@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-#include "core_mid.hpp"
+#include "const/core_mid.hpp"
 #include "lock.hpp"
 #include "logger.hpp"
 #ifdef WITH_LOG_FLUENTD
@@ -15,7 +15,7 @@
 #ifdef WITH_LOG_SYSLOG
 #  include "logger_syslog.hpp"
 #endif
-#include "util.hpp"
+#include "utils.hpp"
 
 namespace processwarp {
 namespace Logger {
@@ -141,7 +141,7 @@ void output(Level lv, const char* file, const std::size_t line,
   std::string message = Message::vformat(mid, args);
   va_end(args);
 
-  delegate->output(lv, Util::get_filename(file), line, mid, message);
+  delegate->output(lv, Utils::get_filename(file), line, mid, message);
 }
 
 /**
@@ -157,7 +157,7 @@ void output_raw(Level lv, const char* file, const std::size_t line,
   assert(delegate != nullptr);
   Lock::Guard guard(mutex);
 
-  delegate->output(lv, Util::get_filename(file), line, mid, message);
+  delegate->output(lv, Utils::get_filename(file), line, mid, message);
 }
 
 /**
@@ -192,7 +192,7 @@ void output_raw(Level lv, const char* file, const std::size_t line,
   va_end(args);
   va_end(args_copy);
 
-  delegate->output(lv, Util::get_filename(file), line, mid, std::string(buffer.data()));
+  delegate->output(lv, Utils::get_filename(file), line, mid, std::string(buffer.data()));
 }
 }  // namespace Logger
 }  // namespace processwarp

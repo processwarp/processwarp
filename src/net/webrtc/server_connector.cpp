@@ -5,14 +5,13 @@
 #include <string>
 #include <vector>
 
-#include "constant.hpp"
 #include "convert.hpp"
 #include "core_mid.hpp"
+#include "daemon/router.hpp"
 #include "error.hpp"
 #include "logger.hpp"
-#include "router.hpp"
 #include "server_connector.hpp"
-#include "util.hpp"
+#include "utils.hpp"
 #include "webrtc_connector.hpp"
 
 namespace processwarp {
@@ -177,7 +176,7 @@ void ServerConnector::connect(ServerConnectorConnectDelegate* delegate,
 
   std::string hash_password = password_;
   for (int i = 0; i < 10; i ++) {
-    hash_password = Util::calc_sha256(hash_password);
+    hash_password = Utils::calc_sha256(hash_password);
   }
   password = "[10sha256]" + hash_password;
   is_auth_yet = false;

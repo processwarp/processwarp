@@ -10,7 +10,7 @@
 #include "constant_native.hpp"
 #include "packet.hpp"
 #include "scheduler.hpp"
-#include "type.hpp"
+#include "types.hpp"
 
 namespace processwarp {
 class Router : public SchedulerDelegate {

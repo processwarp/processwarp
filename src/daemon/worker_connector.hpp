@@ -12,7 +12,7 @@
 #include "connector.hpp"
 #include "constant_native.hpp"
 #include "packet.hpp"
-#include "type.hpp"
+#include "types.hpp"
 #ifdef WITH_WORKER_DEBUG
 #  include "worker_subprocess.hpp"
 #endif

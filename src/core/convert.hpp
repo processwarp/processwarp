@@ -7,8 +7,8 @@
 #include <string>
 #include <vector>
 
-#include "type.hpp"
-#include "util.hpp"
+#include "types.hpp"
+#include "utils.hpp"
 
 namespace processwarp {
 namespace Convert {
@@ -18,7 +18,7 @@ namespace Convert {
  * @return A integer as string.
  */
 template<class T> std::string int2str(T num) {
-  return Util::num2hex_str<T>(num);
+  return Utils::num2hex_str<T>(num);
 }
 
 /**
@@ -54,7 +54,7 @@ inline std::string vaddr2str(const vaddr_t& addr) {
  * @return A converted integer.
  */
 template<class T> T str2int(const std::string& str) {
-  return Util::hex_str2num<T>(str);
+  return Utils::hex_str2num<T>(str);
 }
 
 /**

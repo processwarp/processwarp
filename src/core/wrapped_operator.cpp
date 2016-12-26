@@ -8,7 +8,7 @@
 #include "error.hpp"
 #include "logger.hpp"
 #include "type_store.hpp"
-#include "util.hpp"
+#include "utils.hpp"
 #include "wrapped_operator.hpp"
 
 namespace processwarp {
@@ -316,7 +316,7 @@ void WrappedPrimitiveOperator<T>::type_cast(vaddr_t dst, vaddr_t type, vaddr_t s
       memory.write<double>(dst, static_cast<double>(memory.read<T>(src))); break;
 
     default: {
-      throw_error_message(Error::CAST_VIOLATION, Util::vaddr2str(type));
+      throw_error_message(Error::CAST_VIOLATION, Utils::vaddr2str(type));
     } break;
   }
   Logger::dbg_vm(CoreMid::L1001, "type_cast:%" PRId64 " <- %" PRId64,
@@ -425,7 +425,7 @@ void WrappedPointerOperator::type_cast(vaddr_t dst, vaddr_t type, vaddr_t src) {
       break;
 
     default:
-      throw_error_message(Error::CAST_VIOLATION, Util::vaddr2str(type));
+      throw_error_message(Error::CAST_VIOLATION, Utils::vaddr2str(type));
   }
   Logger::dbg_vm(CoreMid::L1001, "type_cast:%" PRId64 " <- %016" PRIx64,
                  memory.read<longest_int_t>(dst),

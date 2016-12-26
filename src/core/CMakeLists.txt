@@ -27,53 +27,18 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     include_directories(${OPENSSL_INCLUDE_DIR})
     list(APPEND ssl_libs ${OPENSSL_LIBRARIES})
   endif()
-
-  # libfluent
-  if (WITH_LOG_FLUENTD)
-    list(APPEND extra_libs "fluent")
-    link_directories(${PROJECT_SOURCE_DIR}/local/lib)
-  endif (WITH_LOG_FLUENTD)
-
-  # RE2
-  if(WITH_RE2)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWITH_RE2=1")
-    include_directories(${PROJECT_SOURCE_DIR}/lib/re2)
-    link_directories(${PROJECT_SOURCE_DIR}/tmp/re2/src/RE2-build)
-    list(APPEND extra_libs re2)
-  endif()
 endif()
-
-# C++ options
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wno-unused-parameter")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   # MaxOSX
-  include_directories(/usr/local/include)
-
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   # Emscripten
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-warn-absolute-paths")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --bind -s EXPORT_ALL=1")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -s DISABLE_EXCEPTION_CATCHING=0")
-  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -s ASSERTIONS=2")
-  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -s DEMANGLE_SUPPORT=1")
-  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g4")
-
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
   # FreeBSD
-  list(APPEND extra_libs pthread)
-
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   # Linux
-  list(APPEND extra_libs "pthread")
-  list(APPEND extra_libs "dl")
-
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   # Windows
-  add_definitions(-DUNICODE)
-  add_definitions(-D_UNICODE)
 endif()
 
 # Core files
@@ -82,7 +47,6 @@ set(PWCORE_FILES
   convert.cpp
   error.cpp
   func_store.cpp
-  finally.cpp
   basic_operator.cpp
   builtin_bit.cpp
   builtin_gui.cpp
@@ -92,8 +56,10 @@ set(PWCORE_FILES
   builtin_posix.cpp
   builtin_va_arg.cpp
   builtin_warp.cpp
+  connector.cpp
   dynamic_library.cpp
   endless_order_id.cpp
+  finally.cpp
   format.cpp
   interrupt_memory_require.cpp
   lock.cpp
@@ -109,7 +75,7 @@ set(PWCORE_FILES
   symbols.cpp
   thread.cpp
   type_store.cpp
-  util.cpp
+  utils.cpp
   vmachine.cpp
   vmemory.cpp
   wrapped_operator.cpp

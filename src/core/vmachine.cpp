@@ -24,7 +24,7 @@
 #include "interrupt.hpp"
 #include "interrupt_memory_require.hpp"
 #include "logger.hpp"
-#include "type.hpp"
+#include "types.hpp"
 #include "vmachine.hpp"
 #include "vmemory.hpp"
 

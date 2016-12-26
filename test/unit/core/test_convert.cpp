@@ -4,7 +4,7 @@
 
 #include "constant_vm.hpp"
 #include "convert.hpp"
-#include "type.hpp"
+#include "types.hpp"
 
 namespace processwarp {
 class ConvertTest : public ::testing::Test {

@@ -5,7 +5,7 @@
 
 #include "packet.hpp"
 #include "process.hpp"
-#include "type.hpp"
+#include "types.hpp"
 #include "vmachine.hpp"
 
 namespace processwarp {

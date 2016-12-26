@@ -3,7 +3,7 @@
 #include <cassert>
 
 #include "constant_vm.hpp"
-#include "type.hpp"
+#include "types.hpp"
 
 namespace processwarp {
 class Instruction {

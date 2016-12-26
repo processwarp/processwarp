@@ -11,7 +11,7 @@
 #include "constant.hpp"
 #include "lock.hpp"
 #include "node_id.hpp"
-#include "type.hpp"
+#include "types.hpp"
 
 namespace processwarp {
 struct Packet {
