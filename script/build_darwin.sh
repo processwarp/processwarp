@@ -23,7 +23,12 @@ git submodule update
 if ! type brew >/dev/null 2>&1; then
     ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 fi
-brew install cmake boost libffi libuv msgpack openssl
+brew install cmake libffi libuv msgpack openssl
+
+brew list | grep boost
+if [ $? -eq 1 ]; then
+    brew install boost
+fi
 
 if ! type python >/dev/null 2>&1; then
     brew install python
