@@ -1,8 +1,6 @@
 #!/bin/bash
 
-set -e
-set -u
-set -x
+set -eux
 
 _pwd=`pwd`
 
