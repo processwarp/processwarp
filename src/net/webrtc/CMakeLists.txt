@@ -32,3 +32,7 @@ add_library(pwwebrtc STATIC
   ${HEADER_FILES}
   ${PWWEBRTC_FILES}
   )
+add_dependencies(pwwebrtc
+  const_processwarp
+  const_core_constant
+  )

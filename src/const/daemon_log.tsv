@@ -1,6 +1,4 @@
 ID	c
-L3001	connector bind failed (name=%s, path=%s)
-L3002	connector listen failed (name=%s, path=%s)
 L3003	connector read failed (name=%s)
 L3004	receive bad packet
 L3005	(packet={%s})
