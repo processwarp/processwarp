@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
-project(processwarp)
+project(PROCESSWARP)
 
 include(ExternalProject)
 
@@ -17,7 +17,10 @@ if (NOT PROCESSWARP_BUILD_TYPE)
   message("PROCESSWARP_BUILD_TYPE was not set, Automatically set to Client.")
   set(PROCESSWARP_BUILD_TYPE Client)
 
-elseif (NOT (${PROCESSWARP_BUILD_TYPE} STREQUAL "Client" OR ${PROCESSWARP_BUILD_TYPE} STREQUAL "Server"))
+elseif (NOT (
+      ${PROCESSWARP_BUILD_TYPE} STREQUAL "Client" OR
+      ${PROCESSWARP_BUILD_TYPE} STREQUAL "Server" OR
+      ${PROCESSWARP_BUILD_TYPE} STREQUAL "libpwnet"))
   message("PROCESSWARP_BUILD_TYPE must be ether Client or Server.")
   return()
 endif ()
@@ -29,12 +32,12 @@ add_custom_target(cpplint
   --extensions=cpp,h,hpp
   --linelength=100
   --filter=-legal/copyright,-runtime/references,-build/c++11
-  ${PROJECT_SOURCE_DIR}/src/core/*.cpp ${PROJECT_SOURCE_DIR}/src/core/*.hpp
-  ${PROJECT_SOURCE_DIR}/src/daemon/*.cpp ${PROJECT_SOURCE_DIR}/src/daemon/*.hpp
-  ${PROJECT_SOURCE_DIR}/include/processwarp/*.h ${PROJECT_SOURCE_DIR}/include/processwarp/*.hpp
-  ${PROJECT_SOURCE_DIR}/test/unit/core/*.cpp ${PROJECT_SOURCE_DIR}/test/unit/core/*.hpp
-  ${PROJECT_SOURCE_DIR}/src/android/app/src/main/jni/*.cpp
-  ${PROJECT_SOURCE_DIR}/src/android/app/src/main/jni/*.hpp
+  ${PROCESSWARP_SOURCE_DIR}/src/core/*.cpp ${PROCESSWARP_SOURCE_DIR}/src/core/*.hpp
+  ${PROCESSWARP_SOURCE_DIR}/src/daemon/*.cpp ${PROCESSWARP_SOURCE_DIR}/src/daemon/*.hpp
+  ${PROCESSWARP_SOURCE_DIR}/include/processwarp/*.h ${PROCESSWARP_SOURCE_DIR}/include/processwarp/*.hpp
+  ${PROCESSWARP_SOURCE_DIR}/test/unit/core/*.cpp ${PROCESSWARP_SOURCE_DIR}/test/unit/core/*.hpp
+  ${PROCESSWARP_SOURCE_DIR}/src/android/app/src/main/jni/*.cpp
+  ${PROCESSWARP_SOURCE_DIR}/src/android/app/src/main/jni/*.hpp
   )
 
 # Generate develop document.
@@ -58,7 +61,7 @@ endif (WITH_DOCUMENT)
 
 # Socket.io
 if (${PROCESSWARP_BUILD_TYPE} STREQUAL "Client")
-  add_subdirectory(${PROJECT_SOURCE_DIR}/lib/socket.io-client-cpp)
+  add_subdirectory(${PROCESSWARP_SOURCE_DIR}/lib/socket.io-client-cpp)
 endif ()
 
 # RE2
@@ -68,23 +71,23 @@ if (WITH_RE2)
     # Linux
     ExternalProject_Add(
       RE2
-      PREFIX ${PROJECT_SOURCE_DIR}/tmp/re2
-      SOURCE_DIR ${PROJECT_SOURCE_DIR}/lib/re2
+      PREFIX ${PROCESSWARP_SOURCE_DIR}/tmp/re2
+      SOURCE_DIR ${PROCESSWARP_SOURCE_DIR}/lib/re2
       CMAKE_ARGS -DEXTRA_TARGET_LINK_LIBRARIES="rt"
       INSTALL_COMMAND echo "Nothing for install RE2."
       )
   else ()
     ExternalProject_Add(
       RE2
-      PREFIX ${PROJECT_SOURCE_DIR}/tmp/re2
-      SOURCE_DIR ${PROJECT_SOURCE_DIR}/lib/re2
+      PREFIX ${PROCESSWARP_SOURCE_DIR}/tmp/re2
+      SOURCE_DIR ${PROCESSWARP_SOURCE_DIR}/lib/re2
       INSTALL_COMMAND echo "Nothing for install RE2."
       )
   endif ()
 
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWITH_RE2=1")
-  include_directories(${PROJECT_SOURCE_DIR}/lib/re2)
-  link_directories(${PROJECT_SOURCE_DIR}/tmp/re2/src/RE2-build)
+  include_directories(${PROCESSWARP_SOURCE_DIR}/lib/re2)
+  link_directories(${PROCESSWARP_SOURCE_DIR}/tmp/re2/src/RE2-build)
 endif (WITH_RE2)
 
 # C++ compile options
@@ -156,30 +159,30 @@ if (WITH_PTHREAD)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWITH_PTHREAD=1")
 endif ()
 
-include_directories(${PROJECT_SOURCE_DIR}/include)
-include_directories(${PROJECT_SOURCE_DIR}/lib/picojson)
-include_directories(${PROJECT_SOURCE_DIR}/lib/safeint)
-include_directories(${PROJECT_SOURCE_DIR}/lib/socket.io-client-cpp/src)
-include_directories(${PROJECT_SOURCE_DIR}/local/include)
-include_directories(${PROJECT_SOURCE_DIR}/src)
-include_directories(${PROJECT_SOURCE_DIR}/src/const)
-include_directories(${PROJECT_SOURCE_DIR}/src/core)
+include_directories(${PROCESSWARP_SOURCE_DIR}/include)
+include_directories(${PROCESSWARP_SOURCE_DIR}/lib/picojson)
+include_directories(${PROCESSWARP_SOURCE_DIR}/lib/safeint)
+include_directories(${PROCESSWARP_SOURCE_DIR}/lib/socket.io-client-cpp/src)
+include_directories(${PROCESSWARP_SOURCE_DIR}/local/include)
+include_directories(${PROCESSWARP_SOURCE_DIR}/src)
+include_directories(${PROCESSWARP_SOURCE_DIR}/src/const)
+include_directories(${PROCESSWARP_SOURCE_DIR}/src/core)
 
-link_directories(${PROJECT_SOURCE_DIR}/local/lib)
+link_directories(${PROCESSWARP_SOURCE_DIR}/local/lib)
 
-add_subdirectory(src/const)
-add_subdirectory(src/core)
-add_subdirectory(src/net/webrtc)
+add_subdirectory(${PROCESSWARP_SOURCE_DIR}/src/const)
+add_subdirectory(${PROCESSWARP_SOURCE_DIR}/src/core)
+add_subdirectory(${PROCESSWARP_SOURCE_DIR}/src/net/webrtc)
 
 if (${PROCESSWARP_BUILD_TYPE} STREQUAL "Client")
-  add_subdirectory(src/daemon)
+  add_subdirectory(${PROCESSWARP_SOURCE_DIR}/src/daemon)
 elseif (${PROCESSWARP_BUILD_TYPE} STREQUAL "Server")
-  add_subdirectory(src/loader)
+  add_subdirectory(${PROCESSWARP_SOURCE_DIR}/src/loader)
 endif ()
 
 # Sample
 add_custom_target(sample
-  COMMAND python ${PROJECT_SOURCE_DIR}/script/compile.py -s ${PROJECT_SOURCE_DIR}/include/libc -I {PROJECT_SOURCE_DIR}/include/processwarp ${PROJECT_SOURCE_DIR}/sample
+  COMMAND python ${PROCESSWARP_SOURCE_DIR}/script/compile.py -s ${PROCESSWARP_SOURCE_DIR}/include/libc -I {PROCESSWARP_SOURCE_DIR}/include/processwarp ${PROCESSWARP_SOURCE_DIR}/sample
   )
 
 # Test

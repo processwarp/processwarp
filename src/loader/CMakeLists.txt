@@ -18,7 +18,7 @@ endif()
 # fluentd
 if (WITH_LOG_FLUENTD)
   list(APPEND extra_libs "fluent")
-  link_directories(${PROJECT_SOURCE_DIR}/local/lib)
+  link_directories(${PROCESSWARP_SOURCE_DIR}/local/lib)
 endif (WITH_LOG_FLUENTD)
 
 # LLVM (http://llvm.org/docs/CMake.html)
@@ -44,8 +44,8 @@ list(APPEND extra_libs ${OPENSSL_LIBRARIES})
 # RE2
 if(WITH_RE2)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWITH_RE2=1")
-  include_directories(${PROJECT_SOURCE_DIR}/lib/re2)
-  link_directories(${PROJECT_SOURCE_DIR}/tmp/re2/src/RE2-build)
+  include_directories(${PROCESSWARP_SOURCE_DIR}/lib/re2)
+  link_directories(${PROCESSWARP_SOURCE_DIR}/tmp/re2/src/RE2-build)
   list(APPEND extra_libs re2)
 endif()
 
@@ -74,4 +74,4 @@ target_link_libraries(loader
   pwcore
   ${extra_libs}
   )
-install(TARGETS loader DESTINATION ${PROJECT_SOURCE_DIR}/bin)
+install(TARGETS loader DESTINATION ${PROCESSWARP_SOURCE_DIR}/bin)

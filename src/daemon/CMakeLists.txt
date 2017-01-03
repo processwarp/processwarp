@@ -126,14 +126,14 @@ endif()
 # libfluent
 if (WITH_LOG_FLUENTD)
   list(APPEND extra_libs "fluent")
-  link_directories(${PROJECT_SOURCE_DIR}/local/lib)
+  link_directories(${PROCESSWARP_SOURCE_DIR}/local/lib)
 endif (WITH_LOG_FLUENTD)
 
 # RE2
 if(WITH_RE2)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWITH_RE2=1")
-  include_directories(${PROJECT_SOURCE_DIR}/lib/re2)
-  link_directories(${PROJECT_SOURCE_DIR}/tmp/re2/src/RE2-build)
+  include_directories(${PROCESSWARP_SOURCE_DIR}/lib/re2)
+  link_directories(${PROCESSWARP_SOURCE_DIR}/tmp/re2/src/RE2-build)
   list(APPEND extra_libs re2)
 endif()
 
@@ -259,14 +259,14 @@ target_link_libraries(processwarp
 
 # Install
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
-  install(TARGETS processwarp DESTINATION ${PROJECT_SOURCE_DIR}/bin)
+  install(TARGETS processwarp DESTINATION ${PROCESSWARP_SOURCE_DIR}/bin)
 
   if(NOT WITH_WEBRTC_DEBUG)
-    install(TARGETS webrtc_subprocess DESTINATION ${PROJECT_SOURCE_DIR}/bin)
+    install(TARGETS webrtc_subprocess DESTINATION ${PROCESSWARP_SOURCE_DIR}/bin)
   endif(NOT WITH_WEBRTC_DEBUG)
 
   if(NOT WITH_WORKER_DEBUG)
-    install(TARGETS worker_subprocess DESTINATION ${PROJECT_SOURCE_DIR}/bin)
+    install(TARGETS worker_subprocess DESTINATION ${PROCESSWARP_SOURCE_DIR}/bin)
   endif(NOT WITH_WORKER_DEBUG)
 endif()
 

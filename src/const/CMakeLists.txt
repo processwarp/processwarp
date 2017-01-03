@@ -1,47 +1,47 @@
 
 add_custom_command(
-  OUTPUT ${PROJECT_SOURCE_DIR}/src/const/loader_mid.hpp
+  OUTPUT ${PROCESSWARP_SOURCE_DIR}/src/const/loader_mid.hpp
   COMMAND python
-  ARGS ${PROJECT_SOURCE_DIR}/script/gen_message.py c LoaderMid ${PROJECT_SOURCE_DIR}/src/const/loader_mid ${PROJECT_SOURCE_DIR}/src/const/loader_log.tsv
-  DEPENDS ${PROJECT_SOURCE_DIR}/script/gen_message.py ${PROJECT_SOURCE_DIR}/src/const/loader_log.tsv
+  ARGS ${PROCESSWARP_SOURCE_DIR}/script/gen_message.py c LoaderMid ${PROCESSWARP_SOURCE_DIR}/src/const/loader_mid ${PROCESSWARP_SOURCE_DIR}/src/const/loader_log.tsv
+  DEPENDS ${PROCESSWARP_SOURCE_DIR}/script/gen_message.py ${PROCESSWARP_SOURCE_DIR}/src/const/loader_log.tsv
   )
 add_custom_target(const_loader
-  SOURCES ${PROJECT_SOURCE_DIR}/src/const/loader_mid.hpp)
+  SOURCES ${PROCESSWARP_SOURCE_DIR}/src/const/loader_mid.hpp)
 
 add_custom_command(
-  OUTPUT ${PROJECT_SOURCE_DIR}/src/const/core_mid.hpp
+  OUTPUT ${PROCESSWARP_SOURCE_DIR}/src/const/core_mid.hpp
   COMMAND python
-  ARGS ${PROJECT_SOURCE_DIR}/script/gen_message.py c CoreMid ${PROJECT_SOURCE_DIR}/src/const/core_mid ${PROJECT_SOURCE_DIR}/src/const/core_log.tsv
-  DEPENDS ${PROJECT_SOURCE_DIR}/script/gen_message.py ${PROJECT_SOURCE_DIR}/src/const/core_log.tsv
+  ARGS ${PROCESSWARP_SOURCE_DIR}/script/gen_message.py c CoreMid ${PROCESSWARP_SOURCE_DIR}/src/const/core_mid ${PROCESSWARP_SOURCE_DIR}/src/const/core_log.tsv
+  DEPENDS ${PROCESSWARP_SOURCE_DIR}/script/gen_message.py ${PROCESSWARP_SOURCE_DIR}/src/const/core_log.tsv
   )
 add_custom_target(const_core
-  SOURCES ${PROJECT_SOURCE_DIR}/src/const/core_mid.hpp)
+  SOURCES ${PROCESSWARP_SOURCE_DIR}/src/const/core_mid.hpp)
 
 add_custom_command(
-  OUTPUT ${PROJECT_SOURCE_DIR}/src/const/daemon_mid.hpp
+  OUTPUT ${PROCESSWARP_SOURCE_DIR}/src/const/daemon_mid.hpp
   COMMAND python
-  ARGS ${PROJECT_SOURCE_DIR}/script/gen_message.py c DaemonMid ${PROJECT_SOURCE_DIR}/src/const/daemon_mid ${PROJECT_SOURCE_DIR}/src/const/daemon_log.tsv ${PROJECT_SOURCE_DIR}/src/const/core_log.tsv
-  DEPENDS ${PROJECT_SOURCE_DIR}/script/gen_message.py ${PROJECT_SOURCE_DIR}/src/const/daemon_log.tsv ${PROJECT_SOURCE_DIR}/src/const/core_log.tsv
+  ARGS ${PROCESSWARP_SOURCE_DIR}/script/gen_message.py c DaemonMid ${PROCESSWARP_SOURCE_DIR}/src/const/daemon_mid ${PROCESSWARP_SOURCE_DIR}/src/const/daemon_log.tsv ${PROCESSWARP_SOURCE_DIR}/src/const/core_log.tsv
+  DEPENDS ${PROCESSWARP_SOURCE_DIR}/script/gen_message.py ${PROCESSWARP_SOURCE_DIR}/src/const/daemon_log.tsv ${PROCESSWARP_SOURCE_DIR}/src/const/core_log.tsv
   )
 add_custom_target(const_processwarp
-  SOURCES ${PROJECT_SOURCE_DIR}/src/const/daemon_mid.hpp)
+  SOURCES ${PROCESSWARP_SOURCE_DIR}/src/const/daemon_mid.hpp)
 
 add_custom_command(
-  OUTPUT ${PROJECT_SOURCE_DIR}/src/core/constant.hpp
+  OUTPUT ${PROCESSWARP_SOURCE_DIR}/src/core/constant.hpp
   COMMAND python
-  ARGS ${PROJECT_SOURCE_DIR}/script/gen_constant.py --cpp-dst ${PROJECT_SOURCE_DIR}/src/core/constant.hpp ${PROJECT_SOURCE_DIR}/src/const/definition.json ${PROJECT_SOURCE_DIR}/src/const/module.json ${PROJECT_SOURCE_DIR}/src/const/nid.json ${PROJECT_SOURCE_DIR}/src/const/packet_mode.json ${PROJECT_SOURCE_DIR}/src/const/packet_error.json ${PROJECT_SOURCE_DIR}/src/const/pid.json
-  DEPENDS ${PROJECT_SOURCE_DIR}/script/gen_constant.py ${PROJECT_SOURCE_DIR}/src/const/definition.json ${PROJECT_SOURCE_DIR}/src/const/module.json ${PROJECT_SOURCE_DIR}/src/const/nid.json ${PROJECT_SOURCE_DIR}/src/const/packet_mode.json ${PROJECT_SOURCE_DIR}/src/const/packet_error.json ${PROJECT_SOURCE_DIR}/src/const/pid.json
+  ARGS ${PROCESSWARP_SOURCE_DIR}/script/gen_constant.py --cpp-dst ${PROCESSWARP_SOURCE_DIR}/src/core/constant.hpp ${PROCESSWARP_SOURCE_DIR}/src/const/definition.json ${PROCESSWARP_SOURCE_DIR}/src/const/module.json ${PROCESSWARP_SOURCE_DIR}/src/const/nid.json ${PROCESSWARP_SOURCE_DIR}/src/const/packet_mode.json ${PROCESSWARP_SOURCE_DIR}/src/const/packet_error.json ${PROCESSWARP_SOURCE_DIR}/src/const/pid.json
+  DEPENDS ${PROCESSWARP_SOURCE_DIR}/script/gen_constant.py ${PROCESSWARP_SOURCE_DIR}/src/const/definition.json ${PROCESSWARP_SOURCE_DIR}/src/const/module.json ${PROCESSWARP_SOURCE_DIR}/src/const/nid.json ${PROCESSWARP_SOURCE_DIR}/src/const/packet_mode.json ${PROCESSWARP_SOURCE_DIR}/src/const/packet_error.json ${PROCESSWARP_SOURCE_DIR}/src/const/pid.json
   )
 add_custom_target(const_core_constant
-  SOURCES ${PROJECT_SOURCE_DIR}/src/core/constant.hpp)
+  SOURCES ${PROCESSWARP_SOURCE_DIR}/src/core/constant.hpp)
 
 add_custom_command(
-  OUTPUT ${PROJECT_SOURCE_DIR}/src/electron/constant.js
+  OUTPUT ${PROCESSWARP_SOURCE_DIR}/src/electron/constant.js
   COMMAND python
-  ARGS ${PROJECT_SOURCE_DIR}/script/gen_constant.py --nodejs-dst ${PROJECT_SOURCE_DIR}/src/electron/constant.js ${PROJECT_SOURCE_DIR}/src/const/definition.json ${PROJECT_SOURCE_DIR}/src/const/nid.json ${PROJECT_SOURCE_DIR}/src/const/packet_mode.json ${PROJECT_SOURCE_DIR}/src/const/packet_error.json ${PROJECT_SOURCE_DIR}/src/const/pid.json ${PROJECT_SOURCE_DIR}/src/const/module.json
-  DEPENDS ${PROJECT_SOURCE_DIR}/script/gen_constant.py ${PROJECT_SOURCE_DIR}/src/const/definition.json ${PROJECT_SOURCE_DIR}/src/const/nid.json ${PROJECT_SOURCE_DIR}/src/const/packet_mode.json ${PROJECT_SOURCE_DIR}/src/const/packet_error.json ${PROJECT_SOURCE_DIR}/src/const/pid.json ${PROJECT_SOURCE_DIR}/src/const/module.json
+  ARGS ${PROCESSWARP_SOURCE_DIR}/script/gen_constant.py --nodejs-dst ${PROCESSWARP_SOURCE_DIR}/src/electron/constant.js ${PROCESSWARP_SOURCE_DIR}/src/const/definition.json ${PROCESSWARP_SOURCE_DIR}/src/const/nid.json ${PROCESSWARP_SOURCE_DIR}/src/const/packet_mode.json ${PROCESSWARP_SOURCE_DIR}/src/const/packet_error.json ${PROCESSWARP_SOURCE_DIR}/src/const/pid.json ${PROCESSWARP_SOURCE_DIR}/src/const/module.json
+  DEPENDS ${PROCESSWARP_SOURCE_DIR}/script/gen_constant.py ${PROCESSWARP_SOURCE_DIR}/src/const/definition.json ${PROCESSWARP_SOURCE_DIR}/src/const/nid.json ${PROCESSWARP_SOURCE_DIR}/src/const/packet_mode.json ${PROCESSWARP_SOURCE_DIR}/src/const/packet_error.json ${PROCESSWARP_SOURCE_DIR}/src/const/pid.json ${PROCESSWARP_SOURCE_DIR}/src/const/module.json
   )
 
 add_custom_target(const_electron
-  SOURCES ${PROJECT_SOURCE_DIR}/src/electron/constant.js
+  SOURCES ${PROCESSWARP_SOURCE_DIR}/src/electron/constant.js
   )
