@@ -61,7 +61,7 @@ endif (WITH_DOCUMENT)
 
 # Socket.io
 if (${PROCESSWARP_BUILD_TYPE} STREQUAL "Client")
-  add_subdirectory(${PROCESSWARP_SOURCE_DIR}/lib/socket.io-client-cpp)
+  add_subdirectory(${LOCAL_ENV_PATH}/src/socket.io-client-cpp)
 endif ()
 
 # RE2
@@ -72,7 +72,7 @@ if (WITH_RE2)
     ExternalProject_Add(
       RE2
       PREFIX ${PROCESSWARP_SOURCE_DIR}/tmp/re2
-      SOURCE_DIR ${PROCESSWARP_SOURCE_DIR}/lib/re2
+      SOURCE_DIR ${LOCAL_ENV_PATH}/src/re2
       CMAKE_ARGS -DEXTRA_TARGET_LINK_LIBRARIES="rt"
       INSTALL_COMMAND echo "Nothing for install RE2."
       )
@@ -80,13 +80,13 @@ if (WITH_RE2)
     ExternalProject_Add(
       RE2
       PREFIX ${PROCESSWARP_SOURCE_DIR}/tmp/re2
-      SOURCE_DIR ${PROCESSWARP_SOURCE_DIR}/lib/re2
+      SOURCE_DIR ${env_path/src/re2
       INSTALL_COMMAND echo "Nothing for install RE2."
       )
   endif ()
 
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWITH_RE2=1")
-  include_directories(${PROCESSWARP_SOURCE_DIR}/lib/re2)
+  include_directories(${LOCAL_ENV_PATH}/src/re2)
   link_directories(${PROCESSWARP_SOURCE_DIR}/tmp/re2/src/RE2-build)
 endif (WITH_RE2)
 
@@ -159,11 +159,11 @@ if (WITH_PTHREAD)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWITH_PTHREAD=1")
 endif ()
 
+include_directories(${LOCAL_ENV_PATH}/include)
+include_directories(${LOCAL_ENV_PATH}/src/picojson)
+include_directories(${LOCAL_ENV_PATH}/src/socket.io-client-cpp/src)
+include_directories(${PROCESSWARP_SOURCE_DIR}/third_party/safeint)
 include_directories(${PROCESSWARP_SOURCE_DIR}/include)
-include_directories(${PROCESSWARP_SOURCE_DIR}/lib/picojson)
-include_directories(${PROCESSWARP_SOURCE_DIR}/lib/safeint)
-include_directories(${PROCESSWARP_SOURCE_DIR}/lib/socket.io-client-cpp/src)
-include_directories(${PROCESSWARP_SOURCE_DIR}/local/include)
 include_directories(${PROCESSWARP_SOURCE_DIR}/src)
 include_directories(${PROCESSWARP_SOURCE_DIR}/src/const)
 include_directories(${PROCESSWARP_SOURCE_DIR}/src/core)
