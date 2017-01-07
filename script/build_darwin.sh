@@ -6,7 +6,7 @@ _pwd=`pwd`
 _root=$(cd $(dirname $0)/.. && pwd)
 
 # Set local environment path.
-if [ -z "${env_path+x}" ] ; then
+if [ -z "${LOCAL_ENV_PATH+x}" ] ; then
     export LOCAL_ENV_PATH=${_root}/local
 fi
 mkdir -p ${LOCAL_ENV_PATH}/src
@@ -91,35 +91,39 @@ git submodule update
 
 
 # Compile native programes.
-cd ${_root}
-cmake -DCMAKE_BUILD_TYPE=Debug -DLOCAL_ENV_PATH=${LOCAL_ENV_PATH} -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DOPENSSL_INCLUDE_DIR=/usr/local/opt/openssl/include .
-make
-make install
-make const_electron
+if [ -z "${WITHOUT_COMPILE+x}" ]; then
+    cd ${_root}
+    cmake -DCMAKE_BUILD_TYPE=Debug -DLOCAL_ENV_PATH=${LOCAL_ENV_PATH} -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DOPENSSL_INCLUDE_DIR=/usr/local/opt/openssl/include .
+    make
+    make install
+    make const_electron
+fi
 
 # Install electron and requirement modules.
-if ! type electron >/dev/null 2>&1; then
-    npm -g install electron-prebuilt
-fi
+if [ -z "${WITHOUT_ELECTRON+x}" ]; then
+    if ! type electron >/dev/null 2>&1; then
+	npm -g install electron-prebuilt
+    fi
 
-cd ${_root}/src/electron
-if [ -e node_modules ]; then
-    npm update
-else
-    npm install
-fi
+    cd ${_root}/src/electron
+    if [ -e node_modules ]; then
+	npm update
+    else
+	npm install
+    fi
 
-# Install babel and convert js files.
-cd ${_root}/src/electron
-if ! type babel >/dev/null 2>&1; then
-    npm -g install babel-cli
-    npm install babel-preset-es2015
-fi
+    # Install babel and convert js files.
+    cd ${_root}/src/electron
+    if ! type babel >/dev/null 2>&1; then
+	npm -g install babel-cli
+	npm install babel-preset-es2015
+    fi
 
-mkdir -p dist
-babel --no-babelrc --presets es2015 --retain-lines -o dist/constant.js constant.js
-babel --no-babelrc --presets es2015 --retain-lines -o dist/main.js main.js
-babel --no-babelrc --presets es2015 --retain-lines -o dist/packet_controller.js packet_controller.js
+    mkdir -p dist
+    babel --no-babelrc --presets es2015 --retain-lines -o dist/constant.js constant.js
+    babel --no-babelrc --presets es2015 --retain-lines -o dist/main.js main.js
+    babel --no-babelrc --presets es2015 --retain-lines -o dist/packet_controller.js packet_controller.js
+fi
 
 # Finish.
 cd ${_pwd}
