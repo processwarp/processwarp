@@ -60,8 +60,9 @@ if (WITH_DOCUMENT)
 endif (WITH_DOCUMENT)
 
 # Socket.io
-if (${PROCESSWARP_BUILD_TYPE} STREQUAL "Client")
-  add_subdirectory(${LOCAL_ENV_PATH}/src/socket.io-client-cpp)
+if (${PROCESSWARP_BUILD_TYPE} STREQUAL "Client" OR
+    ${PROCESSWARP_BUILD_TYPE} STREQUAL "libpwnet")
+  add_subdirectory(${LOCAL_ENV_PATH}/src/socket.io-client-cpp src/socket.io-client-cpp)
 endif ()
 
 # RE2
